@@ -42,6 +42,8 @@ add_filter('manage_xpressui_submission_posts_columns', function ($columns) {
     $columns['xpressui_project_id'] = 'Project ID';
     $columns['xpressui_project_slug'] = 'Project';
     $columns['xpressui_submission_status'] = 'Status';
+    $columns['xpressui_submission_contact'] = 'Contact';
+    $columns['xpressui_submission_files_count'] = 'Files';
     $columns['xpressui_submission_id'] = 'Submission ID';
     return $columns;
 });
@@ -57,6 +59,16 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
     }
     if ($column === 'xpressui_submission_status') {
         echo esc_html(xpressui_get_submission_status_label((string) get_post_meta($post_id, '_xpressui_submission_status', true)));
+        return;
+    }
+    if ($column === 'xpressui_submission_contact') {
+        $payload = xpressui_get_submission_payload($post_id);
+        $summary = xpressui_get_submission_contact_summary($payload);
+        echo esc_html($summary !== '' ? $summary : 'No contact details');
+        return;
+    }
+    if ($column === 'xpressui_submission_files_count') {
+        echo esc_html((string) xpressui_get_uploaded_file_count($post_id));
         return;
     }
     if ($column === 'xpressui_submission_id') {
@@ -82,6 +94,45 @@ function xpressui_get_submission_status_options() {
 function xpressui_get_submission_status_label($status) {
     $options = xpressui_get_submission_status_options();
     return $options[$status] ?? $options['new'];
+}
+
+function xpressui_get_submission_payload($post_id) {
+    $payload_json = get_post_meta($post_id, '_xpressui_payload_json', true);
+    $payload = $payload_json ? json_decode($payload_json, true) : [];
+    return is_array($payload) ? $payload : [];
+}
+
+function xpressui_get_submission_contact_summary($payload) {
+    if (!is_array($payload)) {
+        return '';
+    }
+
+    $full_name = trim((string) ($payload['fullName'] ?? ''));
+    $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
+    $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
+    $email = trim((string) ($payload['email'] ?? ''));
+    $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
+
+    if ($full_name !== '') {
+        return $full_name;
+    }
+    if ($first_name !== '' || $last_name !== '') {
+        return trim($first_name . ' ' . $last_name);
+    }
+    if ($email !== '') {
+        return $email;
+    }
+    if ($phone !== '') {
+        return $phone;
+    }
+
+    return '';
+}
+
+function xpressui_get_uploaded_file_count($post_id) {
+    $files_json = get_post_meta($post_id, '_xpressui_uploaded_files', true);
+    $files = $files_json ? json_decode($files_json, true) : [];
+    return is_array($files) ? count($files) : 0;
 }
 
 function xpressui_render_submission_filters($post_type) {
@@ -155,11 +206,7 @@ function xpressui_apply_submission_filters($query) {
 }
 
 function xpressui_render_submission_summary_metabox($post) {
-    $payload_json = get_post_meta($post->ID, '_xpressui_payload_json', true);
-    $payload = $payload_json ? json_decode($payload_json, true) : [];
-    if (!is_array($payload)) {
-        $payload = [];
-    }
+    $payload = xpressui_get_submission_payload($post->ID);
 
     $project_id = (string) get_post_meta($post->ID, '_xpressui_project_id', true);
     $project_slug = (string) get_post_meta($post->ID, '_xpressui_project_slug', true);
@@ -167,10 +214,7 @@ function xpressui_render_submission_summary_metabox($post) {
     $status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
     $email = trim((string) ($payload['email'] ?? ''));
     $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
-    $full_name = trim((string) ($payload['fullName'] ?? ''));
-    $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
-    $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
-    $contact_name = $full_name !== '' ? $full_name : trim($first_name . ' ' . $last_name);
+    $contact_name = xpressui_get_submission_contact_summary($payload);
 
     echo '<dl style="margin:0;">';
     echo '<dt><strong>Status</strong></dt><dd style="margin:0 0 8px;">' . esc_html(xpressui_get_submission_status_label($status)) . '</dd>';
@@ -276,15 +320,9 @@ function xpressui_handle_submission_status_action() {
 }
 
 function xpressui_render_submission_payload_metabox($post) {
-    $payload_json = get_post_meta($post->ID, '_xpressui_payload_json', true);
-    if (!$payload_json) {
+    $payload = xpressui_get_submission_payload($post->ID);
+    if (empty($payload)) {
         echo '<p>No submission payload recorded.</p>';
-        return;
-    }
-
-    $payload = json_decode($payload_json, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo '<pre style="white-space:pre-wrap;overflow:auto;">' . esc_html((string) $payload_json) . '</pre>';
         return;
     }
 
