@@ -236,6 +236,39 @@ function xpressui_attach_uploaded_file_references($payload, array $stored_files)
     return $payload;
 }
 
+function xpressui_build_submission_title($project_slug, $submission_id, $payload) {
+    $summary = '';
+
+    if (is_array($payload)) {
+        $full_name = trim((string) ($payload['fullName'] ?? ''));
+        $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
+        $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
+        $email = trim((string) ($payload['email'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
+
+        if ($full_name !== '') {
+            $summary = $full_name;
+        } elseif ($first_name !== '' || $last_name !== '') {
+            $summary = trim($first_name . ' ' . $last_name);
+        } elseif ($email !== '') {
+            $summary = $email;
+        } elseif ($phone !== '') {
+            $summary = $phone;
+        }
+    }
+
+    if ($summary === '') {
+        $summary = (string) ($submission_id ?: uniqid('submission_', true));
+    }
+
+    return sprintf(
+        '%s · %s · %s',
+        (string) $project_slug,
+        $summary,
+        wp_date('Y-m-d H:i'),
+    );
+}
+
 function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
     $project_id = $request->get_param('projectId') ?: 'unknown-project';
@@ -255,7 +288,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     $post_id = wp_insert_post([
         'post_type' => 'xpressui_submission',
         'post_status' => 'private',
-        'post_title' => sprintf('%s %s', $project_slug, $submission_id),
+        'post_title' => xpressui_build_submission_title($project_slug, $submission_id, $payload),
     ]);
 
     if (is_wp_error($post_id)) {
