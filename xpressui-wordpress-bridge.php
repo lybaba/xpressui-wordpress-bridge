@@ -116,7 +116,7 @@ function xpressui_normalize_project_config_snapshot($raw_config) {
     return is_array($raw_config) ? $raw_config : [];
 }
 
-function xpressui_store_project_config_snapshot($project_id, $project_slug, $config) {
+function xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config_version, $config) {
     $normalized = xpressui_normalize_project_config_snapshot($config);
     if (empty($normalized)) {
         return [];
@@ -127,10 +127,11 @@ function xpressui_store_project_config_snapshot($project_id, $project_slug, $con
         $registry = [];
     }
 
-    $registry_key = $project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug;
+    $registry_key = $project_config_version !== '' ? 'config:' . $project_config_version : ($project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug);
     $registry[$registry_key] = [
         'projectId' => $project_id,
         'projectSlug' => $project_slug,
+        'projectConfigVersion' => $project_config_version,
         'storedAt' => current_time('mysql'),
         'config' => $normalized,
     ];
@@ -155,7 +156,8 @@ function xpressui_get_project_config_snapshot($post_id) {
 
     $project_id = (string) get_post_meta($post_id, '_xpressui_project_id', true);
     $project_slug = (string) get_post_meta($post_id, '_xpressui_project_slug', true);
-    $registry_key = $project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug;
+    $project_config_version = (string) get_post_meta($post_id, '_xpressui_project_config_version', true);
+    $registry_key = $project_config_version !== '' ? 'config:' . $project_config_version : ($project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug);
     $entry = $registry[$registry_key] ?? null;
     return is_array($entry['config'] ?? null) ? $entry['config'] : [];
 }
@@ -536,6 +538,7 @@ function xpressui_render_submission_preview_metabox($post) {
     $hidden_keys = [
         'projectId',
         'projectSlug',
+        'projectConfigVersion',
         'submissionId',
         'projectConfigSnapshotJson',
     ];
@@ -867,6 +870,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
     $project_id = $request->get_param('projectId') ?: 'unknown-project';
     $project_slug = $request->get_param('projectSlug') ?: 'unknown-project';
+    $project_config_version = $request->get_param('projectConfigVersion') ?: '';
     $submission_id = $request->get_param('submissionId') ?: uniqid('submission_', true);
     $project_config = xpressui_normalize_project_config_snapshot($request->get_param('projectConfigSnapshotJson'));
 
@@ -896,11 +900,9 @@ function xpressui_handle_submission(WP_REST_Request $request) {
 
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
+    update_post_meta($post_id, '_xpressui_project_config_version', $project_config_version);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
-    $stored_project_config = xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config);
-    if (!empty($stored_project_config)) {
-        update_post_meta($post_id, '_xpressui_project_config_json', wp_json_encode($stored_project_config));
-    }
+    xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config_version, $project_config);
     xpressui_set_submission_status($post_id, 'new', 'Submission received');
 
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
