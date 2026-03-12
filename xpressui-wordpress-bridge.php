@@ -162,6 +162,25 @@ function xpressui_get_project_config_snapshot($post_id) {
     return is_array($entry['config'] ?? null) ? $entry['config'] : [];
 }
 
+function xpressui_build_field_choice_map($field) {
+    $choice_map = [];
+    $choices = is_array($field['choices'] ?? null) ? $field['choices'] : [];
+    foreach ($choices as $choice) {
+        if (!is_array($choice)) {
+            continue;
+        }
+        $label = (string) ($choice['label'] ?? $choice['name'] ?? $choice['value'] ?? '');
+        foreach (['value', 'name', 'label'] as $choice_key) {
+            $raw_value = $choice[$choice_key] ?? null;
+            if ($raw_value === null || $raw_value === '') {
+                continue;
+            }
+            $choice_map[(string) $raw_value] = $label !== '' ? $label : (string) $raw_value;
+        }
+    }
+    return $choice_map;
+}
+
 function xpressui_build_config_field_index($config) {
     $index = [];
     $sections = is_array($config['sections'] ?? null) ? $config['sections'] : [];
@@ -189,6 +208,7 @@ function xpressui_build_config_field_index($config) {
                 'label' => (string) ($field['label'] ?? $field['adminLabel'] ?? $field_name),
                 'sectionLabel' => $section_label,
                 'type' => (string) ($field['type'] ?? ''),
+                'choices' => xpressui_build_field_choice_map($field),
             ];
         }
     }
@@ -196,7 +216,12 @@ function xpressui_build_config_field_index($config) {
     return $index;
 }
 
-function xpressui_format_submission_value($value) {
+function xpressui_format_submission_value($value, $field_meta = []) {
+    $choice_map = is_array($field_meta['choices'] ?? null) ? $field_meta['choices'] : [];
+    $map_choice = static function ($raw_value) use ($choice_map) {
+        $normalized_value = (string) $raw_value;
+        return $choice_map[$normalized_value] ?? $normalized_value;
+    };
     if (is_array($value)) {
         if (($value['kind'] ?? '') === 'uploaded-file') {
             $original_name = (string) ($value['originalName'] ?? $value['field'] ?? 'File');
@@ -206,6 +231,18 @@ function xpressui_format_submission_value($value) {
             }
             return esc_html($original_name);
         }
+        $is_list = array_keys($value) === range(0, count($value) - 1);
+        if ($is_list) {
+            $formatted_values = [];
+            foreach ($value as $item) {
+                if (is_scalar($item) || $item === null) {
+                    $formatted_values[] = $map_choice($item);
+                    continue;
+                }
+                $formatted_values[] = wp_json_encode($item, JSON_UNESCAPED_SLASHES);
+            }
+            return esc_html(implode(', ', array_filter($formatted_values, static fn ($item) => $item !== '')));
+        }
         return '<pre style="white-space:pre-wrap;margin:0;">' . esc_html(wp_json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
     }
     if (is_bool($value)) {
@@ -214,7 +251,7 @@ function xpressui_format_submission_value($value) {
     if ($value === null || $value === '') {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-    return esc_html((string) $value);
+    return esc_html($map_choice($value));
 }
 
 function xpressui_get_submission_contact_summary($payload) {
@@ -564,7 +601,7 @@ function xpressui_render_submission_preview_metabox($post) {
             foreach ($fields as $field_name => $field_meta) {
                 echo '<tr>';
                 echo '<th style="width:30%;">' . esc_html($field_meta['label']) . '</th>';
-                echo '<td>' . xpressui_format_submission_value($payload[$field_name]) . '</td>';
+                echo '<td>' . xpressui_format_submission_value($payload[$field_name], $field_meta) . '</td>';
                 echo '</tr>';
             }
             echo '</tbody></table>';
@@ -584,8 +621,9 @@ function xpressui_render_submission_preview_metabox($post) {
         echo '<table class="widefat striped"><tbody>';
         foreach ($remaining as $key => $value) {
             echo '<tr>';
-            echo '<th style="width:30%;">' . esc_html($field_index[$key]['label'] ?? $key) . '</th>';
-            echo '<td>' . xpressui_format_submission_value($value) . '</td>';
+            $field_meta = is_array($field_index[$key] ?? null) ? $field_index[$key] : [];
+            echo '<th style="width:30%;">' . esc_html($field_meta['label'] ?? $key) . '</th>';
+            echo '<td>' . xpressui_format_submission_value($value, $field_meta) . '</td>';
             echo '</tr>';
         }
         echo '</tbody></table>';
