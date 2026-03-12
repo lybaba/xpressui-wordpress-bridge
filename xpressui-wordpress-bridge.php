@@ -80,6 +80,8 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
 add_action('add_meta_boxes', function () {
     add_meta_box('xpressui_submission_status', 'Submission Workflow', 'xpressui_render_submission_status_metabox', 'xpressui_submission', 'side', 'high');
     add_meta_box('xpressui_submission_summary', 'Submission Summary', 'xpressui_render_submission_summary_metabox', 'xpressui_submission', 'side', 'high');
+    add_meta_box('xpressui_submission_review', 'Review Notes', 'xpressui_render_submission_review_metabox', 'xpressui_submission', 'normal', 'default');
+    add_meta_box('xpressui_submission_history', 'Status History', 'xpressui_render_submission_history_metabox', 'xpressui_submission', 'side', 'default');
     add_meta_box('xpressui_submission_payload', 'Submission Payload', 'xpressui_render_submission_payload_metabox', 'xpressui_submission', 'normal', 'default');
     add_meta_box('xpressui_submission_files', 'Uploaded Files', 'xpressui_render_submission_files_metabox', 'xpressui_submission', 'side', 'default');
 });
@@ -134,6 +136,37 @@ function xpressui_get_uploaded_file_count($post_id) {
     $files_json = get_post_meta($post_id, '_xpressui_uploaded_files', true);
     $files = $files_json ? json_decode($files_json, true) : [];
     return is_array($files) ? count($files) : 0;
+}
+
+function xpressui_get_status_history($post_id) {
+    $history_json = get_post_meta($post_id, '_xpressui_status_history', true);
+    $history = $history_json ? json_decode($history_json, true) : [];
+    return is_array($history) ? $history : [];
+}
+
+function xpressui_append_status_history($post_id, $status, $note = '') {
+    $history = xpressui_get_status_history($post_id);
+    $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+    $actor = ($user && !empty($user->user_login)) ? (string) $user->user_login : 'system';
+    $history[] = [
+        'status' => $status,
+        'note' => trim((string) $note),
+        'at' => current_time('mysql'),
+        'actor' => $actor,
+    ];
+    update_post_meta($post_id, '_xpressui_status_history', wp_json_encode($history));
+}
+
+function xpressui_set_submission_status($post_id, $status, $note = '') {
+    $current_status = (string) get_post_meta($post_id, '_xpressui_submission_status', true);
+    $current_note = (string) get_post_meta($post_id, '_xpressui_review_note', true);
+    $normalized_note = trim((string) $note);
+    update_post_meta($post_id, '_xpressui_submission_status', $status);
+    update_post_meta($post_id, '_xpressui_review_note', $normalized_note);
+
+    if ($current_status !== $status || $current_note !== $normalized_note) {
+        xpressui_append_status_history($post_id, $status, $normalized_note);
+    }
 }
 
 function xpressui_register_submission_admin_pages() {
@@ -349,6 +382,37 @@ function xpressui_render_submission_status_metabox($post) {
     echo '<p style="margin-top:8px;opacity:0.8;">Use Update to save the new status.</p>';
 }
 
+function xpressui_render_submission_review_metabox($post) {
+    $note = (string) get_post_meta($post->ID, '_xpressui_review_note', true);
+    echo '<label for="xpressui_review_note"><strong>Operator notes</strong></label>';
+    echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" style="width:100%;margin-top:8px;">' . esc_textarea($note) . '</textarea>';
+    echo '<p style="margin-top:8px;opacity:0.8;">Saved with the current status and added to the review history when changed.</p>';
+}
+
+function xpressui_render_submission_history_metabox($post) {
+    $history = array_reverse(xpressui_get_status_history($post->ID));
+    if (empty($history)) {
+        echo '<p>No review history recorded yet.</p>';
+        return;
+    }
+
+    echo '<ul style="margin:0;padding-left:18px;">';
+    foreach ($history as $entry) {
+        $status = xpressui_get_submission_status_label((string) ($entry['status'] ?? 'new'));
+        $actor = (string) ($entry['actor'] ?? 'system');
+        $at = (string) ($entry['at'] ?? '');
+        $note = trim((string) ($entry['note'] ?? ''));
+        echo '<li style="margin-bottom:10px;">';
+        echo '<strong>' . esc_html($status) . '</strong><br />';
+        echo '<span style="opacity:0.7;">' . esc_html($at !== '' ? $at : 'unknown time') . ' · ' . esc_html($actor) . '</span>';
+        if ($note !== '') {
+            echo '<br /><span>' . esc_html($note) . '</span>';
+        }
+        echo '</li>';
+    }
+    echo '</ul>';
+}
+
 function xpressui_save_submission_status($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
@@ -361,12 +425,13 @@ function xpressui_save_submission_status($post_id) {
     }
 
     $status = isset($_POST['xpressui_submission_status']) ? sanitize_text_field((string) $_POST['xpressui_submission_status']) : 'new';
+    $note = isset($_POST['xpressui_review_note']) ? sanitize_textarea_field((string) $_POST['xpressui_review_note']) : '';
     $options = xpressui_get_submission_status_options();
     if (!isset($options[$status])) {
         $status = 'new';
     }
 
-    update_post_meta($post_id, '_xpressui_submission_status', $status);
+    xpressui_set_submission_status($post_id, $status, $note);
 }
 
 function xpressui_add_submission_row_actions($actions, $post) {
@@ -409,7 +474,7 @@ function xpressui_handle_submission_status_action() {
     }
 
     check_admin_referer('xpressui_mark_submission_status_' . $post_id . '_' . $status);
-    update_post_meta($post_id, '_xpressui_submission_status', $status);
+    xpressui_set_submission_status($post_id, $status);
 
     wp_safe_redirect(add_query_arg([
         'post_type' => 'xpressui_submission',
@@ -654,7 +719,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
-    update_post_meta($post_id, '_xpressui_submission_status', 'new');
+    xpressui_set_submission_status($post_id, 'new', 'Submission received');
 
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
     $payload_with_files = xpressui_attach_uploaded_file_references($payload, $stored_files);
