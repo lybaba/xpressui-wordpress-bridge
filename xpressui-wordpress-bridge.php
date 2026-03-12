@@ -389,6 +389,15 @@ function xpressui_render_product_list_value($value, $field_meta = []) {
 }
 
 function xpressui_render_quiz_value($value, $field_meta = []) {
+    if (is_string($value)) {
+        $trimmed_value = trim($value);
+        if ($trimmed_value === '') {
+            return '<span style="opacity:0.6;">Empty</span>';
+        }
+
+        return nl2br(esc_html($trimmed_value));
+    }
+
     if (!is_array($value) || empty($value)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
