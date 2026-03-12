@@ -17,6 +17,9 @@ add_action('init', 'xpressui_register_submission_post_type');
 add_action('rest_api_init', 'xpressui_register_rest_routes');
 add_action('restrict_manage_posts', 'xpressui_render_submission_filters');
 add_action('pre_get_posts', 'xpressui_apply_submission_filters');
+add_action('save_post_xpressui_submission', 'xpressui_save_submission_status');
+add_action('admin_init', 'xpressui_handle_submission_status_action');
+add_filter('post_row_actions', 'xpressui_add_submission_row_actions', 10, 2);
 
 function xpressui_register_submission_post_type() {
     register_post_type('xpressui_submission', [
@@ -62,6 +65,7 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
 }, 10, 2);
 
 add_action('add_meta_boxes', function () {
+    add_meta_box('xpressui_submission_status', 'Submission Workflow', 'xpressui_render_submission_status_metabox', 'xpressui_submission', 'side', 'high');
     add_meta_box('xpressui_submission_summary', 'Submission Summary', 'xpressui_render_submission_summary_metabox', 'xpressui_submission', 'side', 'high');
     add_meta_box('xpressui_submission_payload', 'Submission Payload', 'xpressui_render_submission_payload_metabox', 'xpressui_submission', 'normal', 'default');
     add_meta_box('xpressui_submission_files', 'Uploaded Files', 'xpressui_render_submission_files_metabox', 'xpressui_submission', 'side', 'default');
@@ -183,6 +187,92 @@ function xpressui_render_submission_summary_metabox($post) {
         echo '<dt><strong>Phone</strong></dt><dd style="margin:0 0 8px;"><a href="tel:' . esc_attr($phone) . '">' . esc_html($phone) . '</a></dd>';
     }
     echo '</dl>';
+}
+
+function xpressui_render_submission_status_metabox($post) {
+    $current_status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    if ($current_status === '') {
+        $current_status = 'new';
+    }
+
+    wp_nonce_field('xpressui_save_submission_status', 'xpressui_submission_status_nonce');
+
+    echo '<label for="xpressui_submission_status"><strong>Operator status</strong></label><br />';
+    echo '<select id="xpressui_submission_status" name="xpressui_submission_status" style="width:100%;margin-top:8px;">';
+    foreach (xpressui_get_submission_status_options() as $value => $label) {
+        echo '<option value="' . esc_attr($value) . '"' . selected($current_status, $value, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+    echo '<p style="margin-top:8px;opacity:0.8;">Use Update to save the new status.</p>';
+}
+
+function xpressui_save_submission_status($post_id) {
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    if (!isset($_POST['xpressui_submission_status_nonce']) || !wp_verify_nonce((string) $_POST['xpressui_submission_status_nonce'], 'xpressui_save_submission_status')) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $status = isset($_POST['xpressui_submission_status']) ? sanitize_text_field((string) $_POST['xpressui_submission_status']) : 'new';
+    $options = xpressui_get_submission_status_options();
+    if (!isset($options[$status])) {
+        $status = 'new';
+    }
+
+    update_post_meta($post_id, '_xpressui_submission_status', $status);
+}
+
+function xpressui_add_submission_row_actions($actions, $post) {
+    if (($post->post_type ?? '') !== 'xpressui_submission') {
+        return $actions;
+    }
+
+    $current_status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    foreach (xpressui_get_submission_status_options() as $status => $label) {
+        if ($status === $current_status) {
+            continue;
+        }
+        $url = wp_nonce_url(
+            add_query_arg([
+                'post_type' => 'xpressui_submission',
+                'xpressui_submission_id' => $post->ID,
+                'xpressui_mark_status' => $status,
+            ], admin_url('edit.php')),
+            'xpressui_mark_submission_status_' . $post->ID . '_' . $status,
+        );
+        $actions['xpressui_mark_' . $status] = '<a href="' . esc_url($url) . '">Mark ' . esc_html($label) . '</a>';
+    }
+
+    return $actions;
+}
+
+function xpressui_handle_submission_status_action() {
+    if (!is_admin() || !isset($_GET['xpressui_submission_id']) || !isset($_GET['xpressui_mark_status'])) {
+        return;
+    }
+
+    $post_id = (int) $_GET['xpressui_submission_id'];
+    $status = sanitize_text_field((string) $_GET['xpressui_mark_status']);
+    $options = xpressui_get_submission_status_options();
+    if ($post_id <= 0 || !isset($options[$status])) {
+        return;
+    }
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    check_admin_referer('xpressui_mark_submission_status_' . $post_id . '_' . $status);
+    update_post_meta($post_id, '_xpressui_submission_status', $status);
+
+    wp_safe_redirect(add_query_arg([
+        'post_type' => 'xpressui_submission',
+        'xpressui_status_updated' => 1,
+    ], admin_url('edit.php')));
+    exit;
 }
 
 function xpressui_render_submission_payload_metabox($post) {
