@@ -203,6 +203,7 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
         }
         $stored_files[] = [
             'field' => $file['field'],
+            'originalName' => $file['name'],
             'attachmentId' => $attachment,
             'url' => wp_get_attachment_url($attachment),
         ];
@@ -210,6 +211,29 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_uploaded_files', wp_json_encode($stored_files));
     update_post_meta($post_id, '_xpressui_upload_debug', wp_json_encode($debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     return $stored_files;
+}
+
+function xpressui_attach_uploaded_file_references($payload, array $stored_files) {
+    if (!is_array($payload) || empty($stored_files)) {
+        return $payload;
+    }
+
+    foreach ($stored_files as $file) {
+        $field_name = isset($file['field']) ? (string) $file['field'] : '';
+        if ($field_name === '') {
+            continue;
+        }
+
+        $payload[$field_name] = [
+            'field' => $field_name,
+            'kind' => 'uploaded-file',
+            'originalName' => isset($file['originalName']) ? (string) $file['originalName'] : '',
+            'attachmentId' => isset($file['attachmentId']) ? (int) $file['attachmentId'] : 0,
+            'url' => isset($file['url']) ? (string) $file['url'] : '',
+        ];
+    }
+
+    return $payload;
 }
 
 function xpressui_handle_submission(WP_REST_Request $request) {
@@ -241,12 +265,13 @@ function xpressui_handle_submission(WP_REST_Request $request) {
         ], 500);
     }
 
-    update_post_meta($post_id, '_xpressui_payload_json', is_string($payload) ? $payload : wp_json_encode($payload));
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
 
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
+    $payload_with_files = xpressui_attach_uploaded_file_references($payload, $stored_files);
+    update_post_meta($post_id, '_xpressui_payload_json', is_string($payload_with_files) ? $payload_with_files : wp_json_encode($payload_with_files));
 
     return new WP_REST_Response([
         'success' => true,
