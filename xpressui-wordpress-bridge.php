@@ -136,17 +136,25 @@ function xpressui_normalize_uploaded_files(array $file_params) {
 function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
     $stored_files = [];
     $file_params = $request->get_file_params();
-    foreach (xpressui_normalize_uploaded_files($file_params) as $file) {
+    foreach (xpressui_normalize_uploaded_files($file_params) as $index => $file) {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || empty($file['tmp_name'])) {
             continue;
         }
-        $attachment = media_handle_sideload([
+
+        $temporary_field = sprintf('xpressui_upload_%d', $index);
+        $_FILES[$temporary_field] = [
             'name' => $file['name'],
             'type' => $file['type'],
             'tmp_name' => $file['tmp_name'],
             'error' => $file['error'],
             'size' => $file['size'],
-        ], $post_id);
+        ];
+
+        $attachment = media_handle_upload($temporary_field, $post_id, [], [
+            'test_form' => false,
+        ]);
+        unset($_FILES[$temporary_field]);
+
         if (is_wp_error($attachment)) {
             continue;
         }
