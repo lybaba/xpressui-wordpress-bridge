@@ -82,6 +82,7 @@ add_action('add_meta_boxes', function () {
     add_meta_box('xpressui_submission_summary', 'Submission Summary', 'xpressui_render_submission_summary_metabox', 'xpressui_submission', 'side', 'high');
     add_meta_box('xpressui_submission_review', 'Review Notes', 'xpressui_render_submission_review_metabox', 'xpressui_submission', 'normal', 'default');
     add_meta_box('xpressui_submission_history', 'Status History', 'xpressui_render_submission_history_metabox', 'xpressui_submission', 'side', 'default');
+    add_meta_box('xpressui_submission_preview', 'Submission Preview', 'xpressui_render_submission_preview_metabox', 'xpressui_submission', 'normal', 'high');
     add_meta_box('xpressui_submission_payload', 'Submission Payload', 'xpressui_render_submission_payload_metabox', 'xpressui_submission', 'normal', 'default');
     add_meta_box('xpressui_submission_files', 'Uploaded Files', 'xpressui_render_submission_files_metabox', 'xpressui_submission', 'side', 'default');
 });
@@ -103,6 +104,115 @@ function xpressui_get_submission_payload($post_id) {
     $payload_json = get_post_meta($post_id, '_xpressui_payload_json', true);
     $payload = $payload_json ? json_decode($payload_json, true) : [];
     return is_array($payload) ? $payload : [];
+}
+
+function xpressui_normalize_project_config_snapshot($raw_config) {
+    if (is_string($raw_config) && trim($raw_config) !== '') {
+        $decoded = json_decode($raw_config, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+    }
+    return is_array($raw_config) ? $raw_config : [];
+}
+
+function xpressui_store_project_config_snapshot($project_id, $project_slug, $config) {
+    $normalized = xpressui_normalize_project_config_snapshot($config);
+    if (empty($normalized)) {
+        return [];
+    }
+
+    $registry = get_option('xpressui_project_config_registry', []);
+    if (!is_array($registry)) {
+        $registry = [];
+    }
+
+    $registry_key = $project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug;
+    $registry[$registry_key] = [
+        'projectId' => $project_id,
+        'projectSlug' => $project_slug,
+        'storedAt' => current_time('mysql'),
+        'config' => $normalized,
+    ];
+
+    update_option('xpressui_project_config_registry', $registry, false);
+    return $normalized;
+}
+
+function xpressui_get_project_config_snapshot($post_id) {
+    $stored_json = get_post_meta($post_id, '_xpressui_project_config_json', true);
+    if (is_string($stored_json) && trim($stored_json) !== '') {
+        $stored = json_decode($stored_json, true);
+        if (is_array($stored)) {
+            return $stored;
+        }
+    }
+
+    $registry = get_option('xpressui_project_config_registry', []);
+    if (!is_array($registry)) {
+        $registry = [];
+    }
+
+    $project_id = (string) get_post_meta($post_id, '_xpressui_project_id', true);
+    $project_slug = (string) get_post_meta($post_id, '_xpressui_project_slug', true);
+    $registry_key = $project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug;
+    $entry = $registry[$registry_key] ?? null;
+    return is_array($entry['config'] ?? null) ? $entry['config'] : [];
+}
+
+function xpressui_build_config_field_index($config) {
+    $index = [];
+    $sections = is_array($config['sections'] ?? null) ? $config['sections'] : [];
+    $custom_sections = is_array($sections['custom'] ?? null) ? $sections['custom'] : [];
+
+    foreach ($custom_sections as $section) {
+        if (!is_array($section)) {
+            continue;
+        }
+        $section_name = (string) ($section['name'] ?? '');
+        if ($section_name === '') {
+            continue;
+        }
+        $section_label = (string) ($section['label'] ?? $section['title'] ?? $section_name);
+        $fields = is_array($sections[$section_name] ?? null) ? $sections[$section_name] : [];
+        foreach ($fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+            $field_name = (string) ($field['name'] ?? '');
+            if ($field_name === '') {
+                continue;
+            }
+            $index[$field_name] = [
+                'label' => (string) ($field['label'] ?? $field['adminLabel'] ?? $field_name),
+                'sectionLabel' => $section_label,
+                'type' => (string) ($field['type'] ?? ''),
+            ];
+        }
+    }
+
+    return $index;
+}
+
+function xpressui_format_submission_value($value) {
+    if (is_array($value)) {
+        if (($value['kind'] ?? '') === 'uploaded-file') {
+            $original_name = (string) ($value['originalName'] ?? $value['field'] ?? 'File');
+            $url = (string) ($value['url'] ?? '');
+            if ($url !== '') {
+                return '<a href="' . esc_url($url) . '" target="_blank" rel="noreferrer">' . esc_html($original_name) . '</a>';
+            }
+            return esc_html($original_name);
+        }
+        return '<pre style="white-space:pre-wrap;margin:0;">' . esc_html(wp_json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
+    }
+    if (is_bool($value)) {
+        return esc_html($value ? 'Yes' : 'No');
+    }
+    if ($value === null || $value === '') {
+        return '<span style="opacity:0.6;">Empty</span>';
+    }
+    return esc_html((string) $value);
 }
 
 function xpressui_get_submission_contact_summary($payload) {
@@ -167,6 +277,7 @@ function xpressui_set_submission_status($post_id, $status, $note = '') {
     if ($current_status !== $status || $current_note !== $normalized_note) {
         xpressui_append_status_history($post_id, $status, $normalized_note);
     }
+
 }
 
 function xpressui_register_submission_admin_pages() {
@@ -411,6 +522,71 @@ function xpressui_render_submission_history_metabox($post) {
         echo '</li>';
     }
     echo '</ul>';
+}
+
+function xpressui_render_submission_preview_metabox($post) {
+    $payload = xpressui_get_submission_payload($post->ID);
+    if (empty($payload)) {
+        echo '<p>No submission payload recorded.</p>';
+        return;
+    }
+
+    $config = xpressui_get_project_config_snapshot($post->ID);
+    $field_index = xpressui_build_config_field_index($config);
+    $hidden_keys = [
+        'projectId',
+        'projectSlug',
+        'submissionId',
+        'projectConfigSnapshotJson',
+    ];
+    $rendered_fields = [];
+
+    if (!empty($field_index)) {
+        $grouped = [];
+        foreach ($field_index as $field_name => $field_meta) {
+            if (!array_key_exists($field_name, $payload)) {
+                continue;
+            }
+            $section_label = $field_meta['sectionLabel'] ?: 'Submission fields';
+            if (!isset($grouped[$section_label])) {
+                $grouped[$section_label] = [];
+            }
+            $grouped[$section_label][$field_name] = $field_meta;
+            $rendered_fields[$field_name] = true;
+        }
+
+        foreach ($grouped as $section_label => $fields) {
+            echo '<h3 style="margin:16px 0 8px;">' . esc_html($section_label) . '</h3>';
+            echo '<table class="widefat striped" style="margin-bottom:12px;"><tbody>';
+            foreach ($fields as $field_name => $field_meta) {
+                echo '<tr>';
+                echo '<th style="width:30%;">' . esc_html($field_meta['label']) . '</th>';
+                echo '<td>' . xpressui_format_submission_value($payload[$field_name]) . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        }
+    }
+
+    $remaining = [];
+    foreach ($payload as $key => $value) {
+        if (isset($rendered_fields[$key]) || in_array($key, $hidden_keys, true)) {
+            continue;
+        }
+        $remaining[$key] = $value;
+    }
+
+    if (!empty($remaining)) {
+        echo '<h3 style="margin:16px 0 8px;">Additional fields</h3>';
+        echo '<table class="widefat striped"><tbody>';
+        foreach ($remaining as $key => $value) {
+            echo '<tr>';
+            echo '<th style="width:30%;">' . esc_html($field_index[$key]['label'] ?? $key) . '</th>';
+            echo '<td>' . xpressui_format_submission_value($value) . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
 }
 
 function xpressui_save_submission_status($post_id) {
@@ -692,6 +868,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     $project_id = $request->get_param('projectId') ?: 'unknown-project';
     $project_slug = $request->get_param('projectSlug') ?: 'unknown-project';
     $submission_id = $request->get_param('submissionId') ?: uniqid('submission_', true);
+    $project_config = xpressui_normalize_project_config_snapshot($request->get_param('projectConfigSnapshotJson'));
 
     if (empty($payload)) {
         $payload = $request->get_json_params();
@@ -700,6 +877,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
         }
         if (is_array($payload)) {
             unset($payload['payload']);
+            unset($payload['projectConfigSnapshotJson']);
         }
     }
 
@@ -719,6 +897,10 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
+    $stored_project_config = xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config);
+    if (!empty($stored_project_config)) {
+        update_post_meta($post_id, '_xpressui_project_config_json', wp_json_encode($stored_project_config));
+    }
     xpressui_set_submission_status($post_id, 'new', 'Submission received');
 
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
