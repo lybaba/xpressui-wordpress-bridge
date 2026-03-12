@@ -15,6 +15,8 @@ require_once ABSPATH . 'wp-admin/includes/image.php';
 
 add_action('init', 'xpressui_register_submission_post_type');
 add_action('rest_api_init', 'xpressui_register_rest_routes');
+add_action('restrict_manage_posts', 'xpressui_render_submission_filters');
+add_action('pre_get_posts', 'xpressui_apply_submission_filters');
 
 function xpressui_register_submission_post_type() {
     register_post_type('xpressui_submission', [
@@ -36,6 +38,7 @@ function xpressui_register_rest_routes() {
 add_filter('manage_xpressui_submission_posts_columns', function ($columns) {
     $columns['xpressui_project_id'] = 'Project ID';
     $columns['xpressui_project_slug'] = 'Project';
+    $columns['xpressui_submission_status'] = 'Status';
     $columns['xpressui_submission_id'] = 'Submission ID';
     return $columns;
 });
@@ -49,15 +52,138 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
         echo esc_html((string) get_post_meta($post_id, '_xpressui_project_slug', true));
         return;
     }
+    if ($column === 'xpressui_submission_status') {
+        echo esc_html(xpressui_get_submission_status_label((string) get_post_meta($post_id, '_xpressui_submission_status', true)));
+        return;
+    }
     if ($column === 'xpressui_submission_id') {
         echo esc_html((string) get_post_meta($post_id, '_xpressui_submission_id', true));
     }
 }, 10, 2);
 
 add_action('add_meta_boxes', function () {
+    add_meta_box('xpressui_submission_summary', 'Submission Summary', 'xpressui_render_submission_summary_metabox', 'xpressui_submission', 'side', 'high');
     add_meta_box('xpressui_submission_payload', 'Submission Payload', 'xpressui_render_submission_payload_metabox', 'xpressui_submission', 'normal', 'default');
     add_meta_box('xpressui_submission_files', 'Uploaded Files', 'xpressui_render_submission_files_metabox', 'xpressui_submission', 'side', 'default');
 });
+
+function xpressui_get_submission_status_options() {
+    return [
+        'new' => 'New',
+        'in-review' => 'In review',
+        'done' => 'Done',
+    ];
+}
+
+function xpressui_get_submission_status_label($status) {
+    $options = xpressui_get_submission_status_options();
+    return $options[$status] ?? $options['new'];
+}
+
+function xpressui_render_submission_filters($post_type) {
+    if ($post_type !== 'xpressui_submission') {
+        return;
+    }
+
+    $selected_status = isset($_GET['xpressui_status']) ? sanitize_text_field((string) $_GET['xpressui_status']) : '';
+    $selected_project = isset($_GET['xpressui_project']) ? sanitize_text_field((string) $_GET['xpressui_project']) : '';
+    $submission_ids = get_posts([
+        'post_type' => 'xpressui_submission',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'meta_key' => '_xpressui_project_slug',
+        'orderby' => 'meta_value',
+        'order' => 'ASC',
+    ]);
+    $projects = [];
+    foreach ($submission_ids as $submission_id) {
+        $project_slug = (string) get_post_meta($submission_id, '_xpressui_project_slug', true);
+        if ($project_slug !== '') {
+            $projects[$project_slug] = $project_slug;
+        }
+    }
+
+    echo '<select name="xpressui_status">';
+    echo '<option value="">All statuses</option>';
+    foreach (xpressui_get_submission_status_options() as $value => $label) {
+        echo '<option value="' . esc_attr($value) . '"' . selected($selected_status, $value, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+
+    echo '<select name="xpressui_project">';
+    echo '<option value="">All projects</option>';
+    foreach ($projects as $value => $label) {
+        echo '<option value="' . esc_attr($value) . '"' . selected($selected_project, $value, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+}
+
+function xpressui_apply_submission_filters($query) {
+    if (!is_admin() || !$query->is_main_query()) {
+        return;
+    }
+    if (($query->get('post_type') ?: '') !== 'xpressui_submission') {
+        return;
+    }
+
+    $meta_query = $query->get('meta_query');
+    if (!is_array($meta_query)) {
+        $meta_query = [];
+    }
+
+    if (!empty($_GET['xpressui_status'])) {
+        $meta_query[] = [
+            'key' => '_xpressui_submission_status',
+            'value' => sanitize_text_field((string) $_GET['xpressui_status']),
+        ];
+    }
+
+    if (!empty($_GET['xpressui_project'])) {
+        $meta_query[] = [
+            'key' => '_xpressui_project_slug',
+            'value' => sanitize_text_field((string) $_GET['xpressui_project']),
+        ];
+    }
+
+    if (!empty($meta_query)) {
+        $query->set('meta_query', $meta_query);
+    }
+}
+
+function xpressui_render_submission_summary_metabox($post) {
+    $payload_json = get_post_meta($post->ID, '_xpressui_payload_json', true);
+    $payload = $payload_json ? json_decode($payload_json, true) : [];
+    if (!is_array($payload)) {
+        $payload = [];
+    }
+
+    $project_id = (string) get_post_meta($post->ID, '_xpressui_project_id', true);
+    $project_slug = (string) get_post_meta($post->ID, '_xpressui_project_slug', true);
+    $submission_id = (string) get_post_meta($post->ID, '_xpressui_submission_id', true);
+    $status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    $email = trim((string) ($payload['email'] ?? ''));
+    $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
+    $full_name = trim((string) ($payload['fullName'] ?? ''));
+    $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
+    $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
+    $contact_name = $full_name !== '' ? $full_name : trim($first_name . ' ' . $last_name);
+
+    echo '<dl style="margin:0;">';
+    echo '<dt><strong>Status</strong></dt><dd style="margin:0 0 8px;">' . esc_html(xpressui_get_submission_status_label($status)) . '</dd>';
+    echo '<dt><strong>Project</strong></dt><dd style="margin:0 0 8px;">' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</dd>';
+    echo '<dt><strong>Project ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($project_id !== '' ? $project_id : 'not recorded') . '</dd>';
+    echo '<dt><strong>Submission ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($submission_id !== '' ? $submission_id : 'not recorded') . '</dd>';
+    if ($contact_name !== '') {
+        echo '<dt><strong>Contact</strong></dt><dd style="margin:0 0 8px;">' . esc_html($contact_name) . '</dd>';
+    }
+    if ($email !== '') {
+        echo '<dt><strong>Email</strong></dt><dd style="margin:0 0 8px;"><a href="mailto:' . esc_attr($email) . '">' . esc_html($email) . '</a></dd>';
+    }
+    if ($phone !== '') {
+        echo '<dt><strong>Phone</strong></dt><dd style="margin:0 0 8px;"><a href="tel:' . esc_attr($phone) . '">' . esc_html($phone) . '</a></dd>';
+    }
+    echo '</dl>';
+}
 
 function xpressui_render_submission_payload_metabox($post) {
     $payload_json = get_post_meta($post->ID, '_xpressui_payload_json', true);
@@ -301,6 +427,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
+    update_post_meta($post_id, '_xpressui_submission_status', 'new');
 
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
     $payload_with_files = xpressui_attach_uploaded_file_references($payload, $stored_files);
