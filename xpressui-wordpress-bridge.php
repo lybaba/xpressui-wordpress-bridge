@@ -667,6 +667,17 @@ function xpressui_set_submission_status($post_id, $status, $note = '') {
     $normalized_note = trim((string) $note);
     update_post_meta($post_id, '_xpressui_submission_status', $status);
     update_post_meta($post_id, '_xpressui_review_note', $normalized_note);
+    if ($status === 'in-review' && get_post_meta($post_id, '_xpressui_reviewed_at', true) === '') {
+        update_post_meta($post_id, '_xpressui_reviewed_at', current_time('mysql'));
+    }
+    if ($status === 'done') {
+        if (get_post_meta($post_id, '_xpressui_reviewed_at', true) === '') {
+            update_post_meta($post_id, '_xpressui_reviewed_at', current_time('mysql'));
+        }
+        update_post_meta($post_id, '_xpressui_done_at', current_time('mysql'));
+    } elseif ($current_status === 'done' && $status !== 'done') {
+        delete_post_meta($post_id, '_xpressui_done_at');
+    }
 
     if ($current_status !== $status || $current_note !== $normalized_note) {
         xpressui_append_status_history($post_id, $status, $normalized_note);
@@ -896,6 +907,8 @@ function xpressui_render_submission_summary_metabox($post) {
     $project_slug = (string) get_post_meta($post->ID, '_xpressui_project_slug', true);
     $submission_id = (string) get_post_meta($post->ID, '_xpressui_submission_id', true);
     $status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    $reviewed_at = (string) get_post_meta($post->ID, '_xpressui_reviewed_at', true);
+    $done_at = (string) get_post_meta($post->ID, '_xpressui_done_at', true);
     $config = xpressui_get_project_config_snapshot($post->ID);
     $field_index = xpressui_build_config_field_index($config);
     $capture_summary = xpressui_get_submission_capture_summary($field_index, $payload);
@@ -909,6 +922,12 @@ function xpressui_render_submission_summary_metabox($post) {
     echo '<dt><strong>Project ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($project_id !== '' ? $project_id : 'not recorded') . '</dd>';
     echo '<dt><strong>Submission ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($submission_id !== '' ? $submission_id : 'not recorded') . '</dd>';
     echo '<dt><strong>Assignee</strong></dt><dd style="margin:0 0 8px;">' . esc_html(xpressui_get_submission_assignee_display($post->ID) ?: 'Unassigned') . '</dd>';
+    if ($reviewed_at !== '') {
+        echo '<dt><strong>Reviewed at</strong></dt><dd style="margin:0 0 8px;">' . esc_html($reviewed_at) . '</dd>';
+    }
+    if ($done_at !== '') {
+        echo '<dt><strong>Done at</strong></dt><dd style="margin:0 0 8px;">' . esc_html($done_at) . '</dd>';
+    }
     if ($capture_summary['fieldCount'] > 0) {
         echo '<dt><strong>Capture</strong></dt><dd style="margin:0 0 8px;">' . esc_html(
             $capture_summary['filledCount'] . ' / ' . $capture_summary['fieldCount'] . ' fields'
