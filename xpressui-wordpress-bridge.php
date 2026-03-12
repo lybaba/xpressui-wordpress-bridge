@@ -392,6 +392,64 @@ function xpressui_render_quiz_value($value, $field_meta = []) {
     return $html;
 }
 
+function xpressui_render_image_gallery_value($value, $field_meta = []) {
+    if (!is_array($value) || empty($value)) {
+        return '<span style="opacity:0.6;">Empty</span>';
+    }
+
+    $catalog_index = xpressui_build_choice_catalog_index($field_meta);
+    $items = [];
+    foreach ($value as $position => $entry) {
+        if (!is_array($entry)) {
+            continue;
+        }
+        $entry_id = (string) ($entry['id'] ?? $entry['value'] ?? ('image_' . ($position + 1)));
+        $catalog_entry = $catalog_index[$entry_id] ?? [];
+        $name = (string) ($entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id);
+        $thumbnail = (string) ($entry['image_thumbnail'] ?? $catalog_entry['image_thumbnail'] ?? $catalog_entry['imageThumbnail'] ?? '');
+        $full_url = (string) ($entry['image_medium'] ?? $catalog_entry['image_medium'] ?? $catalog_entry['imageMedium'] ?? $thumbnail);
+        $items[] = [
+            'name' => $name,
+            'thumbnail' => $thumbnail,
+            'fullUrl' => $full_url,
+        ];
+    }
+
+    if (empty($items)) {
+        return '<span style="opacity:0.6;">Empty</span>';
+    }
+
+    $html = '<div>';
+    $html .= '<div style="margin:0 0 8px;font-weight:600;">' . esc_html(count($items) . ' selected image' . (count($items) > 1 ? 's' : '')) . '</div>';
+    $html .= '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">';
+    foreach ($items as $item) {
+        $html .= '<div style="border:1px solid rgba(15,23,42,0.12);border-radius:12px;padding:10px;background:#fff;">';
+        if ($item['thumbnail'] !== '') {
+            $image = '<img src="' . esc_url($item['thumbnail']) . '" alt="' . esc_attr($item['name']) . '" style="display:block;width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />';
+            if ($item['fullUrl'] !== '') {
+                $html .= '<a href="' . esc_url($item['fullUrl']) . '" target="_blank" rel="noreferrer">' . $image . '</a>';
+            } else {
+                $html .= $image;
+            }
+        }
+        $html .= '<div style="font-weight:600;">' . esc_html($item['name']) . '</div>';
+        $html .= '</div>';
+    }
+    $html .= '</div></div>';
+
+    return $html;
+}
+
+function xpressui_render_scalar_badge($label, $tone = 'neutral') {
+    $styles = [
+        'neutral' => 'background:#f8fafc;color:#0f172a;border-color:rgba(15,23,42,0.12);',
+        'success' => 'background:#dcfce7;color:#166534;border-color:#86efac;',
+        'muted' => 'background:#f1f5f9;color:#475569;border-color:#cbd5e1;',
+    ];
+    $style = $styles[$tone] ?? $styles['neutral'];
+    return '<span style="display:inline-flex;align-items:center;padding:2px 10px;border:1px solid;border-radius:999px;font-size:12px;font-weight:600;' . $style . '">' . esc_html($label) . '</span>';
+}
+
 function xpressui_get_section_capture_summary($fields, $payload) {
     $filled_count = 0;
     $interactive_count = 0;
@@ -432,6 +490,9 @@ function xpressui_format_submission_value($value, $field_meta = []) {
     if ($field_type === 'quiz') {
         return xpressui_render_quiz_value($value, $field_meta);
     }
+    if ($field_type === 'image-gallery') {
+        return xpressui_render_image_gallery_value($value, $field_meta);
+    }
     if (is_array($value)) {
         if (($value['kind'] ?? '') === 'uploaded-file') {
             $original_name = (string) ($value['originalName'] ?? $value['field'] ?? 'File');
@@ -446,20 +507,23 @@ function xpressui_format_submission_value($value, $field_meta = []) {
             $formatted_values = [];
             foreach ($value as $item) {
                 if (is_scalar($item) || $item === null) {
-                    $formatted_values[] = $map_choice($item);
+                    $formatted_values[] = xpressui_render_scalar_badge($map_choice($item));
                     continue;
                 }
                 $formatted_values[] = xpressui_build_structured_item_summary($item, $choice_map);
             }
-            return esc_html(implode(', ', array_filter($formatted_values, static fn ($item) => $item !== '')));
+            return implode(' ', array_filter($formatted_values, static fn ($item) => $item !== ''));
         }
         return '<pre style="white-space:pre-wrap;margin:0;">' . esc_html(wp_json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
     }
     if (is_bool($value)) {
-        return esc_html($value ? 'Yes' : 'No');
+        return xpressui_render_scalar_badge($value ? 'Yes' : 'No', $value ? 'success' : 'muted');
     }
     if ($value === null || $value === '') {
         return '<span style="opacity:0.6;">Empty</span>';
+    }
+    if (!empty($choice_map)) {
+        return xpressui_render_scalar_badge($map_choice($value));
     }
     return esc_html($map_choice($value));
 }
