@@ -42,6 +42,7 @@ function xpressui_register_rest_routes() {
 add_filter('manage_xpressui_submission_posts_columns', function ($columns) {
     $columns['xpressui_project_id'] = 'Project ID';
     $columns['xpressui_project_slug'] = 'Project';
+    $columns['xpressui_submission_assignee'] = 'Assignee';
     $columns['xpressui_submission_status'] = 'Status';
     $columns['xpressui_submission_contact'] = 'Contact';
     $columns['xpressui_submission_files_count'] = 'Files';
@@ -60,6 +61,11 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
     }
     if ($column === 'xpressui_submission_status') {
         echo esc_html(xpressui_get_submission_status_label((string) get_post_meta($post_id, '_xpressui_submission_status', true)));
+        return;
+    }
+    if ($column === 'xpressui_submission_assignee') {
+        $assignee = xpressui_get_submission_assignee_display($post_id);
+        echo esc_html($assignee !== '' ? $assignee : 'Unassigned');
         return;
     }
     if ($column === 'xpressui_submission_contact') {
@@ -98,6 +104,37 @@ function xpressui_get_submission_status_options() {
 function xpressui_get_submission_status_label($status) {
     $options = xpressui_get_submission_status_options();
     return $options[$status] ?? $options['new'];
+}
+
+function xpressui_get_assignable_users() {
+    $users = get_users([
+        'orderby' => 'display_name',
+        'order' => 'ASC',
+        'fields' => ['ID', 'display_name', 'user_login'],
+    ]);
+
+    return is_array($users) ? $users : [];
+}
+
+function xpressui_get_submission_assignee_display($post_id) {
+    $assignee_id = (int) get_post_meta($post_id, '_xpressui_assignee_id', true);
+    if ($assignee_id <= 0) {
+        return '';
+    }
+    $user = get_user_by('id', $assignee_id);
+    if (!$user) {
+        return '';
+    }
+    return (string) ($user->display_name ?: $user->user_login ?: '');
+}
+
+function xpressui_set_submission_assignee($post_id, $assignee_id) {
+    $assignee_id = (int) $assignee_id;
+    if ($assignee_id > 0) {
+        update_post_meta($post_id, '_xpressui_assignee_id', $assignee_id);
+        return;
+    }
+    delete_post_meta($post_id, '_xpressui_assignee_id');
 }
 
 function xpressui_get_submission_payload($post_id) {
@@ -646,6 +683,14 @@ function xpressui_register_submission_admin_pages() {
         'xpressui-project-inbox',
         'xpressui_render_project_inbox_page',
     );
+    add_submenu_page(
+        'edit.php?post_type=xpressui_submission',
+        'My Queue',
+        'My Queue',
+        'edit_posts',
+        'xpressui-my-queue',
+        'xpressui_render_my_queue_page',
+    );
 }
 
 function xpressui_get_project_inbox_rows() {
@@ -735,6 +780,30 @@ function xpressui_render_project_inbox_page() {
     echo '</div>';
 }
 
+function xpressui_render_my_queue_page() {
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
+
+    $current_user_id = get_current_user_id();
+    $queue_url = add_query_arg([
+        'post_type' => 'xpressui_submission',
+        'xpressui_assignee' => (string) $current_user_id,
+    ], admin_url('edit.php'));
+    $review_url = add_query_arg([
+        'post_type' => 'xpressui_submission',
+        'xpressui_assignee' => (string) $current_user_id,
+        'xpressui_status' => 'in-review',
+    ], admin_url('edit.php'));
+
+    echo '<div class="wrap">';
+    echo '<h1>My Queue</h1>';
+    echo '<p>Open the submissions assigned to you, or jump straight into the ones already in review.</p>';
+    echo '<p><a class="button button-primary" href="' . esc_url($queue_url) . '">Open my submissions</a> ';
+    echo '<a class="button" href="' . esc_url($review_url) . '">Open my in-review queue</a></p>';
+    echo '</div>';
+}
+
 function xpressui_render_submission_filters($post_type) {
     if ($post_type !== 'xpressui_submission') {
         return;
@@ -742,6 +811,7 @@ function xpressui_render_submission_filters($post_type) {
 
     $selected_status = isset($_GET['xpressui_status']) ? sanitize_text_field((string) $_GET['xpressui_status']) : '';
     $selected_project = isset($_GET['xpressui_project']) ? sanitize_text_field((string) $_GET['xpressui_project']) : '';
+    $selected_assignee = isset($_GET['xpressui_assignee']) ? sanitize_text_field((string) $_GET['xpressui_assignee']) : '';
     $submission_ids = get_posts([
         'post_type' => 'xpressui_submission',
         'posts_per_page' => -1,
@@ -757,6 +827,7 @@ function xpressui_render_submission_filters($post_type) {
             $projects[$project_slug] = $project_slug;
         }
     }
+    $assignable_users = xpressui_get_assignable_users();
 
     echo '<select name="xpressui_status">';
     echo '<option value="">All statuses</option>';
@@ -769,6 +840,14 @@ function xpressui_render_submission_filters($post_type) {
     echo '<option value="">All projects</option>';
     foreach ($projects as $value => $label) {
         echo '<option value="' . esc_attr($value) . '"' . selected($selected_project, $value, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+    echo '<select name="xpressui_assignee">';
+    echo '<option value="">All assignees</option>';
+    foreach ($assignable_users as $user) {
+        $value = (string) $user->ID;
+        $label = (string) ($user->display_name ?: $user->user_login ?: ('User #' . $user->ID));
+        echo '<option value="' . esc_attr($value) . '"' . selected($selected_assignee, $value, false) . '>' . esc_html($label) . '</option>';
     }
     echo '</select>';
 }
@@ -799,6 +878,12 @@ function xpressui_apply_submission_filters($query) {
             'value' => sanitize_text_field((string) $_GET['xpressui_project']),
         ];
     }
+    if (!empty($_GET['xpressui_assignee'])) {
+        $meta_query[] = [
+            'key' => '_xpressui_assignee_id',
+            'value' => (int) $_GET['xpressui_assignee'],
+        ];
+    }
 
     if (!empty($meta_query)) {
         $query->set('meta_query', $meta_query);
@@ -823,6 +908,7 @@ function xpressui_render_submission_summary_metabox($post) {
     echo '<dt><strong>Project</strong></dt><dd style="margin:0 0 8px;">' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</dd>';
     echo '<dt><strong>Project ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($project_id !== '' ? $project_id : 'not recorded') . '</dd>';
     echo '<dt><strong>Submission ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($submission_id !== '' ? $submission_id : 'not recorded') . '</dd>';
+    echo '<dt><strong>Assignee</strong></dt><dd style="margin:0 0 8px;">' . esc_html(xpressui_get_submission_assignee_display($post->ID) ?: 'Unassigned') . '</dd>';
     if ($capture_summary['fieldCount'] > 0) {
         echo '<dt><strong>Capture</strong></dt><dd style="margin:0 0 8px;">' . esc_html(
             $capture_summary['filledCount'] . ' / ' . $capture_summary['fieldCount'] . ' fields'
@@ -846,9 +932,11 @@ function xpressui_render_submission_summary_metabox($post) {
 
 function xpressui_render_submission_status_metabox($post) {
     $current_status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    $current_assignee = (int) get_post_meta($post->ID, '_xpressui_assignee_id', true);
     if ($current_status === '') {
         $current_status = 'new';
     }
+    $assignable_users = xpressui_get_assignable_users();
 
     wp_nonce_field('xpressui_save_submission_status', 'xpressui_submission_status_nonce');
 
@@ -856,6 +944,15 @@ function xpressui_render_submission_status_metabox($post) {
     echo '<select id="xpressui_submission_status" name="xpressui_submission_status" style="width:100%;margin-top:8px;">';
     foreach (xpressui_get_submission_status_options() as $value => $label) {
         echo '<option value="' . esc_attr($value) . '"' . selected($current_status, $value, false) . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+    echo '<label for="xpressui_assignee_id" style="display:block;margin-top:12px;"><strong>Assignee</strong></label>';
+    echo '<select id="xpressui_assignee_id" name="xpressui_assignee_id" style="width:100%;margin-top:8px;">';
+    echo '<option value="">Unassigned</option>';
+    foreach ($assignable_users as $user) {
+        $value = (string) $user->ID;
+        $label = (string) ($user->display_name ?: $user->user_login ?: ('User #' . $user->ID));
+        echo '<option value="' . esc_attr($value) . '"' . selected($current_assignee, (int) $user->ID, false) . '>' . esc_html($label) . '</option>';
     }
     echo '</select>';
     echo '<p style="margin-top:8px;opacity:0.8;">Use Update to save the new status.</p>';
@@ -975,12 +1072,14 @@ function xpressui_save_submission_status($post_id) {
 
     $status = isset($_POST['xpressui_submission_status']) ? sanitize_text_field((string) $_POST['xpressui_submission_status']) : 'new';
     $note = isset($_POST['xpressui_review_note']) ? sanitize_textarea_field((string) $_POST['xpressui_review_note']) : '';
+    $assignee_id = isset($_POST['xpressui_assignee_id']) ? (int) $_POST['xpressui_assignee_id'] : 0;
     $options = xpressui_get_submission_status_options();
     if (!isset($options[$status])) {
         $status = 'new';
     }
 
     xpressui_set_submission_status($post_id, $status, $note);
+    xpressui_set_submission_assignee($post_id, $assignee_id);
 }
 
 function xpressui_add_submission_row_actions($actions, $post) {
