@@ -181,6 +181,55 @@ function xpressui_build_field_choice_map($field) {
     return $choice_map;
 }
 
+function xpressui_build_structured_item_summary($item, $choice_map = []) {
+    if (!is_array($item)) {
+        $normalized = (string) $item;
+        return $choice_map[$normalized] ?? $normalized;
+    }
+
+    $parts = [];
+    $primary = '';
+    foreach (['label', 'title', 'name', 'value', 'id'] as $candidate_key) {
+        $candidate_value = $item[$candidate_key] ?? null;
+        if ($candidate_value === null || is_array($candidate_value) || is_object($candidate_value)) {
+            continue;
+        }
+        $normalized = (string) $candidate_value;
+        if ($normalized === '') {
+            continue;
+        }
+        $primary = $choice_map[$normalized] ?? $normalized;
+        break;
+    }
+    if ($primary !== '') {
+        $parts[] = $primary;
+    }
+    foreach ([
+        'quantity' => 'qty',
+        'price' => 'price',
+        'amount' => 'amount',
+        'score' => 'score',
+        'result' => 'result',
+        'answer' => 'answer',
+        'selected' => 'selected',
+        'correct' => 'correct',
+    ] as $key => $label) {
+        $raw_value = $item[$key] ?? null;
+        if ($raw_value === null || is_array($raw_value) || is_object($raw_value) || $raw_value === '') {
+            continue;
+        }
+        if (is_bool($raw_value)) {
+            $parts[] = $label . ': ' . ($raw_value ? 'yes' : 'no');
+            continue;
+        }
+        $parts[] = $label . ': ' . (string) $raw_value;
+    }
+    if (empty($parts)) {
+        return wp_json_encode($item, JSON_UNESCAPED_SLASHES);
+    }
+    return implode(' · ', $parts);
+}
+
 function xpressui_build_config_field_index($config) {
     $index = [];
     $sections = is_array($config['sections'] ?? null) ? $config['sections'] : [];
@@ -239,9 +288,13 @@ function xpressui_format_submission_value($value, $field_meta = []) {
                     $formatted_values[] = $map_choice($item);
                     continue;
                 }
-                $formatted_values[] = wp_json_encode($item, JSON_UNESCAPED_SLASHES);
+                $formatted_values[] = xpressui_build_structured_item_summary($item, $choice_map);
             }
             return esc_html(implode(', ', array_filter($formatted_values, static fn ($item) => $item !== '')));
+        }
+        if (($field_meta['type'] ?? '') === 'quiz') {
+            $summary = xpressui_build_structured_item_summary($value, $choice_map);
+            return esc_html($summary);
         }
         return '<pre style="white-space:pre-wrap;margin:0;">' . esc_html(wp_json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
     }
@@ -596,7 +649,19 @@ function xpressui_render_submission_preview_metabox($post) {
         }
 
         foreach ($grouped as $section_label => $fields) {
+            $filled_count = 0;
+            $interactive_count = 0;
+            foreach ($fields as $field_name => $field_meta) {
+                $raw_value = $payload[$field_name] ?? null;
+                if ($raw_value !== null && $raw_value !== '' && $raw_value !== []) {
+                    $filled_count += 1;
+                }
+                if (in_array((string) ($field_meta['type'] ?? ''), ['product-list', 'quiz', 'image-gallery', 'select-one', 'select-multiple', 'radio-buttons', 'checkboxes'], true)) {
+                    $interactive_count += 1;
+                }
+            }
             echo '<h3 style="margin:16px 0 8px;">' . esc_html($section_label) . '</h3>';
+            echo '<p style="margin:0 0 8px;opacity:0.75;">' . esc_html($filled_count . ' / ' . count($fields) . ' fields captured' . ($interactive_count > 0 ? ' · ' . $interactive_count . ' interactive' : '')) . '</p>';
             echo '<table class="widefat striped" style="margin-bottom:12px;"><tbody>';
             foreach ($fields as $field_name => $field_meta) {
                 echo '<tr>';
