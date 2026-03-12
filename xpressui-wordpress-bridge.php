@@ -20,6 +20,7 @@ add_action('pre_get_posts', 'xpressui_apply_submission_filters');
 add_action('save_post_xpressui_submission', 'xpressui_save_submission_status');
 add_action('admin_init', 'xpressui_handle_submission_status_action');
 add_filter('post_row_actions', 'xpressui_add_submission_row_actions', 10, 2);
+add_action('admin_menu', 'xpressui_register_submission_admin_pages');
 
 function xpressui_register_submission_post_type() {
     register_post_type('xpressui_submission', [
@@ -133,6 +134,104 @@ function xpressui_get_uploaded_file_count($post_id) {
     $files_json = get_post_meta($post_id, '_xpressui_uploaded_files', true);
     $files = $files_json ? json_decode($files_json, true) : [];
     return is_array($files) ? count($files) : 0;
+}
+
+function xpressui_register_submission_admin_pages() {
+    add_submenu_page(
+        'edit.php?post_type=xpressui_submission',
+        'Project Inbox',
+        'Project Inbox',
+        'edit_posts',
+        'xpressui-project-inbox',
+        'xpressui_render_project_inbox_page',
+    );
+}
+
+function xpressui_get_project_inbox_rows() {
+    $submission_ids = get_posts([
+        'post_type' => 'xpressui_submission',
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
+    $rows = [];
+    foreach ($submission_ids as $submission_id) {
+        $project_slug = (string) get_post_meta($submission_id, '_xpressui_project_slug', true);
+        $status = (string) get_post_meta($submission_id, '_xpressui_submission_status', true);
+        if ($project_slug === '') {
+            $project_slug = 'unknown-project';
+        }
+        if ($status === '') {
+            $status = 'new';
+        }
+        if (!isset($rows[$project_slug])) {
+            $rows[$project_slug] = [
+                'projectSlug' => $project_slug,
+                'total' => 0,
+                'new' => 0,
+                'in-review' => 0,
+                'done' => 0,
+                'latestSubmissionId' => '',
+                'latestDate' => '',
+            ];
+        }
+        $rows[$project_slug]['total'] += 1;
+        if (isset($rows[$project_slug][$status])) {
+            $rows[$project_slug][$status] += 1;
+        }
+        if ($rows[$project_slug]['latestSubmissionId'] === '') {
+            $rows[$project_slug]['latestSubmissionId'] = (string) get_post_meta($submission_id, '_xpressui_submission_id', true);
+            $rows[$project_slug]['latestDate'] = get_the_date('Y-m-d H:i', $submission_id) ?: '';
+        }
+    }
+
+    ksort($rows);
+    return array_values($rows);
+}
+
+function xpressui_render_project_inbox_page() {
+    if (!current_user_can('edit_posts')) {
+        return;
+    }
+
+    $rows = xpressui_get_project_inbox_rows();
+
+    echo '<div class="wrap">';
+    echo '<h1>Project Inbox</h1>';
+    echo '<p>Review incoming submissions grouped by project, then jump into filtered queues.</p>';
+
+    if (empty($rows)) {
+        echo '<p>No submissions recorded yet.</p>';
+        echo '</div>';
+        return;
+    }
+
+    echo '<table class="widefat striped"><thead><tr>';
+    echo '<th>Project</th><th>Total</th><th>New</th><th>In review</th><th>Done</th><th>Latest submission</th><th>Actions</th>';
+    echo '</tr></thead><tbody>';
+    foreach ($rows as $row) {
+        $all_url = add_query_arg([
+            'post_type' => 'xpressui_submission',
+            'xpressui_project' => $row['projectSlug'],
+        ], admin_url('edit.php'));
+        $new_url = add_query_arg([
+            'post_type' => 'xpressui_submission',
+            'xpressui_project' => $row['projectSlug'],
+            'xpressui_status' => 'new',
+        ], admin_url('edit.php'));
+        echo '<tr>';
+        echo '<td><strong>' . esc_html($row['projectSlug']) . '</strong></td>';
+        echo '<td>' . esc_html((string) $row['total']) . '</td>';
+        echo '<td>' . esc_html((string) $row['new']) . '</td>';
+        echo '<td>' . esc_html((string) $row['in-review']) . '</td>';
+        echo '<td>' . esc_html((string) $row['done']) . '</td>';
+        echo '<td>' . esc_html($row['latestSubmissionId'] !== '' ? $row['latestSubmissionId'] . ' · ' . $row['latestDate'] : 'No submissions yet') . '</td>';
+        echo '<td><a href="' . esc_url($all_url) . '">Open all</a> · <a href="' . esc_url($new_url) . '">Open new</a></td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table>';
+    echo '</div>';
 }
 
 function xpressui_render_submission_filters($post_type) {
