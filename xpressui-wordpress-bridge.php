@@ -54,6 +54,53 @@ add_action('manage_xpressui_submission_posts_custom_column', function ($column, 
     }
 }, 10, 2);
 
+add_action('add_meta_boxes', function () {
+    add_meta_box('xpressui_submission_payload', 'Submission Payload', 'xpressui_render_submission_payload_metabox', 'xpressui_submission', 'normal', 'default');
+    add_meta_box('xpressui_submission_files', 'Uploaded Files', 'xpressui_render_submission_files_metabox', 'xpressui_submission', 'side', 'default');
+});
+
+function xpressui_render_submission_payload_metabox($post) {
+    $payload_json = get_post_meta($post->ID, '_xpressui_payload_json', true);
+    if (!$payload_json) {
+        echo '<p>No submission payload recorded.</p>';
+        return;
+    }
+
+    $payload = json_decode($payload_json, true);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo '<pre style="white-space:pre-wrap;overflow:auto;">' . esc_html((string) $payload_json) . '</pre>';
+        return;
+    }
+
+    echo '<pre style="white-space:pre-wrap;overflow:auto;max-height:420px;">' . esc_html(wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
+}
+
+function xpressui_render_submission_files_metabox($post) {
+    $files_json = get_post_meta($post->ID, '_xpressui_uploaded_files', true);
+    $files = $files_json ? json_decode($files_json, true) : [];
+    if (!is_array($files) || empty($files)) {
+        echo '<p>No uploaded files recorded.</p>';
+        return;
+    }
+
+    echo '<ul style="margin:0;padding-left:18px;">';
+    foreach ($files as $file) {
+        $field = isset($file['field']) ? (string) $file['field'] : 'file';
+        $url = isset($file['url']) ? (string) $file['url'] : '';
+        $attachment_id = isset($file['attachmentId']) ? (int) $file['attachmentId'] : 0;
+        echo '<li style="margin-bottom:8px;">';
+        echo '<strong>' . esc_html($field) . '</strong><br />';
+        if ($url !== '') {
+            echo '<a href="' . esc_url($url) . '" target="_blank" rel="noreferrer">Open file</a>';
+        }
+        if ($attachment_id > 0) {
+            echo '<br /><span style="opacity:0.7;">Attachment ID: ' . esc_html((string) $attachment_id) . '</span>';
+        }
+        echo '</li>';
+    }
+    echo '</ul>';
+}
+
 function xpressui_normalize_uploaded_files(array $file_params) {
     $normalized = [];
     foreach ($file_params as $field_name => $file_info) {
@@ -119,6 +166,16 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     $project_slug = $request->get_param('projectSlug') ?: 'unknown-project';
     $submission_id = $request->get_param('submissionId') ?: uniqid('submission_', true);
 
+    if (empty($payload)) {
+        $payload = $request->get_json_params();
+        if (!is_array($payload) || empty($payload)) {
+            $payload = $request->get_params();
+        }
+        if (is_array($payload)) {
+            unset($payload['projectId'], $payload['projectSlug'], $payload['submissionId'], $payload['payload']);
+        }
+    }
+
     $post_id = wp_insert_post([
         'post_type' => 'xpressui_submission',
         'post_status' => 'private',
@@ -152,4 +209,3 @@ register_activation_hook(__FILE__, function () {
     xpressui_register_submission_post_type();
     flush_rewrite_rules();
 });
-
