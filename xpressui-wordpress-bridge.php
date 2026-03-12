@@ -248,7 +248,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
             $payload = $request->get_params();
         }
         if (is_array($payload)) {
-            unset($payload['projectId'], $payload['projectSlug'], $payload['submissionId'], $payload['payload']);
+            unset($payload['payload']);
         }
     }
 
