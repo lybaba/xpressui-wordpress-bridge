@@ -392,6 +392,33 @@ function xpressui_render_quiz_value($value, $field_meta = []) {
     return $html;
 }
 
+function xpressui_get_section_capture_summary($fields, $payload) {
+    $filled_count = 0;
+    $interactive_count = 0;
+    foreach ($fields as $field_name => $field_meta) {
+        $raw_value = $payload[$field_name] ?? null;
+        if ($raw_value !== null && $raw_value !== '' && $raw_value !== []) {
+            $filled_count += 1;
+        }
+        if (in_array((string) ($field_meta['type'] ?? ''), ['product-list', 'quiz', 'image-gallery', 'select-one', 'select-multiple', 'radio-buttons', 'checkboxes'], true)) {
+            $interactive_count += 1;
+        }
+    }
+    $field_count = count($fields);
+    $status = 'empty';
+    if ($filled_count > 0 && $filled_count < $field_count) {
+        $status = 'partial';
+    } elseif ($field_count > 0 && $filled_count >= $field_count) {
+        $status = 'complete';
+    }
+    return [
+        'filledCount' => $filled_count,
+        'fieldCount' => $field_count,
+        'interactiveCount' => $interactive_count,
+        'status' => $status,
+    ];
+}
+
 function xpressui_format_submission_value($value, $field_meta = []) {
     $field_type = (string) ($field_meta['type'] ?? '');
     $choice_map = is_array($field_meta['choices'] ?? null) ? $field_meta['choices'] : [];
@@ -779,19 +806,10 @@ function xpressui_render_submission_preview_metabox($post) {
         }
 
         foreach ($grouped as $section_label => $fields) {
-            $filled_count = 0;
-            $interactive_count = 0;
-            foreach ($fields as $field_name => $field_meta) {
-                $raw_value = $payload[$field_name] ?? null;
-                if ($raw_value !== null && $raw_value !== '' && $raw_value !== []) {
-                    $filled_count += 1;
-                }
-                if (in_array((string) ($field_meta['type'] ?? ''), ['product-list', 'quiz', 'image-gallery', 'select-one', 'select-multiple', 'radio-buttons', 'checkboxes'], true)) {
-                    $interactive_count += 1;
-                }
-            }
+            $summary = xpressui_get_section_capture_summary($fields, $payload);
+            $status_label = ucfirst((string) ($summary['status'] ?? 'empty'));
             echo '<h3 style="margin:16px 0 8px;">' . esc_html($section_label) . '</h3>';
-            echo '<p style="margin:0 0 8px;opacity:0.75;">' . esc_html($filled_count . ' / ' . count($fields) . ' fields captured' . ($interactive_count > 0 ? ' · ' . $interactive_count . ' interactive' : '')) . '</p>';
+            echo '<p style="margin:0 0 8px;opacity:0.75;">' . esc_html($status_label . ' · ' . $summary['filledCount'] . ' / ' . $summary['fieldCount'] . ' fields captured' . ($summary['interactiveCount'] > 0 ? ' · ' . $summary['interactiveCount'] . ' interactive' : '')) . '</p>';
             echo '<table class="widefat striped" style="margin-bottom:12px;"><tbody>';
             foreach ($fields as $field_name => $field_meta) {
                 echo '<tr>';
