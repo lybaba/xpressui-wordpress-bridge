@@ -477,6 +477,50 @@ function xpressui_get_section_capture_summary($fields, $payload) {
     ];
 }
 
+function xpressui_get_submission_capture_summary($field_index, $payload) {
+    $sections = [];
+    foreach ($field_index as $field_name => $field_meta) {
+        if (!array_key_exists($field_name, $payload)) {
+            continue;
+        }
+        $section_label = (string) ($field_meta['sectionLabel'] ?? 'Submission');
+        if (!isset($sections[$section_label])) {
+            $sections[$section_label] = [];
+        }
+        $sections[$section_label][$field_name] = $field_meta;
+    }
+
+    $field_total = 0;
+    $field_filled = 0;
+    $interactive_total = 0;
+    $complete_sections = 0;
+    $partial_sections = 0;
+    $empty_sections = 0;
+    foreach ($sections as $fields) {
+        $summary = xpressui_get_section_capture_summary($fields, $payload);
+        $field_total += (int) $summary['fieldCount'];
+        $field_filled += (int) $summary['filledCount'];
+        $interactive_total += (int) $summary['interactiveCount'];
+        if (($summary['status'] ?? '') === 'complete') {
+            $complete_sections += 1;
+        } elseif (($summary['status'] ?? '') === 'partial') {
+            $partial_sections += 1;
+        } else {
+            $empty_sections += 1;
+        }
+    }
+
+    return [
+        'sectionCount' => count($sections),
+        'completeSections' => $complete_sections,
+        'partialSections' => $partial_sections,
+        'emptySections' => $empty_sections,
+        'fieldCount' => $field_total,
+        'filledCount' => $field_filled,
+        'interactiveCount' => $interactive_total,
+    ];
+}
+
 function xpressui_format_submission_value($value, $field_meta = []) {
     $field_type = (string) ($field_meta['type'] ?? '');
     $choice_map = is_array($field_meta['choices'] ?? null) ? $field_meta['choices'] : [];
@@ -763,11 +807,13 @@ function xpressui_apply_submission_filters($query) {
 
 function xpressui_render_submission_summary_metabox($post) {
     $payload = xpressui_get_submission_payload($post->ID);
-
     $project_id = (string) get_post_meta($post->ID, '_xpressui_project_id', true);
     $project_slug = (string) get_post_meta($post->ID, '_xpressui_project_slug', true);
     $submission_id = (string) get_post_meta($post->ID, '_xpressui_submission_id', true);
     $status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
+    $config = xpressui_get_project_config_snapshot($post->ID);
+    $field_index = xpressui_build_config_field_index($config);
+    $capture_summary = xpressui_get_submission_capture_summary($field_index, $payload);
     $email = trim((string) ($payload['email'] ?? ''));
     $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
     $contact_name = xpressui_get_submission_contact_summary($payload);
@@ -777,6 +823,15 @@ function xpressui_render_submission_summary_metabox($post) {
     echo '<dt><strong>Project</strong></dt><dd style="margin:0 0 8px;">' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</dd>';
     echo '<dt><strong>Project ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($project_id !== '' ? $project_id : 'not recorded') . '</dd>';
     echo '<dt><strong>Submission ID</strong></dt><dd style="margin:0 0 8px;word-break:break-all;">' . esc_html($submission_id !== '' ? $submission_id : 'not recorded') . '</dd>';
+    if ($capture_summary['fieldCount'] > 0) {
+        echo '<dt><strong>Capture</strong></dt><dd style="margin:0 0 8px;">' . esc_html(
+            $capture_summary['filledCount'] . ' / ' . $capture_summary['fieldCount'] . ' fields'
+            . ' · '
+            . $capture_summary['completeSections'] . ' / ' . $capture_summary['sectionCount'] . ' sections complete'
+            . ($capture_summary['partialSections'] > 0 ? ' · ' . $capture_summary['partialSections'] . ' partial' : '')
+            . ($capture_summary['interactiveCount'] > 0 ? ' · ' . $capture_summary['interactiveCount'] . ' interactive' : '')
+        ) . '</dd>';
+    }
     if ($contact_name !== '') {
         echo '<dt><strong>Contact</strong></dt><dd style="margin:0 0 8px;">' . esc_html($contact_name) . '</dd>';
     }
