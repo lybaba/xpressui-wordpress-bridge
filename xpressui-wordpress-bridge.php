@@ -80,6 +80,10 @@ function xpressui_render_submission_files_metabox($post) {
     $files = $files_json ? json_decode($files_json, true) : [];
     if (!is_array($files) || empty($files)) {
         echo '<p>No uploaded files recorded.</p>';
+        $debug_json = get_post_meta($post->ID, '_xpressui_upload_debug', true);
+        if ($debug_json) {
+            echo '<pre style="white-space:pre-wrap;overflow:auto;max-height:240px;">' . esc_html((string) $debug_json) . '</pre>';
+        }
         return;
     }
 
@@ -99,6 +103,20 @@ function xpressui_render_submission_files_metabox($post) {
         echo '</li>';
     }
     echo '</ul>';
+}
+
+function xpressui_get_request_file_params(WP_REST_Request $request) {
+    $request_files = $request->get_file_params();
+    if (!is_array($request_files)) {
+        $request_files = [];
+    }
+
+    $superglobal_files = is_array($_FILES) ? $_FILES : [];
+    if (empty($request_files)) {
+        return $superglobal_files;
+    }
+
+    return array_replace_recursive($superglobal_files, $request_files);
 }
 
 function xpressui_normalize_uploaded_files(array $file_params) {
@@ -135,9 +153,29 @@ function xpressui_normalize_uploaded_files(array $file_params) {
 
 function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
     $stored_files = [];
-    $file_params = $request->get_file_params();
+    $debug = [
+        'requestFileKeys' => [],
+        'superglobalFileKeys' => [],
+        'normalizedFiles' => [],
+        'errors' => [],
+    ];
+    $file_params = xpressui_get_request_file_params($request);
+    $debug['requestFileKeys'] = array_keys((array) $request->get_file_params());
+    $debug['superglobalFileKeys'] = array_keys(is_array($_FILES) ? $_FILES : []);
     foreach (xpressui_normalize_uploaded_files($file_params) as $index => $file) {
+        $debug['normalizedFiles'][] = [
+            'field' => $file['field'] ?? '',
+            'name' => $file['name'] ?? '',
+            'error' => $file['error'] ?? UPLOAD_ERR_NO_FILE,
+            'size' => $file['size'] ?? 0,
+            'hasTmpName' => !empty($file['tmp_name']),
+        ];
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || empty($file['tmp_name'])) {
+            $debug['errors'][] = [
+                'field' => $file['field'] ?? '',
+                'message' => 'Upload missing tmp_name or has PHP upload error.',
+                'errorCode' => $file['error'] ?? UPLOAD_ERR_NO_FILE,
+            ];
             continue;
         }
 
@@ -156,6 +194,11 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
         unset($_FILES[$temporary_field]);
 
         if (is_wp_error($attachment)) {
+            $debug['errors'][] = [
+                'field' => $file['field'] ?? '',
+                'message' => $attachment->get_error_message(),
+                'errorCode' => $attachment->get_error_code(),
+            ];
             continue;
         }
         $stored_files[] = [
@@ -165,6 +208,7 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
         ];
     }
     update_post_meta($post_id, '_xpressui_uploaded_files', wp_json_encode($stored_files));
+    update_post_meta($post_id, '_xpressui_upload_debug', wp_json_encode($debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     return $stored_files;
 }
 
