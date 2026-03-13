@@ -981,6 +981,7 @@ function xpressui_render_submission_preview_metabox($post) {
         'projectConfigVersion',
         'submissionId',
         'projectConfigSnapshotJson',
+        'rest_route',
     ];
     $grouped = [];
     $rendered_fields = [];
