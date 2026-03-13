@@ -319,6 +319,57 @@ function xpressui_build_choice_catalog_index($field_meta = []) {
     return $index;
 }
 
+function xpressui_get_choice_display_parts($choice, $fallback = '') {
+    if (!is_array($choice)) {
+        $fallback_label = trim((string) $fallback);
+        return [
+            'label' => $fallback_label,
+            'identifier' => '',
+        ];
+    }
+
+    $label = trim((string) ($choice['label'] ?? ''));
+    $identifier = trim((string) ($choice['value'] ?? $choice['name'] ?? $choice['id'] ?? ''));
+
+    if ($label === '') {
+        $label = trim((string) ($choice['name'] ?? $choice['value'] ?? $choice['id'] ?? $fallback));
+    }
+
+    if ($label === '') {
+        $label = trim((string) $fallback);
+    }
+
+    if ($identifier === '' || $identifier === $label) {
+        $identifier = '';
+    }
+
+    return [
+        'label' => $label,
+        'identifier' => $identifier,
+    ];
+}
+
+function xpressui_render_choice_display($choice, $fallback = '', $options = []) {
+    $parts = xpressui_get_choice_display_parts($choice, $fallback);
+    $label = $parts['label'];
+    $identifier = $parts['identifier'];
+
+    if ($label === '') {
+        return '';
+    }
+
+    $inline = !empty($options['inline']);
+    if ($identifier === '') {
+        return esc_html($label);
+    }
+
+    if ($inline) {
+        return '<span>' . esc_html($label) . '</span> <code style="font-size:11px;opacity:0.72;">' . esc_html($identifier) . '</code>';
+    }
+
+    return '<div style="font-weight:600;">' . esc_html($label) . '</div><div style="margin-top:2px;font-size:11px;opacity:0.72;"><code>' . esc_html($identifier) . '</code></div>';
+}
+
 function xpressui_format_money_amount($raw_amount) {
     if (!is_numeric($raw_amount)) {
         return '';
@@ -410,10 +461,10 @@ function xpressui_render_quiz_value($value, $field_meta = []) {
         }
         $entry_id = (string) ($entry['id'] ?? $entry['value'] ?? ('answer_' . ($position + 1)));
         $catalog_entry = $catalog_index[$entry_id] ?? [];
-        $name = (string) ($entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id);
         $desc = (string) ($entry['desc'] ?? $catalog_entry['desc'] ?? '');
         $items[] = [
-            'name' => $name,
+            'choice' => array_merge($catalog_entry, $entry),
+            'fallback' => $entry_id,
             'desc' => $desc,
         ];
     }
@@ -427,7 +478,7 @@ function xpressui_render_quiz_value($value, $field_meta = []) {
     $html .= '<ul style="margin:0;padding-left:18px;">';
     foreach ($items as $item) {
         $html .= '<li style="margin:0 0 6px;">';
-        $html .= '<strong>' . esc_html($item['name']) . '</strong>';
+        $html .= xpressui_render_choice_display($item['choice'], $item['fallback'], ['inline' => false]);
         if ($item['desc'] !== '') {
             $html .= '<div style="opacity:0.8;">' . esc_html($item['desc']) . '</div>';
         }
@@ -451,11 +502,11 @@ function xpressui_render_image_gallery_value($value, $field_meta = []) {
         }
         $entry_id = (string) ($entry['id'] ?? $entry['value'] ?? ('image_' . ($position + 1)));
         $catalog_entry = $catalog_index[$entry_id] ?? [];
-        $name = (string) ($entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id);
         $thumbnail = (string) ($entry['image_thumbnail'] ?? $catalog_entry['image_thumbnail'] ?? $catalog_entry['imageThumbnail'] ?? '');
         $full_url = (string) ($entry['image_medium'] ?? $catalog_entry['image_medium'] ?? $catalog_entry['imageMedium'] ?? $thumbnail);
         $items[] = [
-            'name' => $name,
+            'choice' => array_merge($catalog_entry, $entry),
+            'fallback' => $entry_id,
             'thumbnail' => $thumbnail,
             'fullUrl' => $full_url,
         ];
@@ -471,14 +522,15 @@ function xpressui_render_image_gallery_value($value, $field_meta = []) {
     foreach ($items as $item) {
         $html .= '<div style="border:1px solid rgba(15,23,42,0.12);border-radius:12px;padding:10px;background:#fff;">';
         if ($item['thumbnail'] !== '') {
-            $image = '<img src="' . esc_url($item['thumbnail']) . '" alt="' . esc_attr($item['name']) . '" style="display:block;width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />';
+            $alt = xpressui_get_choice_display_parts($item['choice'], $item['fallback'])['label'];
+            $image = '<img src="' . esc_url($item['thumbnail']) . '" alt="' . esc_attr($alt) . '" style="display:block;width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />';
             if ($item['fullUrl'] !== '') {
                 $html .= '<a href="' . esc_url($item['fullUrl']) . '" target="_blank" rel="noreferrer">' . $image . '</a>';
             } else {
                 $html .= $image;
             }
         }
-        $html .= '<div style="font-weight:600;">' . esc_html($item['name']) . '</div>';
+        $html .= xpressui_render_choice_display($item['choice'], $item['fallback'], ['inline' => false]);
         $html .= '</div>';
     }
     $html .= '</div></div>';
@@ -570,6 +622,7 @@ function xpressui_get_submission_capture_summary($field_index, $payload) {
 function xpressui_format_submission_value($value, $field_meta = []) {
     $field_type = (string) ($field_meta['type'] ?? '');
     $choice_map = is_array($field_meta['choices'] ?? null) ? $field_meta['choices'] : [];
+    $catalog_index = xpressui_build_choice_catalog_index($field_meta);
     $map_choice = static function ($raw_value) use ($choice_map) {
         $normalized_value = (string) $raw_value;
         return $choice_map[$normalized_value] ?? $normalized_value;
@@ -597,7 +650,10 @@ function xpressui_format_submission_value($value, $field_meta = []) {
             $formatted_values = [];
             foreach ($value as $item) {
                 if (is_scalar($item) || $item === null) {
-                    $formatted_values[] = xpressui_render_scalar_badge($map_choice($item));
+                    $normalized_item = (string) $item;
+                    $catalog_entry = $catalog_index[$normalized_item] ?? [];
+                    $choice_html = xpressui_render_choice_display($catalog_entry, $normalized_item, ['inline' => true]);
+                    $formatted_values[] = xpressui_render_scalar_badge(wp_strip_all_tags($choice_html));
                     continue;
                 }
                 $formatted_values[] = xpressui_build_structured_item_summary($item, $choice_map);
@@ -613,7 +669,10 @@ function xpressui_format_submission_value($value, $field_meta = []) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
     if (!empty($choice_map)) {
-        return xpressui_render_scalar_badge($map_choice($value));
+        $normalized_value = (string) $value;
+        $catalog_entry = $catalog_index[$normalized_value] ?? [];
+        $choice_html = xpressui_render_choice_display($catalog_entry, $normalized_value, ['inline' => true]);
+        return xpressui_render_scalar_badge(wp_strip_all_tags($choice_html));
     }
     return esc_html($map_choice($value));
 }
