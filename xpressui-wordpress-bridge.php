@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: XPressUI WordPress Bridge
- * Description: Development bridge for receiving exported XPressUI workflow submissions.
+ * Description: Receives submissions from an exported XPressUI workflow package.
  * Version: 0.1.0
  */
 
@@ -13,8 +13,6 @@ require_once ABSPATH . 'wp-admin/includes/file.php';
 require_once ABSPATH . 'wp-admin/includes/media.php';
 require_once ABSPATH . 'wp-admin/includes/image.php';
 
-add_action('init', 'xpressui_register_submission_post_type');
-add_action('rest_api_init', 'xpressui_register_rest_routes');
 add_action('restrict_manage_posts', 'xpressui_render_submission_filters');
 add_action('pre_get_posts', 'xpressui_apply_submission_filters');
 add_action('save_post_xpressui_submission', 'xpressui_save_submission_status');
@@ -22,20 +20,22 @@ add_action('admin_init', 'xpressui_handle_submission_status_action');
 add_filter('post_row_actions', 'xpressui_add_submission_row_actions', 10, 2);
 add_action('admin_menu', 'xpressui_register_submission_admin_pages');
 
+add_action('rest_api_init', function () {
+    register_rest_route('xpressui/v1', '/submit', [
+        'methods' => 'POST',
+        'callback' => 'xpressui_handle_submission',
+        'permission_callback' => '__return_true',
+    ]);
+});
+
+add_action('init', 'xpressui_register_submission_post_type');
+
 function xpressui_register_submission_post_type() {
     register_post_type('xpressui_submission', [
         'public' => false,
         'show_ui' => true,
         'label' => 'XPressUI Submissions',
         'supports' => ['title'],
-    ]);
-}
-
-function xpressui_register_rest_routes() {
-    register_rest_route('xpressui/v1', '/submit', [
-        'methods' => 'POST',
-        'callback' => 'xpressui_handle_submission',
-        'permission_callback' => '__return_true',
     ]);
 }
 
@@ -112,7 +112,6 @@ function xpressui_get_assignable_users() {
         'order' => 'ASC',
         'fields' => ['ID', 'display_name', 'user_login'],
     ]);
-
     return is_array($users) ? $users : [];
 }
 
@@ -158,12 +157,10 @@ function xpressui_store_project_config_snapshot($project_id, $project_slug, $pro
     if (empty($normalized)) {
         return [];
     }
-
     $registry = get_option('xpressui_project_config_registry', []);
     if (!is_array($registry)) {
         $registry = [];
     }
-
     $registry_key = $project_config_version !== '' ? 'config:' . $project_config_version : ($project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug);
     $registry[$registry_key] = [
         'projectId' => $project_id,
@@ -172,7 +169,6 @@ function xpressui_store_project_config_snapshot($project_id, $project_slug, $pro
         'storedAt' => current_time('mysql'),
         'config' => $normalized,
     ];
-
     update_option('xpressui_project_config_registry', $registry, false);
     return $normalized;
 }
@@ -185,12 +181,10 @@ function xpressui_get_project_config_snapshot($post_id) {
             return $stored;
         }
     }
-
     $registry = get_option('xpressui_project_config_registry', []);
     if (!is_array($registry)) {
         $registry = [];
     }
-
     $project_id = (string) get_post_meta($post_id, '_xpressui_project_id', true);
     $project_slug = (string) get_post_meta($post_id, '_xpressui_project_slug', true);
     $project_config_version = (string) get_post_meta($post_id, '_xpressui_project_config_version', true);
@@ -223,7 +217,6 @@ function xpressui_build_structured_item_summary($item, $choice_map = []) {
         $normalized = (string) $item;
         return $choice_map[$normalized] ?? $normalized;
     }
-
     $parts = [];
     $primary = '';
     foreach (['label', 'title', 'name', 'value', 'id'] as $candidate_key) {
@@ -271,7 +264,6 @@ function xpressui_build_config_field_index($config) {
     $index = [];
     $sections = is_array($config['sections'] ?? null) ? $config['sections'] : [];
     $custom_sections = is_array($sections['custom'] ?? null) ? $sections['custom'] : [];
-
     foreach ($custom_sections as $section) {
         if (!is_array($section)) {
             continue;
@@ -299,7 +291,6 @@ function xpressui_build_config_field_index($config) {
             ];
         }
     }
-
     return $index;
 }
 
@@ -319,57 +310,6 @@ function xpressui_build_choice_catalog_index($field_meta = []) {
     return $index;
 }
 
-function xpressui_get_choice_display_parts($choice, $fallback = '') {
-    if (!is_array($choice)) {
-        $fallback_label = trim((string) $fallback);
-        return [
-            'label' => $fallback_label,
-            'identifier' => '',
-        ];
-    }
-
-    $label = trim((string) ($choice['label'] ?? ''));
-    $identifier = trim((string) ($choice['value'] ?? $choice['name'] ?? $choice['id'] ?? ''));
-
-    if ($label === '') {
-        $label = trim((string) ($choice['name'] ?? $choice['value'] ?? $choice['id'] ?? $fallback));
-    }
-
-    if ($label === '') {
-        $label = trim((string) $fallback);
-    }
-
-    if ($identifier === '' || $identifier === $label) {
-        $identifier = '';
-    }
-
-    return [
-        'label' => $label,
-        'identifier' => $identifier,
-    ];
-}
-
-function xpressui_render_choice_display($choice, $fallback = '', $options = []) {
-    $parts = xpressui_get_choice_display_parts($choice, $fallback);
-    $label = $parts['label'];
-    $identifier = $parts['identifier'];
-
-    if ($label === '') {
-        return '';
-    }
-
-    $inline = !empty($options['inline']);
-    if ($identifier === '') {
-        return esc_html($label);
-    }
-
-    if ($inline) {
-        return '<span>' . esc_html($label) . '</span> <code style="font-size:11px;opacity:0.72;">' . esc_html($identifier) . '</code>';
-    }
-
-    return '<div style="font-weight:600;">' . esc_html($label) . '</div><div style="margin-top:2px;font-size:11px;opacity:0.72;"><code>' . esc_html($identifier) . '</code></div>';
-}
-
 function xpressui_format_money_amount($raw_amount) {
     if (!is_numeric($raw_amount)) {
         return '';
@@ -385,12 +325,10 @@ function xpressui_render_product_list_value($value, $field_meta = []) {
     if (!is_array($value) || empty($value)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $catalog_index = xpressui_build_choice_catalog_index($field_meta);
     $rows = [];
     $total_quantity = 0;
     $total_amount = 0.0;
-
     foreach ($value as $position => $entry) {
         if (!is_array($entry)) {
             continue;
@@ -414,11 +352,9 @@ function xpressui_render_product_list_value($value, $field_meta = []) {
             'line' => $line_label,
         ];
     }
-
     if (empty($rows)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $html = '<div>';
     $html .= '<div style="margin:0 0 8px;font-weight:600;">' . esc_html(count($rows) . ' selected item' . (count($rows) > 1 ? 's' : '') . ' · qty ' . $total_quantity) . '</div>';
     $html .= '<table class="widefat striped" style="margin:0;"><thead><tr><th>Item</th><th style="width:90px;">Qty</th><th style="width:120px;">Unit</th><th style="width:120px;">Total</th></tr></thead><tbody>';
@@ -435,24 +371,17 @@ function xpressui_render_product_list_value($value, $field_meta = []) {
         $html .= '<div style="margin-top:8px;font-weight:600;">Estimated total: ' . esc_html(xpressui_format_money_amount($total_amount)) . '</div>';
     }
     $html .= '</div>';
-
     return $html;
 }
 
 function xpressui_render_quiz_value($value, $field_meta = []) {
     if (is_string($value)) {
-        $trimmed_value = trim($value);
-        if ($trimmed_value === '') {
-            return '<span style="opacity:0.6;">Empty</span>';
-        }
-
-        return nl2br(esc_html($trimmed_value));
+        $trimmed = trim($value);
+        return $trimmed === '' ? '<span style="opacity:0.6;">Empty</span>' : nl2br(esc_html($trimmed));
     }
-
     if (!is_array($value) || empty($value)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $catalog_index = xpressui_build_choice_catalog_index($field_meta);
     $items = [];
     foreach ($value as $position => $entry) {
@@ -461,31 +390,28 @@ function xpressui_render_quiz_value($value, $field_meta = []) {
         }
         $entry_id = (string) ($entry['id'] ?? $entry['value'] ?? ('answer_' . ($position + 1)));
         $catalog_entry = $catalog_index[$entry_id] ?? [];
+        $name = (string) ($entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id);
         $desc = (string) ($entry['desc'] ?? $catalog_entry['desc'] ?? '');
         $items[] = [
-            'choice' => array_merge($catalog_entry, $entry),
-            'fallback' => $entry_id,
+            'name' => $name,
             'desc' => $desc,
         ];
     }
-
     if (empty($items)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $html = '<div>';
     $html .= '<div style="margin:0 0 8px;font-weight:600;">' . esc_html(count($items) . ' selected answer' . (count($items) > 1 ? 's' : '')) . '</div>';
     $html .= '<ul style="margin:0;padding-left:18px;">';
     foreach ($items as $item) {
         $html .= '<li style="margin:0 0 6px;">';
-        $html .= xpressui_render_choice_display($item['choice'], $item['fallback'], ['inline' => false]);
+        $html .= '<strong>' . esc_html($item['name']) . '</strong>';
         if ($item['desc'] !== '') {
             $html .= '<div style="opacity:0.8;">' . esc_html($item['desc']) . '</div>';
         }
         $html .= '</li>';
     }
     $html .= '</ul></div>';
-
     return $html;
 }
 
@@ -493,7 +419,6 @@ function xpressui_render_image_gallery_value($value, $field_meta = []) {
     if (!is_array($value) || empty($value)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $catalog_index = xpressui_build_choice_catalog_index($field_meta);
     $items = [];
     foreach ($value as $position => $entry) {
@@ -502,39 +427,35 @@ function xpressui_render_image_gallery_value($value, $field_meta = []) {
         }
         $entry_id = (string) ($entry['id'] ?? $entry['value'] ?? ('image_' . ($position + 1)));
         $catalog_entry = $catalog_index[$entry_id] ?? [];
+        $name = (string) ($entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id);
         $thumbnail = (string) ($entry['image_thumbnail'] ?? $catalog_entry['image_thumbnail'] ?? $catalog_entry['imageThumbnail'] ?? '');
         $full_url = (string) ($entry['image_medium'] ?? $catalog_entry['image_medium'] ?? $catalog_entry['imageMedium'] ?? $thumbnail);
         $items[] = [
-            'choice' => array_merge($catalog_entry, $entry),
-            'fallback' => $entry_id,
+            'name' => $name,
             'thumbnail' => $thumbnail,
             'fullUrl' => $full_url,
         ];
     }
-
     if (empty($items)) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
-
     $html = '<div>';
     $html .= '<div style="margin:0 0 8px;font-weight:600;">' . esc_html(count($items) . ' selected image' . (count($items) > 1 ? 's' : '')) . '</div>';
     $html .= '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">';
     foreach ($items as $item) {
         $html .= '<div style="border:1px solid rgba(15,23,42,0.12);border-radius:12px;padding:10px;background:#fff;">';
         if ($item['thumbnail'] !== '') {
-            $alt = xpressui_get_choice_display_parts($item['choice'], $item['fallback'])['label'];
-            $image = '<img src="' . esc_url($item['thumbnail']) . '" alt="' . esc_attr($alt) . '" style="display:block;width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />';
+            $image = '<img src="' . esc_url($item['thumbnail']) . '" alt="' . esc_attr($item['name']) . '" style="display:block;width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;" />';
             if ($item['fullUrl'] !== '') {
                 $html .= '<a href="' . esc_url($item['fullUrl']) . '" target="_blank" rel="noreferrer">' . $image . '</a>';
             } else {
                 $html .= $image;
             }
         }
-        $html .= xpressui_render_choice_display($item['choice'], $item['fallback'], ['inline' => false]);
+        $html .= '<div style="font-weight:600;">' . esc_html($item['name']) . '</div>';
         $html .= '</div>';
     }
     $html .= '</div></div>';
-
     return $html;
 }
 
@@ -556,7 +477,7 @@ function xpressui_get_section_capture_summary($fields, $payload) {
         if ($raw_value !== null && $raw_value !== '' && $raw_value !== []) {
             $filled_count += 1;
         }
-        if (in_array((string) ($field_meta['type'] ?? ''), ['product-list', 'quiz', 'image-gallery', 'select-one', 'select-multiple', 'radio-buttons', 'checkboxes'], true)) {
+        if (in_array((string) ($field_meta['type'] ?? ''), ['product-list', 'quiz', 'select-image', 'select-one', 'select-multiple', 'radio-buttons', 'checkboxes'], true)) {
             $interactive_count += 1;
         }
     }
@@ -587,7 +508,6 @@ function xpressui_get_submission_capture_summary($field_index, $payload) {
         }
         $sections[$section_label][$field_name] = $field_meta;
     }
-
     $field_total = 0;
     $field_filled = 0;
     $interactive_total = 0;
@@ -607,7 +527,6 @@ function xpressui_get_submission_capture_summary($field_index, $payload) {
             $empty_sections += 1;
         }
     }
-
     return [
         'sectionCount' => count($sections),
         'completeSections' => $complete_sections,
@@ -622,7 +541,6 @@ function xpressui_get_submission_capture_summary($field_index, $payload) {
 function xpressui_format_submission_value($value, $field_meta = []) {
     $field_type = (string) ($field_meta['type'] ?? '');
     $choice_map = is_array($field_meta['choices'] ?? null) ? $field_meta['choices'] : [];
-    $catalog_index = xpressui_build_choice_catalog_index($field_meta);
     $map_choice = static function ($raw_value) use ($choice_map) {
         $normalized_value = (string) $raw_value;
         return $choice_map[$normalized_value] ?? $normalized_value;
@@ -633,7 +551,7 @@ function xpressui_format_submission_value($value, $field_meta = []) {
     if ($field_type === 'quiz') {
         return xpressui_render_quiz_value($value, $field_meta);
     }
-    if ($field_type === 'image-gallery') {
+    if ($field_type === 'select-image') {
         return xpressui_render_image_gallery_value($value, $field_meta);
     }
     if (is_array($value)) {
@@ -650,10 +568,7 @@ function xpressui_format_submission_value($value, $field_meta = []) {
             $formatted_values = [];
             foreach ($value as $item) {
                 if (is_scalar($item) || $item === null) {
-                    $normalized_item = (string) $item;
-                    $catalog_entry = $catalog_index[$normalized_item] ?? [];
-                    $choice_html = xpressui_render_choice_display($catalog_entry, $normalized_item, ['inline' => true]);
-                    $formatted_values[] = xpressui_render_scalar_badge(wp_strip_all_tags($choice_html));
+                    $formatted_values[] = xpressui_render_scalar_badge($map_choice($item));
                     continue;
                 }
                 $formatted_values[] = xpressui_build_structured_item_summary($item, $choice_map);
@@ -669,10 +584,7 @@ function xpressui_format_submission_value($value, $field_meta = []) {
         return '<span style="opacity:0.6;">Empty</span>';
     }
     if (!empty($choice_map)) {
-        $normalized_value = (string) $value;
-        $catalog_entry = $catalog_index[$normalized_value] ?? [];
-        $choice_html = xpressui_render_choice_display($catalog_entry, $normalized_value, ['inline' => true]);
-        return xpressui_render_scalar_badge(wp_strip_all_tags($choice_html));
+        return xpressui_render_scalar_badge($map_choice($value));
     }
     return esc_html($map_choice($value));
 }
@@ -681,13 +593,11 @@ function xpressui_get_submission_contact_summary($payload) {
     if (!is_array($payload)) {
         return '';
     }
-
     $full_name = trim((string) ($payload['fullName'] ?? ''));
     $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
     $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
     $email = trim((string) ($payload['email'] ?? ''));
     $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
-
     if ($full_name !== '') {
         return $full_name;
     }
@@ -700,65 +610,7 @@ function xpressui_get_submission_contact_summary($payload) {
     if ($phone !== '') {
         return $phone;
     }
-
     return '';
-}
-
-function xpressui_get_submission_preview_summary($post_id, $max_items = 2) {
-    $payload = xpressui_get_submission_payload($post_id);
-    if (empty($payload) || !is_array($payload)) {
-        return '';
-    }
-
-    $config = xpressui_get_project_config_snapshot($post_id);
-    $field_index = xpressui_build_config_field_index($config);
-    $hidden_keys = [
-        'projectId',
-        'projectSlug',
-        'projectConfigVersion',
-        'submissionId',
-        'projectConfigSnapshotJson',
-        'fullName',
-        'firstName',
-        'firstname',
-        'lastName',
-        'lastname',
-        'email',
-        'phone',
-        'phoneNumber',
-    ];
-
-    $summaries = [];
-    foreach ($field_index as $field_name => $field_meta) {
-        if (in_array($field_name, $hidden_keys, true) || !array_key_exists($field_name, $payload)) {
-            continue;
-        }
-
-        $formatted = trim(wp_strip_all_tags(xpressui_format_submission_value($payload[$field_name], $field_meta)));
-        if ($formatted === '' || strtolower($formatted) === 'empty') {
-            continue;
-        }
-
-        $summaries[] = [
-            'label' => (string) ($field_meta['label'] ?? $field_name),
-            'value' => preg_replace('/\s+/', ' ', $formatted),
-        ];
-
-        if (count($summaries) >= $max_items) {
-            break;
-        }
-    }
-
-    if (empty($summaries)) {
-        return '';
-    }
-
-    $parts = [];
-    foreach ($summaries as $summary) {
-        $parts[] = $summary['label'] . ': ' . $summary['value'];
-    }
-
-    return implode(' · ', $parts);
 }
 
 function xpressui_get_uploaded_file_count($post_id) {
@@ -803,11 +655,9 @@ function xpressui_set_submission_status($post_id, $status, $note = '') {
     } elseif ($current_status === 'done' && $status !== 'done') {
         delete_post_meta($post_id, '_xpressui_done_at');
     }
-
     if ($current_status !== $status || $current_note !== $normalized_note) {
         xpressui_append_status_history($post_id, $status, $normalized_note);
     }
-
 }
 
 function xpressui_register_submission_admin_pages() {
@@ -832,6 +682,7 @@ function xpressui_register_submission_admin_pages() {
 function xpressui_get_project_inbox_rows() {
     $submission_ids = get_posts([
         'post_type' => 'xpressui_submission',
+        'post_status' => 'private',
         'posts_per_page' => -1,
         'fields' => 'ids',
         'orderby' => 'date',
@@ -856,7 +707,6 @@ function xpressui_get_project_inbox_rows() {
                 'done' => 0,
                 'latestSubmissionId' => '',
                 'latestDate' => '',
-                'latestSummary' => '',
             ];
         }
         $rows[$project_slug]['total'] += 1;
@@ -866,10 +716,8 @@ function xpressui_get_project_inbox_rows() {
         if ($rows[$project_slug]['latestSubmissionId'] === '') {
             $rows[$project_slug]['latestSubmissionId'] = (string) get_post_meta($submission_id, '_xpressui_submission_id', true);
             $rows[$project_slug]['latestDate'] = get_the_date('Y-m-d H:i', $submission_id) ?: '';
-            $rows[$project_slug]['latestSummary'] = xpressui_get_submission_preview_summary($submission_id);
         }
     }
-
     ksort($rows);
     return array_values($rows);
 }
@@ -878,21 +726,17 @@ function xpressui_render_project_inbox_page() {
     if (!current_user_can('edit_posts')) {
         return;
     }
-
     $rows = xpressui_get_project_inbox_rows();
-
     echo '<div class="wrap">';
     echo '<h1>Project Inbox</h1>';
     echo '<p>Review incoming submissions grouped by project, then jump into filtered queues.</p>';
-
     if (empty($rows)) {
         echo '<p>No submissions recorded yet.</p>';
         echo '</div>';
         return;
     }
-
     echo '<table class="widefat striped"><thead><tr>';
-    echo '<th>Project</th><th>Total</th><th>New</th><th>In review</th><th>Done</th><th>Latest submission</th><th>Latest summary</th><th>Actions</th>';
+    echo '<th>Project</th><th>Total</th><th>New</th><th>In review</th><th>Done</th><th>Latest submission</th><th>Actions</th>';
     echo '</tr></thead><tbody>';
     foreach ($rows as $row) {
         $all_url = add_query_arg([
@@ -911,7 +755,6 @@ function xpressui_render_project_inbox_page() {
         echo '<td>' . esc_html((string) $row['in-review']) . '</td>';
         echo '<td>' . esc_html((string) $row['done']) . '</td>';
         echo '<td>' . esc_html($row['latestSubmissionId'] !== '' ? $row['latestSubmissionId'] . ' · ' . $row['latestDate'] : 'No submissions yet') . '</td>';
-        echo '<td>' . esc_html($row['latestSummary'] !== '' ? $row['latestSummary'] : 'No preview yet') . '</td>';
         echo '<td><a href="' . esc_url($all_url) . '">Open all</a> · <a href="' . esc_url($new_url) . '">Open new</a></td>';
         echo '</tr>';
     }
@@ -923,7 +766,6 @@ function xpressui_render_my_queue_page() {
     if (!current_user_can('edit_posts')) {
         return;
     }
-
     $current_user_id = get_current_user_id();
     $queue_url = add_query_arg([
         'post_type' => 'xpressui_submission',
@@ -934,44 +776,11 @@ function xpressui_render_my_queue_page() {
         'xpressui_assignee' => (string) $current_user_id,
         'xpressui_status' => 'in-review',
     ], admin_url('edit.php'));
-    $submission_ids = get_posts([
-        'post_type' => 'xpressui_submission',
-        'posts_per_page' => 12,
-        'fields' => 'ids',
-        'meta_key' => '_xpressui_assignee_id',
-        'meta_value' => $current_user_id,
-        'orderby' => 'date',
-        'order' => 'DESC',
-    ]);
-
     echo '<div class="wrap">';
     echo '<h1>My Queue</h1>';
     echo '<p>Open the submissions assigned to you, or jump straight into the ones already in review.</p>';
     echo '<p><a class="button button-primary" href="' . esc_url($queue_url) . '">Open my submissions</a> ';
     echo '<a class="button" href="' . esc_url($review_url) . '">Open my in-review queue</a></p>';
-    if (empty($submission_ids)) {
-        echo '<p>No submissions are currently assigned to you.</p>';
-        echo '</div>';
-        return;
-    }
-    echo '<table class="widefat striped"><thead><tr>';
-    echo '<th>Project</th><th>Status</th><th>Contact</th><th>Summary</th><th>Updated</th></tr></thead><tbody>';
-    foreach ($submission_ids as $submission_id) {
-        $project_slug = (string) get_post_meta($submission_id, '_xpressui_project_slug', true);
-        $status = (string) get_post_meta($submission_id, '_xpressui_submission_status', true);
-        $payload = xpressui_get_submission_payload($submission_id);
-        $contact = xpressui_get_submission_contact_summary($payload);
-        $summary = xpressui_get_submission_preview_summary($submission_id);
-        $edit_url = get_edit_post_link($submission_id);
-        echo '<tr>';
-        echo '<td><a href="' . esc_url($edit_url ?: '') . '"><strong>' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</strong></a></td>';
-        echo '<td>' . esc_html(xpressui_get_submission_status_label($status !== '' ? $status : 'new')) . '</td>';
-        echo '<td>' . esc_html($contact !== '' ? $contact : 'No contact details') . '</td>';
-        echo '<td>' . esc_html($summary !== '' ? $summary : 'No preview yet') . '</td>';
-        echo '<td>' . esc_html(get_the_date('Y-m-d H:i', $submission_id) ?: '') . '</td>';
-        echo '</tr>';
-    }
-    echo '</tbody></table>';
     echo '</div>';
 }
 
@@ -979,12 +788,12 @@ function xpressui_render_submission_filters($post_type) {
     if ($post_type !== 'xpressui_submission') {
         return;
     }
-
     $selected_status = isset($_GET['xpressui_status']) ? sanitize_text_field((string) $_GET['xpressui_status']) : '';
     $selected_project = isset($_GET['xpressui_project']) ? sanitize_text_field((string) $_GET['xpressui_project']) : '';
     $selected_assignee = isset($_GET['xpressui_assignee']) ? sanitize_text_field((string) $_GET['xpressui_assignee']) : '';
     $submission_ids = get_posts([
         'post_type' => 'xpressui_submission',
+        'post_status' => 'private',
         'posts_per_page' => -1,
         'fields' => 'ids',
         'meta_key' => '_xpressui_project_slug',
@@ -999,14 +808,12 @@ function xpressui_render_submission_filters($post_type) {
         }
     }
     $assignable_users = xpressui_get_assignable_users();
-
     echo '<select name="xpressui_status">';
     echo '<option value="">All statuses</option>';
     foreach (xpressui_get_submission_status_options() as $value => $label) {
         echo '<option value="' . esc_attr($value) . '"' . selected($selected_status, $value, false) . '>' . esc_html($label) . '</option>';
     }
     echo '</select>';
-
     echo '<select name="xpressui_project">';
     echo '<option value="">All projects</option>';
     foreach ($projects as $value => $label) {
@@ -1030,19 +837,16 @@ function xpressui_apply_submission_filters($query) {
     if (($query->get('post_type') ?: '') !== 'xpressui_submission') {
         return;
     }
-
     $meta_query = $query->get('meta_query');
     if (!is_array($meta_query)) {
         $meta_query = [];
     }
-
     if (!empty($_GET['xpressui_status'])) {
         $meta_query[] = [
             'key' => '_xpressui_submission_status',
             'value' => sanitize_text_field((string) $_GET['xpressui_status']),
         ];
     }
-
     if (!empty($_GET['xpressui_project'])) {
         $meta_query[] = [
             'key' => '_xpressui_project_slug',
@@ -1055,7 +859,6 @@ function xpressui_apply_submission_filters($query) {
             'value' => (int) $_GET['xpressui_assignee'],
         ];
     }
-
     if (!empty($meta_query)) {
         $query->set('meta_query', $meta_query);
     }
@@ -1075,7 +878,6 @@ function xpressui_render_submission_summary_metabox($post) {
     $email = trim((string) ($payload['email'] ?? ''));
     $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
     $contact_name = xpressui_get_submission_contact_summary($payload);
-
     echo '<dl style="margin:0;">';
     echo '<dt><strong>Status</strong></dt><dd style="margin:0 0 8px;">' . esc_html(xpressui_get_submission_status_label($status)) . '</dd>';
     echo '<dt><strong>Project</strong></dt><dd style="margin:0 0 8px;">' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</dd>';
@@ -1116,9 +918,7 @@ function xpressui_render_submission_status_metabox($post) {
         $current_status = 'new';
     }
     $assignable_users = xpressui_get_assignable_users();
-
     wp_nonce_field('xpressui_save_submission_status', 'xpressui_submission_status_nonce');
-
     echo '<label for="xpressui_submission_status"><strong>Operator status</strong></label><br />';
     echo '<select id="xpressui_submission_status" name="xpressui_submission_status" style="width:100%;margin-top:8px;">';
     foreach (xpressui_get_submission_status_options() as $value => $label) {
@@ -1150,7 +950,6 @@ function xpressui_render_submission_history_metabox($post) {
         echo '<p>No review history recorded yet.</p>';
         return;
     }
-
     echo '<ul style="margin:0;padding-left:18px;">';
     foreach ($history as $entry) {
         $status = xpressui_get_submission_status_label((string) ($entry['status'] ?? 'new'));
@@ -1171,10 +970,9 @@ function xpressui_render_submission_history_metabox($post) {
 function xpressui_render_submission_preview_metabox($post) {
     $payload = xpressui_get_submission_payload($post->ID);
     if (empty($payload)) {
-        echo '<p>No submission payload recorded.</p>';
+        echo '<p>No structured submission data recorded.</p>';
         return;
     }
-
     $config = xpressui_get_project_config_snapshot($post->ID);
     $field_index = xpressui_build_config_field_index($config);
     $hidden_keys = [
@@ -1184,22 +982,20 @@ function xpressui_render_submission_preview_metabox($post) {
         'submissionId',
         'projectConfigSnapshotJson',
     ];
+    $grouped = [];
     $rendered_fields = [];
-
     if (!empty($field_index)) {
-        $grouped = [];
         foreach ($field_index as $field_name => $field_meta) {
             if (!array_key_exists($field_name, $payload)) {
                 continue;
             }
-            $section_label = $field_meta['sectionLabel'] ?: 'Submission fields';
+            $section_label = (string) ($field_meta['sectionLabel'] ?? 'Submission');
             if (!isset($grouped[$section_label])) {
                 $grouped[$section_label] = [];
             }
             $grouped[$section_label][$field_name] = $field_meta;
             $rendered_fields[$field_name] = true;
         }
-
         foreach ($grouped as $section_label => $fields) {
             $summary = xpressui_get_section_capture_summary($fields, $payload);
             $status_label = ucfirst((string) ($summary['status'] ?? 'empty'));
@@ -1215,7 +1011,6 @@ function xpressui_render_submission_preview_metabox($post) {
             echo '</tbody></table>';
         }
     }
-
     $remaining = [];
     foreach ($payload as $key => $value) {
         if (isset($rendered_fields[$key]) || in_array($key, $hidden_keys, true)) {
@@ -1223,7 +1018,6 @@ function xpressui_render_submission_preview_metabox($post) {
         }
         $remaining[$key] = $value;
     }
-
     if (!empty($remaining)) {
         echo '<h3 style="margin:16px 0 8px;">Additional fields</h3>';
         echo '<table class="widefat striped"><tbody>';
@@ -1248,7 +1042,6 @@ function xpressui_save_submission_status($post_id) {
     if (!current_user_can('edit_post', $post_id)) {
         return;
     }
-
     $status = isset($_POST['xpressui_submission_status']) ? sanitize_text_field((string) $_POST['xpressui_submission_status']) : 'new';
     $note = isset($_POST['xpressui_review_note']) ? sanitize_textarea_field((string) $_POST['xpressui_review_note']) : '';
     $assignee_id = isset($_POST['xpressui_assignee_id']) ? (int) $_POST['xpressui_assignee_id'] : 0;
@@ -1256,7 +1049,6 @@ function xpressui_save_submission_status($post_id) {
     if (!isset($options[$status])) {
         $status = 'new';
     }
-
     xpressui_set_submission_status($post_id, $status, $note);
     xpressui_set_submission_assignee($post_id, $assignee_id);
 }
@@ -1265,7 +1057,6 @@ function xpressui_add_submission_row_actions($actions, $post) {
     if (($post->post_type ?? '') !== 'xpressui_submission') {
         return $actions;
     }
-
     $current_status = (string) get_post_meta($post->ID, '_xpressui_submission_status', true);
     foreach (xpressui_get_submission_status_options() as $status => $label) {
         if ($status === $current_status) {
@@ -1281,7 +1072,6 @@ function xpressui_add_submission_row_actions($actions, $post) {
         );
         $actions['xpressui_mark_' . $status] = '<a href="' . esc_url($url) . '">Mark ' . esc_html($label) . '</a>';
     }
-
     return $actions;
 }
 
@@ -1289,7 +1079,6 @@ function xpressui_handle_submission_status_action() {
     if (!is_admin() || !isset($_GET['xpressui_submission_id']) || !isset($_GET['xpressui_mark_status'])) {
         return;
     }
-
     $post_id = (int) $_GET['xpressui_submission_id'];
     $status = sanitize_text_field((string) $_GET['xpressui_mark_status']);
     $options = xpressui_get_submission_status_options();
@@ -1299,10 +1088,8 @@ function xpressui_handle_submission_status_action() {
     if (!current_user_can('edit_post', $post_id)) {
         return;
     }
-
     check_admin_referer('xpressui_mark_submission_status_' . $post_id . '_' . $status);
     xpressui_set_submission_status($post_id, $status);
-
     wp_safe_redirect(add_query_arg([
         'post_type' => 'xpressui_submission',
         'xpressui_status_updated' => 1,
@@ -1316,7 +1103,6 @@ function xpressui_render_submission_payload_metabox($post) {
         echo '<p>No submission payload recorded.</p>';
         return;
     }
-
     echo '<pre style="white-space:pre-wrap;overflow:auto;max-height:420px;">' . esc_html(wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) . '</pre>';
 }
 
@@ -1331,7 +1117,6 @@ function xpressui_render_submission_files_metabox($post) {
         }
         return;
     }
-
     echo '<ul style="margin:0;padding-left:18px;">';
     foreach ($files as $file) {
         $field = isset($file['field']) ? (string) $file['field'] : 'file';
@@ -1355,12 +1140,10 @@ function xpressui_get_request_file_params(WP_REST_Request $request) {
     if (!is_array($request_files)) {
         $request_files = [];
     }
-
     $superglobal_files = is_array($_FILES) ? $_FILES : [];
     if (empty($request_files)) {
         return $superglobal_files;
     }
-
     return array_replace_recursive($superglobal_files, $request_files);
 }
 
@@ -1423,7 +1206,6 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
             ];
             continue;
         }
-
         $temporary_field = sprintf('xpressui_upload_%d', $index);
         $_FILES[$temporary_field] = [
             'name' => $file['name'],
@@ -1432,12 +1214,10 @@ function xpressui_store_uploaded_files($post_id, WP_REST_Request $request) {
             'error' => $file['error'],
             'size' => $file['size'],
         ];
-
         $attachment = media_handle_upload($temporary_field, $post_id, [], [
             'test_form' => false,
         ]);
         unset($_FILES[$temporary_field]);
-
         if (is_wp_error($attachment)) {
             $debug['errors'][] = [
                 'field' => $file['field'] ?? '',
@@ -1462,13 +1242,11 @@ function xpressui_attach_uploaded_file_references($payload, array $stored_files)
     if (!is_array($payload) || empty($stored_files)) {
         return $payload;
     }
-
     foreach ($stored_files as $file) {
         $field_name = isset($file['field']) ? (string) $file['field'] : '';
         if ($field_name === '') {
             continue;
         }
-
         $payload[$field_name] = [
             'field' => $field_name,
             'kind' => 'uploaded-file',
@@ -1477,20 +1255,17 @@ function xpressui_attach_uploaded_file_references($payload, array $stored_files)
             'url' => isset($file['url']) ? (string) $file['url'] : '',
         ];
     }
-
     return $payload;
 }
 
 function xpressui_build_submission_title($project_slug, $submission_id, $payload) {
     $summary = '';
-
     if (is_array($payload)) {
         $full_name = trim((string) ($payload['fullName'] ?? ''));
         $first_name = trim((string) ($payload['firstName'] ?? $payload['firstname'] ?? ''));
         $last_name = trim((string) ($payload['lastName'] ?? $payload['lastname'] ?? ''));
         $email = trim((string) ($payload['email'] ?? ''));
         $phone = trim((string) ($payload['phone'] ?? $payload['phoneNumber'] ?? ''));
-
         if ($full_name !== '') {
             $summary = $full_name;
         } elseif ($first_name !== '' || $last_name !== '') {
@@ -1501,27 +1276,19 @@ function xpressui_build_submission_title($project_slug, $submission_id, $payload
             $summary = $phone;
         }
     }
-
     if ($summary === '') {
         $summary = (string) ($submission_id ?: uniqid('submission_', true));
     }
-
-    return sprintf(
-        '%s · %s · %s',
-        (string) $project_slug,
-        $summary,
-        wp_date('Y-m-d H:i'),
-    );
+    return sprintf('%s · %s · %s', (string) $project_slug, $summary, wp_date('Y-m-d H:i'));
 }
 
 function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
-    $project_id = $request->get_param('projectId') ?: 'unknown-project';
-    $project_slug = $request->get_param('projectSlug') ?: 'unknown-project';
+    $project_id = $request->get_param('projectId') ?: 'q9XgVeQ1WhqW5z9AeSorRg';
     $project_config_version = $request->get_param('projectConfigVersion') ?: '';
-    $submission_id = $request->get_param('submissionId') ?: uniqid('submission_', true);
+    $submission_id = $request->get_param('submissionId');
+    $project_slug = $request->get_param('projectSlug') ?: 'client-document-intake';
     $project_config = xpressui_normalize_project_config_snapshot($request->get_param('projectConfigSnapshotJson'));
-
     if (empty($payload)) {
         $payload = $request->get_json_params();
         if (!is_array($payload) || empty($payload)) {
@@ -1540,33 +1307,27 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     ]);
 
     if (is_wp_error($post_id)) {
-        return new WP_REST_Response([
-            'success' => false,
-            'message' => 'Unable to create submission',
-        ], 500);
+        return new WP_REST_Response(['success' => false, 'message' => "Unable to send this form to WordPress right now. Please try again."], 500);
     }
 
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
     update_post_meta($post_id, '_xpressui_project_slug', $project_slug);
     update_post_meta($post_id, '_xpressui_project_config_version', $project_config_version);
-    update_post_meta($post_id, '_xpressui_submission_id', $submission_id);
+    update_post_meta($post_id, '_xpressui_submission_id', $submission_id ?: '');
     xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config_version, $project_config);
-    xpressui_set_submission_status($post_id, 'new', 'Submission received');
-
+    xpressui_set_submission_status($post_id, 'new', "Your documents and details have been sent successfully.");
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
     $payload_with_files = xpressui_attach_uploaded_file_references($payload, $stored_files);
     update_post_meta($post_id, '_xpressui_payload_json', is_string($payload_with_files) ? $payload_with_files : wp_json_encode($payload_with_files));
 
-    return new WP_REST_Response([
-        'success' => true,
-        'message' => 'Submission received',
-        'entryId' => $post_id,
-        'submissionId' => $submission_id,
-        'files' => $stored_files,
-    ], 200);
+    return new WP_REST_Response(['success' => true, 'message' => "Your documents and details have been sent successfully.", 'entryId' => $post_id, 'submissionId' => $submission_id, 'files' => $stored_files], 200);
 }
 
 register_activation_hook(__FILE__, function () {
     xpressui_register_submission_post_type();
     flush_rewrite_rules();
 });
+
+// Expected endpoint:
+// rest_url('xpressui/v1/submit')
+// Suggested shortcode function: xpressui_render_client_document_intake
