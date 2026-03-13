@@ -704,6 +704,63 @@ function xpressui_get_submission_contact_summary($payload) {
     return '';
 }
 
+function xpressui_get_submission_preview_summary($post_id, $max_items = 2) {
+    $payload = xpressui_get_submission_payload($post_id);
+    if (empty($payload) || !is_array($payload)) {
+        return '';
+    }
+
+    $config = xpressui_get_project_config_snapshot($post_id);
+    $field_index = xpressui_build_config_field_index($config);
+    $hidden_keys = [
+        'projectId',
+        'projectSlug',
+        'projectConfigVersion',
+        'submissionId',
+        'projectConfigSnapshotJson',
+        'fullName',
+        'firstName',
+        'firstname',
+        'lastName',
+        'lastname',
+        'email',
+        'phone',
+        'phoneNumber',
+    ];
+
+    $summaries = [];
+    foreach ($field_index as $field_name => $field_meta) {
+        if (in_array($field_name, $hidden_keys, true) || !array_key_exists($field_name, $payload)) {
+            continue;
+        }
+
+        $formatted = trim(wp_strip_all_tags(xpressui_format_submission_value($payload[$field_name], $field_meta)));
+        if ($formatted === '' || strtolower($formatted) === 'empty') {
+            continue;
+        }
+
+        $summaries[] = [
+            'label' => (string) ($field_meta['label'] ?? $field_name),
+            'value' => preg_replace('/\s+/', ' ', $formatted),
+        ];
+
+        if (count($summaries) >= $max_items) {
+            break;
+        }
+    }
+
+    if (empty($summaries)) {
+        return '';
+    }
+
+    $parts = [];
+    foreach ($summaries as $summary) {
+        $parts[] = $summary['label'] . ': ' . $summary['value'];
+    }
+
+    return implode(' · ', $parts);
+}
+
 function xpressui_get_uploaded_file_count($post_id) {
     $files_json = get_post_meta($post_id, '_xpressui_uploaded_files', true);
     $files = $files_json ? json_decode($files_json, true) : [];
@@ -799,6 +856,7 @@ function xpressui_get_project_inbox_rows() {
                 'done' => 0,
                 'latestSubmissionId' => '',
                 'latestDate' => '',
+                'latestSummary' => '',
             ];
         }
         $rows[$project_slug]['total'] += 1;
@@ -808,6 +866,7 @@ function xpressui_get_project_inbox_rows() {
         if ($rows[$project_slug]['latestSubmissionId'] === '') {
             $rows[$project_slug]['latestSubmissionId'] = (string) get_post_meta($submission_id, '_xpressui_submission_id', true);
             $rows[$project_slug]['latestDate'] = get_the_date('Y-m-d H:i', $submission_id) ?: '';
+            $rows[$project_slug]['latestSummary'] = xpressui_get_submission_preview_summary($submission_id);
         }
     }
 
@@ -833,7 +892,7 @@ function xpressui_render_project_inbox_page() {
     }
 
     echo '<table class="widefat striped"><thead><tr>';
-    echo '<th>Project</th><th>Total</th><th>New</th><th>In review</th><th>Done</th><th>Latest submission</th><th>Actions</th>';
+    echo '<th>Project</th><th>Total</th><th>New</th><th>In review</th><th>Done</th><th>Latest submission</th><th>Latest summary</th><th>Actions</th>';
     echo '</tr></thead><tbody>';
     foreach ($rows as $row) {
         $all_url = add_query_arg([
@@ -852,6 +911,7 @@ function xpressui_render_project_inbox_page() {
         echo '<td>' . esc_html((string) $row['in-review']) . '</td>';
         echo '<td>' . esc_html((string) $row['done']) . '</td>';
         echo '<td>' . esc_html($row['latestSubmissionId'] !== '' ? $row['latestSubmissionId'] . ' · ' . $row['latestDate'] : 'No submissions yet') . '</td>';
+        echo '<td>' . esc_html($row['latestSummary'] !== '' ? $row['latestSummary'] : 'No preview yet') . '</td>';
         echo '<td><a href="' . esc_url($all_url) . '">Open all</a> · <a href="' . esc_url($new_url) . '">Open new</a></td>';
         echo '</tr>';
     }
@@ -874,12 +934,44 @@ function xpressui_render_my_queue_page() {
         'xpressui_assignee' => (string) $current_user_id,
         'xpressui_status' => 'in-review',
     ], admin_url('edit.php'));
+    $submission_ids = get_posts([
+        'post_type' => 'xpressui_submission',
+        'posts_per_page' => 12,
+        'fields' => 'ids',
+        'meta_key' => '_xpressui_assignee_id',
+        'meta_value' => $current_user_id,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
 
     echo '<div class="wrap">';
     echo '<h1>My Queue</h1>';
     echo '<p>Open the submissions assigned to you, or jump straight into the ones already in review.</p>';
     echo '<p><a class="button button-primary" href="' . esc_url($queue_url) . '">Open my submissions</a> ';
     echo '<a class="button" href="' . esc_url($review_url) . '">Open my in-review queue</a></p>';
+    if (empty($submission_ids)) {
+        echo '<p>No submissions are currently assigned to you.</p>';
+        echo '</div>';
+        return;
+    }
+    echo '<table class="widefat striped"><thead><tr>';
+    echo '<th>Project</th><th>Status</th><th>Contact</th><th>Summary</th><th>Updated</th></tr></thead><tbody>';
+    foreach ($submission_ids as $submission_id) {
+        $project_slug = (string) get_post_meta($submission_id, '_xpressui_project_slug', true);
+        $status = (string) get_post_meta($submission_id, '_xpressui_submission_status', true);
+        $payload = xpressui_get_submission_payload($submission_id);
+        $contact = xpressui_get_submission_contact_summary($payload);
+        $summary = xpressui_get_submission_preview_summary($submission_id);
+        $edit_url = get_edit_post_link($submission_id);
+        echo '<tr>';
+        echo '<td><a href="' . esc_url($edit_url ?: '') . '"><strong>' . esc_html($project_slug !== '' ? $project_slug : 'unknown-project') . '</strong></a></td>';
+        echo '<td>' . esc_html(xpressui_get_submission_status_label($status !== '' ? $status : 'new')) . '</td>';
+        echo '<td>' . esc_html($contact !== '' ? $contact : 'No contact details') . '</td>';
+        echo '<td>' . esc_html($summary !== '' ? $summary : 'No preview yet') . '</td>';
+        echo '<td>' . esc_html(get_the_date('Y-m-d H:i', $submission_id) ?: '') . '</td>';
+        echo '</tr>';
+    }
+    echo '</tbody></table>';
     echo '</div>';
 }
 
