@@ -1285,7 +1285,7 @@ function xpressui_build_submission_title($project_slug, $submission_id, $payload
 
 function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
-    $project_id = $request->get_param('projectId') ?: 'aBtmethvBeesLQMZWUG5gR';
+    $project_id = $request->get_param('projectId') ?: 'qwNc7up5Jcg3Br4svxHbe3';
     $project_config_version = $request->get_param('projectConfigVersion') ?: '';
     $submission_id = $request->get_param('submissionId');
     $project_slug = $request->get_param('projectSlug') ?: 'document-intake';
