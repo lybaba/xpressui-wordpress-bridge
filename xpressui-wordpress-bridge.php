@@ -19,6 +19,9 @@ add_action('save_post_xpressui_submission', 'xpressui_save_submission_status');
 add_action('admin_init', 'xpressui_handle_submission_status_action');
 add_filter('post_row_actions', 'xpressui_add_submission_row_actions', 10, 2);
 add_action('admin_menu', 'xpressui_register_submission_admin_pages');
+add_action('admin_menu', 'xpressui_register_admin_page');
+
+add_shortcode('xpressui', 'xpressui_render_shortcode');
 
 add_action('rest_api_init', function () {
     register_rest_route('xpressui/v1', '/submit', [
@@ -34,8 +37,20 @@ function xpressui_register_submission_post_type() {
     register_post_type('xpressui_submission', [
         'public' => false,
         'show_ui' => true,
+        'labels' => [
+            'name' => 'Submissions',
+            'singular_name' => 'Submission',
+            'menu_name' => 'XPressUI',
+            'all_items' => 'All Submissions',
+        ],
+        'menu_icon' => 'dashicons-layout',
+        'menu_position' => 80,
         'label' => 'XPressUI Submissions',
         'supports' => ['title'],
+        'capabilities' => [
+            'create_posts' => 'do_not_allow',
+        ],
+        'map_meta_cap' => true,
     ]);
 }
 
@@ -1285,7 +1300,7 @@ function xpressui_build_submission_title($project_slug, $submission_id, $payload
 
 function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
-    $project_id = $request->get_param('projectId') ?: 'qwNc7up5Jcg3Br4svxHbe3';
+    $project_id = $request->get_param('projectId') ?: '5qyV39g8toVh1cAz6gxHVS';
     $project_config_version = $request->get_param('projectConfigVersion') ?: '';
     $submission_id = $request->get_param('submissionId');
     $project_slug = $request->get_param('projectSlug') ?: 'document-intake';
@@ -1322,6 +1337,209 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_payload_json', is_string($payload_with_files) ? $payload_with_files : wp_json_encode($payload_with_files));
 
     return new WP_REST_Response(['success' => true, 'message' => "Your intake was sent successfully.", 'entryId' => $post_id, 'submissionId' => $submission_id, 'files' => $stored_files], 200);
+}
+
+function xpressui_register_admin_page() {
+    add_submenu_page(
+        'edit.php?post_type=xpressui_submission', // Parent menu
+        'Manage Workflows',        // Page title
+        'Workflows',               // Sub-menu title
+        'manage_options',          // Required capability (Admins)
+        'xpressui-bridge',         // Slug
+        'xpressui_render_admin_page' // Display function
+    );
+}
+
+// 2. Page rendering function and form handling
+function xpressui_render_admin_page() {
+    // Permissions check
+    if (!current_user_can('manage_options')) {
+        wp_die(__('You do not have sufficient permissions to access this page.'));
+    }
+
+    // Initialize notification variables
+    $notice_class = '';
+    $notice_message = '';
+
+    // If the form is submitted
+    if (isset($_POST['xpressui_upload_pack']) && check_admin_referer('xpressui_upload_action', 'xpressui_nonce')) {
+        $upload_result = xpressui_handle_zip_upload();
+        
+        if (is_wp_error($upload_result)) {
+            $notice_class = 'notice-error';
+            $notice_message = $upload_result->get_error_message();
+        } else {
+            $notice_class = 'notice-success';
+            $notice_message = "<strong>Success!</strong> The package has been successfully installed. You can integrate it using the appropriate shortcode, for example: <code>[xpressui id=\"{$upload_result}\"]</code>";
+        }
+    }
+
+    // Get installed workflows
+    $upload_dir = wp_get_upload_dir();
+    $target_dir = trailingslashit($upload_dir['basedir']) . 'xpressui/';
+    $installed_workflows = [];
+    
+    if (is_dir($target_dir)) {
+        $items = scandir($target_dir);
+        foreach ($items as $item) {
+            if ($item !== '.' && $item !== '..' && is_dir($target_dir . $item)) {
+                $installed_workflows[] = $item;
+            }
+        }
+    }
+
+    // HTML interface rendering
+    ?>
+    <div class="wrap">
+        <h1>Manage XPressUI Workflows</h1>
+        
+        <?php if ($notice_message) : ?>
+            <div class="notice <?php echo esc_attr($notice_class); ?> is-dismissible">
+                <p><?php echo wp_kses_post($notice_message); ?></p>
+            </div>
+        <?php endif; ?>
+
+        <div class="card" style="max-width: 800px; margin-top: 20px;">
+            <h2 class="title">Installed Workflows</h2>
+            <?php if (empty($installed_workflows)) : ?>
+                <p>No workflows installed yet. Upload a package below to get started.</p>
+            <?php else : ?>
+                <table class="wp-list-table widefat fixed striped" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Project Slug</th>
+                            <th>Shortcode</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($installed_workflows as $slug) : ?>
+                        <tr>
+                            <td><strong><?php echo esc_html($slug); ?></strong></td>
+                            <td><code>[xpressui id="<?php echo esc_attr($slug); ?>"]</code></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <div class="card" style="max-width: 800px; margin-top: 20px;">
+            <h2 class="title">Install or Update a Pack</h2>
+            <p>Drag and drop the <code>.zip</code> file generated by the XPressUI console. The folder will be automatically extracted into your uploads directory.</p>
+            
+            <form method="post" enctype="multipart/form-data" style="margin-top: 20px;">
+                <?php wp_nonce_field('xpressui_upload_action', 'xpressui_nonce'); ?>
+                <input type="hidden" name="xpressui_upload_pack" value="1">
+                
+                <table class="form-table">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="xpressui_zip">Package File (.zip)</label></th>
+                            <td>
+                                <input type="file" name="xpressui_zip" id="xpressui_zip" accept=".zip" required>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <p class="submit">
+                    <?php submit_button('Install workflow', 'primary', 'submit', false); ?>
+                </p>
+            </form>
+        </div>
+    </div>
+    <?php
+}
+
+// 3. ZIP file processing logic
+function xpressui_handle_zip_upload() {
+    // Check if a file is actually uploaded
+    if (empty($_FILES['xpressui_zip']['tmp_name'])) {
+        return new WP_Error('no_file', 'Please select a file.');
+    }
+
+    $file = $_FILES['xpressui_zip'];
+
+    // Security: check the file's MIME type
+    $file_type = wp_check_filetype($file['name']);
+    if ($file_type['ext'] !== 'zip') {
+        return new WP_Error('invalid_file_type', 'Only .zip files are allowed.');
+    }
+
+    // Initialize WP_Filesystem (required for unzip_file)
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    WP_Filesystem();
+    
+    // Determine the destination folder
+    $upload_dir = wp_get_upload_dir();
+    if (!empty($upload_dir['error'])) {
+        return new WP_Error('upload_dir_error', $upload_dir['error']);
+    }
+
+    $target_dir = trailingslashit($upload_dir['basedir']) . 'xpressui/';
+
+    // Create the XPressUI root folder if it doesn't exist
+    if (!file_exists($target_dir)) {
+        wp_mkdir_p($target_dir);
+        
+        // Security: Add an empty index.php to prevent directory listing
+        global $wp_filesystem;
+        $wp_filesystem->put_contents($target_dir . 'index.php', '<?php' . PHP_EOL . '// Silence is golden.' . PHP_EOL, FS_CHMOD_FILE);
+    }
+
+    // Temporarily move the ZIP
+    $tmp_zip_path = $target_dir . basename($file['name']);
+    if (!move_uploaded_file($file['tmp_name'], $tmp_zip_path)) {
+        return new WP_Error('move_failed', 'Failed to save the uploaded file.');
+    }
+
+    // Extract the ZIP
+    $unzip_result = unzip_file($tmp_zip_path, $target_dir);
+
+    // Delete the temporary ZIP file (whether the extraction succeeds or not)
+    global $wp_filesystem;
+    $wp_filesystem->delete($tmp_zip_path);
+
+    if (is_wp_error($unzip_result)) {
+        return $unzip_result; // Return the extraction error (e.g. permission issues)
+        return $unzip_result; 
+    }
+
+    // Try to guess the project slug (filename without extension)
+    // This assumes the export is a single folder with the same name as the zip (e.g. document-intake.zip -> document-intake folder)
+    $project_slug = pathinfo($file['name'], PATHINFO_FILENAME);
+
+    return $project_slug; // Return the slug to display an example shortcode
+    return $project_slug;
+}
+
+// 4. Shortcode rendering logic
+function xpressui_render_shortcode($atts) {
+    $atts = shortcode_atts(['id' => '', 'height' => '700px'], $atts, 'xpressui');
+    $project_slug = sanitize_title($atts['id']);
+    $height = esc_attr($atts['height']);
+    
+    if (empty($project_slug)) {
+        return '<p style="color:red; font-weight:bold;">Error: Missing XPressUI project ID.</p>';
+    }
+    
+    $upload_dir = wp_get_upload_dir();
+    $base_dir = trailingslashit($upload_dir['basedir']) . 'xpressui/';
+    $base_url = trailingslashit($upload_dir['baseurl']) . 'xpressui/';
+    
+    // Smart detection for zip double-folders
+    $iframe_url = '';
+    if (file_exists($base_dir . $project_slug . '/index.html')) {
+        $iframe_url = $base_url . $project_slug . '/index.html';
+    } elseif (file_exists($base_dir . $project_slug . '/' . $project_slug . '/index.html')) {
+        $iframe_url = $base_url . $project_slug . '/' . $project_slug . '/index.html';
+    } else {
+        return '<p style="color:red; font-weight:bold;">Error: XPressUI project "'. esc_html($project_slug) .'" not found. Please upload the package in the XPressUI settings.</p>';
+    }
+    
+    return '<div class="xpressui-wrapper" style="width: 100%; margin: 0 auto; clear: both;">
+        <iframe src="' . esc_url($iframe_url) . '" style="width: 100%; border: none; min-height: ' . $height . ';" scrolling="auto" allow="camera; microphone; fullscreen; autoplay"></iframe>
+    </div>';
 }
 
 register_activation_hook(__FILE__, function () {
