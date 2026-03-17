@@ -1527,7 +1527,6 @@ function xpressui_render_shortcode($atts) {
     $base_dir = trailingslashit($upload_dir['basedir']) . 'xpressui/';
     $base_url = trailingslashit($upload_dir['baseurl']) . 'xpressui/';
     
-    // Smart detection for zip double-folders
     $iframe_url = '';
     if (file_exists($base_dir . $project_slug . '/index.html')) {
         $iframe_url = $base_url . $project_slug . '/index.html';
@@ -1537,9 +1536,58 @@ function xpressui_render_shortcode($atts) {
         return '<p style="color:red; font-weight:bold;">Error: XPressUI project "'. esc_html($project_slug) .'" not found. Please upload the package in the XPressUI settings.</p>';
     }
     
-    return '<div class="xpressui-wrapper" style="width: 100%; margin: 0 auto; clear: both;">
-        <iframe src="' . esc_url($iframe_url) . '" style="width: 100%; border: none; min-height: ' . $height . ';" scrolling="auto" allow="camera; microphone; fullscreen; autoplay"></iframe>
-    </div>';
+    $iframe_id = 'xpressui_iframe_' . uniqid();
+    
+    ob_start();
+    ?>
+    <div class="xpressui-wrapper" style="width: 100%; margin: 0 auto; clear: both; overflow: hidden; box-sizing: border-box; padding: 2px;">
+        <iframe id="<?php echo esc_attr($iframe_id); ?>" src="<?php echo esc_url($iframe_url); ?>" style="width: 100%; border: none; min-height: 400px; display: block; overflow: hidden; box-sizing: border-box; opacity: 0; transition: opacity 0.4s ease, height 0.3s ease-out;" scrolling="no" allow="camera; microphone; fullscreen; autoplay"></iframe>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var iframe = document.getElementById("<?php echo esc_js($iframe_id); ?>");
+            if (!iframe) return;
+            
+            function resizeIframe() {
+                try {
+                    var doc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (!doc || !doc.documentElement) return;
+                    var shell = doc.querySelector('.page-shell') || doc.body;
+                    var frame = doc.querySelector('.form-frame') || shell;
+                    if (frame && frame.scrollHeight > 0) {
+                        var newHeight = Math.ceil(frame.scrollHeight + 20);
+                        var currentHeight = parseInt(iframe.style.height || "0", 10);
+                        if (Math.abs(currentHeight - newHeight) > 4) {
+                            iframe.style.height = newHeight + "px";
+                        }
+                    }
+                } catch (e) {} // Ignore cross-origin issues just in case
+            }
+
+            iframe.addEventListener("load", function() {
+                try {
+                    var doc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (!doc) return;
+                    var style = doc.createElement('style');
+                    style.innerHTML = 'html, body { background: transparent !important; height: auto !important; min-height: 0 !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; width: 100% !important; } * { box-sizing: border-box !important; } .page-shell { background: transparent !important; padding: 2px !important; min-height: 0 !important; height: auto !important; overflow: hidden !important; align-items: flex-start !important; width: 100% !important; } body::before, body::after, .page-shell::before, .page-shell::after { display: none !important; } .form-frame { background: transparent !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }';
+                    doc.head.appendChild(style);
+                    
+                    setTimeout(function() {
+                        resizeIframe();
+                        iframe.style.opacity = "1";
+                    }, 50);
+                    
+                    var targetNode = doc.querySelector('.form-frame') || doc.body;
+                    if (window.ResizeObserver && targetNode) {
+                        new ResizeObserver(function() { window.requestAnimationFrame(resizeIframe); }).observe(targetNode);
+                    }
+                } catch (e) { setInterval(resizeIframe, 500); iframe.style.opacity = "1"; }
+            });
+            window.addEventListener('resize', resizeIframe);
+        });
+    </script>
+    <?php
+    return ob_get_clean();
 }
 
 register_activation_hook(__FILE__, function () {
