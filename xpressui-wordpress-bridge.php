@@ -1300,10 +1300,10 @@ function xpressui_build_submission_title($project_slug, $submission_id, $payload
 
 function xpressui_handle_submission(WP_REST_Request $request) {
     $payload = $request->get_param('payload');
-    $project_id = $request->get_param('projectId') ?: '5qyV39g8toVh1cAz6gxHVS';
+    $project_id = $request->get_param('projectId') ?: 'dev-project';
     $project_config_version = $request->get_param('projectConfigVersion') ?: '';
     $submission_id = $request->get_param('submissionId');
-    $project_slug = $request->get_param('projectSlug') ?: 'document-intake';
+    $project_slug = $request->get_param('projectSlug') ?: 'dev-project';
     $project_config = xpressui_normalize_project_config_snapshot($request->get_param('projectConfigSnapshotJson'));
     if (empty($payload)) {
         $payload = $request->get_json_params();
@@ -1323,7 +1323,7 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     ]);
 
     if (is_wp_error($post_id)) {
-        return new WP_REST_Response(['success' => false, 'message' => "Unable to send this intake to WordPress right now. Please try again."], 500);
+        return new WP_REST_Response(['success' => false, 'message' => "Submission failed. Please review the form and try again."], 500);
     }
 
     update_post_meta($post_id, '_xpressui_project_id', $project_id);
@@ -1331,12 +1331,12 @@ function xpressui_handle_submission(WP_REST_Request $request) {
     update_post_meta($post_id, '_xpressui_project_config_version', $project_config_version);
     update_post_meta($post_id, '_xpressui_submission_id', $submission_id ?: '');
     xpressui_store_project_config_snapshot($project_id, $project_slug, $project_config_version, $project_config);
-    xpressui_set_submission_status($post_id, 'new', "Your intake was sent successfully.");
+    xpressui_set_submission_status($post_id, 'new', "Submission received");
     $stored_files = xpressui_store_uploaded_files($post_id, $request);
     $payload_with_files = xpressui_attach_uploaded_file_references($payload, $stored_files);
     update_post_meta($post_id, '_xpressui_payload_json', is_string($payload_with_files) ? $payload_with_files : wp_json_encode($payload_with_files));
 
-    return new WP_REST_Response(['success' => true, 'message' => "Your intake was sent successfully.", 'entryId' => $post_id, 'submissionId' => $submission_id, 'files' => $stored_files], 200);
+    return new WP_REST_Response(['success' => true, 'message' => "Submission received", 'entryId' => $post_id, 'submissionId' => $submission_id, 'files' => $stored_files], 200);
 }
 
 function xpressui_register_admin_page() {
@@ -1562,4 +1562,4 @@ register_activation_hook(__FILE__, function () {
 
 // Expected endpoint:
 // rest_url('xpressui/v1/submit')
-// Suggested shortcode function: xpressui_render_document_intake
+// Suggested shortcode function: xpressui_render_dev_project
