@@ -34,10 +34,14 @@
 
 		resize();
 
+		// Try ResizeObserver first (same-origin, most efficient).
 		try {
 			var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
 			if ( doc && doc.body && window.ResizeObserver ) {
 				new ResizeObserver( resize ).observe( doc.body );
+				// Also keep a slow poll as safety net (Chrome sometimes misses the first paint).
+				setTimeout( resize, 100 );
+				setTimeout( resize, 500 );
 				return;
 			}
 		} catch ( _e ) {}
@@ -54,17 +58,48 @@
 		}, 150 );
 	}
 
+	function tryWatchFrame( frame ) {
+		try {
+			var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
+			if ( doc && doc.readyState === 'complete' ) {
+				watchFrame( frame );
+				return;
+			}
+		} catch ( _e ) {}
+
+		// Not ready yet — listen for load, and also poll as fallback for Chrome/Edge.
+		var loaded = false;
+
+		frame.addEventListener( 'load', function () {
+			loaded = true;
+			watchFrame( frame );
+		} );
+
+		// Chrome/Edge sometimes don't fire load on already-loading iframes.
+		// Poll readyState as a safety net.
+		var check = setInterval( function () {
+			try {
+				var d = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
+				if ( d && d.readyState === 'complete' ) {
+					clearInterval( check );
+					if ( ! loaded ) {
+						loaded = true;
+						watchFrame( frame );
+					}
+				}
+			} catch ( _e ) {
+				clearInterval( check );
+			}
+		}, 100 );
+
+		// Stop polling after 15 s regardless.
+		setTimeout( function () { clearInterval( check ); }, 15000 );
+	}
+
 	function initFrames() {
 		var frames = document.querySelectorAll( 'iframe[data-xpressui-autoresize]' );
 		for ( var i = 0; i < frames.length; i++ ) {
-			( function ( frame ) {
-				var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
-				if ( frame.complete || ( doc && doc.readyState === 'complete' ) ) {
-					watchFrame( frame );
-				} else {
-					frame.addEventListener( 'load', function () { watchFrame( frame ); } );
-				}
-			}( frames[ i ] ) );
+			tryWatchFrame( frames[ i ] );
 		}
 	}
 

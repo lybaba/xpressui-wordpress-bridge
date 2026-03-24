@@ -91,7 +91,6 @@ function xpressui_render_shortcode( $atts ) {
 		. ' style="width:' . $width . ';border:none;display:block;"'
 		. $height_attr
 		. $resize_attr
-		. ' loading="lazy"'
 		. ' allow="camera;microphone;geolocation"'
 		. '></iframe>';
 	$html .= '</div>';
