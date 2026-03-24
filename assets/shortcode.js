@@ -1,6 +1,9 @@
 /**
  * XPressUI iframe auto-resize.
- * Loaded only on pages that contain an [xpressui] shortcode.
+ * Supports: Chrome, Firefox, Edge, Safari, iOS Safari, Android Chrome.
+ *
+ * iOS Safari bug: scrollHeight returns the container height, not the content height.
+ * Fix: temporarily set iframe height to 0 before measuring, forcing a reflow.
  */
 ( function () {
 	'use strict';
@@ -11,11 +14,18 @@
 			if ( ! doc || ! doc.body ) {
 				return 0;
 			}
-			return Math.max(
-				doc.body.scrollHeight,
-				doc.body.offsetHeight,
-				doc.documentElement ? doc.documentElement.scrollHeight : 0
+
+			// iOS Safari fix: reset to 0 to force correct scrollHeight recalculation.
+			frame.style.height = '0px';
+
+			var h = Math.max(
+				doc.body.scrollHeight       || 0,
+				doc.body.offsetHeight       || 0,
+				doc.documentElement ? ( doc.documentElement.scrollHeight || 0 ) : 0,
+				doc.documentElement ? ( doc.documentElement.offsetHeight || 0 ) : 0
 			);
+
+			return h;
 		} catch ( _e ) {
 			return 0;
 		}
@@ -34,24 +44,25 @@
 
 		resize();
 
-		// Try ResizeObserver first (same-origin, most efficient).
+		// ResizeObserver (same-origin, modern browsers including Android Chrome).
 		try {
 			var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
 			if ( doc && doc.body && window.ResizeObserver ) {
 				new ResizeObserver( resize ).observe( doc.body );
-				// Also keep a slow poll as safety net (Chrome sometimes misses the first paint).
+				// Safety net: re-measure after React finishes first paint (all platforms).
 				setTimeout( resize, 100 );
 				setTimeout( resize, 500 );
+				setTimeout( resize, 1500 );
 				return;
 			}
 		} catch ( _e ) {}
 
-		// Fallback: poll every 150 ms for 10 s, then every 500 ms.
+		// Fallback polling (iOS Safari < 13.4, older Android).
 		var polls = 0;
 		var interval = setInterval( function () {
 			resize();
 			polls++;
-			if ( polls === 67 ) {
+			if ( polls === 67 ) { // ~10 s at 150 ms
 				clearInterval( interval );
 				setInterval( resize, 500 );
 			}
@@ -67,7 +78,6 @@
 			}
 		} catch ( _e ) {}
 
-		// Not ready yet — listen for load, and also poll as fallback for Chrome/Edge.
 		var loaded = false;
 
 		frame.addEventListener( 'load', function () {
@@ -75,8 +85,7 @@
 			watchFrame( frame );
 		} );
 
-		// Chrome/Edge sometimes don't fire load on already-loading iframes.
-		// Poll readyState as a safety net.
+		// Chrome/Edge/Android: poll readyState as safety net alongside load event.
 		var check = setInterval( function () {
 			try {
 				var d = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
@@ -92,7 +101,6 @@
 			}
 		}, 100 );
 
-		// Stop polling after 15 s regardless.
 		setTimeout( function () { clearInterval( check ); }, 15000 );
 	}
 
@@ -103,7 +111,7 @@
 		}
 	}
 
-	// Cross-origin fallback: runtime posts { type: 'xpressui:resize', height }.
+	// Cross-origin / runtime postMessage fallback.
 	window.addEventListener( 'message', function ( event ) {
 		var data = event.data;
 		if ( ! data || data.type !== 'xpressui:resize' ) {
