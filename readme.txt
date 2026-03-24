@@ -1,0 +1,107 @@
+=== XPressUI WordPress Bridge ===
+Contributors: iakpress
+Tags: form, submission, workflow, document intake, iframe
+Requires at least: 6.0
+Tested up to: 6.7
+Requires PHP: 8.0
+Stable tag: 1.0.0
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Embed any XPressUI workflow on your WordPress site with a shortcode and review incoming submissions straight from wp-admin.
+
+== Description ==
+
+**XPressUI WordPress Bridge** connects your WordPress site to workflow packages built with the [XPressUI console](https://iakpress.com/document-intake).
+
+Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. Submissions are stored as private posts in a dedicated wp-admin inbox — no third-party database required.
+
+= Key features =
+
+* **One-click installation** — upload the exported `.zip` file from the XPressUI console directly inside wp-admin.
+* **Shortcode embed** — `[xpressui id="your-project-slug"]` works in any page, post, or block-editor paragraph block.
+* **Submission inbox** — all submissions land in a private wp-admin post list with status badges, filtering by project / status / assignee, and detailed review metaboxes.
+* **Status workflow** — mark submissions *New*, *In review*, or *Done* from the list or the detail view. Every status change is recorded in a per-submission history log.
+* **Team assignment** — assign any WordPress user to a submission. The *My Queue* page shows each reviewer their personal backlog at a glance.
+* **Email notifications** — configure a notification address per project and receive a plain-text summary email the moment a new submission arrives.
+* **Post-submit redirect** — optionally redirect the visitor to a thank-you page after a successful submission. Configured per project from wp-admin.
+* **File uploads** — uploaded files are stored as WordPress media attachments and linked back to their submission.
+* **REST API endpoint** — submissions are received via a standard WordPress REST route (`POST /wp-json/xpressui/v1/submit`). No extra server configuration required.
+
+= Who is this for? =
+
+Businesses and developers who use the XPressUI console to build document-intake or multi-step application forms and want to manage the collected data inside their existing WordPress environment without an external SaaS inbox.
+
+== Installation ==
+
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://iakpress.com/document-intake).
+2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
+3. Click **Activate Plugin**.
+4. In the XPressUI console, export your workflow as a package (`.zip`).
+5. In wp-admin, go to **Submissions › Workflows** and upload the workflow package.
+6. Insert `[xpressui id="your-project-slug"]` in any page or post to embed the form.
+
+== Frequently Asked Questions ==
+
+= Where do I get the workflow package (.zip) to upload? =
+
+You build and export it in the XPressUI console at [iakpress.com](https://iakpress.com/document-intake). The console lets you design multi-step forms and document-intake workflows without code, then export them as self-contained packages.
+
+= What does the [xpressui] shortcode accept? =
+
+* `id` (required) — the project slug, matching the uploaded package folder name.
+* `title` — accessible title for the embedded iframe. Defaults to "XPressUI Form".
+* `width` — CSS width of the iframe. Defaults to `100%`.
+* `height` — fixed pixel height. If omitted, the iframe auto-resizes based on its content via a postMessage listener.
+
+Example: `[xpressui id="loan-application" width="100%" title="Loan Application"]`
+
+= Where are submissions stored? =
+
+Submissions are stored as private WordPress posts of the custom post type `xpressui_submission`, directly in your site's database. No data is sent to external servers.
+
+= Can I export or delete submissions? =
+
+Submissions can be deleted directly from the wp-admin list (Trash → Delete permanently). Export and bulk actions are on the roadmap.
+
+= Does the plugin send emails? =
+
+Only if you configure a notification email address for a project under **Submissions › Workflows › Project Settings**. The plugin uses WordPress's built-in `wp_mail()` function, so it respects any SMTP plugin you have installed.
+
+= What file types can submitters upload? =
+
+File uploads are handled by `media_handle_upload()`, which respects the WordPress file type allow-list configured under **Settings › Media**. By default, this includes common document, image, and archive formats.
+
+= Is the REST endpoint publicly accessible? =
+
+Yes — the `/wp-json/xpressui/v1/submit` endpoint accepts POST requests without authentication. This is intentional: form submissions originate from visitors who are not logged in. Each submission is stored as a private post and is only visible to authorised users inside wp-admin.
+
+= What happens to uploaded files when a submission is deleted? =
+
+Uploaded files are stored as WordPress media attachments. They are not automatically deleted when the submission post is trashed or deleted. Remove them manually via **Media › Library** if needed.
+
+== Screenshots ==
+
+1. The submission list with status badges, project filter, and row actions.
+2. The submission detail view with payload fields, status workflow, and assignment panel.
+3. The Manage Workflows page showing installed packages and project settings.
+4. A workflow embedded in a page using the [xpressui] shortcode.
+
+== Changelog ==
+
+= 1.0.0 =
+* Initial release.
+* Custom post type for submissions with status workflow (New, In review, Done).
+* Status history log per submission.
+* Team assignment and My Queue page.
+* Project Inbox overview page.
+* [xpressui] shortcode with auto-resize iframe support.
+* REST endpoint for receiving submissions and file uploads.
+* Per-project email notifications via wp_mail().
+* Per-project post-submit redirect URL.
+* Manage Workflows page with ZIP upload and project settings.
+
+== Upgrade Notice ==
+
+= 1.0.0 =
+Initial release — no upgrade steps required.
