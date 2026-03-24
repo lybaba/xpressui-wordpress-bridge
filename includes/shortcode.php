@@ -72,6 +72,17 @@ function xpressui_render_shortcode( $atts ) {
 		$resize_attr = ' data-xpressui-autoresize="1"';
 	}
 
+	// Enqueue the resize script (only once, only when autoresize is needed).
+	if ( $resize_attr !== '' ) {
+		wp_enqueue_script(
+			'xpressui-shortcode',
+			XPRESSUI_BRIDGE_URL . 'assets/shortcode.js',
+			[],
+			XPRESSUI_BRIDGE_VERSION,
+			true
+		);
+	}
+
 	$html  = '<div class="xpressui-embed-wrapper">';
 	$html .= '<iframe'
 		. ' id="' . $iframe_id . '"'
@@ -84,128 +95,6 @@ function xpressui_render_shortcode( $atts ) {
 		. ' allow="camera;microphone;geolocation"'
 		. '></iframe>';
 	$html .= '</div>';
-	$html .= xpressui_shortcode_resize_script();
 
 	return $html;
-}
-
-/**
- * Returns the inline JS for auto-resizing iframes.
- * Deduplicated — only injected once per page load.
- *
- * @return string
- */
-function xpressui_shortcode_resize_script() {
-	static $injected = false;
-
-	if ( $injected ) {
-		return '';
-	}
-	$injected = true;
-
-	ob_start();
-	?>
-	<script>
-	(function () {
-		'use strict';
-
-		/**
-		 * Resize an iframe to match its content height.
-		 * Works same-origin (direct DOM access) with a ResizeObserver fallback,
-		 * and also handles cross-origin runtimes that post { type: 'xpressui:resize', height }.
-		 */
-
-		function getContentHeight( frame ) {
-			try {
-				var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
-				if ( ! doc || ! doc.body ) {
-					return 0;
-				}
-				return Math.max(
-					doc.body.scrollHeight,
-					doc.body.offsetHeight,
-					doc.documentElement ? doc.documentElement.scrollHeight : 0
-				);
-			} catch ( _e ) {
-				return 0;
-			}
-		}
-
-		function applyHeight( frame, height ) {
-			if ( height > 0 ) {
-				frame.style.height = height + 'px';
-			}
-		}
-
-		function watchFrame( frame ) {
-			function resize() {
-				applyHeight( frame, getContentHeight( frame ) );
-			}
-
-			// Initial resize after content is painted.
-			resize();
-
-			// Observe content size changes with ResizeObserver (same-origin).
-			try {
-				var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
-				if ( doc && doc.body && window.ResizeObserver ) {
-					new ResizeObserver( resize ).observe( doc.body );
-					return; // ResizeObserver handles it — no polling needed.
-				}
-			} catch ( _e ) {}
-
-			// Fallback: poll every 150 ms for the first 10 s, then every 500 ms.
-			var polls = 0;
-			var interval = setInterval( function () {
-				resize();
-				polls++;
-				if ( polls === 67 ) { // ~10 s at 150 ms
-					clearInterval( interval );
-					setInterval( resize, 500 );
-				}
-			}, 150 );
-		}
-
-		function initFrames() {
-			var frames = document.querySelectorAll( 'iframe[data-xpressui-autoresize]' );
-			for ( var i = 0; i < frames.length; i++ ) {
-				(function ( frame ) {
-					if ( frame.complete || ( frame.contentDocument && frame.contentDocument.readyState === 'complete' ) ) {
-						watchFrame( frame );
-					} else {
-						frame.addEventListener( 'load', function () { watchFrame( frame ); } );
-					}
-				}( frames[i] ) );
-			}
-		}
-
-		// Cross-origin fallback: runtime posts { type: 'xpressui:resize', height }.
-		window.addEventListener( 'message', function ( event ) {
-			var data = event.data;
-			if ( ! data || data.type !== 'xpressui:resize' ) {
-				return;
-			}
-			var height = parseInt( data.height, 10 );
-			if ( isNaN( height ) || height <= 0 ) {
-				return;
-			}
-			var frames = document.querySelectorAll( 'iframe[data-xpressui-autoresize]' );
-			for ( var i = 0; i < frames.length; i++ ) {
-				try {
-					if ( frames[i].contentWindow === event.source ) {
-						applyHeight( frames[i], height );
-					}
-				} catch ( _e ) {}
-			}
-		}, false );
-
-		if ( document.readyState === 'loading' ) {
-			document.addEventListener( 'DOMContentLoaded', initFrames );
-		} else {
-			initFrames();
-		}
-	}());
-	</script>
-	<?php
-	return ob_get_clean();
 }
