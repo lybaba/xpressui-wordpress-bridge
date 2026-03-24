@@ -110,10 +110,77 @@ function xpressui_shortcode_resize_script() {
 		'use strict';
 
 		/**
-		 * Listen for postMessage events sent by the XPressUI runtime.
-		 * The runtime posts: { type: 'xpressui:resize', height: <number> }
+		 * Resize an iframe to match its content height.
+		 * Works same-origin (direct DOM access) with a ResizeObserver fallback,
+		 * and also handles cross-origin runtimes that post { type: 'xpressui:resize', height }.
 		 */
-		function onMessage( event ) {
+
+		function getContentHeight( frame ) {
+			try {
+				var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
+				if ( ! doc || ! doc.body ) {
+					return 0;
+				}
+				return Math.max(
+					doc.body.scrollHeight,
+					doc.body.offsetHeight,
+					doc.documentElement ? doc.documentElement.scrollHeight : 0
+				);
+			} catch ( _e ) {
+				return 0;
+			}
+		}
+
+		function applyHeight( frame, height ) {
+			if ( height > 0 ) {
+				frame.style.height = height + 'px';
+			}
+		}
+
+		function watchFrame( frame ) {
+			function resize() {
+				applyHeight( frame, getContentHeight( frame ) );
+			}
+
+			// Initial resize after content is painted.
+			resize();
+
+			// Observe content size changes with ResizeObserver (same-origin).
+			try {
+				var doc = frame.contentDocument || ( frame.contentWindow && frame.contentWindow.document );
+				if ( doc && doc.body && window.ResizeObserver ) {
+					new ResizeObserver( resize ).observe( doc.body );
+					return; // ResizeObserver handles it — no polling needed.
+				}
+			} catch ( _e ) {}
+
+			// Fallback: poll every 150 ms for the first 10 s, then every 500 ms.
+			var polls = 0;
+			var interval = setInterval( function () {
+				resize();
+				polls++;
+				if ( polls === 67 ) { // ~10 s at 150 ms
+					clearInterval( interval );
+					setInterval( resize, 500 );
+				}
+			}, 150 );
+		}
+
+		function initFrames() {
+			var frames = document.querySelectorAll( 'iframe[data-xpressui-autoresize]' );
+			for ( var i = 0; i < frames.length; i++ ) {
+				(function ( frame ) {
+					if ( frame.complete || ( frame.contentDocument && frame.contentDocument.readyState === 'complete' ) ) {
+						watchFrame( frame );
+					} else {
+						frame.addEventListener( 'load', function () { watchFrame( frame ); } );
+					}
+				}( frames[i] ) );
+			}
+		}
+
+		// Cross-origin fallback: runtime posts { type: 'xpressui:resize', height }.
+		window.addEventListener( 'message', function ( event ) {
 			var data = event.data;
 			if ( ! data || data.type !== 'xpressui:resize' ) {
 				return;
@@ -126,14 +193,16 @@ function xpressui_shortcode_resize_script() {
 			for ( var i = 0; i < frames.length; i++ ) {
 				try {
 					if ( frames[i].contentWindow === event.source ) {
-						frames[i].style.height = height + 'px';
+						applyHeight( frames[i], height );
 					}
 				} catch ( _e ) {}
 			}
-		}
+		}, false );
 
-		if ( window.addEventListener ) {
-			window.addEventListener( 'message', onMessage, false );
+		if ( document.readyState === 'loading' ) {
+			document.addEventListener( 'DOMContentLoaded', initFrames );
+		} else {
+			initFrames();
 		}
 	}());
 	</script>
