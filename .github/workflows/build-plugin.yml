@@ -1,0 +1,44 @@
+name: Build WordPress Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin ZIP
+        run: |
+          ZIP_NAME="xpressui-wordpress-bridge-${{ steps.version.outputs.version }}.zip"
+
+          # Build from parent so the zip root is xpressui-wordpress-bridge/
+          cd ..
+          zip -r "$ZIP_NAME" xpressui-wordpress-bridge \
+            --exclude "*/render-compiled-template.php" \
+            --exclude "*/WP_ORG_PRE_SUBMISSION_CHECKLIST.txt" \
+            --exclude "*/WP_PLUGIN_CHECK.txt" \
+            --exclude "*/.git/*" \
+            --exclude "*/.github/*"
+          mv "$ZIP_NAME" xpressui-wordpress-bridge/
+
+          echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "v${{ steps.version.outputs.version }}"
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
