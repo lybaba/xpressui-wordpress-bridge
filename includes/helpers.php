@@ -620,12 +620,28 @@ function xpressui_delete_workflow( $slug ) {
 }
 
 function xpressui_maybe_install_bundled_workflows() {
+	$current_version  = defined( 'XPRESSUI_BRIDGE_VERSION' ) ? XPRESSUI_BRIDGE_VERSION : '';
+	$installed_version = get_option( 'xpressui_bundled_workflows_version', '' );
+	$version_changed  = ( $current_version !== '' && $installed_version !== $current_version );
+
 	$installed_registry = get_option( 'xpressui_bundled_workflows_installed', [] );
 	if ( ! is_array( $installed_registry ) ) {
 		$installed_registry = [];
 	}
 
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
+
+	// On plugin update, force-reinstall all bundled workflows so generated artifacts
+	// (e.g. template.context.json) are always up to date with the installed plugin version.
+	if ( $version_changed ) {
+		foreach ( $bundled_slugs as $slug ) {
+			xpressui_reinstall_bundled_workflow( $slug );
+			$installed_registry[ $slug ] = current_time( 'mysql' );
+		}
+		update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
+		update_option( 'xpressui_bundled_workflows_version', $current_version, false );
+		return;
+	}
 
 	// Reinstall if: never registered, OR registered but artifacts are incomplete / missing.
 	$needs_install = array_values(
@@ -651,6 +667,7 @@ function xpressui_maybe_install_bundled_workflows() {
 		$installed_registry[ $slug ] = current_time( 'mysql' );
 	}
 	update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
+	update_option( 'xpressui_bundled_workflows_version', $current_version, false );
 }
 
 // ---------------------------------------------------------------------------
