@@ -269,9 +269,9 @@ function xpressui_render_workflows_page() {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
 	}
 
-	echo '<div class="wrap">';
+	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'XPressUI Workflows', 'xpressui-bridge' ) . '</h1>';
-	echo '<p>' . esc_html__( 'Manage your installed workflow packages and configure per-project settings.', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-project settings.', 'xpressui-bridge' ) . '</p>';
 
 	echo '<div class="card xpressui-admin-card">';
 	echo '<h2>' . esc_html__( 'Pro Extension', 'xpressui-bridge' ) . '</h2>';
