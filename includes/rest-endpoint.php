@@ -17,16 +17,34 @@ function xpressui_register_rest_routes() {
 	register_rest_route( 'xpressui/v1', '/submit', [
 		'methods'             => 'POST',
 		'callback'            => 'xpressui_handle_submission',
-		'permission_callback' => '__return_true',
+		'permission_callback' => 'xpressui_submission_permissions_check',
 	] );
+}
+
+function xpressui_submission_permissions_check( WP_REST_Request $request ) {
+	$project_slug = sanitize_title( (string) $request->get_param( 'projectSlug' ) );
+	if ( $project_slug === '' || ! xpressui_is_installed_workflow( $project_slug ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project',
+			__( 'Unknown workflow project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	$rate_limit = xpressui_check_submission_rate_limit( $project_slug );
+	if ( is_wp_error( $rate_limit ) ) {
+		return $rate_limit;
+	}
+
+	return true;
 }
 
 function xpressui_handle_submission( WP_REST_Request $request ) {
 	$payload              = $request->get_param( 'payload' );
-	$project_id           = $request->get_param( 'projectId' ) ?: 'dev-project';
-	$project_config_version = $request->get_param( 'projectConfigVersion' ) ?: '';
-	$submission_id        = $request->get_param( 'submissionId' );
-	$project_slug         = $request->get_param( 'projectSlug' ) ?: 'dev-project';
+	$project_id           = xpressui_sanitize_request_identifier( $request->get_param( 'projectId' ) );
+	$project_config_version = xpressui_sanitize_request_identifier( $request->get_param( 'projectConfigVersion' ) );
+	$submission_id        = xpressui_sanitize_request_identifier( $request->get_param( 'submissionId' ) );
+	$project_slug         = sanitize_title( (string) $request->get_param( 'projectSlug' ) );
 	$project_config       = xpressui_normalize_config_snapshot( $request->get_param( 'projectConfigSnapshotJson' ) );
 
 	// Fall back to raw body if payload param is empty.
@@ -38,6 +56,11 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		if ( is_array( $payload ) ) {
 			unset( $payload['payload'], $payload['projectConfigSnapshotJson'] );
 		}
+	}
+
+	$validation = xpressui_validate_submission_request( $request, $project_slug, $submission_id, $payload );
+	if ( is_wp_error( $validation ) ) {
+		return $validation;
 	}
 
 	$post_id = wp_insert_post( [
@@ -90,6 +113,104 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	return new WP_REST_Response( $response, 200 );
 }
 
+function xpressui_validate_submission_request( WP_REST_Request $request, $project_slug, $submission_id, $payload ) {
+	if ( $project_slug === '' || ! xpressui_is_installed_workflow( $project_slug ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project',
+			__( 'Unknown workflow project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	if ( ! is_array( $payload ) ) {
+		return new WP_Error(
+			'xpressui_invalid_payload',
+			__( 'Submission payload must be a JSON object or form payload.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	if ( empty( $payload ) ) {
+		return new WP_Error(
+			'xpressui_empty_payload',
+			__( 'Submission payload is empty.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	if ( $submission_id !== '' ) {
+		$existing_ids = get_posts( [
+			'post_type'      => 'xpressui_submission',
+			'post_status'    => 'private',
+			'fields'         => 'ids',
+			'posts_per_page' => 1,
+			'meta_query'     => [
+				[
+					'key'   => '_xpressui_project_slug',
+					'value' => $project_slug,
+				],
+				[
+					'key'   => '_xpressui_submission_id',
+					'value' => $submission_id,
+				],
+			],
+		] );
+		if ( ! empty( $existing_ids ) ) {
+			return new WP_Error(
+				'xpressui_duplicate_submission',
+				__( 'This submission has already been received.', 'xpressui-bridge' ),
+				[ 'status' => 409 ]
+			);
+		}
+	}
+
+	$file_validation = xpressui_validate_uploaded_files( xpressui_get_request_file_params( $request ) );
+	if ( is_wp_error( $file_validation ) ) {
+		return $file_validation;
+	}
+
+	return true;
+}
+
+function xpressui_get_request_ip() {
+	$keys = [ 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'REMOTE_ADDR' ];
+	foreach ( $keys as $key ) {
+		$raw = isset( $_SERVER[ $key ] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER[ $key ] ) ) : '';
+		if ( $raw === '' ) {
+			continue;
+		}
+		$parts = array_map( 'trim', explode( ',', $raw ) );
+		foreach ( $parts as $part ) {
+			if ( filter_var( $part, FILTER_VALIDATE_IP ) ) {
+				return $part;
+			}
+		}
+	}
+	return '';
+}
+
+function xpressui_check_submission_rate_limit( $project_slug ) {
+	$ip_address = xpressui_get_request_ip();
+	if ( $ip_address === '' ) {
+		return true;
+	}
+
+	$transient_key = 'xpressui_rate_' . md5( $project_slug . '|' . $ip_address );
+	$attempts      = (int) get_transient( $transient_key );
+	$max_attempts  = 10;
+
+	if ( $attempts >= $max_attempts ) {
+		return new WP_Error(
+			'xpressui_rate_limited',
+			__( 'Too many submissions from this address. Please try again in a few minutes.', 'xpressui-bridge' ),
+			[ 'status' => 429 ]
+		);
+	}
+
+	set_transient( $transient_key, $attempts + 1, 10 * MINUTE_IN_SECONDS );
+	return true;
+}
+
 // ---------------------------------------------------------------------------
 // File handling
 // ---------------------------------------------------------------------------
@@ -134,6 +255,78 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 		];
 	}
 	return $normalized;
+}
+
+function xpressui_validate_uploaded_files( array $file_params ) {
+	$files             = xpressui_normalize_uploaded_files( $file_params );
+	$allowed_mime_map  = get_allowed_mime_types();
+	$allowed_exts      = array_keys( $allowed_mime_map );
+	$max_files         = 5;
+	$max_bytes_per_file = 10 * MB_IN_BYTES;
+
+	if ( count( $files ) > $max_files ) {
+		return new WP_Error(
+			'xpressui_too_many_files',
+			__( 'Too many uploaded files.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	foreach ( $files as $file ) {
+		$name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
+		$size = isset( $file['size'] ) ? (int) $file['size'] : 0;
+
+		if ( ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
+			return new WP_Error(
+				'xpressui_invalid_upload',
+				__( 'One of the uploaded files is invalid.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		if ( $name === '' || $size <= 0 ) {
+			return new WP_Error(
+				'xpressui_empty_upload',
+				__( 'Uploaded files must have a valid name and size.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		if ( $size > $max_bytes_per_file ) {
+			return new WP_Error(
+				'xpressui_file_too_large',
+				__( 'Uploaded files must be 10 MB or smaller.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$ext = strtolower( (string) pathinfo( $name, PATHINFO_EXTENSION ) );
+		if ( $ext === '' ) {
+			return new WP_Error(
+				'xpressui_missing_extension',
+				__( 'Uploaded files must have a valid file extension.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		$ext_allowed = false;
+		foreach ( $allowed_exts as $allowed_ext_group ) {
+			$group = explode( '|', (string) $allowed_ext_group );
+			if ( in_array( $ext, $group, true ) ) {
+				$ext_allowed = true;
+				break;
+			}
+		}
+		if ( ! $ext_allowed ) {
+			return new WP_Error(
+				'xpressui_disallowed_extension',
+				__( 'One of the uploaded file types is not allowed.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+	}
+
+	return true;
 }
 
 function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "console.export/v2",
+  "exportId": "api-document-intake-starter",
+  "projectId": "document-intake-starter",
+  "projectSlug": "document-intake",
+  "projectName": "Document Intake",
+  "generatedAt": "2026-03-13T00:00:00+00:00",
+  "xpressui": {
+    "version": "0.88.2",
+    "target": "wordpress"
+  },
+  "artifacts": {
+    "config": "form.config.json",
+    "project": "project.document.json",
+    "readme": "README.md",
+    "customization": "CUSTOMIZATION.md",
+    "assetsDir": "assets",
+    "snippets": {
+      "react": "snippets/react.tsx",
+      "staticHtml": "snippets/static-html.html"
+    },
+    "wordpress": {
+      "readme": "wordpress/README.md",
+      "shortcode": "wordpress/shortcode-example.php",
+      "runtime": "wordpress/runtime/xpressui-light-0.88.2.umd.js"
+    }
+  },
+  "checksums": {
+    "algorithm": "fnv1a-64",
+    "files": {
+      "wordpress/README.md": "4e68a033b68cea8d",
+      "wordpress/shortcode-example.php": "5f81010a368d6fb3",
+      "wordpress/runtime/xpressui-light-0.88.2.umd.js": "efbb8eb81ebb7000",
+      "form.config.json": "13cf6ab19d439198"
+    }
+  },
+  "workflow": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "wordpress-bridge",
+    "resumeSupport": "disabled",
+    "documentHandling": "basic-upload",
+    "submissionEndpoint": "rest_url('xpressui/v1/submit')"
+  },
+  "runtimeRequirements": {
+    "tier": "light",
+    "minimumPluginVersion": "1.0.0",
+    "minimumRuntimeVersion": "0.88.2"
+  },
+  "capabilities": {
+    "components": [
+      "email",
+      "file",
+      "price",
+      "select-one",
+      "tel",
+      "text",
+      "textarea"
+    ],
+    "features": [
+      "basic-upload",
+      "email-notifications",
+      "multi-step",
+      "submission-storage"
+    ],
+    "themeFeatures": [
+      "basic-colors",
+      "basic-radius",
+      "basic-sections",
+      "basic-typography"
+    ]
+  },
+  "wordpressCompatibility": {
+    "bridgeMode": "plugin-shell",
+    "fallbackBridgeMode": "legacy-shell",
+    "shortcodeMode": "config-driven",
+    "supportsBundledDemo": false,
+    "requiresLicense": false
+  },
+  "integrationTargets": {
+    "wordpress": {
+      "bridgeMode": "shared-site-plugin",
+      "preferredShellMode": "plugin-hosted",
+      "fallbackShellMode": "packaged-legacy",
+      "endpoint": "rest_url('xpressui/v1/submit')",
+      "method": "POST",
+      "uploadStrategy": "wordpress-media",
+      "visualAssetStrategy": "external-public-assets",
+      "runtimeArtifact": "wordpress/runtime/xpressui-light-0.88.2.umd.js",
+      "runtimeVersion": "0.88.2",
+      "expectedRoute": "xpressui/v1/submit",
+      "projectIdentityFields": [
+        "projectId",
+        "projectSlug",
+        "submissionId"
+      ]
+    }
+  },
+  "meta": {
+    "contractVersion": 2,
+    "projectSchemaVersion": "console.project/v1",
+    "projectStatus": "published",
+    "assetCount": 0,
+    "stepCount": 4,
+    "fieldCount": 10
+  }
+}

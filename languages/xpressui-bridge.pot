@@ -1,0 +1,949 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: XPressUI WordPress Bridge\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-25 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: xpressui-bridge\n"
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:57
+msgid "%1$d / %2$d fields · %3$d / %4$d sections complete"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:205
+msgid "%1$s · %2$d / %3$d fields captured"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:208
+msgid "%d interactive"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:65
+msgid "%d partial"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:317
+msgid "* Required fields"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:225
+msgid "<strong>License settings saved.</strong>"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:213
+msgid "<strong>Settings saved.</strong>"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:190
+msgid "<strong>Success!</strong> The package has been installed. Embed it with: <code>[xpressui id=\"%s\"]</code>"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:88
+msgid "A new submission has been received for project: %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:596
+msgid "A page using this workflow shortcode already exists."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:116
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:332
+msgid "Actions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:230
+msgid "Additional fields"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:22
+msgid "All Submissions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/filters.php:53
+msgid "All assignees"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/filters.php:46
+msgid "All projects"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/filters.php:39
+msgid "All statuses"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:100
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:46
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:40
+msgid "Assignee"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:286
+msgid "Attachment ID: %d"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/camera-photo.php:40
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:47
+msgid "Awaiting camera photo"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:48
+msgid "Awaiting file"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:46
+msgid "Awaiting image"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:349
+msgid "Bundled starter"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:277
+msgid "Bundled starter included:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:417
+msgid "Bundled update available"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/camera-photo.php:41
+msgid "Camera capture"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:67
+msgid "Capture"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:415
+msgid "Compiled PHP shell ready"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:462
+msgid "Configure email notifications and post-submit redirect URL per project."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:70
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:39
+msgid "Contact"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:96
+msgid "Contact       : %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/content-block.php:14
+msgid "Content block reserved for runtime rendering."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:424
+msgid "Create page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:313
+msgid "Create starter page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:253
+msgid "Current runtime tier:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:91
+msgid "Date          : %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:435
+msgid "Delete"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:18
+msgid "Depending on the form you publish, submissions may include names, email addresses, phone numbers, free-form answers, uploaded files, project identifiers, operator review notes, and workflow status history."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:401
+msgid "Document Intake"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:301
+msgid "Document Intake is already bundled with the plugin so you can test the full submission flow immediately."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:114
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:679
+msgid "Done"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:52
+msgid "Done at"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:23
+msgid "Drag a file here or browse from your device."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:22
+msgid "Drag an image here or browse from your device."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:427
+msgid "Edit page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:307
+msgid "Edit starter page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:73
+msgid "Email"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1157
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1188
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1222
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1226
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1244
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1263
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1284
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1347
+msgid "Empty"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1212
+msgid "Estimated total: %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:640
+msgid "Failed to save the uploaded file."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:41
+msgid "Files"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:425
+msgid "Find pages"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/rendered-form.php:36
+msgid "Form content"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:113
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:678
+msgid "In review"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:445
+msgid "Install or Update a Pack"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:455
+msgid "Install workflow"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:320
+msgid "Installed Workflows"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:618
+msgid "Invalid workflow slug."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1195
+msgid "Item"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:415
+msgid "JS shell fallback only"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:115
+msgid "Latest submission"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:251
+msgid "License and Pro Extension"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:263
+msgid "License key"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:255
+msgid "License validated:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:38
+msgid "Manage Workflows"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:247
+msgid "Manage XPressUI Workflows"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/filters.php:114
+msgid "Mark %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/field-meta.php:10
+msgid "Max choices:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/field-meta.php:9
+msgid "Min choices:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:153
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:27
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:28
+msgid "My Queue"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:112
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:677
+msgid "New"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:254
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:255
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1344
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:113
+msgid "No"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:64
+msgid "No contact details"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:151
+msgid "No review history recorded yet."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/rendered-form.php:37
+msgid "No sections are configured yet."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:178
+msgid "No structured submission data recorded."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:250
+msgid "No submission payload recorded."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:104
+msgid "No submissions recorded yet."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:124
+msgid "No submissions yet"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:265
+msgid "No uploaded files recorded."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:322
+msgid "No workflows installed yet. Upload a package below to get started."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:475
+msgid "Notification email"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:330
+msgid "Notify email"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:323
+msgid "One of the uploaded file types is not allowed."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:282
+msgid "One of the uploaded files is invalid."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:627
+msgid "Only .zip files are allowed."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:133
+msgid "Open all"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:282
+msgid "Open file"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:157
+msgid "Open my in-review queue"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:156
+msgid "Open my submissions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:133
+msgid "Open new"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/camera-photo.php:18
+msgid "Open the device camera or choose an existing photo from your gallery."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:154
+msgid "Open the submissions assigned to you, or jump straight into the ones already in review."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:139
+msgid "Operator notes"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:93
+msgid "Operator status"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:451
+msgid "Package File (.zip)"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/field-meta.php:8
+msgid "Pattern:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:76
+msgid "Phone"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:619
+msgid "Please select a file."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:479
+msgid "Post-submit redirect"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:309
+msgid "Preview starter page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:254
+msgid "Pro extension detected:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:257
+msgid "Pro workflows remain blocked in the free bridge until a separate Pro extension is active and confirms the license via plugin hooks."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:110
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:468
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:43
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:37
+msgid "Project"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:44
+msgid "Project ID"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:100
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:19
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:20
+msgid "Project Inbox"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:461
+msgid "Project Settings"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:326
+msgid "Project Slug"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:86
+msgid "Project slug"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1196
+msgid "Qty"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:477
+msgid "Receive an email on each new submission for this project. Leave empty to disable."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:331
+msgid "Redirect URL"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:481
+msgid "Redirect the client to this URL after a successful submission. Leave empty to show the success message."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:433
+msgid "Reinstall"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:15
+msgid "Review Notes"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:101
+msgid "Review incoming submissions grouped by project, then jump into filtered queues."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:129
+msgid "Review this submission in wp-admin:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:49
+msgid "Reviewed at"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:327
+msgid "Runtime"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:271
+msgid "Save license key"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:485
+msgid "Save settings"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:141
+msgid "Saved with the current status and added to the review history when changed."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:268
+msgid "Saving a key here does not activate Pro by itself. The future Pro add-on will use this stored value to validate the license."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:329
+msgid "Shortcode"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:328
+msgid "Source"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:248
+msgid "Start fast with the bundled Document Intake workflow, or upload your own package from the XPressUI console."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:300
+msgid "Starter Onboarding"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:306
+msgid "Starter page:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:42
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:38
+msgid "Status"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:16
+msgid "Status History"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:266
+msgid "Stored key:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:20
+msgid "Submission"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:45
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:42
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:82
+msgid "Submission ID"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:90
+msgid "Submission ID : %d"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:18
+msgid "Submission Payload"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:17
+msgid "Submission Preview"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:14
+msgid "Submission Summary"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:13
+msgid "Submission Workflow"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:318
+msgid "Submission failed"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:319
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:75
+msgid "Submission failed. Please review the form and try again."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:320
+msgid "Submission feedback will appear here after the runtime handles the form."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:136
+msgid "Submission payload is empty."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:128
+msgid "Submission payload must be a JSON object or form payload."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:323
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:104
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:85
+msgid "Submission received"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:324
+msgid "Submission received."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:325
+msgid "Submission status"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:19
+msgid "Submissions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:90
+msgid "Submitted at"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:100
+msgid "Submitted fields"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:322
+msgid "Submitting"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:321
+msgid "Submitting..."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/camera-photo.php:15
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:17
+msgid "Take photo"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:711
+msgid "The ZIP extension is required to inspect workflow packages."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:580
+msgid "The bundled workflow could not be installed."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:509
+msgid "The bundled workflow was reinstalled successfully."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:252
+msgid "The free bridge stays self-contained. A future XPressUI Pro add-on can hook into this screen to validate a license and unlock pro workflows."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:20
+msgid "The plugin also keeps workflow package metadata and project settings such as notification email addresses and post-submit redirect URLs."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shell.php:30
+msgid "The requested workflow could not be loaded."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/camera-photo.php:44
+msgid "The runtime can keep this server-rendered camera shell and update the selected photo in place."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:53
+msgid "The runtime can keep this server-rendered selection shell and update file state in place."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/approval-state.php:22
+msgid "The runtime updates this readonly field with the latest approval provider status."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:658
+msgid "The uploads directory is not available."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:579
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:623
+msgid "The workflow could not be found."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:800
+msgid "The workflow manifest must be valid JSON."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:854
+msgid "The workflow manifest project slug must match the package folder name."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:786
+msgid "The workflow package contains a blocked file type."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:791
+msgid "The workflow package contains a file type that is not allowed."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:755
+msgid "The workflow package contains an invalid file path."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:716
+msgid "The workflow package could not be opened."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:766
+msgid "The workflow package folder name must be a valid slug."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:808
+msgid "The workflow package is empty."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:696
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:831
+msgid "The workflow package is missing a required artifact: %s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:685
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:813
+msgid "The workflow package must contain a top-level manifest.json file."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:773
+msgid "The workflow package must contain exactly one top-level folder."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:530
+msgid "The workflow was deleted successfully."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:569
+msgid "This bundled workflow could not be found."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/unsupported.php:13
+msgid "This field is rendered by the XPressUI runtime. The server-rendered HTML shell keeps its slot reserved here."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:134
+msgid "This notification was sent by the XPressUI Bridge plugin on %s."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:161
+msgid "This submission has already been received."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:849
+msgid "This workflow manifest schema is not supported."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:865
+msgid "This workflow requires XPressUI Pro capabilities and cannot run in the current bridge installation."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:205
+msgid "Too many submissions from this address. Please try again in a few minutes."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:270
+msgid "Too many uploaded files."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:111
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1198
+msgid "Total"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:326
+msgid "Unable to load this XPressUI workflow."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:102
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:46
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:58
+msgid "Unassigned"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1197
+msgid "Unit"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:120
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:29
+msgid "Unknown workflow project."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:306
+msgid "Untitled page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:433
+msgid "Update"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:18
+msgid "Upload file"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/templates/generated/export/_partials/fields/upload.php:16
+msgid "Upload image"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:446
+msgid "Upload the .zip file generated by the XPressUI console. The package will be extracted into your uploads directory."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:19
+msgid "Uploaded Files"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:646
+msgid "Uploaded ZIP file could not be located."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:105
+msgid "Uploaded file %d"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:19
+msgid "Uploaded files are stored in the WordPress media library and linked to the related submission. Notification emails may be sent to the address configured for a workflow project."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:298
+msgid "Uploaded files must be 10 MB or smaller."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:307
+msgid "Uploaded files must have a valid file extension."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/rest-endpoint.php:290
+msgid "Uploaded files must have a valid name and size."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:349
+msgid "Uploaded pack"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:108
+msgid "Use Update to save the new status."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:413
+msgid "Uses legacy shell artifacts"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:430
+msgid "View page"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shell.php:30
+msgid "Workflow not found"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:302
+msgid "Workflow:"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:39
+msgid "Workflows"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:21
+msgid "XPressUI"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shortcode.php:24
+msgid "XPressUI Form"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:26
+msgid "XPressUI Submissions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:21
+msgid "XPressUI WordPress Bridge"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:17
+msgid "XPressUI WordPress Bridge stores form submissions sent by embedded XPressUI workflows."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:112
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:26
+#: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:34
+msgid "XPressUI submissions"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:254
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:255
+#: dev/wordpress/xpressui-wordpress-bridge/includes/helpers.php:1344
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:113
+msgid "Yes"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:167
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:77
+msgid "[%1$s] New submission for %2$s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/notifications.php:74
+msgid "[%1$s] New submission for %2$s — %3$s"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shortcode.php:41
+msgid "[xpressui] error: could not resolve the uploads directory."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shortcode.php:53
+msgid "[xpressui] error: no package found for id \"%s\". Please install the workflow package first."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/shortcode.php:34
+msgid "[xpressui] error: the \"id\" attribute is required."
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:476
+msgid "hello@example.com"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:44
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:45
+msgid "not recorded"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:162
+msgid "unknown time"
+msgstr ""
+
+#: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:43
+msgid "unknown-project"
+msgstr ""

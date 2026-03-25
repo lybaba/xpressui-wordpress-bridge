@@ -1,0 +1,177 @@
+{
+  "mode": "form-multi-step",
+  "navigationLabels": {
+    "prevLabel": "Back",
+    "nextLabel": "Continue",
+    "submitLabel": "Submit intake"
+  },
+  "workflowConfig": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "wordpress-bridge",
+    "resumeSupport": "disabled",
+    "documentHandling": "basic-upload",
+    "submissionEndpoint": "/wp-json/xpressui/v1/submit",
+    "successMessage": "Your intake was sent successfully.",
+    "errorMessage": "Unable to send this intake to WordPress right now. Please try again."
+  },
+  "sections": {
+    "custom": [
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 1: Contact",
+        "adminLabel": "Step 1: Contact",
+        "name": "section1"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 2: Request",
+        "adminLabel": "Step 2: Request",
+        "name": "requestStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 3: Files",
+        "adminLabel": "Step 3: Files",
+        "name": "filesStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 4: Review",
+        "adminLabel": "Step 4: Review",
+        "name": "reviewStep"
+      }
+    ],
+    "section1": [
+      {
+        "type": "text",
+        "label": "First name",
+        "name": "firstname",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "text",
+        "label": "Last name",
+        "name": "lastname",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "email",
+        "label": "Email",
+        "name": "email",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "tel",
+        "label": "Phone number",
+        "name": "phone",
+        "choices": null
+      }
+    ],
+    "requestStep": [
+      {
+        "type": "select-one",
+        "label": "Request type",
+        "name": "requestType",
+        "choices": [
+          {
+            "label": "Application file",
+            "value": "application-file"
+          },
+          {
+            "label": "Client onboarding",
+            "value": "client-onboarding"
+          },
+          {
+            "label": "Supporting documents",
+            "value": "supporting-documents"
+          }
+        ],
+        "minNumOfChoices": 1,
+        "maxNumOfChoices": 1
+      },
+      {
+        "type": "textarea",
+        "label": "Case summary",
+        "name": "caseSummary",
+        "choices": null
+      },
+      {
+        "type": "price",
+        "label": "Estimated budget",
+        "name": "estimatedBudget",
+        "choices": null
+      }
+    ],
+    "filesStep": [
+      {
+        "type": "file",
+        "label": "Primary document",
+        "name": "primaryDocument",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Supporting file",
+        "name": "supportingFile",
+        "choices": null
+      }
+    ],
+    "reviewStep": [
+      {
+        "type": "textarea",
+        "label": "Additional notes",
+        "name": "additionalNotes",
+        "choices": null
+      }
+    ],
+    "btngroup": [
+      {
+        "type": "submit",
+        "name": "prevbtn",
+        "label": "Back",
+        "adminLabel": "Back"
+      },
+      {
+        "type": "submit",
+        "name": "nextbtn",
+        "label": "Continue",
+        "adminLabel": "Continue"
+      },
+      {
+        "type": "submit",
+        "name": "submitbtn",
+        "label": "Submit intake",
+        "adminLabel": "Submit intake"
+      }
+    ]
+  },
+  "showProjectTitle": true,
+  "submit": {
+    "endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
+    "method": "POST",
+    "mode": "form-data",
+    "includeDocumentData": true,
+    "metadata": {
+      "projectId": "document-intake-starter",
+      "projectSlug": "document-intake",
+      "projectConfigVersion": "document-intake-starter:2026-03-13T00:00:00+00:00"
+    }
+  },
+  "submitFeedback": {
+    "title": "Submission status",
+    "idle_message": "Submission feedback will appear here after the runtime handles the form.",
+    "loading_message": "Submitting...",
+    "success_title": "Submission received",
+    "success_message": "Your intake was sent successfully.",
+    "error_title": "Submission failed",
+    "error_message": "Unable to send this intake to WordPress right now. Please try again."
+  }
+}

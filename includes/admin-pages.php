@@ -170,6 +170,13 @@ function xpressui_render_workflows_page() {
 	$notice_class   = '';
 	$notice_message = '';
 
+	if ( isset( $_GET['xpressui_notice'] ) ) {
+		$notice_message = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_notice'] ) );
+		$notice_class   = ( isset( $_GET['xpressui_notice_type'] ) && sanitize_key( (string) $_GET['xpressui_notice_type'] ) === 'error' )
+			? 'notice-error'
+			: 'notice-success';
+	}
+
 	// Handle zip upload.
 	if ( isset( $_POST['xpressui_upload_pack'] ) && check_admin_referer( 'xpressui_upload_action', 'xpressui_nonce' ) ) {
 		$result = xpressui_handle_zip_upload();
@@ -207,22 +214,30 @@ function xpressui_render_workflows_page() {
 		}
 	}
 
-	// Installed workflows.
-	$upload_dir         = wp_get_upload_dir();
-	$target_dir         = trailingslashit( $upload_dir['basedir'] ) . 'xpressui/';
-	$installed_slugs    = [];
-	if ( is_dir( $target_dir ) ) {
-		foreach ( (array) scandir( $target_dir ) as $item ) {
-			if ( $item !== '.' && $item !== '..' && is_dir( $target_dir . $item ) ) {
-				$installed_slugs[] = $item;
-			}
-		}
+	if ( isset( $_POST['xpressui_save_license_settings'] ) && check_admin_referer( 'xpressui_license_settings_action', 'xpressui_license_nonce' ) ) {
+		$license_key = sanitize_text_field( (string) ( $_POST['xpressui_license_key'] ?? '' ) );
+		$settings    = xpressui_get_license_settings();
+		$settings['licenseKey']  = $license_key;
+		$settings['updatedAt']   = current_time( 'mysql' );
+		$settings['maskedKey']   = xpressui_get_masked_license_key();
+		xpressui_update_license_settings( $settings );
+		$notice_class   = 'notice-success';
+		$notice_message = __( '<strong>License settings saved.</strong>', 'xpressui-bridge' );
 	}
+
+	// Installed workflows.
+	$installed_slugs = xpressui_get_installed_workflow_slugs();
 
 	$all_settings = get_option( 'xpressui_project_settings', [] );
 	if ( ! is_array( $all_settings ) ) {
 		$all_settings = [];
 	}
+	$license_settings  = xpressui_get_license_settings();
+	$license_key       = sanitize_text_field( (string) ( $license_settings['licenseKey'] ?? '' ) );
+	$masked_license    = xpressui_get_masked_license_key();
+	$pro_active        = xpressui_is_pro_extension_active();
+	$license_valid     = xpressui_has_valid_pro_license();
+	$current_tier      = xpressui_get_current_runtime_tier();
 
 	if ( $notice_message ) {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
@@ -230,6 +245,75 @@ function xpressui_render_workflows_page() {
 
 	echo '<div class="wrap">';
 	echo '<h1>' . esc_html__( 'Manage XPressUI Workflows', 'xpressui-bridge' ) . '</h1>';
+	echo '<p>' . esc_html__( 'Start fast with the bundled Document Intake workflow, or upload your own package from the XPressUI console.', 'xpressui-bridge' ) . '</p>';
+
+	echo '<div class="card xpressui-admin-card">';
+	echo '<h2>' . esc_html__( 'License and Pro Extension', 'xpressui-bridge' ) . '</h2>';
+	echo '<p>' . esc_html__( 'The free bridge stays self-contained. A future XPressUI Pro add-on can hook into this screen to validate a license and unlock pro workflows.', 'xpressui-bridge' ) . '</p>';
+	echo '<p><strong>' . esc_html__( 'Current runtime tier:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $current_tier ) . '</p>';
+	echo '<p><strong>' . esc_html__( 'Pro extension detected:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $pro_active ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) ) . '<br />';
+	echo '<strong>' . esc_html__( 'License validated:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $license_valid ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) ) . '</p>';
+	if ( ! $pro_active || ! $license_valid ) {
+		echo '<p class="description">' . esc_html__( 'Pro workflows remain blocked in the free bridge until a separate Pro extension is active and confirms the license via plugin hooks.', 'xpressui-bridge' ) . '</p>';
+	}
+	echo '<form method="post">';
+	wp_nonce_field( 'xpressui_license_settings_action', 'xpressui_license_nonce' );
+	echo '<input type="hidden" name="xpressui_save_license_settings" value="1">';
+	echo '<table class="form-table"><tbody>';
+	echo '<tr><th><label for="xpressui_license_key">' . esc_html__( 'License key', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_license_key" name="xpressui_license_key" class="regular-text" value="' . esc_attr( $license_key ) . '" autocomplete="off" />';
+	if ( '' !== $masked_license ) {
+		echo '<p class="description">' . esc_html__( 'Stored key:', 'xpressui-bridge' ) . ' ' . esc_html( $masked_license ) . '</p>';
+	}
+	echo '<p class="description">' . esc_html__( 'Saving a key here does not activate Pro by itself. The future Pro add-on will use this stored value to validate the license.', 'xpressui-bridge' ) . '</p></td></tr>';
+	echo '</tbody></table>';
+	echo '<p class="submit">';
+	submit_button( __( 'Save license key', 'xpressui-bridge' ), 'secondary', 'submit', false );
+	echo '</p></form></div>';
+
+	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
+	if ( ! empty( $bundled_slugs ) ) {
+		echo '<div class="notice notice-info"><p>';
+		echo esc_html__( 'Bundled starter included:', 'xpressui-bridge' ) . ' ';
+		foreach ( $bundled_slugs as $slug ) {
+			echo '<code>[xpressui id="' . esc_attr( $slug ) . '"]</code> ';
+		}
+		echo '</p></div>';
+	}
+
+	$starter_slug    = 'document-intake';
+	$starter_page_id = xpressui_get_workflow_primary_page_id( $starter_slug );
+	if ( xpressui_is_installed_workflow( $starter_slug ) ) {
+		$starter_create_url = wp_nonce_url(
+			add_query_arg(
+				[
+					'post_type'       => 'xpressui_submission',
+					'page'            => 'xpressui-bridge',
+					'xpressui_action' => 'create_workflow_page',
+					'xpressui_slug'   => $starter_slug,
+				],
+				admin_url( 'edit.php' )
+			),
+			'xpressui_create_workflow_page_' . $starter_slug
+		);
+		echo '<div class="card xpressui-admin-card">';
+		echo '<h2>' . esc_html__( 'Starter Onboarding', 'xpressui-bridge' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Document Intake is already bundled with the plugin so you can test the full submission flow immediately.', 'xpressui-bridge' ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Workflow:', 'xpressui-bridge' ) . '</strong> <code>[xpressui id="document-intake"]</code></p>';
+		if ( $starter_page_id > 0 ) {
+			$edit_url = get_edit_post_link( $starter_page_id, '' );
+			$view_url = get_permalink( $starter_page_id );
+			echo '<p><strong>' . esc_html__( 'Starter page:', 'xpressui-bridge' ) . '</strong> ' . esc_html( get_the_title( $starter_page_id ) ?: __( 'Untitled page', 'xpressui-bridge' ) ) . '</p>';
+			echo '<p><a class="button button-primary" href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit starter page', 'xpressui-bridge' ) . '</a> ';
+			if ( $view_url ) {
+				echo '<a class="button" href="' . esc_url( $view_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'Preview starter page', 'xpressui-bridge' ) . '</a>';
+			}
+			echo '</p>';
+		} else {
+			echo '<p><a class="button button-primary" href="' . esc_url( $starter_create_url ) . '">' . esc_html__( 'Create starter page', 'xpressui-bridge' ) . '</a></p>';
+		}
+		echo '</div>';
+	}
 
 	// --- Installed workflows table ---
 	echo '<div class="card xpressui-admin-card">';
@@ -240,19 +324,116 @@ function xpressui_render_workflows_page() {
 		echo '<table class="wp-list-table widefat fixed striped">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Project Slug', 'xpressui-bridge' ) . '</th>';
+		echo '<th>' . esc_html__( 'Runtime', 'xpressui-bridge' ) . '</th>';
+		echo '<th>' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Notify email', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Redirect URL', 'xpressui-bridge' ) . '</th>';
+		echo '<th>' . esc_html__( 'Actions', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $installed_slugs as $slug ) {
-			$settings     = $all_settings[ $slug ] ?? [];
-			$notify_email = (string) ( $settings['notifyEmail'] ?? '' );
-			$redirect_url = (string) ( $settings['redirectUrl'] ?? '' );
+			$settings      = $all_settings[ $slug ] ?? [];
+			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+			$notify_email  = (string) ( $settings['notifyEmail'] ?? '' );
+			$redirect_url  = (string) ( $settings['redirectUrl'] ?? '' );
+			$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
+			$bridge_mode   = (string) ( $manifest_meta['bridgeMode'] ?? 'legacy-shell' );
+			$shortcode_mode = (string) ( $manifest_meta['shortcodeMode'] ?? 'legacy-template' );
+			$template_profile = (string) ( $manifest_meta['templateProfile'] ?? 'light' );
+			$legacy_shell  = ! empty( $manifest_meta['usesLegacyShellArtifacts'] );
+			$is_bundled    = ! empty( $manifest_meta['isBundled'] );
+			$update_available = $is_bundled && xpressui_is_bundled_workflow_update_available( $slug );
+			$generated_at  = (string) ( $manifest_meta['generatedAt'] ?? '' );
+			$runtime_version = (string) ( $manifest_meta['runtimeVersion'] ?? '' );
+			$compiled_shell_ready = xpressui_can_render_compiled_workflow_shell( $slug );
+			$source_label  = $is_bundled ? __( 'Bundled starter', 'xpressui-bridge' ) : __( 'Uploaded pack', 'xpressui-bridge' );
+			$open_page_url = add_query_arg(
+				[
+					'post_type'         => 'page',
+					'post_status'       => 'all',
+					's'                 => '[xpressui id="' . $slug . '"]',
+				],
+				admin_url( 'edit.php' )
+			);
+			$reinstall_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'        => 'xpressui_submission',
+						'page'             => 'xpressui-bridge',
+						'xpressui_action'  => 'reinstall_bundled_workflow',
+						'xpressui_slug'    => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_reinstall_bundled_workflow_' . $slug
+			);
+			$delete_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'        => 'xpressui_submission',
+						'page'             => 'xpressui-bridge',
+						'xpressui_action'  => 'delete_workflow',
+						'xpressui_slug'    => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_delete_workflow_' . $slug
+			);
+			$create_page_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'        => 'xpressui_submission',
+						'page'             => 'xpressui-bridge',
+						'xpressui_action'  => 'create_workflow_page',
+						'xpressui_slug'    => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_create_workflow_page_' . $slug
+			);
+			$page_ids       = xpressui_get_workflow_page_ids( $slug );
+			$primary_page_id = ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
+			$edit_page_url  = $primary_page_id > 0 ? get_edit_post_link( $primary_page_id, '' ) : '';
+			$view_page_url  = $primary_page_id > 0 ? get_permalink( $primary_page_id ) : '';
 			echo '<tr>';
-			echo '<td><strong>' . esc_html( $slug ) . '</strong></td>';
+			echo '<td><strong>' . esc_html( $slug ) . '</strong>';
+			if ( $slug === 'document-intake' ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Document Intake', 'xpressui-bridge' ) . '</span>';
+			}
+			echo '</td>';
+			echo '<td>' . esc_html( $runtime_tier !== '' ? $runtime_tier : 'light' ) . '</td>';
+			echo '<td>' . esc_html( $source_label ) . '<br /><span class="xpressui-muted">' . esc_html( $bridge_mode . ' / ' . $shortcode_mode . ' / ' . $template_profile ) . '</span>';
+			if ( $runtime_version !== '' ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html( sprintf( 'Runtime %s', $runtime_version ) ) . '</span>';
+			}
+			if ( $generated_at !== '' ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html( $generated_at ) . '</span>';
+			}
+			if ( $legacy_shell ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Uses legacy shell artifacts', 'xpressui-bridge' ) . '</span>';
+			}
+			echo '<br /><span class="xpressui-muted">' . esc_html( $compiled_shell_ready ? __( 'Compiled PHP shell ready', 'xpressui-bridge' ) : __( 'JS shell fallback only', 'xpressui-bridge' ) ) . '</span>';
+			if ( $update_available ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Bundled update available', 'xpressui-bridge' ) . '</span>';
+			}
+			echo '</td>';
 			echo '<td><code>[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
 			echo '<td>' . esc_html( $notify_email !== '' ? $notify_email : '—' ) . '</td>';
 			echo '<td>' . ( $redirect_url !== '' ? '<a href="' . esc_url( $redirect_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $redirect_url ) . '</a>' : '—' ) . '</td>';
+			echo '<td>';
+			echo '<a href="' . esc_url( $create_page_url ) . '">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a> · ';
+			echo '<a href="' . esc_url( $open_page_url ) . '">' . esc_html__( 'Find pages', 'xpressui-bridge' ) . '</a>';
+			if ( $edit_page_url ) {
+				echo ' · <a href="' . esc_url( $edit_page_url ) . '">' . esc_html__( 'Edit page', 'xpressui-bridge' ) . '</a>';
+			}
+			if ( $view_page_url ) {
+				echo ' · <a href="' . esc_url( $view_page_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'View page', 'xpressui-bridge' ) . '</a>';
+			}
+			if ( $is_bundled ) {
+				echo ' · <a href="' . esc_url( $reinstall_url ) . '">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a>';
+			}
+			echo ' · <a href="' . esc_url( $delete_url ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a>';
+			echo '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -308,6 +489,127 @@ function xpressui_render_workflows_page() {
 	echo '</div>'; // .wrap
 }
 
+function xpressui_handle_workflow_admin_actions() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( (string) $_GET['xpressui_action'] ) : '';
+	$slug   = isset( $_GET['xpressui_slug'] ) ? sanitize_title( (string) $_GET['xpressui_slug'] ) : '';
+	if ( $action === '' || $slug === '' ) {
+		return;
+	}
+
+	if ( $action === 'reinstall_bundled_workflow' ) {
+		check_admin_referer( 'xpressui_reinstall_bundled_workflow_' . $slug );
+		$result = xpressui_reinstall_bundled_workflow( $slug );
+		$status = is_wp_error( $result ) ? 'error' : 'success';
+		$message = is_wp_error( $result )
+			? $result->get_error_message()
+			: __( 'The bundled workflow was reinstalled successfully.', 'xpressui-bridge' );
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'post_type'          => 'xpressui_submission',
+					'page'               => 'xpressui-bridge',
+					'xpressui_notice'    => rawurlencode( $message ),
+					'xpressui_notice_type' => $status,
+				],
+				admin_url( 'edit.php' )
+			)
+		);
+		exit;
+	}
+
+	if ( $action === 'delete_workflow' ) {
+		check_admin_referer( 'xpressui_delete_workflow_' . $slug );
+		$result = xpressui_delete_workflow( $slug );
+		$status = is_wp_error( $result ) ? 'error' : 'success';
+		$message = is_wp_error( $result )
+			? $result->get_error_message()
+			: __( 'The workflow was deleted successfully.', 'xpressui-bridge' );
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'post_type'          => 'xpressui_submission',
+					'page'               => 'xpressui-bridge',
+					'xpressui_notice'    => rawurlencode( $message ),
+					'xpressui_notice_type' => $status,
+				],
+				admin_url( 'edit.php' )
+			)
+		);
+		exit;
+	}
+
+	if ( $action === 'create_workflow_page' ) {
+		check_admin_referer( 'xpressui_create_workflow_page_' . $slug );
+		$result = xpressui_create_workflow_page( $slug );
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect(
+				add_query_arg(
+					[
+						'post_type'            => 'xpressui_submission',
+						'page'                 => 'xpressui-bridge',
+						'xpressui_notice'      => rawurlencode( $result->get_error_message() ),
+						'xpressui_notice_type' => 'error',
+					],
+					admin_url( 'edit.php' )
+				)
+			);
+			exit;
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				[
+					'post'   => (int) $result,
+					'action' => 'edit',
+				],
+				admin_url( 'post.php' )
+			)
+		);
+		exit;
+	}
+}
+
+function xpressui_create_workflow_page( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( $slug === '' || ! xpressui_is_installed_workflow( $slug ) ) {
+		return new WP_Error( 'missing_workflow', __( 'The workflow could not be found.', 'xpressui-bridge' ) );
+	}
+
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+	$page_title    = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
+	if ( $page_title === '' ) {
+		$page_title = ucwords( str_replace( '-', ' ', $slug ) );
+	}
+
+	$existing_pages = get_posts( [
+		'post_type'      => 'page',
+		'post_status'    => [ 'draft', 'publish', 'pending', 'private' ],
+		'posts_per_page' => 1,
+		'fields'         => 'ids',
+		's'              => '[xpressui id="' . $slug . '"]',
+	] );
+	if ( ! empty( $existing_pages ) ) {
+		return new WP_Error( 'page_exists', __( 'A page using this workflow shortcode already exists.', 'xpressui-bridge' ) );
+	}
+
+	$page_id = wp_insert_post( [
+		'post_type'    => 'page',
+		'post_status'  => 'draft',
+		'post_title'   => $page_title,
+		'post_content' => '[xpressui id="' . $slug . '"]',
+	] );
+
+	if ( is_wp_error( $page_id ) ) {
+		return $page_id;
+	}
+
+	return (int) $page_id;
+}
+
 // ---------------------------------------------------------------------------
 // ZIP upload handler
 // ---------------------------------------------------------------------------
@@ -317,8 +619,9 @@ function xpressui_handle_zip_upload() {
 		return new WP_Error( 'no_file', __( 'Please select a file.', 'xpressui-bridge' ) );
 	}
 
-	$file      = $_FILES['xpressui_zip'];
-	$file_type = wp_check_filetype( $file['name'] );
+	$file      = wp_unslash( $_FILES['xpressui_zip'] );
+	$file_name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
+	$file_type = wp_check_filetype( $file_name );
 
 	if ( $file_type['ext'] !== 'zip' ) {
 		return new WP_Error( 'invalid_file_type', __( 'Only .zip files are allowed.', 'xpressui-bridge' ) );
@@ -326,13 +629,34 @@ function xpressui_handle_zip_upload() {
 
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	WP_Filesystem();
-
-	$upload_dir = wp_get_upload_dir();
-	if ( ! empty( $upload_dir['error'] ) ) {
-		return new WP_Error( 'upload_dir_error', $upload_dir['error'] );
+	$upload_overrides = [
+		'test_form' => false,
+		'mimes'     => [ 'zip' => 'application/zip' ],
+	];
+	$handled_upload = wp_handle_upload( $file, $upload_overrides );
+	if ( ! is_array( $handled_upload ) || ! empty( $handled_upload['error'] ) ) {
+		return new WP_Error(
+			'upload_failed',
+			isset( $handled_upload['error'] ) ? (string) $handled_upload['error'] : __( 'Failed to save the uploaded file.', 'xpressui-bridge' )
+		);
 	}
 
-	$target_dir = trailingslashit( $upload_dir['basedir'] ) . 'xpressui/';
+	$tmp_zip = isset( $handled_upload['file'] ) ? (string) $handled_upload['file'] : '';
+	if ( $tmp_zip === '' || ! file_exists( $tmp_zip ) ) {
+		return new WP_Error( 'upload_missing', __( 'Uploaded ZIP file could not be located.', 'xpressui-bridge' ) );
+	}
+
+	$inspection = xpressui_validate_workflow_zip( $tmp_zip, $file_name );
+	if ( is_wp_error( $inspection ) ) {
+		wp_delete_file( $tmp_zip );
+		return $inspection;
+	}
+
+	$target_dir = xpressui_get_workflows_base_dir();
+	if ( $target_dir === '' ) {
+		wp_delete_file( $tmp_zip );
+		return new WP_Error( 'upload_dir_error', __( 'The uploads directory is not available.', 'xpressui-bridge' ) );
+	}
 
 	if ( ! file_exists( $target_dir ) ) {
 		wp_mkdir_p( $target_dir );
@@ -340,19 +664,246 @@ function xpressui_handle_zip_upload() {
 		$wp_filesystem->put_contents( $target_dir . 'index.php', '<?php' . PHP_EOL . '// Silence is golden.' . PHP_EOL, FS_CHMOD_FILE );
 	}
 
-	$tmp_zip = $target_dir . basename( $file['name'] );
-	if ( ! move_uploaded_file( $file['tmp_name'], $tmp_zip ) ) {
-		return new WP_Error( 'move_failed', __( 'Failed to save the uploaded file.', 'xpressui-bridge' ) );
-	}
-
-	$unzip_result = unzip_file( $tmp_zip, $target_dir );
+	$slug       = (string) $inspection['slug'];
+	$manifest   = is_array( $inspection['manifest'] ?? null ) ? $inspection['manifest'] : [];
+	$slug_dir   = trailingslashit( $target_dir ) . $slug . '/';
+	$manifest_file = $slug_dir . 'manifest.json';
 
 	global $wp_filesystem;
-	$wp_filesystem->delete( $tmp_zip );
+	if ( file_exists( $slug_dir ) ) {
+		$wp_filesystem->delete( $slug_dir, true );
+	}
+	$unzip_result = unzip_file( $tmp_zip, $target_dir );
+	wp_delete_file( $tmp_zip );
 
 	if ( is_wp_error( $unzip_result ) ) {
 		return $unzip_result;
 	}
 
-	return pathinfo( $file['name'], PATHINFO_FILENAME );
+	if ( ! file_exists( $manifest_file ) ) {
+		$wp_filesystem->delete( $slug_dir, true );
+		return new WP_Error( 'missing_manifest', __( 'The workflow package must contain a top-level manifest.json file.', 'xpressui-bridge' ) );
+	}
+
+	foreach ( xpressui_get_required_manifest_artifacts( $manifest ) as $required_file ) {
+		$required_path = $slug_dir . ltrim( $required_file, '/' );
+		if ( ! file_exists( $required_path ) ) {
+			$wp_filesystem->delete( $slug_dir, true );
+			return new WP_Error(
+				'missing_manifest_artifact',
+				sprintf(
+					/* translators: %s: artifact path */
+					__( 'The workflow package is missing a required artifact: %s', 'xpressui-bridge' ),
+					$required_file
+				)
+			);
+		}
+	}
+
+	$wp_filesystem->put_contents( $slug_dir . 'index.php', '<?php' . PHP_EOL . '// Silence is golden.' . PHP_EOL, FS_CHMOD_FILE );
+	xpressui_store_workflow_manifest_meta( $slug, $manifest );
+
+	return $slug;
+}
+
+function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
+	if ( ! class_exists( 'ZipArchive' ) ) {
+		return new WP_Error( 'zip_extension_missing', __( 'The ZIP extension is required to inspect workflow packages.', 'xpressui-bridge' ) );
+	}
+
+	$archive = new ZipArchive();
+	if ( true !== $archive->open( $zip_path ) ) {
+		return new WP_Error( 'zip_open_failed', __( 'The workflow package could not be opened.', 'xpressui-bridge' ) );
+	}
+
+	$allowed_extensions = [
+		'html',
+		'css',
+		'js',
+		'json',
+		'txt',
+		'png',
+		'jpg',
+		'jpeg',
+		'gif',
+		'svg',
+		'webp',
+		'ico',
+		'woff',
+		'woff2',
+		'ttf',
+		'eot',
+		'map',
+	];
+	$blocked_extensions = [ 'php', 'phtml', 'phar', 'cgi', 'pl', 'py', 'rb', 'sh', 'exe', 'dll', 'bin' ];
+	$root_slug          = '';
+	$has_manifest       = false;
+	$manifest           = [];
+	$required_files     = [];
+
+	for ( $i = 0; $i < $archive->numFiles; $i++ ) {
+		$entry_name = (string) $archive->getNameIndex( $i );
+		if ( $entry_name === '' ) {
+			continue;
+		}
+
+		$normalized_entry = str_replace( '\\', '/', $entry_name );
+		$normalized_entry = ltrim( $normalized_entry, '/' );
+
+		if ( $normalized_entry === '' || strpos( $normalized_entry, '../' ) !== false ) {
+			$archive->close();
+			return new WP_Error( 'invalid_zip_path', __( 'The workflow package contains an invalid file path.', 'xpressui-bridge' ) );
+		}
+
+		$segments = array_values( array_filter( explode( '/', $normalized_entry ), 'strlen' ) );
+		if ( empty( $segments ) ) {
+			continue;
+		}
+
+		$current_root = sanitize_title( (string) $segments[0] );
+		if ( $current_root === '' || $current_root !== $segments[0] ) {
+			$archive->close();
+			return new WP_Error( 'invalid_zip_slug', __( 'The workflow package folder name must be a valid slug.', 'xpressui-bridge' ) );
+		}
+
+		if ( $root_slug === '' ) {
+			$root_slug = $current_root;
+		} elseif ( $root_slug !== $current_root ) {
+			$archive->close();
+			return new WP_Error( 'multiple_roots', __( 'The workflow package must contain exactly one top-level folder.', 'xpressui-bridge' ) );
+		}
+
+		$is_directory = substr( $normalized_entry, -1 ) === '/';
+		if ( $is_directory ) {
+			continue;
+		}
+
+		$basename = basename( $normalized_entry );
+		$ext      = strtolower( (string) pathinfo( $basename, PATHINFO_EXTENSION ) );
+
+		if ( in_array( $ext, $blocked_extensions, true ) ) {
+			$archive->close();
+			return new WP_Error( 'blocked_file_type', __( 'The workflow package contains a blocked file type.', 'xpressui-bridge' ) );
+		}
+
+		if ( $ext !== '' && ! in_array( $ext, $allowed_extensions, true ) ) {
+			$archive->close();
+			return new WP_Error( 'disallowed_file_type', __( 'The workflow package contains a file type that is not allowed.', 'xpressui-bridge' ) );
+		}
+
+		if ( count( $segments ) === 2 && $segments[1] === 'manifest.json' ) {
+			$has_manifest = true;
+			$manifest_raw = $archive->getFromName( $entry_name );
+			$decoded      = is_string( $manifest_raw ) ? json_decode( $manifest_raw, true ) : null;
+			if ( ! is_array( $decoded ) ) {
+				$archive->close();
+				return new WP_Error( 'invalid_manifest', __( 'The workflow manifest must be valid JSON.', 'xpressui-bridge' ) );
+			}
+			$manifest = $decoded;
+		}
+	}
+
+	if ( $root_slug === '' ) {
+		$archive->close();
+		return new WP_Error( 'empty_zip', __( 'The workflow package is empty.', 'xpressui-bridge' ) );
+	}
+
+	if ( ! $has_manifest ) {
+		$archive->close();
+		return new WP_Error( 'missing_manifest', __( 'The workflow package must contain a top-level manifest.json file.', 'xpressui-bridge' ) );
+	}
+
+	$manifest_check = xpressui_validate_workflow_manifest( $manifest, $root_slug );
+	if ( is_wp_error( $manifest_check ) ) {
+		$archive->close();
+		return $manifest_check;
+	}
+
+	$required_files = xpressui_get_required_manifest_artifacts( $manifest );
+	foreach ( $required_files as $required_file ) {
+		$relative_path = $root_slug . '/' . ltrim( $required_file, '/' );
+		if ( false === $archive->locateName( $relative_path, ZipArchive::FL_NOCASE ) ) {
+			$archive->close();
+			return new WP_Error(
+				'missing_manifest_artifact',
+				sprintf(
+					/* translators: %s: artifact path */
+					__( 'The workflow package is missing a required artifact: %s', 'xpressui-bridge' ),
+					$required_file
+				)
+			);
+		}
+	}
+	$archive->close();
+
+	$fallback_slug = sanitize_title( (string) pathinfo( $original_name, PATHINFO_FILENAME ) );
+	return [
+		'slug' => $root_slug !== '' ? $root_slug : $fallback_slug,
+		'manifest' => $manifest,
+	];
+}
+
+function xpressui_validate_workflow_manifest( array $manifest, $root_slug ) {
+	$schema_version = sanitize_text_field( (string) ( $manifest['schemaVersion'] ?? '' ) );
+	if ( ! in_array( $schema_version, [ 'console.export/v1', 'console.export/v2' ], true ) ) {
+		return new WP_Error( 'unsupported_manifest_schema', __( 'This workflow manifest schema is not supported.', 'xpressui-bridge' ) );
+	}
+
+	$project_slug = sanitize_title( (string) ( $manifest['projectSlug'] ?? '' ) );
+	if ( $project_slug === '' || $project_slug !== $root_slug ) {
+		return new WP_Error( 'manifest_slug_mismatch', __( 'The workflow manifest project slug must match the package folder name.', 'xpressui-bridge' ) );
+	}
+
+	$runtime_requirements = is_array( $manifest['runtimeRequirements'] ?? null ) ? $manifest['runtimeRequirements'] : [];
+	$compatibility        = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
+	$tier                 = sanitize_key( (string) ( $runtime_requirements['tier'] ?? 'light' ) );
+	$requires_license     = ! empty( $compatibility['requiresLicense'] );
+
+	if ( ! xpressui_runtime_supports_workflow( $tier, $requires_license ) ) {
+		return new WP_Error(
+			'xpressui_pro_workflow',
+			__( 'This workflow requires XPressUI Pro capabilities and cannot run in the current bridge installation.', 'xpressui-bridge' )
+		);
+	}
+
+	return true;
+}
+
+function xpressui_get_required_manifest_artifacts( array $manifest ) {
+	$artifacts         = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
+	$compatibility     = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
+	$wordpress_artifacts = is_array( $artifacts['wordpress'] ?? null ) ? $artifacts['wordpress'] : [];
+	$bridge_mode       = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'legacy-shell' ) );
+	$required          = [ 'manifest.json' ];
+
+	$config_path = isset( $artifacts['config'] ) ? sanitize_text_field( (string) $artifacts['config'] ) : '';
+	if ( $config_path !== '' ) {
+		$required[] = $config_path;
+	} else {
+		$required[] = 'form.config.json';
+	}
+
+	$template_context_path = isset( $artifacts['templateContext'] ) ? sanitize_text_field( (string) $artifacts['templateContext'] ) : '';
+	if ( $template_context_path !== '' ) {
+		$required[] = $template_context_path;
+	} else {
+		$required[] = 'template.context.json';
+	}
+
+	$html_path = isset( $artifacts['html'] ) ? sanitize_text_field( (string) $artifacts['html'] ) : '';
+	if ( 'legacy-shell' === $bridge_mode ) {
+		$required[] = $html_path !== '' ? $html_path : 'index.html';
+	}
+
+	$init_path = isset( $artifacts['initJs'] ) ? sanitize_text_field( (string) $artifacts['initJs'] ) : '';
+	if ( 'legacy-shell' === $bridge_mode ) {
+		$required[] = $init_path !== '' ? $init_path : 'init.js';
+	}
+
+	$runtime_path = isset( $wordpress_artifacts['runtime'] ) ? sanitize_text_field( (string) $wordpress_artifacts['runtime'] ) : '';
+	if ( $runtime_path !== '' ) {
+		$required[] = $runtime_path;
+	}
+
+	return array_values( array_unique( $required ) );
 }

@@ -10,6 +10,665 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // ---------------------------------------------------------------------------
+// Workflow package helpers
+// ---------------------------------------------------------------------------
+
+function xpressui_get_workflows_base_dir() {
+	$upload_dir = wp_get_upload_dir();
+	if ( ! is_array( $upload_dir ) || ! empty( $upload_dir['error'] ) ) {
+		return '';
+	}
+	return trailingslashit( $upload_dir['basedir'] ) . 'xpressui/';
+}
+
+function xpressui_get_workflows_base_url() {
+	$upload_dir = wp_get_upload_dir();
+	if ( ! is_array( $upload_dir ) || ! empty( $upload_dir['error'] ) ) {
+		return '';
+	}
+	return trailingslashit( $upload_dir['baseurl'] ) . 'xpressui/';
+}
+
+function xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) {
+	$workflow_dir = trailingslashit( (string) $workflow_dir );
+	if ( '' === $workflow_dir || ! is_dir( $workflow_dir ) ) {
+		return false;
+	}
+
+	$manifest_path = $workflow_dir . 'manifest.json';
+	if ( ! file_exists( $manifest_path ) ) {
+		return false;
+	}
+
+	$manifest_json = file_get_contents( $manifest_path );
+	$manifest      = is_string( $manifest_json ) ? json_decode( $manifest_json, true ) : null;
+	if ( ! is_array( $manifest ) ) {
+		return false;
+	}
+
+	$artifacts = [
+		'manifest.json',
+	];
+
+	$config_path = isset( $manifest['artifacts']['config'] ) ? sanitize_text_field( (string) $manifest['artifacts']['config'] ) : 'form.config.json';
+	if ( '' !== $config_path ) {
+		$artifacts[] = $config_path;
+	}
+
+	$template_context_path = isset( $manifest['artifacts']['templateContext'] ) ? sanitize_text_field( (string) $manifest['artifacts']['templateContext'] ) : 'template.context.json';
+	if ( '' !== $template_context_path ) {
+		$artifacts[] = $template_context_path;
+	}
+
+	$runtime_path = isset( $manifest['artifacts']['wordpress']['runtime'] ) ? sanitize_text_field( (string) $manifest['artifacts']['wordpress']['runtime'] ) : '';
+	if ( '' !== $runtime_path ) {
+		$artifacts[] = $runtime_path;
+	}
+
+	foreach ( array_values( array_unique( $artifacts ) ) as $artifact ) {
+		if ( ! file_exists( $workflow_dir . ltrim( $artifact, '/' ) ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function xpressui_get_workflow_package_dir( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( '' === $slug || '' === $base_dir ) {
+		return '';
+	}
+	return trailingslashit( $base_dir ) . $slug . '/';
+}
+
+function xpressui_get_workflow_package_url( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$base_url = xpressui_get_workflows_base_url();
+	if ( '' === $slug || '' === $base_url ) {
+		return '';
+	}
+	return trailingslashit( $base_url ) . $slug . '/';
+}
+
+function xpressui_get_installed_workflow_slugs() {
+	$target_dir = xpressui_get_workflows_base_dir();
+	if ( $target_dir === '' || ! is_dir( $target_dir ) ) {
+		return [];
+	}
+
+	$installed_slugs = [];
+	foreach ( (array) scandir( $target_dir ) as $item ) {
+		$slug = sanitize_title( (string) $item );
+		if ( $slug === '' || $slug !== $item ) {
+			continue;
+		}
+		if (
+			is_dir( $target_dir . $item )
+			&& xpressui_workflow_directory_has_required_artifacts( $target_dir . $item )
+		) {
+			$installed_slugs[] = $slug;
+		}
+	}
+
+	sort( $installed_slugs );
+	return array_values( array_unique( $installed_slugs ) );
+}
+
+function xpressui_is_installed_workflow( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( $slug === '' ) {
+		return false;
+	}
+	return in_array( $slug, xpressui_get_installed_workflow_slugs(), true );
+}
+
+function xpressui_sanitize_request_identifier( $value, $max_length = 191 ) {
+	$value = sanitize_text_field( (string) $value );
+	$value = preg_replace( '/[^A-Za-z0-9._:-]/', '', $value );
+	$value = is_string( $value ) ? trim( $value ) : '';
+	if ( $value === '' ) {
+		return '';
+	}
+	return substr( $value, 0, (int) $max_length );
+}
+
+function xpressui_get_workflow_manifest_path( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $slug === '' || $base_dir === '' ) {
+		return '';
+	}
+	return trailingslashit( $base_dir ) . $slug . '/manifest.json';
+}
+
+function xpressui_load_workflow_manifest( $slug ) {
+	$manifest_path = xpressui_get_workflow_manifest_path( $slug );
+	if ( $manifest_path === '' || ! file_exists( $manifest_path ) ) {
+		return [];
+	}
+
+	$manifest_json = file_get_contents( $manifest_path );
+	if ( ! is_string( $manifest_json ) || trim( $manifest_json ) === '' ) {
+		return [];
+	}
+
+	$manifest = json_decode( $manifest_json, true );
+	return is_array( $manifest ) ? $manifest : [];
+}
+
+function xpressui_load_bundled_workflow_manifest( $slug ) {
+	$slug        = sanitize_title( (string) $slug );
+	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	if ( '' === $slug || '' === $bundled_dir ) {
+		return [];
+	}
+
+	$manifest_path = trailingslashit( $bundled_dir ) . $slug . '/manifest.json';
+	if ( ! file_exists( $manifest_path ) ) {
+		return [];
+	}
+
+	$manifest_json = file_get_contents( $manifest_path );
+	if ( ! is_string( $manifest_json ) || '' === trim( $manifest_json ) ) {
+		return [];
+	}
+
+	$manifest = json_decode( $manifest_json, true );
+	return is_array( $manifest ) ? $manifest : [];
+}
+
+function xpressui_get_manifest_fingerprint( array $manifest ) {
+	if ( empty( $manifest ) ) {
+		return '';
+	}
+	return md5( wp_json_encode( $manifest ) );
+}
+
+function xpressui_get_workflow_artifact_path( $slug, $artifact_key, $fallback = '' ) {
+	$manifest    = xpressui_load_workflow_manifest( $slug );
+	$package_dir = xpressui_get_workflow_package_dir( $slug );
+	if ( empty( $manifest ) || '' === $package_dir ) {
+		return '';
+	}
+
+	$artifacts = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
+	$value     = $artifacts[ $artifact_key ] ?? $fallback;
+
+	if ( ! is_string( $value ) || '' === $value ) {
+		return '';
+	}
+
+	$relative_path = ltrim( $value, '/' );
+	return $package_dir . $relative_path;
+}
+
+function xpressui_get_workflow_artifact_url( $slug, $artifact_key, $fallback = '' ) {
+	$manifest     = xpressui_load_workflow_manifest( $slug );
+	$package_url  = xpressui_get_workflow_package_url( $slug );
+	if ( empty( $manifest ) || '' === $package_url ) {
+		return '';
+	}
+
+	$artifacts = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
+	$value     = $artifacts[ $artifact_key ] ?? $fallback;
+
+	if ( ! is_string( $value ) || '' === $value ) {
+		return '';
+	}
+
+	$relative_path = ltrim( $value, '/' );
+	return $package_url . $relative_path;
+}
+
+function xpressui_get_workflow_artifact_contents( $slug, $artifact_key, $fallback = '' ) {
+	$artifact_path = xpressui_get_workflow_artifact_path( $slug, $artifact_key, $fallback );
+	if ( '' === $artifact_path || ! file_exists( $artifact_path ) ) {
+		return '';
+	}
+
+	$contents = file_get_contents( $artifact_path );
+	return is_string( $contents ) ? $contents : '';
+}
+
+function xpressui_load_workflow_template_context( $slug ) {
+	$template_context_json = xpressui_get_workflow_artifact_contents( $slug, 'templateContext', 'template.context.json' );
+	if ( '' === $template_context_json ) {
+		return [];
+	}
+
+	$template_context = json_decode( $template_context_json, true );
+	return is_array( $template_context ) ? $template_context : [];
+}
+
+function xpressui_get_workflow_shell_url( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return '';
+	}
+	return add_query_arg(
+		[
+			'xpressui_shell' => $slug,
+		],
+		home_url( '/' )
+	);
+}
+
+function xpressui_get_plugin_shell_asset_urls() {
+	$template_relative = 'assets/shell/plugin-shell-template.html';
+	$init_relative     = 'assets/shell/plugin-shell-init.js';
+	$template_path     = XPRESSUI_BRIDGE_DIR . $template_relative;
+	$init_path         = XPRESSUI_BRIDGE_DIR . $init_relative;
+
+	return [
+		'templateUrl' => file_exists( $template_path ) ? esc_url_raw( XPRESSUI_BRIDGE_URL . $template_relative ) : '',
+		'initUrl'     => file_exists( $init_path ) ? esc_url_raw( XPRESSUI_BRIDGE_URL . $init_relative ) : '',
+	];
+}
+
+function xpressui_get_workflow_shell_payload( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug || ! xpressui_is_installed_workflow( $slug ) ) {
+		return [];
+	}
+
+	$manifest    = xpressui_load_workflow_manifest( $slug );
+	$package_url = xpressui_get_workflow_package_url( $slug );
+	$template    = xpressui_get_workflow_artifact_url( $slug, 'html', '' );
+	$config      = xpressui_get_workflow_artifact_url( $slug, 'config', 'form.config.json' );
+	$template_context = xpressui_get_workflow_artifact_url( $slug, 'templateContext', 'template.context.json' );
+	$init_js     = xpressui_get_workflow_artifact_url( $slug, 'initJs', '' );
+	$runtime     = '';
+	$plugin_shell_assets = xpressui_get_plugin_shell_asset_urls();
+
+	$wordpress_artifacts = [];
+	if ( is_array( $manifest['artifacts'] ?? null ) && is_array( $manifest['artifacts']['wordpress'] ?? null ) ) {
+		$wordpress_artifacts = $manifest['artifacts']['wordpress'];
+	}
+	if ( is_string( $wordpress_artifacts['runtime'] ?? null ) && '' !== $wordpress_artifacts['runtime'] ) {
+		$runtime = trailingslashit( $package_url ) . ltrim( $wordpress_artifacts['runtime'], '/' );
+	}
+
+	if ( '' === $config || '' === $runtime ) {
+		return [];
+	}
+
+	return [
+		'slug'          => $slug,
+		'title'         => sanitize_text_field( (string) ( $manifest['projectName'] ?? $slug ) ),
+		'packageBaseUrl'=> esc_url_raw( $package_url ),
+		'templateUrl'   => esc_url_raw( $template ),
+		'preferredTemplateUrl' => $plugin_shell_assets['templateUrl'],
+		'configUrl'     => esc_url_raw( $config ),
+		'templateContextUrl' => esc_url_raw( $template_context ),
+		'initUrl'       => esc_url_raw( $init_js ),
+		'preferredInitUrl' => $plugin_shell_assets['initUrl'],
+		'runtimeUrl'    => esc_url_raw( $runtime ),
+		'restUrl'       => esc_url_raw( rest_url( 'xpressui/v1/submit' ) ),
+		'bridgeMode'    => sanitize_key( (string) ( $manifest['wordpressCompatibility']['bridgeMode'] ?? 'legacy-shell' ) ),
+		'configMode'    => sanitize_key( (string) ( $manifest['wordpressCompatibility']['shortcodeMode'] ?? 'legacy-template' ) ),
+		'translations'  => xpressui_get_shell_translations(),
+	];
+}
+
+function xpressui_get_shell_translations() {
+	return [
+		'requiredFields' => __( '* Required fields', 'xpressui-bridge' ),
+		'submissionFailedTitle' => __( 'Submission failed', 'xpressui-bridge' ),
+		'submissionFailedMessage' => __( 'Submission failed. Please review the form and try again.', 'xpressui-bridge' ),
+		'submissionFeedbackIdle' => __( 'Submission feedback will appear here after the runtime handles the form.', 'xpressui-bridge' ),
+		'submitting' => __( 'Submitting...', 'xpressui-bridge' ),
+		'submittingTitle' => __( 'Submitting', 'xpressui-bridge' ),
+		'submissionReceivedTitle' => __( 'Submission received', 'xpressui-bridge' ),
+		'submissionReceivedMessage' => __( 'Submission received.', 'xpressui-bridge' ),
+		'submissionStatusTitle' => __( 'Submission status', 'xpressui-bridge' ),
+		'unableLoadWorkflow' => __( 'Unable to load this XPressUI workflow.', 'xpressui-bridge' ),
+	];
+}
+
+function xpressui_render_compiled_workflow_shell_html( $slug ) {
+	$slug             = sanitize_title( (string) $slug );
+	$template_context = xpressui_load_workflow_template_context( $slug );
+	$manifest         = xpressui_load_workflow_manifest( $slug );
+	if ( '' === $slug || empty( $template_context ) || empty( $manifest ) ) {
+		return '';
+	}
+
+	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
+	if ( ! file_exists( $runtime_file ) ) {
+		return '';
+	}
+
+	require_once $runtime_file;
+
+	if ( ! function_exists( 'xui_jinja_render_template' ) ) {
+		return '';
+	}
+
+	$rendered_html = xui_jinja_render_template( 'export/project-page.html.php', $template_context );
+	if ( ! is_string( $rendered_html ) || '' === trim( $rendered_html ) ) {
+		return '';
+	}
+
+	$wordpress_artifacts = is_array( $manifest['artifacts']['wordpress'] ?? null ) ? $manifest['artifacts']['wordpress'] : [];
+	$runtime_relative    = is_string( $wordpress_artifacts['runtime'] ?? null ) ? ltrim( (string) $wordpress_artifacts['runtime'], '/' ) : '';
+	$runtime_url         = '';
+	if ( '' !== $runtime_relative ) {
+		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
+	}
+
+	$plugin_shell_assets = xpressui_get_plugin_shell_asset_urls();
+	$init_url            = is_string( $plugin_shell_assets['initUrl'] ?? null ) ? (string) $plugin_shell_assets['initUrl'] : '';
+	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>';
+
+	if ( '' !== $runtime_relative && '' !== $runtime_url ) {
+		$rendered_html = str_replace( './' . $runtime_relative, esc_url_raw( $runtime_url ), $rendered_html );
+	}
+
+	if ( '' !== $init_url ) {
+		$rendered_html = str_replace( './init.js', esc_url_raw( $init_url ), $rendered_html );
+	}
+
+	if ( false !== strpos( $rendered_html, '</head>' ) ) {
+		$rendered_html = str_replace( '</head>', $translations_script . '</head>', $rendered_html );
+	} else {
+		$rendered_html = $translations_script . $rendered_html;
+	}
+
+	return $rendered_html;
+}
+
+function xpressui_can_render_compiled_workflow_shell( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return false;
+	}
+
+	$template_context = xpressui_load_workflow_template_context( $slug );
+	$template_file    = XPRESSUI_BRIDGE_DIR . 'templates/generated/export/project-page.html.php';
+	$runtime_file     = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
+
+	return ! empty( $template_context ) && file_exists( $template_file ) && file_exists( $runtime_file );
+}
+
+function xpressui_get_workflow_manifest_registry() {
+	$registry = get_option( 'xpressui_workflow_manifest_registry', [] );
+	return is_array( $registry ) ? $registry : [];
+}
+
+function xpressui_get_workflow_manifest_meta( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$registry = xpressui_get_workflow_manifest_registry();
+	$entry    = $registry[ $slug ] ?? [];
+	return is_array( $entry ) ? $entry : [];
+}
+
+function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( $slug === '' ) {
+		return;
+	}
+
+	$runtime_requirements = is_array( $manifest['runtimeRequirements'] ?? null ) ? $manifest['runtimeRequirements'] : [];
+	$capabilities         = is_array( $manifest['capabilities'] ?? null ) ? $manifest['capabilities'] : [];
+	$compatibility        = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
+	$meta                 = is_array( $manifest['meta'] ?? null ) ? $manifest['meta'] : [];
+
+	$registry          = xpressui_get_workflow_manifest_registry();
+	$registry[ $slug ] = [
+		'schemaVersion' => sanitize_text_field( (string) ( $manifest['schemaVersion'] ?? '' ) ),
+		'projectId'     => xpressui_sanitize_request_identifier( $manifest['projectId'] ?? '' ),
+		'projectSlug'   => $slug,
+		'projectName'   => sanitize_text_field( (string) ( $manifest['projectName'] ?? '' ) ),
+		'generatedAt'   => sanitize_text_field( (string) ( $manifest['generatedAt'] ?? '' ) ),
+		'runtimeVersion' => sanitize_text_field( (string) ( $manifest['xpressui']['version'] ?? '' ) ),
+		'runtimeTier'   => sanitize_key( (string) ( $runtime_requirements['tier'] ?? '' ) ),
+		'bridgeMode'    => sanitize_key( (string) ( $compatibility['bridgeMode'] ?? '' ) ),
+		'shortcodeMode' => sanitize_key( (string) ( $compatibility['shortcodeMode'] ?? '' ) ),
+		'templateProfile' => sanitize_key( (string) ( $compatibility['templateProfile'] ?? '' ) ),
+		'requiresLicense' => ! empty( $compatibility['requiresLicense'] ),
+		'components'    => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['components'] ?? [] ) ) ) ),
+		'features'      => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['features'] ?? [] ) ) ) ),
+		'themeFeatures' => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['themeFeatures'] ?? [] ) ) ) ),
+		'stepCount'     => isset( $meta['stepCount'] ) ? (int) $meta['stepCount'] : 0,
+		'fieldCount'    => isset( $meta['fieldCount'] ) ? (int) $meta['fieldCount'] : 0,
+		'manifestFingerprint' => xpressui_get_manifest_fingerprint( $manifest ),
+		'usesLegacyShellArtifacts' => xpressui_manifest_uses_legacy_shell_artifacts( $manifest ),
+		'isBundled'     => xpressui_is_bundled_workflow( $slug ),
+		'storedAt'      => current_time( 'mysql' ),
+	];
+	update_option( 'xpressui_workflow_manifest_registry', $registry, false );
+}
+
+function xpressui_manifest_uses_legacy_shell_artifacts( array $manifest ) {
+	$artifacts     = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
+	$compatibility = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
+	$bridge_mode   = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'legacy-shell' ) );
+
+	if ( 'legacy-shell' === $bridge_mode ) {
+		return true;
+	}
+
+	return ! empty( $artifacts['html'] ) || ! empty( $artifacts['initJs'] );
+}
+
+function xpressui_delete_workflow_manifest_meta( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$registry = xpressui_get_workflow_manifest_registry();
+	if ( isset( $registry[ $slug ] ) ) {
+		unset( $registry[ $slug ] );
+		update_option( 'xpressui_workflow_manifest_registry', $registry, false );
+	}
+}
+
+function xpressui_get_bundled_workflow_slugs() {
+	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	if ( ! is_string( $bundled_dir ) || $bundled_dir === '' || ! is_dir( $bundled_dir ) ) {
+		return [];
+	}
+
+	$slugs = [];
+	foreach ( (array) scandir( $bundled_dir ) as $item ) {
+		$slug = sanitize_title( (string) $item );
+		if ( $slug === '' || $slug !== $item ) {
+			continue;
+		}
+		$workflow_dir  = trailingslashit( $bundled_dir ) . $slug;
+		if ( is_dir( $workflow_dir ) && xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) ) {
+			$slugs[] = $slug;
+		}
+	}
+
+	sort( $slugs );
+	return array_values( array_unique( $slugs ) );
+}
+
+function xpressui_is_bundled_workflow( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( $slug === '' ) {
+		return false;
+	}
+	return in_array( $slug, xpressui_get_bundled_workflow_slugs(), true );
+}
+
+function xpressui_copy_directory_recursive( $source_dir, $target_dir ) {
+	if ( ! is_dir( $source_dir ) ) {
+		return false;
+	}
+
+	if ( ! file_exists( $target_dir ) && ! wp_mkdir_p( $target_dir ) ) {
+		return false;
+	}
+
+	$items = scandir( $source_dir );
+	if ( ! is_array( $items ) ) {
+		return false;
+	}
+
+	foreach ( $items as $item ) {
+		if ( $item === '.' || $item === '..' ) {
+			continue;
+		}
+		$source_path = trailingslashit( $source_dir ) . $item;
+		$target_path = trailingslashit( $target_dir ) . $item;
+
+		if ( is_dir( $source_path ) ) {
+			if ( ! xpressui_copy_directory_recursive( $source_path, $target_path ) ) {
+				return false;
+			}
+			continue;
+		}
+
+		if ( ! copy( $source_path, $target_path ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function xpressui_install_bundled_workflows() {
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $base_dir === '' ) {
+		return [];
+	}
+
+	if ( ! file_exists( $base_dir ) ) {
+		wp_mkdir_p( $base_dir );
+	}
+
+	$installed = [];
+	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	foreach ( xpressui_get_bundled_workflow_slugs() as $slug ) {
+		if ( xpressui_is_installed_workflow( $slug ) ) {
+			continue;
+		}
+
+		$source_dir = trailingslashit( $bundled_dir ) . $slug;
+		$target_dir = trailingslashit( $base_dir ) . $slug;
+		if ( ! xpressui_copy_directory_recursive( $source_dir, $target_dir ) ) {
+			continue;
+		}
+
+		$manifest = xpressui_load_workflow_manifest( $slug );
+		if ( ! empty( $manifest ) ) {
+			xpressui_store_workflow_manifest_meta( $slug, $manifest );
+		}
+		$installed[] = $slug;
+	}
+
+	return $installed;
+}
+
+function xpressui_reinstall_bundled_workflow( $slug ) {
+	$slug        = sanitize_title( (string) $slug );
+	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	$base_dir    = xpressui_get_workflows_base_dir();
+	if ( $slug === '' || ! xpressui_is_bundled_workflow( $slug ) || $base_dir === '' ) {
+		return new WP_Error( 'invalid_bundled_workflow', __( 'This bundled workflow could not be found.', 'xpressui-bridge' ) );
+	}
+
+	$source_dir = trailingslashit( $bundled_dir ) . $slug;
+	$target_dir = trailingslashit( $base_dir ) . $slug;
+
+	if ( file_exists( $target_dir ) ) {
+		xpressui_delete_workflow( $slug );
+	}
+
+	if ( ! xpressui_copy_directory_recursive( $source_dir, $target_dir ) ) {
+		return new WP_Error( 'bundled_reinstall_failed', __( 'The bundled workflow could not be installed.', 'xpressui-bridge' ) );
+	}
+
+	$manifest = xpressui_load_workflow_manifest( $slug );
+	if ( ! empty( $manifest ) ) {
+		xpressui_store_workflow_manifest_meta( $slug, $manifest );
+	}
+
+	$installed_registry          = get_option( 'xpressui_bundled_workflows_installed', [] );
+	$installed_registry          = is_array( $installed_registry ) ? $installed_registry : [];
+	$installed_registry[ $slug ] = current_time( 'mysql' );
+	update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
+
+	return true;
+}
+
+function xpressui_is_bundled_workflow_update_available( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug || ! xpressui_is_bundled_workflow( $slug ) || ! xpressui_is_installed_workflow( $slug ) ) {
+		return false;
+	}
+
+	$installed_meta       = xpressui_get_workflow_manifest_meta( $slug );
+	$bundled_manifest     = xpressui_load_bundled_workflow_manifest( $slug );
+	$bundled_fingerprint  = xpressui_get_manifest_fingerprint( $bundled_manifest );
+	$installed_fingerprint = sanitize_text_field( (string) ( $installed_meta['manifestFingerprint'] ?? '' ) );
+
+	if ( '' === $bundled_fingerprint || '' === $installed_fingerprint ) {
+		return false;
+	}
+
+	return $bundled_fingerprint !== $installed_fingerprint;
+}
+
+function xpressui_delete_workflow( $slug ) {
+	$slug     = sanitize_title( (string) $slug );
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $slug === '' || $base_dir === '' ) {
+		return new WP_Error( 'invalid_workflow_slug', __( 'Invalid workflow slug.', 'xpressui-bridge' ) );
+	}
+
+	$target_dir = trailingslashit( $base_dir ) . $slug;
+	if ( ! file_exists( $target_dir ) ) {
+		return new WP_Error( 'missing_workflow', __( 'The workflow could not be found.', 'xpressui-bridge' ) );
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	WP_Filesystem();
+	global $wp_filesystem;
+	$wp_filesystem->delete( $target_dir, true );
+
+	xpressui_delete_workflow_manifest_meta( $slug );
+
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	if ( is_array( $all_settings ) && isset( $all_settings[ $slug ] ) ) {
+		unset( $all_settings[ $slug ] );
+		update_option( 'xpressui_project_settings', $all_settings );
+	}
+
+	$installed_registry = get_option( 'xpressui_bundled_workflows_installed', [] );
+	if ( is_array( $installed_registry ) && isset( $installed_registry[ $slug ] ) ) {
+		unset( $installed_registry[ $slug ] );
+		update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
+	}
+
+	return true;
+}
+
+function xpressui_maybe_install_bundled_workflows() {
+	$installed_registry = get_option( 'xpressui_bundled_workflows_installed', [] );
+	if ( ! is_array( $installed_registry ) ) {
+		$installed_registry = [];
+	}
+
+	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
+	$missing_slugs = array_values( array_diff( $bundled_slugs, array_keys( $installed_registry ) ) );
+	if ( empty( $missing_slugs ) ) {
+		return;
+	}
+
+	$newly_installed = xpressui_install_bundled_workflows();
+	if ( empty( $newly_installed ) ) {
+		return;
+	}
+
+	foreach ( $newly_installed as $slug ) {
+		$installed_registry[ $slug ] = current_time( 'mysql' );
+	}
+	update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
+}
+
+// ---------------------------------------------------------------------------
 // Status helpers
 // ---------------------------------------------------------------------------
 
@@ -19,6 +678,86 @@ function xpressui_get_status_options() {
 		'in-review' => __( 'In review', 'xpressui-bridge' ),
 		'done'      => __( 'Done', 'xpressui-bridge' ),
 	];
+}
+
+// ---------------------------------------------------------------------------
+// License and Pro capability helpers
+// ---------------------------------------------------------------------------
+
+function xpressui_get_license_settings() {
+	$settings = get_option( 'xpressui_license_settings', [] );
+	return is_array( $settings ) ? $settings : [];
+}
+
+function xpressui_update_license_settings( array $settings ) {
+	update_option( 'xpressui_license_settings', $settings, false );
+}
+
+function xpressui_get_masked_license_key() {
+	$settings = xpressui_get_license_settings();
+	$key      = sanitize_text_field( (string) ( $settings['licenseKey'] ?? '' ) );
+	if ( '' === $key ) {
+		return '';
+	}
+
+	$length = strlen( $key );
+	if ( $length <= 8 ) {
+		return str_repeat( '*', $length );
+	}
+
+	return substr( $key, 0, 4 ) . str_repeat( '*', max( 0, $length - 8 ) ) . substr( $key, -4 );
+}
+
+function xpressui_is_pro_extension_active() {
+	$is_active = (bool) apply_filters( 'xpressui_bridge_is_pro_extension_active', false );
+	return $is_active;
+}
+
+function xpressui_has_valid_pro_license() {
+	$settings = xpressui_get_license_settings();
+	$is_valid = (bool) apply_filters( 'xpressui_bridge_has_valid_pro_license', false, $settings );
+	return $is_valid;
+}
+
+function xpressui_get_current_runtime_tier() {
+	return xpressui_is_pro_extension_active() && xpressui_has_valid_pro_license() ? 'pro' : 'light';
+}
+
+function xpressui_runtime_supports_workflow( $required_tier = 'light', $requires_license = false ) {
+	$required_tier = sanitize_key( (string) $required_tier );
+	$current_tier  = xpressui_get_current_runtime_tier();
+
+	if ( 'pro' === $required_tier || $requires_license ) {
+		return 'pro' === $current_tier;
+	}
+
+	return true;
+}
+
+function xpressui_get_workflow_page_ids( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return [];
+	}
+
+	$page_ids = get_posts(
+		[
+			'post_type'      => 'page',
+			'post_status'    => [ 'draft', 'publish', 'pending', 'private' ],
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			's'              => '[xpressui id="' . $slug . '"]',
+			'orderby'        => 'date',
+			'order'          => 'ASC',
+		]
+	);
+
+	return array_map( 'intval', is_array( $page_ids ) ? $page_ids : [] );
+}
+
+function xpressui_get_workflow_primary_page_id( $slug ) {
+	$page_ids = xpressui_get_workflow_page_ids( $slug );
+	return ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
 }
 
 function xpressui_get_status_label( $status ) {

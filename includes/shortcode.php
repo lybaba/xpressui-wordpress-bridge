@@ -35,17 +35,17 @@ function xpressui_render_shortcode( $atts ) {
 			. '</p>';
 	}
 
-	$upload_dir = wp_get_upload_dir();
-	if ( ! empty( $upload_dir['error'] ) ) {
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $base_dir === '' ) {
 		return '<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: could not resolve the uploads directory.', 'xpressui-bridge' )
 			. '</p>';
 	}
 
-	$package_dir = trailingslashit( $upload_dir['basedir'] ) . 'xpressui/' . $slug . '/';
-	$package_url = trailingslashit( $upload_dir['baseurl'] ) . 'xpressui/' . $slug . '/';
+	$package_dir = xpressui_get_workflow_package_dir( $slug );
+	$shell_url   = xpressui_get_workflow_shell_url( $slug );
 
-	if ( ! is_dir( $package_dir ) || ! file_exists( $package_dir . 'index.html' ) ) {
+	if ( ! is_dir( $package_dir ) || ! xpressui_workflow_directory_has_required_artifacts( $package_dir ) ) {
 		return '<p class="xpressui-embed-error">'
 			. esc_html(
 				sprintf(
@@ -58,7 +58,7 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	$iframe_id  = 'xpressui-frame-' . esc_attr( $slug );
-	$src        = esc_url( $package_url . 'index.html' );
+	$src        = esc_url( $shell_url );
 	$title      = esc_attr( (string) $atts['title'] );
 	$width      = esc_attr( (string) ( $atts['width'] ?: '100%' ) );
 
