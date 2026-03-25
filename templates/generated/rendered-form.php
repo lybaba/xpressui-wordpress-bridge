@@ -31,10 +31,10 @@ if (!isset($__ctx) || !is_array($__ctx)) {
       </div>
       <div class="template-step-status-message" data-form-step-summary><?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'rendered_form'), 'step_status'), 'idle_message')); ?></div>
     </section>
-<?php endif; ?><?php if (xui_jinja_truthy(xui_jinja_attr(xui_jinja_context_get($__ctx, 'rendered_form'), 'has_sections'))): ?><?php $__loop_parent_ctx_2 = $__ctx; $__loop_items_1 = xui_jinja_iterable(xui_jinja_attr(xui_jinja_context_get($__ctx, 'rendered_form'), 'sections')); foreach ($__loop_items_1 as $__loop_index_3 => $__loop_value_4): $__ctx = $__loop_parent_ctx_2; $__ctx['section'] = $__loop_value_4; $__ctx['loop'] = ['index' => $__loop_index_3 + 1, 'index0' => $__loop_index_3, 'first' => $__loop_index_3 === 0, 'last' => ($__loop_index_3 + 1) === count($__loop_items_1)]; ?><?php xui_jinja_include('export/_partials/section.php', $__ctx); ?><?php endforeach; $__ctx = $__loop_parent_ctx_2; ?><?php else: ?>    <section class="template-section" data-template-zone="empty_form">
+<?php endif; ?><?php if (xui_jinja_truthy(xui_jinja_attr(xui_jinja_context_get($__ctx, 'rendered_form'), 'has_sections'))): ?><?php $__loop_parent_ctx_2 = $__ctx; $__loop_items_1 = xui_jinja_iterable(xui_jinja_attr(xui_jinja_context_get($__ctx, 'rendered_form'), 'sections')); foreach ($__loop_items_1 as $__loop_index_3 => $__loop_value_4): $__ctx = $__loop_parent_ctx_2; $__ctx['section'] = $__loop_value_4; $__ctx['loop'] = ['index' => $__loop_index_3 + 1, 'index0' => $__loop_index_3, 'first' => $__loop_index_3 === 0, 'last' => ($__loop_index_3 + 1) === count($__loop_items_1)]; ?><?php xui_jinja_include('section.php', $__ctx); ?><?php endforeach; $__ctx = $__loop_parent_ctx_2; ?><?php else: ?>    <section class="template-section" data-template-zone="empty_form">
       <header class="template-section-header">
         <h2 class="template-section-label"><?php echo xui_jinja_escape(__("Form content", 'xpressui-bridge')); ?></h2>
         <p class="template-section-desc"><?php echo xui_jinja_escape(__("No sections are configured yet.", 'xpressui-bridge')); ?></p>
       </header>
     </section>
-<?php endif; ?><?php xui_jinja_include('export/_partials/actions.php', $__ctx); ?></form>
+<?php endif; ?><?php xui_jinja_include('actions.php', $__ctx); ?></form>

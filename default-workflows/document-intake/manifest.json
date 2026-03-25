@@ -11,14 +11,7 @@
   },
   "artifacts": {
     "config": "form.config.json",
-    "project": "project.document.json",
-    "readme": "README.md",
-    "customization": "CUSTOMIZATION.md",
-    "assetsDir": "assets",
-    "snippets": {
-      "react": "snippets/react.tsx",
-      "staticHtml": "snippets/static-html.html"
-    },
+    "templateContext": "template.context.json",
     "wordpress": {
       "readme": "wordpress/README.md",
       "shortcode": "wordpress/shortcode-example.php",

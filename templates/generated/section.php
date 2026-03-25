@@ -16,5 +16,5 @@ if (!isset($__ctx) || !is_array($__ctx)) {
 <?php endif; ?>  </header>
 
   <div class="template-fields">
-<?php $__loop_parent_ctx_2 = $__ctx; $__loop_items_1 = xui_jinja_iterable(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'fields')); foreach ($__loop_items_1 as $__loop_index_3 => $__loop_value_4): $__ctx = $__loop_parent_ctx_2; $__ctx['field'] = $__loop_value_4; $__ctx['loop'] = ['index' => $__loop_index_3 + 1, 'index0' => $__loop_index_3, 'first' => $__loop_index_3 === 0, 'last' => ($__loop_index_3 + 1) === count($__loop_items_1)]; ?><?php xui_jinja_include('export/_partials/field.php', $__ctx); ?><?php endforeach; $__ctx = $__loop_parent_ctx_2; ?>  </div>
+<?php $__loop_parent_ctx_2 = $__ctx; $__loop_items_1 = xui_jinja_iterable(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'fields')); foreach ($__loop_items_1 as $__loop_index_3 => $__loop_value_4): $__ctx = $__loop_parent_ctx_2; $__ctx['field'] = $__loop_value_4; $__ctx['loop'] = ['index' => $__loop_index_3 + 1, 'index0' => $__loop_index_3, 'first' => $__loop_index_3 === 0, 'last' => ($__loop_index_3 + 1) === count($__loop_items_1)]; ?><?php xui_jinja_include('field.php', $__ctx); ?><?php endforeach; $__ctx = $__loop_parent_ctx_2; ?>  </div>
 </section>

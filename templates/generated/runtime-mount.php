@@ -10,5 +10,5 @@ if (!isset($__ctx) || !is_array($__ctx)) {
   data-theme-preset="<?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'preset_id')); ?>"
   data-template-zone="runtime_mount"
 >
-<?php xui_jinja_include('export/_partials/rendered-form.php', $__ctx); ?></div>
+<?php xui_jinja_include('rendered-form.php', $__ctx); ?></div>
 

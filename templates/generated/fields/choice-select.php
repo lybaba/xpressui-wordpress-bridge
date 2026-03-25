@@ -25,4 +25,4 @@ if (!isset($__ctx) || !is_array($__ctx)) {
 <?php endforeach; $__ctx = $__loop_parent_ctx_2; ?>  </select>
 
 <?php if (xui_jinja_truthy(xui_jinja_attr(xui_jinja_context_get($__ctx, 'field'), 'desc'))): ?>    <div class="template-field-help"><?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'field'), 'desc')); ?></div>
-<?php endif; ?><?php xui_jinja_include('export/_partials/field-meta.php', $__ctx); ?></div>
+<?php endif; ?><?php xui_jinja_include('field-meta.php', $__ctx); ?></div>

@@ -13,4 +13,4 @@ if (!isset($__ctx) || !is_array($__ctx)) {
 <?php elseif (xui_jinja_truthy(xui_jinja_attr(xui_jinja_context_get($__ctx, 'field'), 'default_value'))): ?>      <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'field'), 'default_value')); ?>
 <?php else: ?>      <?php echo xui_jinja_escape(__("Content block reserved for runtime rendering.", 'xpressui-bridge')); ?>
 <?php endif; ?>  </div>
-<?php xui_jinja_include('export/_partials/field-meta.php', $__ctx); ?></div>
+<?php xui_jinja_include('field-meta.php', $__ctx); ?></div>

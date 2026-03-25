@@ -1,0 +1,638 @@
+{
+  "project": {
+    "id": "document-intake-starter",
+    "slug": "document-intake",
+    "name": "Document Intake",
+    "show_project_title": true,
+    "status": "published",
+    "summary": "Generated template artifact for an XPressUI Console project.",
+    "background_image_url": null
+  },
+  "theme": {
+    "preset_id": "console-clean",
+    "layout": "centered",
+    "density": "comfortable",
+    "background_style": "panel",
+    "colors": {
+      "page_background": "#edf3fb",
+      "surface": "#ffffff",
+      "text": "#0f172a",
+      "muted_text": "#475569",
+      "primary": "#2563eb",
+      "border": "#d7e0ea"
+    },
+    "radius": {
+      "card": 28,
+      "input": 14,
+      "button": 14
+    }
+  },
+  "runtime": {
+    "target": "form",
+    "xpressui_version": "0.88.2",
+    "mount_node_id": "xpressui-root",
+    "form_config_json": "{\n  \"mode\": \"form-multi-step\",\n  \"navigationLabels\": {\n    \"prevLabel\": \"Back\",\n    \"nextLabel\": \"Continue\",\n    \"submitLabel\": \"Submit intake\"\n  },\n  \"workflowConfig\": {\n    \"submissionMode\": \"multi-step-submit\",\n    \"providerMode\": \"wordpress-bridge\",\n    \"resumeSupport\": \"disabled\",\n    \"documentHandling\": \"basic-upload\",\n    \"submissionEndpoint\": \"/wp-json/xpressui/v1/submit\",\n    \"successMessage\": \"Your intake was sent successfully.\",\n    \"errorMessage\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  },\n  \"sections\": {\n    \"custom\": [\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 1: Contact\",\n        \"adminLabel\": \"Step 1: Contact\",\n        \"name\": \"section1\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 2: Request\",\n        \"adminLabel\": \"Step 2: Request\",\n        \"name\": \"requestStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 3: Files\",\n        \"adminLabel\": \"Step 3: Files\",\n        \"name\": \"filesStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 4: Review\",\n        \"adminLabel\": \"Step 4: Review\",\n        \"name\": \"reviewStep\"\n      }\n    ],\n    \"section1\": [\n      {\n        \"type\": \"text\",\n        \"label\": \"First name\",\n        \"name\": \"firstname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"text\",\n        \"label\": \"Last name\",\n        \"name\": \"lastname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"email\",\n        \"label\": \"Email\",\n        \"name\": \"email\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"tel\",\n        \"label\": \"Phone number\",\n        \"name\": \"phone\",\n        \"choices\": null\n      }\n    ],\n    \"requestStep\": [\n      {\n        \"type\": \"select-one\",\n        \"label\": \"Request type\",\n        \"name\": \"requestType\",\n        \"choices\": [\n          {\n            \"label\": \"Application file\",\n            \"value\": \"application-file\"\n          },\n          {\n            \"label\": \"Client onboarding\",\n            \"value\": \"client-onboarding\"\n          },\n          {\n            \"label\": \"Supporting documents\",\n            \"value\": \"supporting-documents\"\n          }\n        ],\n        \"minNumOfChoices\": 1,\n        \"maxNumOfChoices\": 1\n      },\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Case summary\",\n        \"name\": \"caseSummary\",\n        \"choices\": null\n      },\n      {\n        \"type\": \"price\",\n        \"label\": \"Estimated budget\",\n        \"name\": \"estimatedBudget\",\n        \"choices\": null\n      }\n    ],\n    \"filesStep\": [\n      {\n        \"type\": \"file\",\n        \"label\": \"Primary document\",\n        \"name\": \"primaryDocument\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"file\",\n        \"label\": \"Supporting file\",\n        \"name\": \"supportingFile\",\n        \"choices\": null\n      }\n    ],\n    \"reviewStep\": [\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Additional notes\",\n        \"name\": \"additionalNotes\",\n        \"choices\": null\n      }\n    ],\n    \"btngroup\": [\n      {\n        \"type\": \"submit\",\n        \"name\": \"prevbtn\",\n        \"label\": \"Back\",\n        \"adminLabel\": \"Back\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"nextbtn\",\n        \"label\": \"Continue\",\n        \"adminLabel\": \"Continue\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"submitbtn\",\n        \"label\": \"Submit intake\",\n        \"adminLabel\": \"Submit intake\"\n      }\n    ]\n  },\n  \"showProjectTitle\": true,\n  \"submit\": {\n    \"endpoint\": \"__XPRESSUI_WORDPRESS_REST_URL__\",\n    \"method\": \"POST\",\n    \"mode\": \"form-data\",\n    \"includeDocumentData\": true,\n    \"metadata\": {\n      \"projectId\": \"document-intake-starter\",\n      \"projectSlug\": \"document-intake\",\n      \"projectConfigVersion\": \"document-intake-starter:2026-03-13T00:00:00+00:00\"\n    }\n  },\n  \"submitFeedback\": {\n    \"title\": \"Submission status\",\n    \"idle_message\": \"Submission feedback will appear here after the runtime handles the form.\",\n    \"loading_message\": \"Submitting...\",\n    \"success_title\": \"Submission received\",\n    \"success_message\": \"Your intake was sent successfully.\",\n    \"error_title\": \"Submission failed\",\n    \"error_message\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  }\n}",
+    "submit_endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
+    "submit_method": "post",
+    "submit_enctype": "multipart/form-data"
+  },
+  "rendered_form": {
+    "title": "Document Intake",
+    "show_title": true,
+    "show_subtitle": true,
+    "subtitle": "* Required fields",
+    "sections": [
+      {
+        "name": "section1",
+        "label": "Step 1: Contact",
+        "desc": null,
+        "fields": [
+          {
+            "name": "firstname",
+            "label": "First name",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "text",
+            "placeholder": "",
+            "required": true,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "text",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "lastname",
+            "label": "Last name",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "text",
+            "placeholder": "",
+            "required": true,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "text",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "email",
+            "label": "Email",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "email",
+            "placeholder": "",
+            "required": true,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "email",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "phone",
+            "label": "Phone number",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "tel",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "tel",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          }
+        ]
+      },
+      {
+        "name": "requestStep",
+        "label": "Step 2: Request",
+        "desc": null,
+        "fields": [
+          {
+            "name": "requestType",
+            "label": "Request type",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "select-one",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": 1,
+            "max_choices": 1,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "text",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [
+              {
+                "id": "application-file",
+                "label": "Application file",
+                "name": "Application file",
+                "value": "application-file",
+                "desc": null,
+                "image_thumbnail": null,
+                "image_medium": null,
+                "sale_price": null,
+                "discount_price": null,
+                "photos_full": [],
+                "max_choices": null
+              },
+              {
+                "id": "client-onboarding",
+                "label": "Client onboarding",
+                "name": "Client onboarding",
+                "value": "client-onboarding",
+                "desc": null,
+                "image_thumbnail": null,
+                "image_medium": null,
+                "sale_price": null,
+                "discount_price": null,
+                "photos_full": [],
+                "max_choices": null
+              },
+              {
+                "id": "supporting-documents",
+                "label": "Supporting documents",
+                "name": "Supporting documents",
+                "value": "supporting-documents",
+                "desc": null,
+                "image_thumbnail": null,
+                "image_medium": null,
+                "sale_price": null,
+                "discount_price": null,
+                "photos_full": [],
+                "max_choices": null
+              }
+            ],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "caseSummary",
+            "label": "Case summary",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "textarea",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "text",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "estimatedBudget",
+            "label": "Estimated budget",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "price",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "number",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          }
+        ]
+      },
+      {
+        "name": "filesStep",
+        "label": "Step 3: Files",
+        "desc": null,
+        "fields": [
+          {
+            "name": "primaryDocument",
+            "label": "Primary document",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "file",
+            "placeholder": "",
+            "required": true,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "file",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": "Document upload",
+            "upload_accept_label": "Accepted: PDF or image",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          },
+          {
+            "name": "supportingFile",
+            "label": "Supporting file",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "file",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "file",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": "Attachment upload",
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          }
+        ]
+      },
+      {
+        "name": "reviewStep",
+        "label": "Step 4: Review",
+        "desc": null,
+        "fields": [
+          {
+            "name": "additionalNotes",
+            "label": "Additional notes",
+            "desc": null,
+            "help_text": null,
+            "error_message": null,
+            "success_message": null,
+            "type": "textarea",
+            "placeholder": "",
+            "required": false,
+            "pattern": null,
+            "min_choices": null,
+            "max_choices": null,
+            "value": null,
+            "default_value": null,
+            "media_url": null,
+            "link_path": null,
+            "input_type": "text",
+            "accept": null,
+            "capture": null,
+            "include_in_submit": false,
+            "choices": [],
+            "linked_sections": [],
+            "subforms": [],
+            "subfields": [],
+            "min_value": null,
+            "max_value": null,
+            "step_value": null,
+            "upload_type_label": null,
+            "upload_accept_label": "Accepted: documents",
+            "document_scan_mode": "double",
+            "document_scan_slots": [
+              {
+                "index": 0,
+                "key": "front",
+                "label": "Front",
+                "control_label": "Capture Front"
+              },
+              {
+                "index": 1,
+                "key": "back",
+                "label": "Back",
+                "control_label": "Capture Back"
+              }
+            ],
+            "enable_document_ocr": false,
+            "require_valid_document_mrz": false,
+            "document_text_target_field": null,
+            "document_mrz_target_field": null
+          }
+        ]
+      }
+    ],
+    "navigation_labels": {
+      "previous": "Back",
+      "next": "Continue"
+    },
+    "submit_label": "Submit intake",
+    "has_sections": true,
+    "step_status": {
+      "enabled": true,
+      "current_index": 1,
+      "total": 4,
+      "current_label": "Step 1: Contact",
+      "idle_message": "Step 1 of 4: Step 1: Contact"
+    },
+    "submit_feedback": {
+      "title": "Submission status",
+      "idle_message": "Submission feedback will appear here after the runtime handles the form.",
+      "loading_message": "Submitting...",
+      "success_title": "Submission received",
+      "success_message": "Your intake was sent successfully.",
+      "error_title": "Submission failed",
+      "error_message": "Unable to send this intake to WordPress right now. Please try again."
+    }
+  },
+  "target": "wordpress"
+}

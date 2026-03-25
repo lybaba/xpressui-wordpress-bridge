@@ -31,47 +31,18 @@ function xpressui_maybe_render_shell_page() {
 		exit;
 	}
 
-	status_header( 200 );
+	$compiled_shell_html = xpressui_render_compiled_workflow_shell_html( $slug );
+
 	nocache_headers();
 	header( 'Content-Type: text/html; charset=' . get_bloginfo( 'charset' ) );
 
-	$compiled_shell_html = xpressui_render_compiled_workflow_shell_html( $slug );
 	if ( '' !== $compiled_shell_html ) {
+		status_header( 200 );
 		echo $compiled_shell_html;
 		exit;
 	}
 
-	?>
-<!doctype html>
-<html <?php language_attributes(); ?>>
-<head>
-	<meta charset="<?php bloginfo( 'charset' ); ?>" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<meta name="robots" content="noindex, nofollow" />
-	<title><?php echo esc_html( $payload['title'] ); ?></title>
-	<style>
-		html, body {
-			margin: 0;
-			padding: 0;
-			width: 100%;
-			min-height: 0;
-			background: transparent;
-		}
-		* {
-			box-sizing: border-box;
-		}
-		#xpressui-shell-root {
-			width: 100%;
-		}
-	</style>
-</head>
-<body>
-	<div id="xpressui-shell-root" data-workflow-slug="<?php echo esc_attr( $payload['slug'] ); ?>"></div>
-	<script id="xpressui-shell-payload" type="application/json"><?php echo wp_json_encode( $payload ); ?></script>
-	<script>window.XPRESSUI_I18N = <?php echo wp_json_encode( xpressui_get_shell_translations() ); ?>;</script>
-	<script src="<?php echo esc_url( XPRESSUI_BRIDGE_URL . 'assets/iframe-shell.js' ); ?>?ver=<?php echo esc_attr( XPRESSUI_BRIDGE_VERSION ); ?>"></script>
-</body>
-</html>
-	<?php
+	status_header( 500 );
+	echo '<!doctype html><html><head><meta charset="' . esc_attr( get_bloginfo( 'charset' ) ) . '"><meta name="robots" content="noindex,nofollow"><title>' . esc_html__( 'Workflow unavailable', 'xpressui-bridge' ) . '</title></head><body><p>' . esc_html__( 'The workflow template could not be rendered. Please reinstall the workflow package.', 'xpressui-bridge' ) . '</p></body></html>';
 	exit;
 }

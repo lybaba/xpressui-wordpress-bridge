@@ -4,5 +4,5 @@ if (!isset($__ctx) || !is_array($__ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><main class="form-frame" data-template-zone="form_frame">
-<?php xui_jinja_include('export/_partials/runtime-mount.php', $__ctx); ?></main>
+<?php xui_jinja_include('runtime-mount.php', $__ctx); ?></main>
 

@@ -36,8 +36,8 @@ function xui_jinja_include(string $template, array $context): void
 {
     $template_path = xui_jinja_templates_root() . '/' . $template;
     if (!is_file($template_path)) {
-        $fallback = xui_jinja_templates_root() . '/export/_partials/fields/unsupported.php';
-        if (is_file($fallback) && $template !== 'export/_partials/fields/unsupported.php') {
+        $fallback = xui_jinja_templates_root() . '/fields/unsupported.php';
+        if (is_file($fallback) && $template !== 'fields/unsupported.php') {
             $__ctx = $context;
             include $fallback;
         }
