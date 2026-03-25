@@ -171,9 +171,11 @@ async function initXPressUI() {
   const defaultSuccessMessage = t('submissionReceivedMessage', 'Submission received.');
   const defaultErrorMessage = t('submissionFailedMessage', 'Submission failed. Please review the form and try again.');
 
-  const handleSuccessRedirect = () => {
+  const handleSuccessRedirect = (result) => {
     const urlParams = new URLSearchParams(window.location.search);
-    const redirectUrl = urlParams.get('redirect') || (formConfig.workflowConfig && formConfig.workflowConfig.redirectUrl);
+    const redirectUrl = urlParams.get('redirect')
+      || (result && result.redirectUrl)
+      || (formConfig.workflowConfig && formConfig.workflowConfig.redirectUrl);
     if (redirectUrl) {
       setTimeout(() => {
         try { window.top.location.href = redirectUrl; }
@@ -275,7 +277,7 @@ async function initXPressUI() {
     node.addEventListener('xpressui:submit-success', (event) => {
       const result = event?.detail?.result;
       setFeedbackState('success', configuredSuccessMessage || result?.message || defaultSuccessMessage, submitFeedbackConfig.success_title || 'Submission received');
-      handleSuccessRedirect();
+      handleSuccessRedirect(result);
     });
     node.addEventListener('xpressui:submit-error', (event) => {
       const result = event?.detail?.result;
@@ -345,7 +347,7 @@ async function initXPressUI() {
         }
 
         setFeedbackState('success', configuredSuccessMessage || result?.message || defaultSuccessMessage, submitFeedbackConfig.success_title || 'Submission received');
-        handleSuccessRedirect();
+        handleSuccessRedirect(result);
       } catch (error) {
         console.error(error);
         setFeedbackState('error', configuredErrorMessage || (error instanceof Error ? error.message : '') || defaultErrorMessage, submitFeedbackConfig.error_title || 'Submission failed');
