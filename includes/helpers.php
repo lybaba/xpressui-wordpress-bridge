@@ -585,6 +585,29 @@ function xpressui_is_bundled_workflow_update_available( $slug ) {
 	return $bundled_fingerprint !== $installed_fingerprint;
 }
 
+function xpressui_delete_directory_recursive( $dir ) {
+	$dir = rtrim( (string) $dir, '/\\' );
+	if ( ! is_dir( $dir ) ) {
+		return true;
+	}
+	$items = scandir( $dir );
+	if ( ! is_array( $items ) ) {
+		return false;
+	}
+	foreach ( $items as $item ) {
+		if ( $item === '.' || $item === '..' ) {
+			continue;
+		}
+		$path = $dir . DIRECTORY_SEPARATOR . $item;
+		if ( is_dir( $path ) ) {
+			xpressui_delete_directory_recursive( $path );
+		} else {
+			@unlink( $path );
+		}
+	}
+	return @rmdir( $dir );
+}
+
 function xpressui_delete_workflow( $slug ) {
 	$slug     = sanitize_title( (string) $slug );
 	$base_dir = xpressui_get_workflows_base_dir();
@@ -597,10 +620,9 @@ function xpressui_delete_workflow( $slug ) {
 		return new WP_Error( 'missing_workflow', __( 'The workflow could not be found.', 'xpressui-bridge' ) );
 	}
 
-	require_once ABSPATH . 'wp-admin/includes/file.php';
-	WP_Filesystem();
-	global $wp_filesystem;
-	$wp_filesystem->delete( $target_dir, true );
+	if ( ! xpressui_delete_directory_recursive( $target_dir ) ) {
+		return new WP_Error( 'delete_failed', __( 'The workflow directory could not be deleted.', 'xpressui-bridge' ) );
+	}
 
 	xpressui_delete_workflow_manifest_meta( $slug );
 
