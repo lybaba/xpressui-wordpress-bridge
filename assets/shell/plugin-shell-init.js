@@ -378,26 +378,23 @@ async function initXPressUI() {
     }
     attachRuntimeFeedbackHandlers(mountNode);
 
-    // Notify the parent iframe resizer on step transitions.
-    // ResizeObserver on doc.body (shortcode.js) may miss React DOM updates that
-    // don't synchronously change body height before the observer fires.
-    // Double-rAF guarantees layout is stable after the React commit phase.
-    // The 300ms safety net covers CSS animations that finish after the first paint.
-    function postResizeToParent() {
-      var h = Math.max(
-        document.body.scrollHeight  || 0,
-        document.body.offsetHeight  || 0,
-        document.documentElement ? (document.documentElement.scrollHeight || 0) : 0,
-        document.documentElement ? (document.documentElement.offsetHeight || 0) : 0
-      );
-      if (h > 0 && window.parent !== window) {
-        try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
-      }
+    // Definitive iframe autoresize: observe the hydrated form-ui element directly.
+    // ResizeObserver fires after the browser has finished layout — no timeouts needed.
+    // This covers step transitions, validation errors, dynamic content, and anything
+    // else that changes the form height, without relying on any specific event.
+    if (window.parent !== window && window.ResizeObserver) {
+      new ResizeObserver(function () {
+        var h = Math.max(
+          document.body.scrollHeight  || 0,
+          document.body.offsetHeight  || 0,
+          document.documentElement ? (document.documentElement.scrollHeight || 0) : 0,
+          document.documentElement ? (document.documentElement.offsetHeight || 0) : 0
+        );
+        if (h > 0) {
+          try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
+        }
+      }).observe(hydrated);
     }
-    mountNode.addEventListener('xpressui:step-change', function () {
-      requestAnimationFrame(function () { requestAnimationFrame(postResizeToParent); });
-      setTimeout(postResizeToParent, 300);
-    });
   } catch (error) {
     console.error(error);
     attachFallbackSubmitHandler(formElement);
