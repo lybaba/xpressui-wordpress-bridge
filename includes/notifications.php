@@ -108,35 +108,75 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 	$config      = xpressui_get_config_snapshot( $post_id );
 	$field_index = ! empty( $config ) ? xpressui_build_config_field_index( $config ) : [];
 
-	// ── Field rows ──────────────────────────────────────────────────────────
-	$rows_html = '';
+	// ── Group payload keys by section ───────────────────────────────────────
+	// Keys not found in the field index land in a catch-all bucket.
+	$sections_ordered = [];
+	$ungrouped_keys   = [];
+
 	if ( is_array( $payload ) ) {
-		$i = 0;
 		foreach ( $payload as $key => $value ) {
 			if ( in_array( $key, $skip, true ) ) {
 				continue;
 			}
-			$label = isset( $field_index[ $key ]['label'] ) && $field_index[ $key ]['label'] !== ''
+			if ( isset( $field_index[ $key ] ) ) {
+				$sec = (string) ( $field_index[ $key ]['sectionLabel'] ?? '' );
+				if ( $sec === '' ) {
+					$sec = __( 'Submission', 'xpressui-bridge' );
+				}
+				if ( ! isset( $sections_ordered[ $sec ] ) ) {
+					$sections_ordered[ $sec ] = [];
+				}
+				$sections_ordered[ $sec ][ $key ] = $value;
+			} else {
+				$ungrouped_keys[ $key ] = $value;
+			}
+		}
+	}
+
+	// Helper: render a single field row.
+	$render_row = static function ( $label, $value, $i ) {
+		if ( is_array( $value ) ) {
+			if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
+				$display = esc_html( (string) ( $value['originalName'] ?? 'file' ) );
+			} else {
+				$display = '<code style="font-size:12px;color:#555;">' . esc_html( wp_json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . '</code>';
+			}
+		} elseif ( is_bool( $value ) ) {
+			$display = esc_html( $value ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) );
+		} else {
+			$display = nl2br( esc_html( (string) $value ) );
+		}
+		$bg = $i % 2 === 0 ? '#ffffff' : '#f9fafb';
+		return '<tr style="background:' . $bg . ';">'
+			. '<td style="padding:9px 14px;font-size:12px;color:#6b7280;white-space:nowrap;border-bottom:1px solid #f0f0f0;width:170px;vertical-align:top;">' . esc_html( $label ) . '</td>'
+			. '<td style="padding:9px 14px;font-size:13px;color:#111827;border-bottom:1px solid #f0f0f0;word-break:break-word;">' . $display . '</td>'
+			. '</tr>';
+	};
+
+	// ── Build rows HTML grouped by section ──────────────────────────────────
+	$rows_html = '';
+	$i         = 0;
+
+	foreach ( $sections_ordered as $section_label => $fields ) {
+		$rows_html .= '<tr>'
+			. '<td colspan="2" style="padding:12px 14px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;background:#f9fafb;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;">'
+			. esc_html( $section_label )
+			. '</td></tr>';
+		$i = 0; // reset alternating colour per section
+
+		foreach ( $fields as $key => $value ) {
+			$label      = isset( $field_index[ $key ]['label'] ) && $field_index[ $key ]['label'] !== ''
 				? $field_index[ $key ]['label']
 				: $key;
-			if ( is_array( $value ) ) {
-				if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
-					$display = esc_html( (string) ( $value['originalName'] ?? 'file' ) );
-				} else {
-					$display = '<code style="font-size:12px;color:#555;">' . esc_html( wp_json_encode( $value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . '</code>';
-				}
-			} elseif ( is_bool( $value ) ) {
-				$display = esc_html( $value ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) );
-			} else {
-				$display = nl2br( esc_html( (string) $value ) );
-			}
-			$bg        = $i % 2 === 0 ? '#ffffff' : '#f9fafb';
-			$rows_html .= '<tr style="background:' . $bg . ';">'
-				. '<td style="padding:9px 14px;font-size:12px;color:#6b7280;white-space:nowrap;border-bottom:1px solid #f0f0f0;width:170px;vertical-align:top;">' . esc_html( $label ) . '</td>'
-				. '<td style="padding:9px 14px;font-size:13px;color:#111827;border-bottom:1px solid #f0f0f0;word-break:break-word;">' . $display . '</td>'
-				. '</tr>';
+			$rows_html .= $render_row( $label, $value, $i );
 			$i++;
 		}
+	}
+
+	// Ungrouped keys (not in the field index) appended without a section header.
+	foreach ( $ungrouped_keys as $key => $value ) {
+		$rows_html .= $render_row( $key, $value, $i );
+		$i++;
 	}
 
 	// ── Meta rows ────────────────────────────────────────────────────────────
@@ -173,12 +213,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		. '<table cellpadding="0" cellspacing="0" width="100%">' . $meta_rows . '</table>'
 		. '</td></tr>'
 
-		// Fields
-		. '<tr><td style="padding:20px 28px 0;">'
-		. '<p style="margin:0 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;">'
-		. esc_html__( 'Submitted fields', 'xpressui-bridge' )
-		. '</p>'
-		. '</td></tr>'
+		// Fields (grouped by section — no outer heading)
 		. '<tr><td>'
 		. '<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">'
 		. $rows_html
