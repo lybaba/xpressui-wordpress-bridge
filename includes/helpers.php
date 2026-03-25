@@ -638,6 +638,17 @@ function xpressui_delete_workflow( $slug ) {
 		update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
 	}
 
+	// Remember that the user explicitly deleted this bundled workflow so it is
+	// not silently reinstalled on the next admin_init call.
+	if ( xpressui_is_bundled_workflow( $slug ) ) {
+		$user_deleted = get_option( 'xpressui_user_deleted_workflows', [] );
+		if ( ! is_array( $user_deleted ) ) {
+			$user_deleted = [];
+		}
+		$user_deleted[ $slug ] = current_time( 'mysql' );
+		update_option( 'xpressui_user_deleted_workflows', $user_deleted, false );
+	}
+
 	return true;
 }
 
@@ -653,8 +664,14 @@ function xpressui_maybe_install_bundled_workflows() {
 
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
+	$user_deleted = get_option( 'xpressui_user_deleted_workflows', [] );
+	if ( ! is_array( $user_deleted ) ) {
+		$user_deleted = [];
+	}
+
 	// On plugin update, force-reinstall all bundled workflows so generated artifacts
 	// (e.g. template.context.json) are always up to date with the installed plugin version.
+	// Also clears the user-deleted list so updated content is not suppressed.
 	if ( $version_changed ) {
 		foreach ( $bundled_slugs as $slug ) {
 			xpressui_reinstall_bundled_workflow( $slug );
@@ -662,14 +679,19 @@ function xpressui_maybe_install_bundled_workflows() {
 		}
 		update_option( 'xpressui_bundled_workflows_installed', $installed_registry, false );
 		update_option( 'xpressui_bundled_workflows_version', $current_version, false );
+		update_option( 'xpressui_user_deleted_workflows', [], false );
 		return;
 	}
 
-	// Reinstall if: never registered, OR registered but artifacts are incomplete / missing.
+	// Reinstall if: never registered OR artifacts missing — but NOT if the user
+	// explicitly deleted it (respect the user's choice until the next plugin update).
 	$needs_install = array_values(
 		array_filter(
 			$bundled_slugs,
-			function ( $slug ) use ( $installed_registry ) {
+			function ( $slug ) use ( $installed_registry, $user_deleted ) {
+				if ( isset( $user_deleted[ $slug ] ) ) {
+					return false;
+				}
 				return ! array_key_exists( $slug, $installed_registry )
 					|| ! xpressui_is_installed_workflow( $slug );
 			}
