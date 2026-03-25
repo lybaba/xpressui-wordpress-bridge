@@ -10,6 +10,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // ---------------------------------------------------------------------------
+// 'Find pages' filter: translate ?xpressui_workflow_slug= into post__in so
+// the admin pages list shows only pages embedding that workflow's shortcode.
+// Using pre_get_posts avoids WP_Query's search tokenisation which mishandles
+// the brackets and quotes in [xpressui id="slug"].
+// ---------------------------------------------------------------------------
+
+add_action( 'pre_get_posts', 'xpressui_filter_pages_by_workflow_slug' );
+
+function xpressui_filter_pages_by_workflow_slug( $query ) {
+	if ( ! is_admin() || ! $query->is_main_query() ) {
+		return;
+	}
+	$slug = sanitize_title( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) );
+	if ( '' === $slug ) {
+		return;
+	}
+	$page_ids = xpressui_get_workflow_page_ids( $slug );
+	// Set post__in to the real IDs, or [0] to return an empty list gracefully.
+	$query->set( 'post__in', ! empty( $page_ids ) ? $page_ids : [ 0 ] );
+}
+
+// ---------------------------------------------------------------------------
 // Menu registration
 // ---------------------------------------------------------------------------
 
@@ -351,14 +373,6 @@ function xpressui_render_workflows_page() {
 			$runtime_version = (string) ( $manifest_meta['runtimeVersion'] ?? '' );
 			$compiled_shell_ready = xpressui_can_render_compiled_workflow_shell( $slug );
 			$source_label  = $is_bundled ? __( 'Bundled starter', 'xpressui-bridge' ) : __( 'Uploaded pack', 'xpressui-bridge' );
-			$open_page_url = add_query_arg(
-				[
-					'post_type'         => 'page',
-					'post_status'       => 'all',
-					's'                 => '[xpressui id="' . $slug . '"]',
-				],
-				admin_url( 'edit.php' )
-			);
 			$reinstall_url = wp_nonce_url(
 				add_query_arg(
 					[
@@ -395,10 +409,20 @@ function xpressui_render_workflows_page() {
 				),
 				'xpressui_create_workflow_page_' . $slug
 			);
-			$page_ids       = xpressui_get_workflow_page_ids( $slug );
+			$page_ids        = xpressui_get_workflow_page_ids( $slug );
 			$primary_page_id = ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
-			$edit_page_url  = $primary_page_id > 0 ? get_edit_post_link( $primary_page_id, '' ) : '';
-			$view_page_url  = $primary_page_id > 0 ? get_permalink( $primary_page_id ) : '';
+			$edit_page_url   = $primary_page_id > 0 ? get_edit_post_link( $primary_page_id, '' ) : '';
+			$view_page_url   = $primary_page_id > 0 ? get_permalink( $primary_page_id ) : '';
+			// 'Find pages' passes a custom param; pre_get_posts translates it to
+			// post__in so WP_Query never tokenises the shortcode string.
+			$open_page_url = add_query_arg(
+				[
+					'post_type'               => 'page',
+					'post_status'             => 'all',
+					'xpressui_workflow_slug'  => $slug,
+				],
+				admin_url( 'edit.php' )
+			);
 			echo '<tr>';
 			echo '<td><strong>' . esc_html( $slug ) . '</strong>';
 			if ( $slug === 'document-intake' ) {
@@ -602,13 +626,7 @@ function xpressui_create_workflow_page( $slug ) {
 		$page_title = ucwords( str_replace( '-', ' ', $slug ) );
 	}
 
-	$existing_pages = get_posts( [
-		'post_type'      => 'page',
-		'post_status'    => [ 'draft', 'publish', 'pending', 'private' ],
-		'posts_per_page' => 1,
-		'fields'         => 'ids',
-		's'              => '[xpressui id="' . $slug . '"]',
-	] );
+	$existing_pages = xpressui_get_workflow_page_ids( $slug );
 	if ( ! empty( $existing_pages ) ) {
 		return new WP_Error( 'page_exists', __( 'A page using this workflow shortcode already exists.', 'xpressui-bridge' ) );
 	}

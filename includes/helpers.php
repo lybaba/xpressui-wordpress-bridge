@@ -781,24 +781,30 @@ function xpressui_runtime_supports_workflow( $required_tier = 'light', $requires
 }
 
 function xpressui_get_workflow_page_ids( $slug ) {
+	global $wpdb;
+
 	$slug = sanitize_title( (string) $slug );
 	if ( '' === $slug ) {
 		return [];
 	}
 
-	$page_ids = get_posts(
-		[
-			'post_type'      => 'page',
-			'post_status'    => [ 'draft', 'publish', 'pending', 'private' ],
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			's'              => '[xpressui id="' . $slug . '"]',
-			'orderby'        => 'date',
-			'order'          => 'ASC',
-		]
+	// Use a direct LIKE query instead of WP_Query 's' parameter.
+	// WP_Query tokenises the search string via wp_parse_search_terms(), which
+	// misinterprets the quotes in [xpressui id="slug"] and returns no results.
+	$like = '%' . $wpdb->esc_like( '[xpressui id="' . $slug . '"]' ) . '%';
+
+	$ids = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT ID FROM {$wpdb->posts}
+			 WHERE post_type = 'page'
+			   AND post_status IN ('draft','publish','pending','private')
+			   AND post_content LIKE %s
+			 ORDER BY post_date ASC",
+			$like
+		)
 	);
 
-	return array_map( 'intval', is_array( $page_ids ) ? $page_ids : [] );
+	return array_map( 'intval', $ids ?: [] );
 }
 
 function xpressui_get_workflow_primary_page_id( $slug ) {
