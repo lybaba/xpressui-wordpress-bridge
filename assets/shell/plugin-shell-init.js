@@ -381,18 +381,22 @@ async function initXPressUI() {
     // Notify the parent iframe resizer on step transitions.
     // ResizeObserver on doc.body (shortcode.js) may miss React DOM updates that
     // don't synchronously change body height before the observer fires.
+    // Double-rAF guarantees layout is stable after the React commit phase.
+    // The 300ms safety net covers CSS animations that finish after the first paint.
+    function postResizeToParent() {
+      var h = Math.max(
+        document.body.scrollHeight  || 0,
+        document.body.offsetHeight  || 0,
+        document.documentElement ? (document.documentElement.scrollHeight || 0) : 0,
+        document.documentElement ? (document.documentElement.offsetHeight || 0) : 0
+      );
+      if (h > 0 && window.parent !== window) {
+        try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
+      }
+    }
     mountNode.addEventListener('xpressui:step-change', function () {
-      setTimeout(function () {
-        var h = Math.max(
-          document.body.scrollHeight  || 0,
-          document.body.offsetHeight  || 0,
-          document.documentElement ? (document.documentElement.scrollHeight || 0) : 0,
-          document.documentElement ? (document.documentElement.offsetHeight || 0) : 0
-        );
-        if (h > 0 && window.parent !== window) {
-          try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
-        }
-      }, 50);
+      requestAnimationFrame(function () { requestAnimationFrame(postResizeToParent); });
+      setTimeout(postResizeToParent, 300);
     });
   } catch (error) {
     console.error(error);
