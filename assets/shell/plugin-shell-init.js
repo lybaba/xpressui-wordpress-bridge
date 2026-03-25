@@ -378,10 +378,20 @@ async function initXPressUI() {
     }
     attachRuntimeFeedbackHandlers(mountNode);
 
-    // Definitive iframe autoresize: observe the hydrated form-ui element directly.
-    // ResizeObserver fires after the browser has finished layout — no timeouts needed.
-    // This covers step transitions, validation errors, dynamic content, and anything
-    // else that changes the form height, without relying on any specific event.
+    // Definitive iframe autoresize: observe document.body from inside the iframe
+    // and postMessage the height to the parent on every layout change.
+    //
+    // Why body, not the form-ui element:
+    //   form-ui is a custom HTMLElement whose default display is 'inline'.
+    //   ResizeObserver behaviour on inline elements is inconsistent across browsers.
+    //   document.body is always display:block and is the canonical source of truth
+    //   for the total iframe content height.
+    //
+    // Why from inside (postMessage) rather than relying only on the parent's observer:
+    //   The parent's ResizeObserver observes the same body but resets frame height to
+    //   0 before measuring (iOS Safari workaround), which can race with React renders.
+    //   Measuring from inside avoids that reset and fires in the same JS context as
+    //   the DOM mutation, giving the most up-to-date value.
     if (window.parent !== window && window.ResizeObserver) {
       new ResizeObserver(function () {
         var h = Math.max(
@@ -393,7 +403,7 @@ async function initXPressUI() {
         if (h > 0) {
           try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
         }
-      }).observe(hydrated);
+      }).observe(document.body);
     }
   } catch (error) {
     console.error(error);
