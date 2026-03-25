@@ -270,17 +270,19 @@ function xpressui_render_workflows_page() {
 	}
 
 	echo '<div class="wrap">';
-	echo '<h1>' . esc_html__( 'Manage XPressUI Workflows', 'xpressui-bridge' ) . '</h1>';
-	echo '<p>' . esc_html__( 'Start fast with the bundled Document Intake workflow, or upload your own package from the XPressUI console.', 'xpressui-bridge' ) . '</p>';
+	echo '<h1>' . esc_html__( 'XPressUI Workflows', 'xpressui-bridge' ) . '</h1>';
+	echo '<p>' . esc_html__( 'Manage your installed workflow packages and configure per-project settings.', 'xpressui-bridge' ) . '</p>';
 
 	echo '<div class="card xpressui-admin-card">';
-	echo '<h2>' . esc_html__( 'License and Pro Extension', 'xpressui-bridge' ) . '</h2>';
-	echo '<p>' . esc_html__( 'The free bridge stays self-contained. A future XPressUI Pro add-on can hook into this screen to validate a license and unlock pro workflows.', 'xpressui-bridge' ) . '</p>';
-	echo '<p><strong>' . esc_html__( 'Current runtime tier:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $current_tier ) . '</p>';
-	echo '<p><strong>' . esc_html__( 'Pro extension detected:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $pro_active ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) ) . '<br />';
-	echo '<strong>' . esc_html__( 'License validated:', 'xpressui-bridge' ) . '</strong> ' . esc_html( $license_valid ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) ) . '</p>';
+	echo '<h2>' . esc_html__( 'Pro Extension', 'xpressui-bridge' ) . '</h2>';
+	echo '<div class="xpressui-status-row">';
+	echo '<span class="xpressui-status-item"><span class="xpressui-status-dot ' . ( $pro_active ? 'xpressui-status-dot--on' : 'xpressui-status-dot--off' ) . '"></span>';
+	echo esc_html__( 'Pro extension', 'xpressui-bridge' ) . ' — <strong>' . esc_html( $pro_active ? __( 'Active', 'xpressui-bridge' ) : __( 'Not installed', 'xpressui-bridge' ) ) . '</strong></span>';
+	echo '<span class="xpressui-status-item"><span class="xpressui-status-dot ' . ( $license_valid ? 'xpressui-status-dot--on' : 'xpressui-status-dot--off' ) . '"></span>';
+	echo esc_html__( 'License', 'xpressui-bridge' ) . ' — <strong>' . esc_html( $license_valid ? __( 'Valid', 'xpressui-bridge' ) : __( 'Not validated', 'xpressui-bridge' ) ) . '</strong></span>';
+	echo '</div>';
 	if ( ! $pro_active || ! $license_valid ) {
-		echo '<p class="description">' . esc_html__( 'Pro workflows remain blocked in the free bridge until a separate Pro extension is active and confirms the license via plugin hooks.', 'xpressui-bridge' ) . '</p>';
+		echo '<p class="description">' . esc_html__( 'Install and activate xpressui-wordpress-bridge-pro to unlock custom workflow packs and other Pro features.', 'xpressui-bridge' ) . '</p>';
 	}
 	echo '<form method="post">';
 	wp_nonce_field( 'xpressui_license_settings_action', 'xpressui_license_nonce' );
@@ -291,21 +293,13 @@ function xpressui_render_workflows_page() {
 	if ( '' !== $masked_license ) {
 		echo '<p class="description">' . esc_html__( 'Stored key:', 'xpressui-bridge' ) . ' ' . esc_html( $masked_license ) . '</p>';
 	}
-	echo '<p class="description">' . esc_html__( 'Saving a key here does not activate Pro by itself. The future Pro add-on will use this stored value to validate the license.', 'xpressui-bridge' ) . '</p></td></tr>';
+	echo '<p class="description">' . esc_html__( 'Enter your XPressUI Pro license key. The Pro extension will use this value to validate your license.', 'xpressui-bridge' ) . '</p></td></tr>';
 	echo '</tbody></table>';
 	echo '<p class="submit">';
 	submit_button( __( 'Save license key', 'xpressui-bridge' ), 'secondary', 'submit', false );
 	echo '</p></form></div>';
 
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
-	if ( ! empty( $bundled_slugs ) ) {
-		echo '<div class="notice notice-info"><p>';
-		echo esc_html__( 'Bundled starter included:', 'xpressui-bridge' ) . ' ';
-		foreach ( $bundled_slugs as $slug ) {
-			echo '<code>[xpressui id="' . esc_attr( $slug ) . '"]</code> ';
-		}
-		echo '</p></div>';
-	}
 
 	$starter_slug    = 'document-intake';
 	$starter_page_id = xpressui_get_workflow_primary_page_id( $starter_slug );
@@ -323,8 +317,8 @@ function xpressui_render_workflows_page() {
 			'xpressui_create_workflow_page_' . $starter_slug
 		);
 		echo '<div class="card xpressui-admin-card">';
-		echo '<h2>' . esc_html__( 'Starter Onboarding', 'xpressui-bridge' ) . '</h2>';
-		echo '<p>' . esc_html__( 'Document Intake is already bundled with the plugin so you can test the full submission flow immediately.', 'xpressui-bridge' ) . '</p>';
+		echo '<h2>' . esc_html__( 'Quick Start', 'xpressui-bridge' ) . '</h2>';
+		echo '<p>' . esc_html__( 'The Document Intake workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click.', 'xpressui-bridge' ) . '</p>';
 		echo '<p><strong>' . esc_html__( 'Workflow:', 'xpressui-bridge' ) . '</strong> <code>[xpressui id="document-intake"]</code></p>';
 		if ( $starter_page_id > 0 ) {
 			$edit_url = get_edit_post_link( $starter_page_id, '' );
@@ -349,8 +343,8 @@ function xpressui_render_workflows_page() {
 	} else {
 		echo '<table class="wp-list-table widefat fixed striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Project Slug', 'xpressui-bridge' ) . '</th>';
-		echo '<th>' . esc_html__( 'Runtime', 'xpressui-bridge' ) . '</th>';
+		echo '<th>' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
+		echo '<th>' . esc_html__( 'Tier', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Notify email', 'xpressui-bridge' ) . '</th>';
@@ -429,20 +423,15 @@ function xpressui_render_workflows_page() {
 				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Document Intake', 'xpressui-bridge' ) . '</span>';
 			}
 			echo '</td>';
-			echo '<td>' . esc_html( $runtime_tier !== '' ? $runtime_tier : 'light' ) . '</td>';
-			echo '<td>' . esc_html( $source_label ) . '<br /><span class="xpressui-muted">' . esc_html( $bridge_mode . ' / ' . $shortcode_mode . ' / ' . $template_profile ) . '</span>';
-			if ( $runtime_version !== '' ) {
-				echo '<br /><span class="xpressui-muted">' . esc_html( sprintf( 'Runtime %s', $runtime_version ) ) . '</span>';
+			echo '<td><span class="xpressui-badge xpressui-badge--muted">' . esc_html( $runtime_tier !== '' ? $runtime_tier : 'light' ) . '</span></td>';
+			echo '<td>';
+			if ( $is_bundled ) {
+				echo '<span class="xpressui-badge">' . esc_html__( 'Bundled', 'xpressui-bridge' ) . '</span>';
+			} else {
+				echo '<span class="xpressui-badge xpressui-badge--muted">' . esc_html__( 'Uploaded', 'xpressui-bridge' ) . '</span>';
 			}
-			if ( $generated_at !== '' ) {
-				echo '<br /><span class="xpressui-muted">' . esc_html( $generated_at ) . '</span>';
-			}
-			if ( $legacy_shell ) {
-				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Uses legacy shell artifacts', 'xpressui-bridge' ) . '</span>';
-			}
-			echo '<br /><span class="xpressui-muted">' . esc_html( $compiled_shell_ready ? __( 'Compiled PHP shell ready', 'xpressui-bridge' ) : __( 'JS shell fallback only', 'xpressui-bridge' ) ) . '</span>';
 			if ( $update_available ) {
-				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Bundled update available', 'xpressui-bridge' ) . '</span>';
+				echo ' <span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html__( 'Update available', 'xpressui-bridge' ) . '</span>';
 			}
 			echo '</td>';
 			echo '<td><code>[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
@@ -472,11 +461,14 @@ function xpressui_render_workflows_page() {
 
 	// --- Install / update pack ---
 	echo '<div class="card xpressui-admin-card">';
-	echo '<h2>' . esc_html__( 'Install or Update a Pack', 'xpressui-bridge' ) . '</h2>';
+	echo '<h2>' . esc_html__( 'Custom Workflow Packs', 'xpressui-bridge' ) . '</h2>';
 	if ( ! xpressui_is_pro_extension_active() ) {
-		echo '<p>' . esc_html__( 'Installing custom workflow packs requires the XPressUI Pro extension.', 'xpressui-bridge' ) . '</p>';
-		echo '<p>' . esc_html__( 'Install and activate', 'xpressui-bridge' ) . ' <strong>xpressui-wordpress-bridge-pro</strong> ' . esc_html__( 'to upload and manage your own workflow packs generated by the XPressUI console.', 'xpressui-bridge' ) . '</p>';
-		echo '<p><a href="https://lybaba.github.io/iakpress-console/" target="_blank" rel="noreferrer" class="button button-primary">' . esc_html__( 'Get XPressUI Pro →', 'xpressui-bridge' ) . '</a></p>';
+		echo '<div class="xpressui-pro-gate">';
+		echo '<span class="dashicons dashicons-lock xpressui-pro-gate__icon"></span>';
+		echo '<div class="xpressui-pro-gate__body">';
+		echo '<p>' . esc_html__( 'Upload and install workflow packages exported from the XPressUI console. Requires the Pro extension.', 'xpressui-bridge' ) . '</p>';
+		echo '<a href="https://lybaba.github.io/iakpress-console/" target="_blank" rel="noreferrer" class="button button-primary">' . esc_html__( 'Get XPressUI Pro', 'xpressui-bridge' ) . '</a>';
+		echo '</div></div>';
 	} else {
 		echo '<p>' . esc_html__( 'Upload the .zip file generated by the XPressUI console. The package will be extracted into your uploads directory.', 'xpressui-bridge' ) . '</p>';
 		echo '<form method="post" enctype="multipart/form-data">';
@@ -496,7 +488,7 @@ function xpressui_render_workflows_page() {
 	if ( ! empty( $installed_slugs ) ) {
 		echo '<div class="card xpressui-admin-card">';
 		echo '<h2>' . esc_html__( 'Project Settings', 'xpressui-bridge' ) . '</h2>';
-		echo '<p>' . esc_html__( 'Configure email notifications and post-submit redirect URL per project.', 'xpressui-bridge' ) . '</p>';
+		echo '<p>' . esc_html__( 'Configure notifications and the post-submission redirect for each workflow.', 'xpressui-bridge' ) . '</p>';
 		echo '<form method="post">';
 		wp_nonce_field( 'xpressui_project_settings_action', 'xpressui_settings_nonce' );
 		echo '<input type="hidden" name="xpressui_save_project_settings" value="1">';

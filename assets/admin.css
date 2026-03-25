@@ -49,17 +49,79 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Admin cards (replaces inline card style in .wrap)
+ * Admin cards
  * ------------------------------------------------------------------------- */
 
 .xpressui-admin-card {
 	margin-top: 20px;
-	padding: 16px 20px;
+	padding: 20px 24px;
 	max-width: 900px;
 }
 
 .xpressui-admin-card h2 {
 	margin-top: 0;
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #1d2327;
+	border-bottom: 1px solid #f0f0f0;
+	padding-bottom: 10px;
+	margin-bottom: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Status row (Pro extension dots)
+ * ------------------------------------------------------------------------- */
+
+.xpressui-status-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin: 0 0 12px;
+}
+
+.xpressui-status-item {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+}
+
+.xpressui-status-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.xpressui-status-dot--on  { background: #46b450; }
+.xpressui-status-dot--off { background: #ccc; }
+
+/* ---------------------------------------------------------------------------
+ * Pro gate (locked feature CTA)
+ * ------------------------------------------------------------------------- */
+
+.xpressui-pro-gate {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	background: #f9f9f9;
+	border: 1px solid #e5e5e5;
+	border-radius: 4px;
+	padding: 16px 18px;
+}
+
+.xpressui-pro-gate__icon {
+	font-size: 22px;
+	color: #bbb;
+	margin-top: 2px;
+	flex-shrink: 0;
+}
+
+.xpressui-pro-gate__body p {
+	margin: 0 0 12px;
+	color: #50575e;
 }
 
 /* ---------------------------------------------------------------------------
