@@ -331,6 +331,9 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	if ( '' !== $runtime_relative ) {
 		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
 	}
+	if ( '' !== $runtime_url ) {
+		$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
+	}
 
 	$init_url = xpressui_get_plugin_shell_init_url();
 	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>';

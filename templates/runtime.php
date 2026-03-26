@@ -34,9 +34,20 @@ function xui_jinja_render_template(string $template, array $context): string
 
 function xui_jinja_include(string $template, array $context): void
 {
-    $template_path = xui_jinja_templates_root() . '/' . $template;
-    if (!is_file($template_path)) {
-        $fallback = xui_jinja_templates_root() . '/fields/unsupported.php';
+    $default_root = xui_jinja_templates_root();
+    $template_dirs = function_exists('apply_filters')
+        ? (array) apply_filters('xpressui_field_template_dirs', [$default_root])
+        : [$default_root];
+    $template_path = null;
+    foreach ($template_dirs as $dir) {
+        $candidate = rtrim((string) $dir, '/') . '/' . $template;
+        if (is_file($candidate)) {
+            $template_path = $candidate;
+            break;
+        }
+    }
+    if ($template_path === null) {
+        $fallback = $default_root . '/fields/unsupported.php';
         if (is_file($fallback) && $template !== 'fields/unsupported.php') {
             $__ctx = $context;
             include $fallback;
