@@ -5,6 +5,7 @@
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![WordPress: 6.0+](https://img.shields.io/badge/WordPress-6.0%2B-21759b)
 ![PHP: 8.0+](https://img.shields.io/badge/PHP-8.0%2B-777bb4)
+![Downloads](https://img.shields.io/github/downloads/lybaba/xpressui-wordpress-bridge/total)
 
 ---
 
