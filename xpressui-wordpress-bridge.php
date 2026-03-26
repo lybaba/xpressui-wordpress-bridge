@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'XPRESSUI_BRIDGE_VERSION', '1.0.19' );
+define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.0' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_TEXT_DOMAIN', 'xpressui-bridge' );
@@ -34,6 +35,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/shortcode.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/notifications.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/light-runtime.php';
 
 add_action( 'init', 'xpressui_load_textdomain' );
 

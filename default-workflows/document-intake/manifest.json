@@ -21,9 +21,9 @@
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
-      "wordpress/README.md": "dbe039c59661d837",
+      "wordpress/README.md": "4c5e438311a04ec2",
       "wordpress/shortcode-example.php": "5f81010a368d6fb3",
-      "wordpress/runtime/xpressui-light-1.0.0.umd.js": "8334fed4cf2acdd0",
+      "wordpress/runtime/xpressui-light-1.0.0.umd.js": "b31f957ff533b168",
       "form.config.json": "13cf6ab19d439198"
     }
   },

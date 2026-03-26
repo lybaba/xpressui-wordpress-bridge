@@ -330,8 +330,6 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	$runtime_url         = '';
 	if ( '' !== $runtime_relative ) {
 		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
-	}
-	if ( '' !== $runtime_url ) {
 		$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 	}
 
