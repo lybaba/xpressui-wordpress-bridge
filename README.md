@@ -130,5 +130,6 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 ## Links
 
 - Product page: iakpress.com/document-intake *(console builder currently being deployed — not yet available)*
+- Demo gallery: [demos.iakpress.com](https://demos.iakpress.com/)
 - Support: [hello@iakpress.com](mailto:hello@iakpress.com)
 - WordPress.org listing: *(coming soon)*
