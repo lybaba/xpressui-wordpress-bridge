@@ -1,10 +1,34 @@
 const mountNode = document.getElementById('xpressui-root');
 const i18n = window.XPRESSUI_I18N || {};
+const shellMeta = window.XPRESSUI_SHELL_META || {};
 
 function t(key, fallback) {
   return typeof i18n[key] === 'string' && i18n[key].trim() !== ''
     ? i18n[key]
     : fallback;
+}
+
+function logRuntimeResolution() {
+  const runtimeUrl = typeof shellMeta.runtimeUrl === 'string' ? shellMeta.runtimeUrl : '';
+  const runtimeSource = typeof shellMeta.runtimeSource === 'string' ? shellMeta.runtimeSource : 'unknown';
+  const slug = typeof shellMeta.slug === 'string' ? shellMeta.slug : '';
+  if (!runtimeUrl) {
+    console.warn('[XPressUI] No runtime URL resolved for shell.', {
+      slug,
+      runtimeSource,
+      shellMeta,
+    });
+    return;
+  }
+
+  console.info('[XPressUI] Runtime resolved.', {
+    slug,
+    runtimeSource,
+    runtimeUrl,
+    runtimeRelative: shellMeta.runtimeRelative || '',
+    workflowPackageUrl: shellMeta.workflowPackageUrl || '',
+    shellInitUrl: shellMeta.shellInitUrl || '',
+  });
 }
 
 async function initXPressUI() {
@@ -356,6 +380,7 @@ async function initXPressUI() {
   };
 
   try {
+    logRuntimeResolution();
     formConfig.submit = formConfig.submit || {};
     if (!formConfig.submit.endpoint || formConfig.submit.endpoint === '__XPRESSUI_WORDPRESS_REST_URL__') {
       const resolvedEndpoint = resolveWordPressRestEndpoint();
@@ -367,7 +392,9 @@ async function initXPressUI() {
       || window.XPressUI?.hydrateForm
       || window.xpressui?.hydrateForm;
     if (typeof hydrateForm !== 'function') {
-      throw new Error('Missing bundled XPressUI runtime.');
+      const runtimeUrl = typeof shellMeta.runtimeUrl === 'string' ? shellMeta.runtimeUrl : '';
+      const runtimeSource = typeof shellMeta.runtimeSource === 'string' ? shellMeta.runtimeSource : 'unknown';
+      throw new Error(`Missing bundled XPressUI runtime. Expected source: ${runtimeSource}. Runtime URL: ${runtimeUrl || 'not resolved'}.`);
     }
     const hydrated = hydrateForm(mountNode, formConfig);
     if (!hydrated) {

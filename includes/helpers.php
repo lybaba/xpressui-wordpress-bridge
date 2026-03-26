@@ -261,6 +261,42 @@ function xpressui_get_plugin_shell_init_url() {
 	return file_exists( $path ) ? esc_url_raw( XPRESSUI_BRIDGE_URL . $relative ) : '';
 }
 
+function xpressui_describe_runtime_source( $runtime_url, $slug ) {
+	$runtime_url = esc_url_raw( (string) $runtime_url );
+	$slug        = sanitize_title( (string) $slug );
+	if ( '' === $runtime_url ) {
+		return 'missing';
+	}
+
+	$bridge_runtime_url = '';
+	if ( defined( 'XPRESSUI_BRIDGE_RUNTIME_VERSION' ) ) {
+		$bridge_runtime_url = esc_url_raw(
+			XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
+		);
+	}
+	if ( '' !== $bridge_runtime_url && $runtime_url === $bridge_runtime_url ) {
+		return 'plugin-bridge';
+	}
+
+	$pro_runtime_url = '';
+	if ( defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ) ) {
+		$pro_runtime_url = esc_url_raw(
+			plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' )
+			. 'runtime/xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js'
+		);
+	}
+	if ( '' !== $pro_runtime_url && $runtime_url === $pro_runtime_url ) {
+		return 'plugin-pro';
+	}
+
+	$workflow_package_url = xpressui_get_workflow_package_url( $slug );
+	if ( '' !== $workflow_package_url && str_starts_with( $runtime_url, $workflow_package_url ) ) {
+		return 'workflow-package';
+	}
+
+	return 'custom';
+}
+
 function xpressui_get_workflow_shell_payload( $slug ) {
 	$slug = sanitize_title( (string) $slug );
 	if ( '' === $slug || ! xpressui_is_installed_workflow( $slug ) ) {
@@ -335,6 +371,16 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	$init_url = xpressui_get_plugin_shell_init_url();
 	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>';
+	$shell_meta_script   = '<script>window.XPRESSUI_SHELL_META = ' . wp_json_encode(
+		[
+			'slug'             => $slug,
+			'runtimeUrl'       => $runtime_url,
+			'runtimeRelative'  => $runtime_relative,
+			'runtimeSource'    => xpressui_describe_runtime_source( $runtime_url, $slug ),
+			'workflowPackageUrl' => xpressui_get_workflow_package_url( $slug ),
+			'shellInitUrl'     => $init_url,
+		]
+	) . ';</script>';
 
 	if ( '' !== $runtime_relative && '' !== $runtime_url ) {
 		$rendered_html = str_replace( './' . $runtime_relative, esc_url_raw( $runtime_url ), $rendered_html );
@@ -345,9 +391,9 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	}
 
 	if ( false !== strpos( $rendered_html, '</head>' ) ) {
-		$rendered_html = str_replace( '</head>', $translations_script . '</head>', $rendered_html );
+		$rendered_html = str_replace( '</head>', $translations_script . $shell_meta_script . '</head>', $rendered_html );
 	} else {
-		$rendered_html = $translations_script . $rendered_html;
+		$rendered_html = $translations_script . $shell_meta_script . $rendered_html;
 	}
 
 	return $rendered_html;
