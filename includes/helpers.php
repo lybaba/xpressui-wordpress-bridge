@@ -827,6 +827,51 @@ function xpressui_runtime_supports_workflow( $required_tier = 'light', $requires
 	return true;
 }
 
+function xpressui_get_runtime_health_summary() {
+	$bridge_runtime_name = defined( 'XPRESSUI_BRIDGE_RUNTIME_VERSION' )
+		? 'xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
+		: '';
+	$bridge_runtime_path = $bridge_runtime_name !== ''
+		? XPRESSUI_BRIDGE_DIR . 'runtime/' . $bridge_runtime_name
+		: '';
+	$bridge_runtime_url  = $bridge_runtime_name !== ''
+		? XPRESSUI_BRIDGE_URL . 'runtime/' . $bridge_runtime_name
+		: '';
+
+	$pro_runtime_name = ( defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ) )
+		? 'xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js'
+		: '';
+	$pro_runtime_path = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
+		? XPRESSUI_PRO_DIR . 'runtime/' . $pro_runtime_name
+		: '';
+	$pro_runtime_url  = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
+		? plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' ) . 'runtime/' . $pro_runtime_name
+		: '';
+
+	$current_tier = xpressui_get_current_runtime_tier();
+	$active_runtime_source = 'pro' === $current_tier && $pro_runtime_url !== '' ? 'plugin-pro' : 'plugin-bridge';
+	$active_runtime_url = 'plugin-pro' === $active_runtime_source ? $pro_runtime_url : $bridge_runtime_url;
+
+	return [
+		'currentTier' => $current_tier,
+		'activeRuntimeSource' => $active_runtime_source,
+		'activeRuntimeUrl' => $active_runtime_url,
+		'bridge' => [
+			'name' => $bridge_runtime_name,
+			'path' => $bridge_runtime_path,
+			'url' => $bridge_runtime_url,
+			'exists' => $bridge_runtime_path !== '' && file_exists( $bridge_runtime_path ),
+		],
+		'pro' => [
+			'name' => $pro_runtime_name,
+			'path' => $pro_runtime_path,
+			'url' => $pro_runtime_url,
+			'exists' => $pro_runtime_path !== '' && file_exists( $pro_runtime_path ),
+			'available' => defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ),
+		],
+	];
+}
+
 function xpressui_get_workflow_page_ids( $slug ) {
 	global $wpdb;
 

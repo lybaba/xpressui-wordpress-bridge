@@ -264,6 +264,7 @@ function xpressui_render_workflows_page() {
 	$pro_active        = xpressui_is_pro_extension_active();
 	$license_valid     = xpressui_has_valid_pro_license();
 	$current_tier      = xpressui_get_current_runtime_tier();
+	$runtime_health    = xpressui_get_runtime_health_summary();
 
 	if ( $notice_message ) {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
@@ -298,6 +299,34 @@ function xpressui_render_workflows_page() {
 	echo '<p class="submit">';
 	submit_button( __( 'Save license key', 'xpressui-bridge' ), 'secondary', 'submit', false );
 	echo '</p></form></div>';
+
+	echo '<div class="card xpressui-admin-card">';
+	echo '<h2>' . esc_html__( 'Runtime Health', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description">' . esc_html__( 'Shows which runtime the plugin shell will try to load and whether the bundled files are present.', 'xpressui-bridge' ) . '</p>';
+	echo '<table class="widefat striped"><tbody>';
+	echo '<tr>';
+	echo '<td><strong>' . esc_html__( 'Active shell runtime', 'xpressui-bridge' ) . '</strong></td>';
+	echo '<td><code>' . esc_html( (string) ( $runtime_health['activeRuntimeSource'] ?? '' ) ) . '</code></td>';
+	echo '<td><code>' . esc_html( (string) ( $runtime_health['activeRuntimeUrl'] ?? '' ) ) . '</code></td>';
+	echo '</tr>';
+	echo '<tr>';
+	echo '<td><strong>' . esc_html__( 'Bridge light runtime', 'xpressui-bridge' ) . '</strong></td>';
+	echo '<td>' . ( ! empty( $runtime_health['bridge']['exists'] ) ? '<span class="xpressui-badge">' . esc_html__( 'Present', 'xpressui-bridge' ) . '</span>' : '<span class="xpressui-badge xpressui-badge--status-new">' . esc_html__( 'Missing', 'xpressui-bridge' ) . '</span>' ) . '</td>';
+	echo '<td><code>' . esc_html( (string) ( $runtime_health['bridge']['url'] ?? '' ) ) . '</code></td>';
+	echo '</tr>';
+	echo '<tr>';
+	echo '<td><strong>' . esc_html__( 'Pro runtime', 'xpressui-bridge' ) . '</strong></td>';
+	$pro_runtime_status = ! empty( $runtime_health['pro']['available'] )
+		? ( ! empty( $runtime_health['pro']['exists'] ) ? __( 'Present', 'xpressui-bridge' ) : __( 'Missing', 'xpressui-bridge' ) )
+		: __( 'Unavailable', 'xpressui-bridge' );
+	$pro_runtime_badge_class = ! empty( $runtime_health['pro']['available'] ) && ! empty( $runtime_health['pro']['exists'] )
+		? 'xpressui-badge'
+		: 'xpressui-badge xpressui-badge--status-new';
+	echo '<td><span class="' . esc_attr( $pro_runtime_badge_class ) . '">' . esc_html( $pro_runtime_status ) . '</span></td>';
+	echo '<td><code>' . esc_html( (string) ( $runtime_health['pro']['url'] ?? '' ) ) . '</code></td>';
+	echo '</tr>';
+	echo '</tbody></table>';
+	echo '</div>';
 
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
