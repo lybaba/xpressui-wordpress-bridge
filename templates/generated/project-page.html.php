@@ -20,7 +20,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
   <script id="xpressui-custom-config" type="application/json">
 <?php echo xui_jinja_escape(xui_jinja_mark_safe(xui_jinja_attr(xui_jinja_context_get($__ctx, 'runtime'), 'form_config_json'))); ?>
   </script>
-  <script src="./wordpress/runtime/xpressui-light-0.88.2.umd.js"></script>
+  <script src="./wordpress/runtime/xpressui-light-1.0.0.umd.js"></script>
   <script src="./init.js"></script>
 </body>
 </html>

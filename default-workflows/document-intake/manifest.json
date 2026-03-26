@@ -4,9 +4,9 @@
   "projectId": "document-intake-starter",
   "projectSlug": "document-intake",
   "projectName": "Document Intake",
-  "generatedAt": "2026-03-13T00:00:00+00:00",
+  "generatedAt": "2026-03-26T00:00:00+00:00",
   "xpressui": {
-    "version": "0.88.2",
+    "version": "1.0.0",
     "target": "wordpress"
   },
   "artifacts": {
@@ -15,15 +15,15 @@
     "wordpress": {
       "readme": "wordpress/README.md",
       "shortcode": "wordpress/shortcode-example.php",
-      "runtime": "wordpress/runtime/xpressui-light-0.88.2.umd.js"
+      "runtime": "wordpress/runtime/xpressui-light-1.0.0.umd.js"
     }
   },
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
-      "wordpress/README.md": "4c5e438311a04ec2",
+      "wordpress/README.md": "dbe039c59661d837",
       "wordpress/shortcode-example.php": "5f81010a368d6fb3",
-      "wordpress/runtime/xpressui-light-0.88.2.umd.js": "21d969f9f29845cf",
+      "wordpress/runtime/xpressui-light-1.0.0.umd.js": "8334fed4cf2acdd0",
       "form.config.json": "13cf6ab19d439198"
     }
   },
@@ -37,7 +37,7 @@
   "runtimeRequirements": {
     "tier": "light",
     "minimumPluginVersion": "1.0.0",
-    "minimumRuntimeVersion": "0.88.2"
+    "minimumRuntimeVersion": "1.0.0"
   },
   "capabilities": {
     "components": [
@@ -78,8 +78,8 @@
       "method": "POST",
       "uploadStrategy": "wordpress-media",
       "visualAssetStrategy": "external-public-assets",
-      "runtimeArtifact": "wordpress/runtime/xpressui-light-0.88.2.umd.js",
-      "runtimeVersion": "0.88.2",
+      "runtimeArtifact": "wordpress/runtime/xpressui-light-1.0.0.umd.js",
+      "runtimeVersion": "1.0.0",
       "expectedRoute": "xpressui/v1/submit",
       "projectIdentityFields": [
         "projectId",
