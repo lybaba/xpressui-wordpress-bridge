@@ -3,7 +3,7 @@
  * Plugin Name:       XPressUI WordPress Bridge
  * Plugin URI:        https://iakpress.com/document-intake
  * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your WordPress site with a shortcode and review submissions in wp-admin.
- * Version:           1.0.18
+ * Version:           1.0.19
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            IAKPress
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'XPRESSUI_BRIDGE_VERSION', '1.0.18' );
+define( 'XPRESSUI_BRIDGE_VERSION', '1.0.19' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_TEXT_DOMAIN', 'xpressui-bridge' );
