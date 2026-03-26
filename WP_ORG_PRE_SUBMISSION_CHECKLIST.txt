@@ -1,0 +1,155 @@
+WordPress.org Pre-Submission Checklist
+Plugin: XPressUI WordPress Bridge
+Date: 2026-03-25
+
+But
+
+Cette checklist sert a preparer une soumission wordpress.org avec le maximum de chances d'acceptation rapide.
+
+
+Bloc A - Bloqueurs probables
+
+[ ] Revoir l'architecture des workflow packages
+- Verifier si le plugin peut fonctionner sans executer un bundle HTML/JS uploade dans uploads.
+- Idealement, transformer le package en donnees/config statiques uniquement.
+- Inclure le moteur de rendu dans le plugin lui-meme.
+- Eviter de servir index.html depuis uploads dans un iframe.
+
+[ ] Durcir le endpoint REST public
+- Remplacer la confiance implicite par des verifications strictes.
+- Valider projectId, projectSlug, submissionId avec des schemas clairs.
+- Refuser les projets inconnus ou non installes.
+- Ajouter un mecanisme anti-spam:
+  token signe, nonce adapte au runtime, honeypot, rate limit, ou combinaison.
+- Limiter la taille, le nombre et les types de fichiers.
+- Retourner des erreurs REST explicites en cas d'entree invalide.
+
+[ ] Durcir le handler ZIP
+- Refuser tout fichier executable ou interpretable:
+  .php, .phtml, .phar, .sh, .cgi, etc.
+- Verifier le contenu du ZIP avant extraction.
+- N'accepter qu'une structure de package attendue.
+- Imposer un manifeste.
+- Imposer une liste blanche d'extensions autorisees.
+- Verifier le slug final du package avant installation.
+- S'assurer qu'aucun path traversal n'est possible.
+
+
+Bloc B - Conformite et privacy
+
+[ ] Ajouter les integrations privacy WordPress
+- Ajouter un personal data exporter.
+- Ajouter un personal data eraser.
+- Ajouter le texte suggere pour la privacy policy.
+- Documenter clairement quelles donnees sont stockees et pourquoi.
+
+[ ] Ajouter uninstall.php
+- Nettoyer les options du plugin si desinstallation complete souhaitee.
+- Definir clairement la politique de conservation des submissions et attachments.
+
+[ ] Clarifier la gestion des pieces jointes
+- Definir si les attachments doivent etre supprimes quand une submission est supprimee.
+- Documenter le comportement dans le readme.
+- Eviter les fichiers orphelins sans politique claire.
+
+
+Bloc C - Readme et listing wordpress.org
+
+[ ] Mettre a jour readme.txt
+- Passer "Tested up to" a 6.9.
+- Verifier que Stable tag et Version restent alignes.
+- Expliquer tres clairement la dependance au service XPressUI.
+- Expliquer la nature exacte du workflow package exporte.
+- Ajouter une section privacy plus explicite.
+- Ajouter une section "External service" claire si necessaire.
+
+[ ] Garder le readme sobre
+- Rester sous environ 10 KB si possible.
+- Eviter le ton trop marketing.
+- Garder 1 a 5 tags maximum.
+
+[ ] Preparer les assets wordpress.org
+- icon-128x128.png
+- icon-256x256.png
+- banner-772x250.png
+- banner-1544x500.png
+- screenshots nommes correctement
+
+
+Bloc D - Hygiene technique
+
+[ ] Verifier l'internationalisation
+- S'assurer que toutes les chaines visibles passent par les fonctions i18n.
+- Verifier la coherence du text domain xpressui-bridge.
+
+[ ] Verifier les sanitizations et escapings
+- Sanitize de toutes les entrees admin et REST.
+- Escape de toutes les sorties HTML, attributs, URLs et JSON.
+
+[ ] Revoir les capabilities
+- Confirmer que chaque ecran admin et action destructive ont la capability adequate.
+- Verifier les actions de changement de statut et uploads.
+
+[ ] Revoir les performances de l'admin
+- Eviter les get_posts(posts_per_page => -1) si le volume peut croitre.
+- Envisager des requetes plus ciblees pour les vues d'inbox et filtres.
+
+
+Bloc E - Verification avant envoi
+
+[ ] Lancer Plugin Check
+- Outil officiel:
+  https://wordpress.org/plugins/plugin-check/
+
+[ ] Valider le readme
+- Outil officiel:
+  https://wordpress.org/plugins/developers/readme-validator/
+
+[ ] Tester sur une installation WordPress propre
+- Activation
+- Upload package
+- Shortcode
+- Soumission simple
+- Soumission avec fichier
+- Notifications email
+- Changement de statut
+- Suppression d'une submission
+
+[ ] Tester sur la derniere version stable de WordPress
+- Au 25 mars 2026, viser WordPress 6.9.x
+
+[ ] Verifier l'absence de notices PHP et warnings JS
+
+
+Ordre recommande
+
+1. Bloqueurs architecture / securite
+2. Privacy et uninstall
+3. Readme et documentation service externe
+4. Plugin Check et readme validator
+5. Packaging final pour wordpress.org
+
+
+Etape suivante recommandee
+
+Commencer par les 3 chantiers critiques:
+- endpoint REST public
+- upload ZIP
+- architecture du package execute depuis uploads
+
+
+Mise a jour du suivi - 25 mars 2026
+
+[x] Pipeline Jinja -> PHP pour les templates WordPress embarques
+[x] Sous-ensemble light seulement dans le plugin free
+[x] Export de `template.context.json` pour le rendu WordPress
+[x] Rendu du shell via templates PHP compiles avec fallback
+[x] Textdomain `xpressui-bridge` charge par le plugin
+[x] Generation et verification du fichier POT automatisees
+[x] Traduction WordPress ajoutee aux chaines systeme du shell PHP
+[x] Traduction WordPress ajoutee aux messages systeme PHP et JS du shell
+
+Reste a faire en priorite:
+- lancer Plugin Check sur une installation WordPress reelle
+- verifier le readme final et les assets wordpress.org
+- poursuivre la reduction du risque lie a l'architecture package/uploads pour la soumission finale

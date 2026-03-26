@@ -10,7 +10,7 @@
 
 ## What it does
 
-Build multi-step forms and document-intake workflows in the [XPressUI console](https://iakpress.com/document-intake), export them as a `.zip` package, upload to WordPress in one click — then embed anywhere with a shortcode.
+Build multi-step forms and document-intake workflows in the XPressUI console builder *(currently being deployed — not yet available)*, export them as a `.zip` package, upload to WordPress in one click — then embed anywhere with a shortcode.
 
 ```
 [xpressui id="loan-application"]
@@ -40,7 +40,7 @@ Every submission lands in a private wp-admin inbox. Your team can review, assign
 
 - WordPress 6.0 or later
 - PHP 8.0 or later
-- A workflow package exported from the [XPressUI console](https://iakpress.com/document-intake)
+- A workflow package exported from the XPressUI console builder *(currently being deployed — not yet available)*
 
 ---
 
@@ -129,6 +129,6 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 
 ## Links
 
-- Product page: [iakpress.com/document-intake](https://iakpress.com/document-intake)
+- Product page: iakpress.com/document-intake *(console builder currently being deployed — not yet available)*
 - Support: [hello@iakpress.com](mailto:hello@iakpress.com)
 - WordPress.org listing: *(coming soon)*
