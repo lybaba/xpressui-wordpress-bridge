@@ -23,7 +23,8 @@ jobs:
       - name: Build plugin ZIP
         run: |
           ZIP_NAME="xpressui-bridge-${{ steps.version.outputs.version }}.zip"
-          bash scripts/build-package.sh "$ZIP_NAME"
+          OUTPUT_PATH="$(bash scripts/build-package.sh "$ZIP_NAME")"
+          cp "$OUTPUT_PATH" "$ZIP_NAME"
 
           echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_ENV"
 
