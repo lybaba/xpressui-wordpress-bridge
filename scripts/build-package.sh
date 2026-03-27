@@ -37,6 +37,6 @@ if [[ -f "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" ]]; then
 fi
 
 cd "${STAGE_DIR}"
-zip -r "${OUTPUT_PATH}" "${DIST_SLUG}"
+zip -rq "${OUTPUT_PATH}" "${DIST_SLUG}"
 
 echo "${OUTPUT_PATH}"
