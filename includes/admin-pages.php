@@ -791,7 +791,15 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 		'eot',
 		'map',
 	];
-	$blocked_extensions = [ 'php', 'phtml', 'phar', 'cgi', 'pl', 'py', 'rb', 'sh', 'exe', 'dll', 'bin' ];
+	$blocked_extensions = [
+		// PHP variants
+		'php', 'php3', 'php4', 'php5', 'php6', 'php7', 'php8', 'phtml', 'phar',
+		// Server config that can re-enable PHP execution in uploads
+		'htaccess', 'htpasswd', 'user.ini',
+		// Other server-side / executable types
+		'cgi', 'pl', 'py', 'rb', 'sh', 'bash', 'asp', 'aspx', 'jsp', 'cfm',
+		'exe', 'dll', 'bin', 'bat', 'cmd', 'msi',
+	];
 	$root_slug          = '';
 	$has_manifest       = false;
 	$manifest           = [];
@@ -842,7 +850,14 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 			return new WP_Error( 'blocked_file_type', __( 'The workflow package contains a blocked file type.', 'xpressui-bridge' ) );
 		}
 
-		if ( $ext !== '' && ! in_array( $ext, $allowed_extensions, true ) ) {
+		// Reject files with no extension (e.g. .htaccess, .env, Makefile).
+		// No legitimate workflow asset omits a file extension.
+		if ( $ext === '' ) {
+			$archive->close();
+			return new WP_Error( 'disallowed_file_type', __( 'The workflow package contains a file type that is not allowed.', 'xpressui-bridge' ) );
+		}
+
+		if ( ! in_array( $ext, $allowed_extensions, true ) ) {
 			$archive->close();
 			return new WP_Error( 'disallowed_file_type', __( 'The workflow package contains a file type that is not allowed.', 'xpressui-bridge' ) );
 		}

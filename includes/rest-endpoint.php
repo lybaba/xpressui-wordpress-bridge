@@ -122,6 +122,17 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 		);
 	}
 
+	// Honeypot: the field is injected by the init script and must remain empty.
+	// Bots that auto-fill all inputs will populate it, triggering rejection.
+	$honeypot = $request->get_param( 'xpressui_confirm_email' );
+	if ( $honeypot !== null && $honeypot !== '' ) {
+		return new WP_Error(
+			'xpressui_spam',
+			__( 'Submission rejected.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
 	if ( ! is_array( $payload ) ) {
 		return new WP_Error(
 			'xpressui_invalid_payload',

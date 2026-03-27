@@ -173,6 +173,22 @@ async function initXPressUI() {
   syncDomWithConfig();
   // --- END DOM SYNCHRONIZATION ---
 
+  // --- HONEYPOT ---
+  // Inject a visually-hidden input that legitimate users cannot fill in.
+  // Bots that auto-fill all fields will populate it; the server rejects such submissions.
+  const formElement0 = mountNode.querySelector('form');
+  if (formElement0 instanceof HTMLFormElement && !formElement0.querySelector('[name="xpressui_confirm_email"]')) {
+    const hp = document.createElement('input');
+    hp.type = 'text';
+    hp.name = 'xpressui_confirm_email';
+    hp.tabIndex = -1;
+    hp.autocomplete = 'off';
+    hp.setAttribute('aria-hidden', 'true');
+    hp.style.cssText = 'opacity:0;position:absolute;top:0;left:0;height:0;width:0;z-index:-1;pointer-events:none;';
+    formElement0.appendChild(hp);
+  }
+  // --- END HONEYPOT ---
+
   const feedbackNode = document.querySelector('[data-submit-feedback]');
   const feedbackMessageNode = document.querySelector('[data-submit-feedback-message]');
   const feedbackTitleNode = document.querySelector('.template-submit-feedback-title');
