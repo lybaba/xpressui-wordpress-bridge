@@ -24,7 +24,7 @@ You can customize the workflow behavior directly via the shortcode:
 
 ## 🛠 Included Files (For Developers)
 - `wordpress/shortcode-example.php`: PHP shortcode logic example
-- `wordpress/runtime/xpressui-light-0.88.2.umd.js`: Bundled XPressUI runtime (`0.88.2`)
+- `wordpress/runtime/xpressui-light-1.0.0.umd.js`: Bundled XPressUI runtime (`1.0.0`)
 
 Workflow included:
 1. Contact
