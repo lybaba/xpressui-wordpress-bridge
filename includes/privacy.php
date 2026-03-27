@@ -130,14 +130,6 @@ function xpressui_personal_data_eraser( $email_address, $page = 1 ) {
 	$items_removed  = false;
 
 	foreach ( $current_ids as $submission_id ) {
-		$stored_files = xpressui_get_uploaded_files( $submission_id );
-		foreach ( $stored_files as $file ) {
-			$attachment_id = isset( $file['attachmentId'] ) ? (int) $file['attachmentId'] : 0;
-			if ( $attachment_id > 0 ) {
-				wp_delete_attachment( $attachment_id, true );
-			}
-		}
-
 		wp_delete_post( $submission_id, true );
 		$items_removed = true;
 	}

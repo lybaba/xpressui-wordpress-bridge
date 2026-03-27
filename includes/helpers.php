@@ -984,6 +984,26 @@ function xpressui_get_uploaded_file_count( $post_id ) {
 	return is_array( $files ) ? count( $files ) : 0;
 }
 
+function xpressui_get_uploaded_files( $post_id ) {
+	$json  = get_post_meta( $post_id, '_xpressui_uploaded_files', true );
+	$files = $json ? json_decode( (string) $json, true ) : [];
+	return is_array( $files ) ? $files : [];
+}
+
+function xpressui_delete_submission_attachments( $post_id ) {
+	$stored_files = xpressui_get_uploaded_files( $post_id );
+	if ( empty( $stored_files ) ) {
+		return;
+	}
+
+	foreach ( $stored_files as $file ) {
+		$attachment_id = isset( $file['attachmentId'] ) ? (int) $file['attachmentId'] : 0;
+		if ( $attachment_id > 0 ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Config snapshot helpers
 // ---------------------------------------------------------------------------

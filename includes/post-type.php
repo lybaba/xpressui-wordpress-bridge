@@ -73,3 +73,15 @@ function xpressui_submission_column_content( $column, $post_id ) {
 			break;
 	}
 }
+
+function xpressui_delete_submission_media_on_post_delete( $post_id, $post ) {
+	if ( ! $post instanceof WP_Post ) {
+		$post = get_post( $post_id );
+	}
+
+	if ( ! $post instanceof WP_Post || $post->post_type !== 'xpressui_submission' ) {
+		return;
+	}
+
+	xpressui_delete_submission_attachments( $post_id );
+}

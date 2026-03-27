@@ -12,7 +12,7 @@ Embed any XPressUI workflow on your WordPress site with a shortcode and review i
 
 == Description ==
 
-**XPressUI WordPress Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://iakpress.com/document-intake) directly in your WordPress pages.
+**XPressUI WordPress Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://xpressui.iakpress.com/) directly in your WordPress pages.
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
@@ -35,7 +35,7 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 == Installation ==
 
-1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://iakpress.com/document-intake).
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [xpressui.iakpress.com](https://xpressui.iakpress.com/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
 4. In the XPressUI console, export your workflow as a package (`.zip`).
@@ -46,7 +46,7 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 = Where do I get the workflow package (.zip) to upload? =
 
-You build and export it in the XPressUI console at [iakpress.com](https://iakpress.com/document-intake). The console lets you design multi-step forms and document-intake workflows without code, then export them as self-contained packages.
+You build and export it in the XPressUI console at [xpressui.iakpress.com](https://xpressui.iakpress.com/). The console lets you design multi-step forms and document-intake workflows without code, then export them as self-contained packages.
 
 = What does the [xpressui] shortcode accept? =
 
@@ -60,7 +60,7 @@ Submissions are stored as private WordPress posts of the custom post type `xpres
 
 = Can I export or delete submissions? =
 
-Submissions can be deleted directly from the wp-admin list (Trash → Delete permanently). Export and bulk actions are on the roadmap.
+Submissions can be deleted directly from the wp-admin list (Trash → Delete permanently). When a submission is permanently deleted, its uploaded files are deleted too. Export and bulk actions are on the roadmap.
 
 = Does the plugin send emails? =
 
@@ -76,21 +76,21 @@ Yes — the `/wp-json/xpressui/v1/submit` endpoint accepts POST requests without
 
 = What happens to uploaded files when a submission is deleted? =
 
-Uploaded files are stored as WordPress media attachments. They are not automatically deleted when the submission post is trashed or deleted. Remove them manually via **Media › Library** if needed.
+Uploaded files are stored as WordPress media attachments. When a submission is permanently deleted, the plugin also permanently deletes the files linked to that submission. Trashing a submission does not immediately remove the files; permanent deletion does.
 
 = Does the plugin call any external API at runtime? =
 
-No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at xpressui.iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
 
 == External Services ==
 
-This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at xpressui.iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
 
 The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
 == Privacy ==
 
-This plugin stores data submitted by your site visitors (form field values, uploaded files, and metadata such as submission timestamps). All data is stored locally in your WordPress database and media library. No data is transmitted to external servers.
+This plugin stores data submitted by your site visitors (form field values, uploaded files, and metadata such as submission timestamps). All data is stored locally in your WordPress database and media library. No data is transmitted to external servers. When a submission is permanently deleted, its linked uploaded files are deleted as well.
 
 Users may request access to or deletion of their personal data. This plugin integrates with the WordPress Personal Data tools (**Tools › Erase Personal Data** and **Tools › Export Personal Data**).
 

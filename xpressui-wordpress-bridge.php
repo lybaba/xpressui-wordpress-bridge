@@ -1,13 +1,13 @@
 <?php
 /**
  * Plugin Name:       XPressUI WordPress Bridge
- * Plugin URI:        https://iakpress.com/document-intake
+ * Plugin URI:        https://xpressui.iakpress.com/
  * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your WordPress site with a shortcode and review submissions in wp-admin.
  * Version:           1.0.21
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            IAKPress
- * Author URI:        https://iakpress.com
+ * Author URI:        https://xpressui.iakpress.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       xpressui-bridge
@@ -51,6 +51,7 @@ function xpressui_load_textdomain() {
 add_action( 'init', 'xpressui_register_submission_post_type' );
 add_filter( 'manage_xpressui_submission_posts_columns', 'xpressui_submission_columns' );
 add_action( 'manage_xpressui_submission_posts_custom_column', 'xpressui_submission_column_content', 10, 2 );
+add_action( 'before_delete_post', 'xpressui_delete_submission_media_on_post_delete', 10, 2 );
 
 // --- Metaboxes ---
 add_action( 'add_meta_boxes', 'xpressui_register_metaboxes' );
