@@ -1,10 +1,10 @@
 === XPressUI WordPress Bridge ===
 Contributors: iakpress
-Tags: form, submission, workflow, document intake, iframe
+Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.0.21
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,21 +12,22 @@ Embed any XPressUI workflow on your WordPress site with a shortcode and review i
 
 == Description ==
 
-**XPressUI WordPress Bridge** connects your WordPress site to workflow packages built with the [XPressUI console](https://iakpress.com/document-intake).
+**XPressUI WordPress Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://iakpress.com/document-intake) directly in your WordPress pages.
 
-Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. Submissions are stored as private posts in a dedicated wp-admin inbox — no third-party database required.
+Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
 = Key features =
 
 * **One-click installation** — upload the exported `.zip` file from the XPressUI console directly inside wp-admin.
-* **Shortcode embed** — `[xpressui id="your-project-slug"]` works in any page, post, or block-editor paragraph block.
-* **Submission inbox** — all submissions land in a private wp-admin post list with status badges, filtering by project / status / assignee, and detailed review metaboxes.
+* **Shortcode embed** — `[xpressui id="your-project-slug"]` works in any page, post, or block-editor paragraph block. The form renders inline, inheriting your theme's page layout.
+* **Submission inbox** — all submissions land in a private wp-admin post list with status badges, filtering by project, status, and assignee, and detailed review metaboxes.
 * **Status workflow** — mark submissions *New*, *In review*, or *Done* from the list or the detail view. Every status change is recorded in a per-submission history log.
 * **Team assignment** — assign any WordPress user to a submission. The *My Queue* page shows each reviewer their personal backlog at a glance.
 * **Email notifications** — configure a notification address per project and receive a plain-text summary email the moment a new submission arrives.
 * **Post-submit redirect** — optionally redirect the visitor to a thank-you page after a successful submission. Configured per project from wp-admin.
 * **File uploads** — uploaded files are stored as WordPress media attachments and linked back to their submission.
 * **REST API endpoint** — submissions are received via a standard WordPress REST route (`POST /wp-json/xpressui/v1/submit`). No extra server configuration required.
+* **Bundled runtime** — the XPressUI light runtime is bundled inside the plugin. No JavaScript is loaded from the uploads directory or external CDNs.
 
 = Who is this for? =
 
@@ -50,11 +51,8 @@ You build and export it in the XPressUI console at [iakpress.com](https://iakpre
 = What does the [xpressui] shortcode accept? =
 
 * `id` (required) — the project slug, matching the uploaded package folder name.
-* `title` — accessible title for the embedded iframe. Defaults to "XPressUI Form".
-* `width` — CSS width of the iframe. Defaults to `100%`.
-* `height` — fixed pixel height. If omitted, the iframe auto-resizes based on its content via a postMessage listener.
 
-Example: `[xpressui id="loan-application" width="100%" title="Loan Application"]`
+Example: `[xpressui id="loan-application"]`
 
 = Where are submissions stored? =
 
@@ -80,14 +78,38 @@ Yes — the `/wp-json/xpressui/v1/submit` endpoint accepts POST requests without
 
 Uploaded files are stored as WordPress media attachments. They are not automatically deleted when the submission post is trashed or deleted. Remove them manually via **Media › Library** if needed.
 
+= Does the plugin call any external API at runtime? =
+
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
+
+== External Services ==
+
+This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+
+The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
+
+== Privacy ==
+
+This plugin stores data submitted by your site visitors (form field values, uploaded files, and metadata such as submission timestamps). All data is stored locally in your WordPress database and media library. No data is transmitted to external servers.
+
+Users may request access to or deletion of their personal data. This plugin integrates with the WordPress Personal Data tools (**Tools › Erase Personal Data** and **Tools › Export Personal Data**).
+
+For full details on what data is collected and how to manage it, refer to your site's privacy policy.
+
 == Screenshots ==
 
 1. The submission list with status badges, project filter, and row actions.
 2. The submission detail view with payload fields, status workflow, and assignment panel.
 3. The Manage Workflows page showing installed packages and project settings.
-4. A workflow embedded in a page using the [xpressui] shortcode.
+4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.21 =
+* Native inline rendering: the [xpressui] shortcode now renders the form directly inside the WordPress page without an iframe.
+* Bundled XPressUI light runtime served from plugin assets — no JavaScript loaded from uploads or external URLs.
+* Form CSS scoped to the embed container to avoid conflicts with the active WordPress theme.
+* Runtime and init script enqueued via wp_enqueue_script for correct dependency ordering and deduplication.
 
 = 1.0.0 =
 * Initial release.
@@ -95,13 +117,16 @@ Uploaded files are stored as WordPress media attachments. They are not automatic
 * Status history log per submission.
 * Team assignment and My Queue page.
 * Project Inbox overview page.
-* [xpressui] shortcode with auto-resize iframe support.
+* [xpressui] shortcode embed with bundled runtime.
 * REST endpoint for receiving submissions and file uploads.
 * Per-project email notifications via wp_mail().
 * Per-project post-submit redirect URL.
 * Manage Workflows page with ZIP upload and project settings.
 
 == Upgrade Notice ==
+
+= 1.0.21 =
+The shortcode now renders the form inline — no iframe. If you have custom CSS targeting the `.xpressui-embed-wrapper iframe`, update your styles to target `.xpressui-inline-embed` instead.
 
 = 1.0.0 =
 Initial release — no upgrade steps required.
