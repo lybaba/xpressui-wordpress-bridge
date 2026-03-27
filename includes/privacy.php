@@ -14,11 +14,11 @@ function xpressui_register_privacy_content() {
 		return;
 	}
 
-	$content  = '<p>' . esc_html__( 'XPressUI WordPress Bridge stores form submissions sent by embedded XPressUI workflows.', 'xpressui-bridge' ) . '</p>';
+	$content  = '<p>' . esc_html__( 'XPressUI Bridge stores form submissions sent by embedded XPressUI workflows.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'Depending on the form you publish, submissions may include names, email addresses, phone numbers, free-form answers, uploaded files, project identifiers, operator review notes, and workflow status history.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'Uploaded files are stored in the WordPress media library and linked to the related submission. Notification emails may be sent to the address configured for a workflow project.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'The plugin also keeps workflow package metadata and project settings such as notification email addresses and post-submit redirect URLs.', 'xpressui-bridge' ) . '</p>';
-	wp_add_privacy_policy_content( __( 'XPressUI WordPress Bridge', 'xpressui-bridge' ), wp_kses_post( $content ) );
+	wp_add_privacy_policy_content( __( 'XPressUI Bridge', 'xpressui-bridge' ), wp_kses_post( $content ) );
 }
 
 function xpressui_register_personal_data_exporter( $exporters ) {

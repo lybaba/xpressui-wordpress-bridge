@@ -22,17 +22,8 @@ jobs:
 
       - name: Build plugin ZIP
         run: |
-          ZIP_NAME="xpressui-wordpress-bridge-${{ steps.version.outputs.version }}.zip"
-
-          # Build from parent so the zip root is xpressui-wordpress-bridge/
-          cd ..
-          zip -r "$ZIP_NAME" xpressui-wordpress-bridge \
-            --exclude "*/render-compiled-template.php" \
-            --exclude "*/WP_ORG_PRE_SUBMISSION_CHECKLIST.txt" \
-            --exclude "*/WP_PLUGIN_CHECK.txt" \
-            --exclude "*/.git/*" \
-            --exclude "*/.github/*"
-          mv "$ZIP_NAME" xpressui-wordpress-bridge/
+          ZIP_NAME="xpressui-bridge-${{ steps.version.outputs.version }}.zip"
+          bash scripts/build-package.sh "$ZIP_NAME"
 
           echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_ENV"
 

@@ -1,4 +1,4 @@
-# XPressUI WordPress Bridge
+# XPressUI Bridge
 
 **Embed XPressUI workflow forms on your WordPress site and manage submissions from wp-admin.**
 
@@ -49,7 +49,7 @@ Every submission lands in a private wp-admin inbox. Your team can review, assign
 
 ### From the WordPress Plugin Directory *(coming soon)*
 
-Search for **XPressUI WordPress Bridge** in *Plugins › Add New*.
+Search for **XPressUI Bridge** in *Plugins › Add New*.
 
 ### Manual installation
 

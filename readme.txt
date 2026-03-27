@@ -1,4 +1,4 @@
-=== XPressUI WordPress Bridge ===
+=== XPressUI Bridge ===
 Contributors: iakpress
 Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Embed any XPressUI workflow on your WordPress site with a shortcode and review i
 
 == Description ==
 
-**XPressUI WordPress Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://xpressui.iakpress.com/) directly in your WordPress pages.
+**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://xpressui.iakpress.com/) directly in your WordPress pages.
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
