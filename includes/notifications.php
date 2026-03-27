@@ -228,6 +228,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		. '<tr><td style="background:#1d2327;padding:22px 28px;">'
 		. '<p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">' . $site_name . '</p>'
 		. '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">'
+		/* translators: %s: workflow project slug. */
 		. esc_html( sprintf( __( 'New submission — %s', 'xpressui-bridge' ), $project_slug ) )
 		. '</p></td></tr>'
 

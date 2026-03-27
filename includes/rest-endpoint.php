@@ -44,6 +44,7 @@ function xpressui_get_request_origin_candidates() {
 	$headers    = [ 'HTTP_ORIGIN', 'HTTP_REFERER' ];
 
 	foreach ( $headers as $header ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized immediately below.
 		$raw = isset( $_SERVER[ $header ] ) ? wp_unslash( (string) $_SERVER[ $header ] ) : '';
 		$raw = is_string( $raw ) ? trim( $raw ) : '';
 		if ( $raw === '' ) {
@@ -401,6 +402,7 @@ function xpressui_check_submission_rate_limit( $project_slug ) {
 
 function xpressui_get_request_file_params( WP_REST_Request $request ) {
 	$request_files    = $request->get_file_params();
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- public REST endpoint intentionally accepts unauthenticated file submissions.
 	$superglobal_files = is_array( $_FILES ) ? $_FILES : [];
 
 	if ( ! is_array( $request_files ) || empty( $request_files ) ) {
@@ -524,6 +526,7 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 
 	$file_params = xpressui_get_request_file_params( $request );
 	$debug['requestFileKeys']    = array_keys( (array) $request->get_file_params() );
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- public REST endpoint intentionally accepts unauthenticated file submissions.
 	$debug['superglobalFileKeys'] = array_keys( is_array( $_FILES ) ? $_FILES : [] );
 
 	foreach ( xpressui_normalize_uploaded_files( $file_params ) as $index => $file ) {

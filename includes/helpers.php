@@ -637,22 +637,16 @@ function xpressui_delete_directory_recursive( $dir ) {
 	if ( ! is_dir( $dir ) ) {
 		return true;
 	}
-	$items = scandir( $dir );
-	if ( ! is_array( $items ) ) {
+
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	WP_Filesystem();
+
+	global $wp_filesystem;
+	if ( ! $wp_filesystem ) {
 		return false;
 	}
-	foreach ( $items as $item ) {
-		if ( $item === '.' || $item === '..' ) {
-			continue;
-		}
-		$path = $dir . DIRECTORY_SEPARATOR . $item;
-		if ( is_dir( $path ) ) {
-			xpressui_delete_directory_recursive( $path );
-		} else {
-			@unlink( $path );
-		}
-	}
-	return @rmdir( $dir );
+
+	return (bool) $wp_filesystem->delete( $dir, true, 'd' );
 }
 
 function xpressui_delete_workflow( $slug ) {
@@ -1409,6 +1403,7 @@ function xpressui_render_quiz_value( $value, $field_meta = [] ) {
 	}
 
 	$html  = '<div>';
+	/* translators: %d: number of selected answers. */
 	$html .= '<div class="xpressui-value-header">' . esc_html( sprintf( _n( '%d selected answer', '%d selected answers', count( $items ), 'xpressui-bridge' ), count( $items ) ) ) . '</div>';
 	$html .= '<ul class="xpressui-answer-list">';
 	foreach ( $items as $item ) {
@@ -1449,6 +1444,7 @@ function xpressui_render_image_gallery_value( $value, $field_meta = [] ) {
 	}
 
 	$html  = '<div>';
+	/* translators: %d: number of selected images. */
 	$html .= '<div class="xpressui-value-header">' . esc_html( sprintf( _n( '%d selected image', '%d selected images', count( $items ), 'xpressui-bridge' ), count( $items ) ) ) . '</div>';
 	$html .= '<div class="xpressui-image-grid">';
 	foreach ( $items as $item ) {

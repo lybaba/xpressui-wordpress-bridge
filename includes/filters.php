@@ -13,9 +13,12 @@ function xpressui_render_submission_filters( $post_type ) {
 	if ( $post_type !== 'xpressui_submission' ) {
 		return;
 	}
-	$selected_status   = isset( $_GET['xpressui_status'] ) ? sanitize_text_field( (string) $_GET['xpressui_status'] ) : '';
-	$selected_project  = isset( $_GET['xpressui_project'] ) ? sanitize_text_field( (string) $_GET['xpressui_project'] ) : '';
-	$selected_assignee = isset( $_GET['xpressui_assignee'] ) ? sanitize_text_field( (string) $_GET['xpressui_assignee'] ) : '';
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
+	$selected_status   = isset( $_GET['xpressui_status'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) ) : '';
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
+	$selected_project  = isset( $_GET['xpressui_project'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_project'] ) ) : '';
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
+	$selected_assignee = isset( $_GET['xpressui_assignee'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_assignee'] ) ) : '';
 
 	$submission_ids = get_posts( [
 		'post_type'      => 'xpressui_submission',
@@ -70,22 +73,25 @@ function xpressui_apply_submission_filters( $query ) {
 	if ( ! is_array( $meta_query ) ) {
 		$meta_query = [];
 	}
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
 	if ( ! empty( $_GET['xpressui_status'] ) ) {
 		$meta_query[] = [
 			'key'   => '_xpressui_submission_status',
-			'value' => sanitize_text_field( (string) $_GET['xpressui_status'] ),
+			'value' => sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) ),
 		];
 	}
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
 	if ( ! empty( $_GET['xpressui_project'] ) ) {
 		$meta_query[] = [
 			'key'   => '_xpressui_project_slug',
-			'value' => sanitize_text_field( (string) $_GET['xpressui_project'] ),
+			'value' => sanitize_text_field( wp_unslash( (string) $_GET['xpressui_project'] ) ),
 		];
 	}
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
 	if ( ! empty( $_GET['xpressui_assignee'] ) ) {
 		$meta_query[] = [
 			'key'   => '_xpressui_assignee_id',
-			'value' => (int) $_GET['xpressui_assignee'],
+			'value' => (int) wp_unslash( $_GET['xpressui_assignee'] ),
 		];
 	}
 	if ( ! empty( $meta_query ) ) {
@@ -120,8 +126,8 @@ function xpressui_handle_submission_status_action() {
 	if ( ! is_admin() || ! isset( $_GET['xpressui_submission_id'] ) || ! isset( $_GET['xpressui_mark_status'] ) ) {
 		return;
 	}
-	$post_id = (int) $_GET['xpressui_submission_id'];
-	$status  = sanitize_text_field( (string) $_GET['xpressui_mark_status'] );
+	$post_id = (int) wp_unslash( $_GET['xpressui_submission_id'] );
+	$status  = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_mark_status'] ) );
 	$options = xpressui_get_status_options();
 
 	if ( $post_id <= 0 || ! isset( $options[ $status ] ) ) {

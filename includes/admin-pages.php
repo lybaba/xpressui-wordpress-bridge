@@ -22,7 +22,8 @@ function xpressui_filter_pages_by_workflow_slug( $query ) {
 	if ( ! is_admin() || ! $query->is_main_query() ) {
 		return;
 	}
-	$slug = sanitize_title( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only admin list filter.
+	$slug = sanitize_title( wp_unslash( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) ) );
 	if ( '' === $slug ) {
 		return;
 	}
@@ -194,7 +195,7 @@ function xpressui_render_workflows_page() {
 
 	if ( isset( $_GET['xpressui_notice'] ) ) {
 		$notice_message = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_notice'] ) );
-		$notice_class   = ( isset( $_GET['xpressui_notice_type'] ) && sanitize_key( (string) $_GET['xpressui_notice_type'] ) === 'error' )
+		$notice_class   = ( isset( $_GET['xpressui_notice_type'] ) && sanitize_key( wp_unslash( (string) $_GET['xpressui_notice_type'] ) ) === 'error' )
 			? 'notice-error'
 			: 'notice-success';
 	}
@@ -213,17 +214,17 @@ function xpressui_render_workflows_page() {
 			$notice_class   = 'notice-success';
 			/* translators: %s: shortcode example */
 			$notice_message = sprintf(
-				__( '<strong>Success!</strong> The package has been installed. Embed it with: <code>[xpressui id="%s"]</code>', 'xpressui-bridge' ),
-				esc_attr( $result )
+				__( 'Success! The package has been installed. Embed it with: [xpressui id="%s"]', 'xpressui-bridge' ),
+				sanitize_title( (string) $result )
 			);
 		}
 	}
 
 	// Handle project settings save.
 	if ( isset( $_POST['xpressui_save_project_settings'] ) && check_admin_referer( 'xpressui_project_settings_action', 'xpressui_settings_nonce' ) ) {
-		$slug           = sanitize_title( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) );
-		$notify_email   = sanitize_email( (string) ( $_POST['xpressui_notify_email'] ?? '' ) );
-		$redirect_url   = esc_url_raw( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) );
+		$slug           = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
+		$notify_email   = sanitize_email( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) );
+		$redirect_url   = esc_url_raw( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
 
 		if ( $slug !== '' ) {
 			$all_settings             = get_option( 'xpressui_project_settings', [] );
@@ -236,19 +237,19 @@ function xpressui_render_workflows_page() {
 			];
 			update_option( 'xpressui_project_settings', $all_settings );
 			$notice_class   = 'notice-success';
-			$notice_message = __( '<strong>Settings saved.</strong>', 'xpressui-bridge' );
+			$notice_message = __( 'Settings saved.', 'xpressui-bridge' );
 		}
 	}
 
 	if ( isset( $_POST['xpressui_save_license_settings'] ) && check_admin_referer( 'xpressui_license_settings_action', 'xpressui_license_nonce' ) ) {
-		$license_key = sanitize_text_field( (string) ( $_POST['xpressui_license_key'] ?? '' ) );
+		$license_key = sanitize_text_field( wp_unslash( (string) ( $_POST['xpressui_license_key'] ?? '' ) ) );
 		$settings    = xpressui_get_license_settings();
 		$settings['licenseKey']  = $license_key;
 		$settings['updatedAt']   = current_time( 'mysql' );
 		$settings['maskedKey']   = xpressui_get_masked_license_key();
 		xpressui_update_license_settings( $settings );
 		$notice_class   = 'notice-success';
-		$notice_message = __( '<strong>License settings saved.</strong>', 'xpressui-bridge' );
+		$notice_message = __( 'License settings saved.', 'xpressui-bridge' );
 	}
 
 	// Installed workflows.
@@ -671,11 +672,15 @@ function xpressui_create_workflow_page( $slug ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_handle_zip_upload() {
-	if ( empty( $_FILES['xpressui_zip']['tmp_name'] ) ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- protected by check_admin_referer() before this helper is called.
+	$file = isset( $_FILES['xpressui_zip'] ) && is_array( $_FILES['xpressui_zip'] )
+		? wp_unslash( $_FILES['xpressui_zip'] )
+		: [];
+
+	if ( empty( $file['tmp_name'] ) ) {
 		return new WP_Error( 'no_file', __( 'Please select a file.', 'xpressui-bridge' ) );
 	}
 
-	$file      = wp_unslash( $_FILES['xpressui_zip'] );
 	$file_name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
 	$file_type = wp_check_filetype( $file_name );
 

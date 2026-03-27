@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 // Shared runtime for PHP templates compiled from Jinja source.
 
 final class XuiJinjaSafeString

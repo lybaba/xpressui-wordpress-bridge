@@ -112,15 +112,15 @@ function xpressui_save_submission_status( $post_id ) {
 	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 		return;
 	}
-	if ( ! isset( $_POST['xpressui_submission_status_nonce'] ) || ! wp_verify_nonce( (string) $_POST['xpressui_submission_status_nonce'], 'xpressui_save_submission_status' ) ) {
+	if ( ! isset( $_POST['xpressui_submission_status_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submission_status_nonce'] ) ), 'xpressui_save_submission_status' ) ) {
 		return;
 	}
 	if ( ! current_user_can( 'edit_post', $post_id ) ) {
 		return;
 	}
-	$status      = isset( $_POST['xpressui_submission_status'] ) ? sanitize_text_field( (string) $_POST['xpressui_submission_status'] ) : 'new';
-	$note        = isset( $_POST['xpressui_review_note'] ) ? sanitize_textarea_field( (string) $_POST['xpressui_review_note'] ) : '';
-	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? (int) $_POST['xpressui_assignee_id'] : 0;
+	$status      = isset( $_POST['xpressui_submission_status'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submission_status'] ) ) : 'new';
+	$note        = isset( $_POST['xpressui_review_note'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_review_note'] ) ) : '';
+	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? (int) wp_unslash( $_POST['xpressui_assignee_id'] ) : 0;
 	$options     = xpressui_get_status_options();
 
 	if ( ! isset( $options[ $status ] ) ) {

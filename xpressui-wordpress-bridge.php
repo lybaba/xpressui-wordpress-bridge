@@ -37,16 +37,6 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/light-runtime.php';
 
-add_action( 'init', 'xpressui_load_textdomain' );
-
-function xpressui_load_textdomain() {
-	load_plugin_textdomain(
-		XPRESSUI_BRIDGE_TEXT_DOMAIN,
-		false,
-		dirname( plugin_basename( __FILE__ ) ) . '/languages'
-	);
-}
-
 // --- Post type ---
 add_action( 'init', 'xpressui_register_submission_post_type' );
 add_filter( 'manage_xpressui_submission_posts_columns', 'xpressui_submission_columns' );

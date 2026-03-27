@@ -1,4 +1,9 @@
 <?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
 // Inline fragment template for WordPress shortcode rendering.
 // Outputs CSS styles and form HTML only — no doctype/html/head/body/script tags.
 // Processed from the compiled head.php + form partials; do not edit manually.

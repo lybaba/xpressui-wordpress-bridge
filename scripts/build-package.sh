@@ -24,11 +24,13 @@ cp -R "${PLUGIN_DIR}" "${STAGE_DIR}/${DIST_SLUG}"
 
 rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.github" \
-       "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org"
+       "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/scripts"
 rm -f "${STAGE_DIR:?}/${DIST_SLUG}/WP_ORG_PRE_SUBMISSION_CHECKLIST.txt" \
       "${STAGE_DIR:?}/${DIST_SLUG}/WP_PLUGIN_CHECK.txt" \
       "${STAGE_DIR:?}/${DIST_SLUG}/render-compiled-template.php" \
-      "${STAGE_DIR:?}/${DIST_SLUG}/templates/render-compiled-template.php"
+      "${STAGE_DIR:?}/${DIST_SLUG}/templates/render-compiled-template.php" \
+      "${STAGE_DIR:?}/${DIST_SLUG}/languages/.gitkeep"
 
 if [[ -f "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" ]]; then
   mv "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" "${STAGE_DIR}/${DIST_SLUG}/${DIST_MAIN_FILE}"
