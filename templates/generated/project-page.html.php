@@ -1,16 +1,15 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 // Generated from export/project-page.html.j2. Do not edit manually.
-if (!isset($__ctx) || !is_array($__ctx)) {
+if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><!doctype html>
 <html lang="en">
-<?php xui_jinja_include('head.php', $__ctx); ?><?php if (xui_jinja_truthy(xui_jinja_eq(xui_jinja_context_get($__ctx, 'target'), "wordpress"))): ?><style>
+<?php xpressui_bridge_template_include_template('head.php', $xpressui_ctx); ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?><style>
   /* WordPress iframe integration overrides */
   html, body { background: transparent !important; height: auto !important; min-height: 0 !important; overflow-x: hidden !important; overflow-y: visible !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
   * { box-sizing: border-box !important; }
@@ -21,11 +20,13 @@ if (!isset($__ctx) || !is_array($__ctx)) {
 </style>
 <?php endif; ?><body>
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
-<?php xui_jinja_include('header.php', $__ctx); ?><?php xui_jinja_include('form-frame.php', $__ctx); ?><?php xui_jinja_include('footer.php', $__ctx); ?>  </div>
+<?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>  </div>
   <script id="xpressui-custom-config" type="application/json">
-<?php echo xui_jinja_escape(xui_jinja_mark_safe(xui_jinja_attr(xui_jinja_context_get($__ctx, 'runtime'), 'form_config_json'))); ?>
+<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json')))); ?>
   </script>
-  <script src="./wordpress/runtime/xpressui-light-1.0.0.umd.js"></script>
+  <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone exported shell loads the runtime directly outside WordPress enqueue APIs. ?>
+  <script src="./wordpress/runtime/xpressui-light-<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'xpressui_version'))); ?>.umd.js"></script>
+  <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone exported shell bootstraps its runtime entry directly. ?>
   <script src="./init.js"></script>
 </body>
 </html>

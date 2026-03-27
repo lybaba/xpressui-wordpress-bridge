@@ -1,13 +1,12 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 // Generated from export/_partials/form-frame.j2. Do not edit manually.
-if (!isset($__ctx) || !is_array($__ctx)) {
+if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><main class="form-frame" data-template-zone="form_frame">
-<?php xui_jinja_include('runtime-mount.php', $__ctx); ?></main>
+<?php xpressui_bridge_template_include_template('runtime-mount.php', $xpressui_ctx); ?></main>
 

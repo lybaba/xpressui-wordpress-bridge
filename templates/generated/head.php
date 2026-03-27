@@ -1,29 +1,28 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 // Generated from export/_partials/head.j2. Do not edit manually.
-if (!isset($__ctx) || !is_array($__ctx)) {
+if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
-  <title><?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'name')); ?></title>
+  <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'name'))); ?></title>
   <style>
     :root {
-      --template-page-background: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'page_background')); ?>;
-      --template-surface: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'surface')); ?>;
-      --template-text: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'text')); ?>;
-      --template-muted-text: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'muted_text')); ?>;
-      --template-primary: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'primary')); ?>;
-      --template-border: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'colors'), 'border')); ?>;
-      --template-card-radius: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'radius'), 'card')); ?>px;
-      --template-input-radius: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'radius'), 'input')); ?>px;
-      --template-button-radius: <?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'radius'), 'button')); ?>px;
+      --template-page-background: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'page_background'))); ?>;
+      --template-surface: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'surface'))); ?>;
+      --template-text: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'text'))); ?>;
+      --template-muted-text: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'muted_text'))); ?>;
+      --template-primary: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'primary'))); ?>;
+      --template-border: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'border'))); ?>;
+      --template-card-radius: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'radius'), 'card'))); ?>px;
+      --template-input-radius: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'radius'), 'input'))); ?>px;
+      --template-button-radius: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'radius'), 'button'))); ?>px;
     }
     body {
       margin: 0;
@@ -41,7 +40,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
       isolation: isolate;
       overflow: hidden;
     }
-<?php if (xui_jinja_truthy(xui_jinja_and(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url'), xui_jinja_eq(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'background_style'), "panel")))): ?>    .page-shell::before {
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "panel")))): ?>    .page-shell::before {
       content: "";
       position: absolute;
       inset: 18px;
@@ -49,7 +48,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
       border-radius: 36px;
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.32)),
-        url('<?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url')); ?>') center center / cover no-repeat;
+        url('<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
     }
     .page-shell::after {
@@ -63,7 +62,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
         linear-gradient(180deg, color-mix(in srgb, var(--template-page-background) 8%, transparent), color-mix(in srgb, var(--template-page-background) 36%, rgba(15,23,42,0.10)));
       pointer-events: none;
     }
-<?php endif; ?><?php if (xui_jinja_truthy(xui_jinja_and(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url'), xui_jinja_eq(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'background_style'), "full-bleed")))): ?>    body::before {
+<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>    body::before {
       content: "";
       position: fixed;
       inset: 0;
@@ -71,7 +70,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.38)),
         radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 34%),
-        url('<?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url')); ?>') center center / cover no-repeat;
+        url('<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       filter: saturate(0.9) contrast(0.92) brightness(0.82);
       transform: scale(1.02);
     }
@@ -89,11 +88,11 @@ if (!isset($__ctx) || !is_array($__ctx)) {
     }
 <?php endif; ?>    .form-frame {
       width: min(100%, 960px);
-      background: <?php if (xui_jinja_truthy(xui_jinja_and(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url'), (!xui_jinja_eq(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'background_style'), "none"))))): ?>rgba(255,255,255,0.965)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
+      background: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>rgba(255,255,255,0.965)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
       border-radius: var(--template-card-radius);
       padding: 24px;
-      box-shadow: <?php if (xui_jinja_truthy(xui_jinja_and(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url'), (!xui_jinja_eq(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(15,23,42,0.42)<?php else: ?>0 20px 60px rgba(15, 23, 42, 0.12)<?php endif; ?>;
-<?php if (xui_jinja_truthy(xui_jinja_and(xui_jinja_attr(xui_jinja_context_get($__ctx, 'project'), 'background_image_url'), (!xui_jinja_eq(xui_jinja_attr(xui_jinja_context_get($__ctx, 'theme'), 'background_style'), "none"))))): ?>backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
+      box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(15,23,42,0.42)<?php else: ?>0 20px 60px rgba(15, 23, 42, 0.12)<?php endif; ?>;
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
       z-index: 1;
     }
     .template-runtime-shell { display: grid; gap: 20px; }
@@ -186,6 +185,7 @@ if (!isset($__ctx) || !is_array($__ctx)) {
     .template-upload-selection[data-upload-selection-state='selected'] { gap: 4px; padding: 10px 12px; }
     .template-upload-selection[data-upload-selection-state='selected'] [data-upload-selection-message] { display: none !important; }
     .template-upload-selection-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    [data-document-scan-controls] { margin-bottom: 10px; }
     .template-upload-selection-title { font-size: 13px; font-weight: 700; color: #0f172a; }
     .template-upload-selection[data-upload-selection-state='selected'] [data-upload-selection-kind] { display: none; }
     .template-upload-selection [data-upload-file-list] { display: grid; gap: 8px; }
@@ -214,6 +214,8 @@ if (!isset($__ctx) || !is_array($__ctx)) {
     .template-gallery-caption { display: flex; justify-content: flex-start; align-items: center; gap: 10px; color: #64748b; font-size: 12px; }
     .template-gallery-card [data-image-gallery-state] { display: none !important; }
     .template-gallery-card [data-image-gallery-badge] { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 999px; background: rgba(248,250,252,0.96); color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .template-gallery-card:has([data-image-gallery-action="toggle"][aria-label^="Remove "]) [data-image-gallery-badge] { font-size: 0; padding: 3px 7px; background: #059669; border: none; }
+    .template-gallery-card:has([data-image-gallery-action="toggle"][aria-label^="Remove "]) [data-image-gallery-badge]::after { content: "✓"; font-size: 11px; font-weight: 800; color: #fff; }
     .template-gallery-card [data-image-gallery-control-row] { position: absolute; top: 18px; right: 18px; margin: 0 !important; z-index: 2; }
     .template-gallery-card [data-image-gallery-action="toggle"] { width: auto !important; min-width: 0 !important; height: 34px !important; padding: 0 12px !important; border-radius: 999px !important; border: 1px solid rgba(148,163,184,0.28) !important; background: rgba(255,255,255,0.92) !important; color: transparent !important; font-size: 0 !important; font-weight: 700 !important; box-shadow: 0 10px 24px -18px rgba(15,23,42,0.35) !important; backdrop-filter: blur(8px); }
     .template-gallery-card [data-image-gallery-action="toggle"]::before { content: "+"; color: #0f172a; font-size: 16px; line-height: 1; font-weight: 700; }

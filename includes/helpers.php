@@ -352,11 +352,11 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	require_once $runtime_file;
 
-	if ( ! function_exists( 'xui_jinja_render_template' ) ) {
+	if ( ! function_exists( 'xpressui_bridge_template_render_template' ) ) {
 		return '';
 	}
 
-	$rendered_html = xui_jinja_render_template( 'project-page.html.php', $template_context );
+	$rendered_html = xpressui_bridge_template_render_template( 'project-page.html.php', $template_context );
 	if ( ! is_string( $rendered_html ) || '' === trim( $rendered_html ) ) {
 		return '';
 	}
@@ -879,6 +879,7 @@ function xpressui_get_workflow_page_ids( $slug ) {
 	// misinterprets the quotes in [xpressui id="slug"] and returns no results.
 	$like = '%' . $wpdb->esc_like( '[xpressui id="' . $slug . '"]' ) . '%';
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- precise shortcode search requires a targeted LIKE query and returns lightweight IDs only.
 	$ids = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}

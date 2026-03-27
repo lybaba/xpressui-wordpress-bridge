@@ -212,11 +212,10 @@ function xpressui_render_workflows_page() {
 			$notice_message = $result->get_error_message();
 		} else {
 			$notice_class   = 'notice-success';
-			/* translators: %s: shortcode example */
-			$notice_message = sprintf(
-				__( 'Success! The package has been installed. Embed it with: [xpressui id="%s"]', 'xpressui-bridge' ),
-				sanitize_title( (string) $result )
-			);
+				$shortcode_slug = sanitize_title( (string) $result );
+				/* translators: %s: installed workflow slug used in the shortcode example. */
+				$notice_template = __( 'Success! The package has been installed. Embed it with: [xpressui id="%s"]', 'xpressui-bridge' );
+				$notice_message  = sprintf( $notice_template, $shortcode_slug );
 		}
 	}
 
@@ -553,8 +552,10 @@ function xpressui_handle_workflow_admin_actions() {
 		return;
 	}
 
-	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( (string) $_GET['xpressui_action'] ) : '';
-	$slug   = isset( $_GET['xpressui_slug'] ) ? sanitize_title( (string) $_GET['xpressui_slug'] ) : '';
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- action requests are nonce-verified before execution below.
+	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_action'] ) ) : '';
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- action requests are nonce-verified before execution below.
+	$slug   = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
 	if ( $action === '' || $slug === '' ) {
 		return;
 	}
@@ -672,10 +673,11 @@ function xpressui_create_workflow_page( $slug ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_handle_zip_upload() {
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- protected by check_admin_referer() before this helper is called.
+	// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- protected by check_admin_referer() before this helper is called; individual fields are sanitized below.
 	$file = isset( $_FILES['xpressui_zip'] ) && is_array( $_FILES['xpressui_zip'] )
 		? wp_unslash( $_FILES['xpressui_zip'] )
 		: [];
+	// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 	if ( empty( $file['tmp_name'] ) ) {
 		return new WP_Error( 'no_file', __( 'Please select a file.', 'xpressui-bridge' ) );

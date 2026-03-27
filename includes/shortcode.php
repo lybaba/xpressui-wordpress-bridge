@@ -99,7 +99,7 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	// Render the form fragment (CSS + HTML only; scripts are enqueued below).
-	$fragment_html = xui_jinja_render_template( 'form-fragment.php', $template_context );
+	$fragment_html = xpressui_bridge_template_render_template( 'form-fragment.php', $template_context );
 
 	// -----------------------------------------------------------------
 	// Enqueue the bundled XPressUI light runtime.

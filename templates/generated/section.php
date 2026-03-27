@@ -1,25 +1,24 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 // Generated from export/_partials/section.j2. Do not edit manually.
-if (!isset($__ctx) || !is_array($__ctx)) {
+if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><section
   class="template-section"
   data-template-zone="section"
-  data-section-name="<?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'name')); ?>"
+  data-section-name="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'name'))); ?>"
   data-type="section"
-  data-name="<?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'name')); ?>"
+  data-name="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'name'))); ?>"
 >
   <header class="template-section-header">
-    <h2 class="template-section-label"><?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'label')); ?></h2>
-<?php if (xui_jinja_truthy(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'desc'))): ?>      <p class="template-section-desc"><?php echo xui_jinja_escape(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'desc')); ?></p>
+    <h2 class="template-section-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'label'))); ?></h2>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'desc'))): ?>      <p class="template-section-desc"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'desc'))); ?></p>
 <?php endif; ?>  </header>
 
   <div class="template-fields">
-<?php $__loop_parent_ctx_2 = $__ctx; $__loop_items_1 = xui_jinja_iterable(xui_jinja_attr(xui_jinja_context_get($__ctx, 'section'), 'fields')); foreach ($__loop_items_1 as $__loop_index_3 => $__loop_value_4): $__ctx = $__loop_parent_ctx_2; $__ctx['field'] = $__loop_value_4; $__ctx['loop'] = ['index' => $__loop_index_3 + 1, 'index0' => $__loop_index_3, 'first' => $__loop_index_3 === 0, 'last' => ($__loop_index_3 + 1) === count($__loop_items_1)]; ?><?php xui_jinja_include('field.php', $__ctx); ?><?php endforeach; $__ctx = $__loop_parent_ctx_2; ?>  </div>
+<?php $xpressui_loop_parent_ctx_2 = $xpressui_ctx; $xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'fields')); foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_value_4): $xpressui_ctx = $xpressui_loop_parent_ctx_2; $xpressui_ctx['field'] = $xpressui_loop_value_4; $xpressui_ctx['loop'] = ['index' => $xpressui_loop_index_3 + 1, 'index0' => $xpressui_loop_index_3, 'first' => $xpressui_loop_index_3 === 0, 'last' => ($xpressui_loop_index_3 + 1) === count($xpressui_loop_items_1)]; ?><?php xpressui_bridge_template_include_template('field.php', $xpressui_ctx); ?><?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>  </div>
 </section>

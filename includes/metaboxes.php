@@ -120,7 +120,8 @@ function xpressui_save_submission_status( $post_id ) {
 	}
 	$status      = isset( $_POST['xpressui_submission_status'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submission_status'] ) ) : 'new';
 	$note        = isset( $_POST['xpressui_review_note'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_review_note'] ) ) : '';
-	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? (int) wp_unslash( $_POST['xpressui_assignee_id'] ) : 0;
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized with absint() after unslashing.
+	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_assignee_id'] ) ) : 0;
 	$options     = xpressui_get_status_options();
 
 	if ( ! isset( $options[ $status ] ) ) {

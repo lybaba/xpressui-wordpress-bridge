@@ -1,4 +1,8 @@
 <?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // Example shortcode output for document-intake
 function xpressui_render_document_intake() {
     $iframe_url = home_url('/?xpressui_shell=document-intake');

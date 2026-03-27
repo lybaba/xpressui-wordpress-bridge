@@ -1,5 +1,15 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', __DIR__ . '/' );
+}
+
+if ( ! function_exists( 'esc_attr' ) ) {
+	function esc_attr( string $text ): string {
+		return htmlspecialchars( $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+	}
+}
+
 require __DIR__ . '/runtime.php';
 
 if ($argc < 3) {
@@ -26,4 +36,4 @@ if (!is_array($context)) {
     exit(1);
 }
 
-echo xui_jinja_render_template($template, $context);
+echo xpressui_bridge_template_render_template($template, $context);

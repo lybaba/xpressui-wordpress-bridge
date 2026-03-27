@@ -9,7 +9,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-$submission_ids = get_posts(
+$xpressui_submission_ids = get_posts(
 	[
 		'post_type'      => 'xpressui_submission',
 		'post_status'    => 'any',
@@ -18,8 +18,8 @@ $submission_ids = get_posts(
 	]
 );
 
-foreach ( $submission_ids as $submission_id ) {
-	wp_delete_post( $submission_id, true );
+foreach ( $xpressui_submission_ids as $xpressui_submission_id ) {
+	wp_delete_post( $xpressui_submission_id, true );
 }
 
 delete_option( 'xpressui_project_settings' );

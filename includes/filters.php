@@ -74,24 +74,30 @@ function xpressui_apply_submission_filters( $query ) {
 		$meta_query = [];
 	}
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
-	if ( ! empty( $_GET['xpressui_status'] ) ) {
-		$meta_query[] = [
-			'key'   => '_xpressui_submission_status',
-			'value' => sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) ),
-		];
-	}
+		if ( ! empty( $_GET['xpressui_status'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
+			$selected_status = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) );
+			$meta_query[] = [
+				'key'   => '_xpressui_submission_status',
+				'value' => $selected_status,
+			];
+		}
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
 	if ( ! empty( $_GET['xpressui_project'] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
+		$selected_project = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_project'] ) );
 		$meta_query[] = [
 			'key'   => '_xpressui_project_slug',
-			'value' => sanitize_text_field( wp_unslash( (string) $_GET['xpressui_project'] ) ),
+			'value' => $selected_project,
 		];
 	}
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only list table filters.
 	if ( ! empty( $_GET['xpressui_assignee'] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- read-only list table filters.
+		$selected_assignee = absint( wp_unslash( (string) $_GET['xpressui_assignee'] ) );
 		$meta_query[] = [
 			'key'   => '_xpressui_assignee_id',
-			'value' => (int) wp_unslash( $_GET['xpressui_assignee'] ),
+			'value' => $selected_assignee,
 		];
 	}
 	if ( ! empty( $meta_query ) ) {
@@ -126,7 +132,9 @@ function xpressui_handle_submission_status_action() {
 	if ( ! is_admin() || ! isset( $_GET['xpressui_submission_id'] ) || ! isset( $_GET['xpressui_mark_status'] ) ) {
 		return;
 	}
-	$post_id = (int) wp_unslash( $_GET['xpressui_submission_id'] );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- action request is nonce-verified below.
+	$post_id = absint( wp_unslash( (string) $_GET['xpressui_submission_id'] ) );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- action request is nonce-verified below.
 	$status  = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_mark_status'] ) );
 	$options = xpressui_get_status_options();
 
