@@ -1,6 +1,6 @@
-const mountNode = document.getElementById('xpressui-root');
 const i18n = window.XPRESSUI_I18N || {};
 const shellMeta = window.XPRESSUI_SHELL_META || {};
+const mountNode = document.getElementById(shellMeta.mountNodeId || 'xpressui-root');
 
 function t(key, fallback) {
   return typeof i18n[key] === 'string' && i18n[key].trim() !== ''
@@ -40,7 +40,7 @@ async function initXPressUI() {
   let formConfig;
   
   try {
-    const configNode = document.getElementById('xpressui-custom-config');
+    const configNode = document.getElementById(shellMeta.configId || 'xpressui-custom-config');
     if (configNode) {
       formConfig = JSON.parse(configNode.textContent);
     } else {
