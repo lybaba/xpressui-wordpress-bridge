@@ -30,7 +30,7 @@ unset($_scope);
 <style>
 <?php echo $_inline_css; ?>
 /* WordPress inline embed — reset standalone-page layout */
-#<?php echo $_mount_id; ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 16px 0 !important; display: block !important; background: var(--template-page-background) !important; }
+#<?php echo $_mount_id; ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }
 </style>
 <div id="<?php echo $_mount_id; ?>" class="page-shell xpressui-inline-form" data-template-zone="page_shell">
 <?php xui_jinja_include('header.php', $__ctx); ?>
