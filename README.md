@@ -131,6 +131,6 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 ## Links
 
 - Product page: [xpressui.iakpress.com](https://xpressui.iakpress.com/)
-- Demo gallery: [demos.iakpress.com](https://demos.iakpress.com/)
+- Demo gallery: [xpressui.iakpress.com/#/demos](https://xpressui.iakpress.com/#/demos)
 - Support: [hello@iakpress.com](mailto:hello@iakpress.com)
 - WordPress.org listing: *(coming soon)*
