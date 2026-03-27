@@ -39,6 +39,172 @@ function xpressui_submission_permissions_check( WP_REST_Request $request ) {
 	return true;
 }
 
+function xpressui_get_request_origin_candidates() {
+	$candidates = [];
+	$headers    = [ 'HTTP_ORIGIN', 'HTTP_REFERER' ];
+
+	foreach ( $headers as $header ) {
+		$raw = isset( $_SERVER[ $header ] ) ? wp_unslash( (string) $_SERVER[ $header ] ) : '';
+		$raw = is_string( $raw ) ? trim( $raw ) : '';
+		if ( $raw === '' ) {
+			continue;
+		}
+
+		$parts  = wp_parse_url( $raw );
+		$scheme = isset( $parts['scheme'] ) ? strtolower( sanitize_key( (string) $parts['scheme'] ) ) : '';
+		$host   = isset( $parts['host'] ) ? strtolower( sanitize_text_field( (string) $parts['host'] ) ) : '';
+		$port   = isset( $parts['port'] ) ? (int) $parts['port'] : 0;
+
+		if ( $scheme === '' || $host === '' ) {
+			continue;
+		}
+
+		$candidates[] = [
+			'header' => $header,
+			'raw'    => $raw,
+			'scheme' => $scheme,
+			'host'   => $host,
+			'port'   => $port,
+		];
+	}
+
+	return $candidates;
+}
+
+function xpressui_validate_submission_origin() {
+	$candidates = xpressui_get_request_origin_candidates();
+	if ( empty( $candidates ) ) {
+		return true;
+	}
+
+	$site_url    = home_url( '/' );
+	$site_parts  = wp_parse_url( $site_url );
+	$site_scheme = isset( $site_parts['scheme'] ) ? strtolower( sanitize_key( (string) $site_parts['scheme'] ) ) : '';
+	$site_host   = isset( $site_parts['host'] ) ? strtolower( sanitize_text_field( (string) $site_parts['host'] ) ) : '';
+	$site_port   = isset( $site_parts['port'] ) ? (int) $site_parts['port'] : 0;
+
+	if ( $site_scheme === '' || $site_host === '' ) {
+		return true;
+	}
+
+	foreach ( $candidates as $candidate ) {
+		$same_host = hash_equals( $site_host, $candidate['host'] );
+		$same_port = $site_port === $candidate['port'];
+
+		if ( $same_host && $same_port ) {
+			return true;
+		}
+	}
+
+	return new WP_Error(
+		'xpressui_invalid_origin',
+		__( 'Submission origin is not allowed for this workflow.', 'xpressui-bridge' ),
+		[ 'status' => 403 ]
+	);
+}
+
+function xpressui_validate_request_identifier_value( $value, $field_name, $required = false ) {
+	$value      = is_string( $value ) ? trim( $value ) : '';
+	$field_name = sanitize_key( (string) $field_name );
+
+	if ( $value === '' ) {
+		if ( $required ) {
+			return new WP_Error(
+				'xpressui_missing_identifier',
+				__( 'A required submission identifier is missing.', 'xpressui-bridge' ),
+				[ 'status' => 400 ]
+			);
+		}
+		return '';
+	}
+
+	if ( strlen( $value ) > 191 ) {
+		return new WP_Error(
+			'xpressui_identifier_too_long',
+			__( 'One of the submission identifiers is too long.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	if ( ! preg_match( '/^[A-Za-z0-9._:-]+$/', $value ) ) {
+		return new WP_Error(
+			'xpressui_invalid_identifier',
+			__( 'One of the submission identifiers is invalid.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	if ( 'projectslug' === $field_name && ! preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $value ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project',
+			__( 'Unknown workflow project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	return $value;
+}
+
+function xpressui_validate_submission_identifiers( $project_slug, $project_id, $project_config_version, $submission_id ) {
+	$project_slug = xpressui_validate_request_identifier_value( $project_slug, 'projectslug', true );
+	if ( is_wp_error( $project_slug ) ) {
+		return $project_slug;
+	}
+
+	$project_id = xpressui_validate_request_identifier_value( $project_id, 'projectid', false );
+	if ( is_wp_error( $project_id ) ) {
+		return $project_id;
+	}
+
+	$project_config_version = xpressui_validate_request_identifier_value( $project_config_version, 'projectconfigversion', false );
+	if ( is_wp_error( $project_config_version ) ) {
+		return $project_config_version;
+	}
+
+	$submission_id = xpressui_validate_request_identifier_value( $submission_id, 'submissionid', false );
+	if ( is_wp_error( $submission_id ) ) {
+		return $submission_id;
+	}
+
+	if ( ! xpressui_is_installed_workflow( $project_slug ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project',
+			__( 'Unknown workflow project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $project_slug );
+	if ( empty( $manifest_meta ) ) {
+		$manifest_meta = xpressui_load_workflow_manifest( $project_slug );
+	}
+
+	$manifest_slug = sanitize_title( (string) ( $manifest_meta['projectSlug'] ?? '' ) );
+	if ( $manifest_slug !== '' && ! hash_equals( $manifest_slug, $project_slug ) ) {
+		return new WP_Error(
+			'xpressui_manifest_mismatch',
+			__( 'Workflow metadata does not match the installed project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	$manifest_project_id = xpressui_sanitize_request_identifier( $manifest_meta['projectId'] ?? '' );
+	if ( $manifest_project_id !== '' && $project_id !== '' && ! hash_equals( $manifest_project_id, $project_id ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project_id',
+			__( 'Submission project metadata does not match the installed workflow.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	return [
+		'projectSlug'          => $project_slug,
+		'projectId'            => $project_id,
+		'projectConfigVersion' => $project_config_version,
+		'submissionId'         => $submission_id,
+	];
+}
+
 function xpressui_handle_submission( WP_REST_Request $request ) {
 	$payload              = $request->get_param( 'payload' );
 	$project_id           = xpressui_sanitize_request_identifier( $request->get_param( 'projectId' ) );
@@ -114,12 +280,19 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 }
 
 function xpressui_validate_submission_request( WP_REST_Request $request, $project_slug, $submission_id, $payload ) {
-	if ( $project_slug === '' || ! xpressui_is_installed_workflow( $project_slug ) ) {
-		return new WP_Error(
-			'xpressui_invalid_project',
-			__( 'Unknown workflow project.', 'xpressui-bridge' ),
-			[ 'status' => 400 ]
-		);
+	$origin_validation = xpressui_validate_submission_origin();
+	if ( is_wp_error( $origin_validation ) ) {
+		return $origin_validation;
+	}
+
+	$identifier_validation = xpressui_validate_submission_identifiers(
+		$project_slug,
+		xpressui_sanitize_request_identifier( $request->get_param( 'projectId' ) ),
+		xpressui_sanitize_request_identifier( $request->get_param( 'projectConfigVersion' ) ),
+		$submission_id
+	);
+	if ( is_wp_error( $identifier_validation ) ) {
+		return $identifier_validation;
 	}
 
 	// Honeypot: the field is injected by the init script and must remain empty.
