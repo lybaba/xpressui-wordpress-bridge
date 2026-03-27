@@ -1,10 +1,10 @@
 WP Plugin Check - XPressUI WordPress Bridge
-Date: 2026-03-25
+Date: 2026-03-27
 
 Contexte
 
 Analyse du plugin local situe dans:
-dev/wordpress/xpressui-wordpress-bridge
+libs/xpressui-wordpress-bridge
 
 Objectif:
 Identifier les points a risque pour une soumission sur wordpress.org, avec priorite sur ce qui peut accelerer l'acceptation du plugin.
@@ -12,83 +12,90 @@ Identifier les points a risque pour une soumission sur wordpress.org, avec prior
 
 Constat principal
 
-Dans l'etat, je ne miserais pas sur une acceptation rapide. Le plugin est propre sur plusieurs bases WordPress, mais il a 2 risques majeurs de revue, dont 1 potentiellement structurel.
+Le plugin est dans un bien meilleur etat qu'au precedent audit. Plusieurs anciens bloqueurs sont desormais corriges. Les points restants sont surtout du durcissement final, de la documentation de comportement et de la finition du listing WordPress.org.
 
 
 Findings
 
-1. Le plus gros risque est l'architecture "upload d'un ZIP executable puis iframe depuis uploads".
+1. L'ancien risque "iframe depuis uploads" n'est plus d'actualite.
 
 References:
-- includes/admin-pages.php:315
-- includes/shortcode.php:45
+- includes/shortcode.php
+- readme.txt
 
-Le plugin extrait un package externe dans wp-content/uploads/xpressui/, puis sert son index.html dans un iframe. Pour l'equipe plugins, cela peut ressembler a du code executable charge hors du plugin lui-meme, ce qui touche directement la guideline 8, et possiblement la 6 si le service externe n'est pas cadre de facon tres nette.
+Le plugin rend maintenant le shell inline dans la page WordPress et charge un runtime embarque dans le plugin. Le point structurel le plus sensible du precedent rapport doit etre considere comme corrige.
 
-Si l'objectif est de maximiser les chances d'acceptation rapide, le meilleur refactor serait:
-- package declaratif JSON/config uniquement
-- moteur de rendu inclus localement dans le plugin
-- pas de HTML/JS "app" execute depuis uploads
+Le package importe reste un artefact applicatif a surveiller, mais le scenario "mini-app executee dans un iframe depuis uploads" n'est plus le bon diagnostic.
 
 
-2. Le endpoint REST public permet a n'importe qui de creer des soumissions privees et des pieces jointes.
+2. Le endpoint REST public est nettement mieux protege, mais merite encore une passe finale de durcissement.
 
 Reference:
-- includes/rest-endpoint.php:16
+- includes/rest-endpoint.php
 
-permission_callback => __return_true peut etre acceptable uniquement si tout le reste est fortement securise. Ici, il manque au minimum:
-- validation stricte du projet cible
+Ce qui est deja present:
+- validation du projet cible
 - rejet des slugs inconnus
-- token de soumission signe par workflow
-- limites de taille, nombre et type de fichiers
-- anti-spam / rate limiting / honeypot
-- sanitation plus stricte de projectId, projectSlug, submissionId
+- honeypot
+- rate limiting par IP
+- validation du payload
+- controle de taille / nombre / type de fichiers
+- prevention de doublons sur submissionId
 
-Tel quel, c'est un point qui peut facilement declencher un retour reviewer du type "security hardening required".
+Ce qui reste a arbitrer avant soumission:
+- faut-il ajouter un mecanisme signe supplementaire
+- faut-il renforcer encore les schemas de validation pour projectId, projectSlug et submissionId
+
+Je ne le classerais plus comme bloqueur brut, mais comme point de securisation finale.
 
 
-3. Le handler ZIP est trop permissif pour une soumission sereine.
+3. Le handler ZIP a ete durci et ne correspond plus au constat precedent.
 
 Reference:
-- includes/admin-pages.php:315
+- includes/admin-pages.php
 
-Le code verifie surtout l'extension, deplace le fichier, puis dezippe l'archive entiere. A renforcer avant soumission:
+Les controles attendus sont maintenant presents:
 - manifeste obligatoire
-- nom de dossier cible controle
+- structure attendue
 - inspection du contenu avant extraction
-- refus explicite de .php, .phar, .phtml, .sh, etc.
-- liste blanche d'assets autorises
-- verification que le package ne contient que des assets statiques attendus
+- refus explicite des extensions executables ou interpretable
+- liste blanche d'extensions
+- controle du slug final
+- protection contre le path traversal
+
+Ce point peut etre considere comme corrige, sous reserve d'une verification fonctionnelle finale.
 
 
-4. Le plugin gere des donnees personnelles sans integration privacy WordPress.
+4. Le plugin gere les sujets privacy beaucoup mieux qu'avant.
 
 References:
-- includes/helpers.php:67
-- includes/notifications.php:46
+- includes/privacy.php
+- uninstall.php
 
-Le plugin stocke noms, email, telephone, payload complet et fichiers. Ce n'est pas forcement bloquant a lui seul, mais pour accelerer l'approbation il est recommande d'ajouter:
-- exporter de donnees personnelles
-- eraser de donnees personnelles
-- texte suggere pour la politique de confidentialite
-- strategie claire de suppression des attachments
-- uninstall.php pour nettoyer options et CPT si souhaite
+Ce qui est deja present:
+- personal data exporter
+- personal data eraser
+- texte suggere pour la privacy policy
+- uninstall.php
+
+Le point encore ouvert concerne surtout la politique de retention / suppression des pieces jointes et sa documentation explicite.
 
 
-5. Le readme.txt est globalement bon, mais il faut le remettre au niveau avant depot.
+5. Le readme.txt est beaucoup plus proche d'un depot WordPress.org.
 
 Reference:
 - readme.txt:1
 
 Points positifs:
 - 5 tags, donc conforme
-- Stable tag = 1.0.0, coherent
-- taille d'environ 6.2 KB, donc sous la zone a risque
+- Tested up to = 6.9
+- Stable tag aligne avec la version courante
+- taille raisonnable
 
-Points a corriger:
-- Tested up to: 6.7 est date. Au 25 mars 2026, la derniere release stable maintenue est 6.9.4, sortie le 11 mars 2026. Il est recommande de passer le readme a 6.9.
-- le readme doit expliquer encore plus explicitement la dependance au service XPressUI, ses conditions d'usage et la privacy
-- prevoir les assets WordPress.org (banner, icon, screenshot-1.png, etc.) avant envoi SVN
+Points a garder sous controle:
+- relire une derniere fois la documentation "external service"
+- relire la section privacy
+- completer les assets WordPress.org manquants, surtout les banners
 
 
 Ce qui est deja bien
@@ -99,20 +106,25 @@ Ce qui est deja bien
 - Pas d'obfuscation
 - Header plugin/readme coherents
 - UI admin sobre, sans pratiques "spammy"
+- Shell inline sans iframe
+- Runtime bundle dans le plugin
+- Integrations privacy WordPress presentes
+- uninstall.php present
+- ZIP validator nettement plus strict
 
 
 Chemin le plus rapide vers une acceptation
 
-1. Refactorer le modele de package: donnees/config seulement, pas de bundle HTML/JS executable uploade.
-2. Durcir fortement le endpoint public et les uploads.
-3. Ajouter le minimum privacy WordPress.
-4. Mettre le readme a jour pour WordPress 6.9 et documenter tres clairement le service externe.
-5. Passer Plugin Check + readme validator avant soumission.
+1. Finaliser le durcissement du endpoint public.
+2. Clarifier et documenter la politique de suppression / retention des pieces jointes.
+3. Completer les assets WordPress.org.
+4. Passer Plugin Check + readme validator avant soumission.
+5. Faire une passe QA sur WordPress propre.
 
 
 Limites de cette verification
 
-Je n'ai pas pu lancer php ni Plugin Check dans cet environnement, car php n'est pas installe ici. Cette note repose donc sur une revue statique du code.
+Cette note reste principalement une revue statique du code et de la documentation. Les points "Plugin Check", "readme validator" et tests d'installation WordPress propre restent a confirmer sur environnement reel.
 
 
 Sources officielles consultees
@@ -136,80 +148,10 @@ Sources officielles consultees
 Suggestion de suite
 
 Si besoin, prochaine etape possible:
-- preparer une checklist pre-soumission WordPress.org tres concrete
-- ou patcher directement le plugin pour lever les bloqueurs les plus probables
-
-
-Note importante sur le refactor structurel a prevoir
-
-Le point sensible n'est pas seulement l'upload ZIP, mais surtout ce que le plugin fait apres extraction:
-- aujourd'hui, le plugin extrait un mini-site dans uploads
-- puis affiche son index.html dans une iframe
-
-Pour wordpress.org, cela peut etre interprete comme du code applicatif externe execute en dehors du plugin.
-
-Approche recommandee
-
-Conserver le concept de "workflow package", mais transformer le package en contenu declaratif au lieu d'un bundle executable.
-Le plugin doit devenir responsable du rendu.
-
-Concretement:
-1. definir un format de package autorise
-- manifest.json
-- fichiers de configuration JSON
-- assets statiques eventuels
-- pas de index.html applicatif
-- pas de JS metier externe
-
-2. stocker ces donnees dans uploads/xpressui/<slug>/
-- mais seulement comme donnees et assets
-
-3. remplacer l'iframe par un rendu natif cote plugin
-- soit via shortcode PHP
-- soit via un script frontend local au plugin
-- le script lirait le manifest et construirait l'interface
-
-4. faire poster le formulaire vers le endpoint REST du plugin
-
-Pourquoi cette approche est preferable
-
-- plus de mini-app executee depuis uploads
-- logique metier visible dans le plugin
-- plus simple a justifier a l'equipe wordpress.org
-- meilleur controle sur la securite et la compatibilite
-
-Version intermediaire possible
-
-Si un refactor complet n'est pas possible tout de suite:
-- interdire tout JS externe dans les packages
-- interdire toute logique applicative dans le ZIP
-- n'autoriser que HTML statique + assets
-- deplacer progressivement le comportement dynamique dans un JS local au plugin
-
-Cette version est meilleure que l'etat actuel, mais reste moins solide qu'un vrai modele declaratif.
-
-Impact probable sur le code
-
-- includes/admin-pages.php
-  le validateur ZIP devrait a terme accepter un manifest.json comme point d'entree principal
-- includes/shortcode.php
-  l'iframe devrait etre remplacee par un conteneur rendu par le plugin
-- nouveau fichier frontend JS local au plugin
-  il lirait les donnees du manifest et construirait l'UI
-- helpers supplementaires
-  pour charger, valider et normaliser le manifest
-
-Plan concret pour ce chantier plus tard
-
-1. inspecter la structure reelle d'un package exporte XPressUI
-2. definir le plus petit manifest exploitable
-3. implementer un premier rendu natif simple
-4. garder la soumission REST compatible
-5. supprimer la dependance a index.html dans le shortcode
-
-Precondition recommandee
-
-Avant de coder ce refactor, il faut idealement analyser un vrai package exporte XPressUI afin de ne pas inventer un format a l'aveugle.
+- mettre en oeuvre les derniers durcissements REST juges necessaires
+- documenter la retention / suppression des pieces jointes
+- completer les assets du listing WordPress.org
+- passer la verification finale de pre-soumission
 
 
 Strategie free / pro recommandee
