@@ -127,7 +127,7 @@ function xpressui_validate_request_identifier_value( $value, $field_name, $requi
 		);
 	}
 
-	if ( ! preg_match( '/^[A-Za-z0-9._:-]+$/', $value ) ) {
+	if ( ! preg_match( '/^[A-Za-z0-9._:+\-]+$/', $value ) ) {
 		return new WP_Error(
 			'xpressui_invalid_identifier',
 			__( 'One of the submission identifiers is invalid.', 'xpressui-bridge' ),
