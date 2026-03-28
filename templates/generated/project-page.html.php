@@ -9,7 +9,9 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 }
 ?><!doctype html>
 <html lang="en">
-<?php xpressui_bridge_template_include_template('head.php', $xpressui_ctx); ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?><style>
+<?php xpressui_bridge_template_include_template('head.php', $xpressui_ctx); ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?>
+<style>
   /* WordPress iframe integration overrides */
   html, body { background: transparent !important; height: auto !important; min-height: 0 !important; overflow-x: hidden !important; overflow-y: visible !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
   * { box-sizing: border-box !important; }
@@ -20,7 +22,10 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 </style>
 <?php endif; ?><body>
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
-<?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>  </div>
+<?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?>
+<?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?>
+<?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>
+  </div>
   <script id="xpressui-custom-config" type="application/json">
 <?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?>
   </script>

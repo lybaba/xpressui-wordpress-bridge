@@ -14,5 +14,6 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   data-theme-preset="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'preset_id'))); ?>"
   data-template-zone="runtime_mount"
 >
-<?php xpressui_bridge_template_include_template('rendered-form.php', $xpressui_ctx); ?></div>
+<?php xpressui_bridge_template_include_template('rendered-form.php', $xpressui_ctx); ?>
+</div>
 

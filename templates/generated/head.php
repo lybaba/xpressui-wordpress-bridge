@@ -40,7 +40,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       isolation: isolate;
       overflow: hidden;
     }
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "panel")))): ?>    .page-shell::before {
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "panel")))): ?>
+    .page-shell::before {
       content: "";
       position: absolute;
       inset: 18px;
@@ -62,7 +63,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
         linear-gradient(180deg, color-mix(in srgb, var(--template-page-background) 8%, transparent), color-mix(in srgb, var(--template-page-background) 36%, rgba(15,23,42,0.10)));
       pointer-events: none;
     }
-<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>    body::before {
+<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>
+    body::before {
       content: "";
       position: fixed;
       inset: 0;
@@ -92,7 +94,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       border-radius: var(--template-card-radius);
       padding: 24px;
       box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(15,23,42,0.42)<?php else: ?>0 20px 60px rgba(15, 23, 42, 0.12)<?php endif; ?>;
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>
+backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
       z-index: 1;
     }
     .template-runtime-shell { display: grid; gap: 20px; }
