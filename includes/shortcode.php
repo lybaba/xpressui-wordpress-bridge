@@ -82,7 +82,8 @@ function xpressui_render_shortcode( $atts ) {
 	require_once $runtime_file;
 
 	// Ensure the fragment template exists.
-	if ( ! file_exists( XPRESSUI_BRIDGE_DIR . 'templates/generated/form-fragment.php' ) ) {
+	$fragment_path = XPRESSUI_BRIDGE_DIR . 'templates/form-fragment.php';
+	if ( ! file_exists( $fragment_path ) ) {
 		return '<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: form fragment template not found.', 'xpressui-bridge' )
 			. '</p>';
@@ -99,7 +100,11 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	// Render the form fragment (CSS + HTML only; scripts are enqueued below).
-	$fragment_html = xpressui_bridge_template_render_template( 'form-fragment.php', $template_context );
+	// form-fragment.php lives in templates/ (not generated/) as it is manually maintained.
+	ob_start();
+	$xpressui_ctx = $template_context;
+	include $fragment_path;
+	$fragment_html = (string) ob_get_clean();
 
 	// -----------------------------------------------------------------
 	// Enqueue the bundled XPressUI light runtime.

@@ -22,7 +22,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
 <?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?><?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>  </div>
   <script id="xpressui-custom-config" type="application/json">
-<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json')))); ?>
+<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?>
   </script>
   <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone exported shell loads the runtime directly outside WordPress enqueue APIs. ?>
   <script src="./wordpress/runtime/xpressui-light-<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'xpressui_version'))); ?>.umd.js"></script>
