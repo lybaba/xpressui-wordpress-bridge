@@ -116,6 +116,9 @@ function xpressui_render_shortcode( $atts ) {
 	$runtime_handle = 'xpressui-light-runtime';
 	$runtime_url    = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
 
+	// Allow extensions (e.g. the pro plugin) to override the runtime URL.
+	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
+
 	wp_enqueue_script(
 		$runtime_handle,
 		$runtime_url,
