@@ -594,7 +594,13 @@ function xpressui_reinstall_bundled_workflow( $slug ) {
 	$target_dir = trailingslashit( $base_dir ) . $slug;
 
 	if ( file_exists( $target_dir ) ) {
-		xpressui_delete_workflow( $slug );
+		xpressui_delete_workflow(
+			$slug,
+			[
+				'preserve_project_settings' => true,
+				'mark_user_deleted'         => false,
+			]
+		);
 	}
 
 	if ( ! xpressui_copy_directory_recursive( $source_dir, $target_dir ) ) {
@@ -649,9 +655,11 @@ function xpressui_delete_directory_recursive( $dir ) {
 	return (bool) $wp_filesystem->delete( $dir, true, 'd' );
 }
 
-function xpressui_delete_workflow( $slug ) {
+function xpressui_delete_workflow( $slug, array $options = [] ) {
 	$slug     = sanitize_title( (string) $slug );
 	$base_dir = xpressui_get_workflows_base_dir();
+	$preserve_project_settings = ! empty( $options['preserve_project_settings'] );
+	$mark_user_deleted         = ! array_key_exists( 'mark_user_deleted', $options ) || ! empty( $options['mark_user_deleted'] );
 	if ( $slug === '' || $base_dir === '' ) {
 		return new WP_Error( 'invalid_workflow_slug', __( 'Invalid workflow slug.', 'xpressui-bridge' ) );
 	}
@@ -668,7 +676,7 @@ function xpressui_delete_workflow( $slug ) {
 	xpressui_delete_workflow_manifest_meta( $slug );
 
 	$all_settings = get_option( 'xpressui_project_settings', [] );
-	if ( is_array( $all_settings ) && isset( $all_settings[ $slug ] ) ) {
+	if ( ! $preserve_project_settings && is_array( $all_settings ) && isset( $all_settings[ $slug ] ) ) {
 		unset( $all_settings[ $slug ] );
 		update_option( 'xpressui_project_settings', $all_settings );
 	}
@@ -681,7 +689,7 @@ function xpressui_delete_workflow( $slug ) {
 
 	// Remember that the user explicitly deleted this bundled workflow so it is
 	// not silently reinstalled on the next admin_init call.
-	if ( xpressui_is_bundled_workflow( $slug ) ) {
+	if ( $mark_user_deleted && xpressui_is_bundled_workflow( $slug ) ) {
 		$user_deleted = get_option( 'xpressui_user_deleted_workflows', [] );
 		if ( ! is_array( $user_deleted ) ) {
 			$user_deleted = [];
