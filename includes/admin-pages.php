@@ -467,6 +467,11 @@ function xpressui_render_workflows_page() {
 			echo '<td>' . esc_html( $notify_email !== '' ? $notify_email : '—' ) . '</td>';
 			echo '<td>' . ( $redirect_url !== '' ? '<a href="' . esc_url( $redirect_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $redirect_url ) . '</a>' : '—' ) . '</td>';
 			echo '<td>';
+			// Allow extensions to inject extra action links (e.g. "Customize" from the pro plugin).
+			$extra_row_actions = apply_filters( 'xpressui_workflow_row_actions', [], $slug );
+			foreach ( $extra_row_actions as $action_html ) {
+				echo wp_kses_post( $action_html ) . ' · ';
+			}
 			echo '<a href="' . esc_url( $create_page_url ) . '">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a> · ';
 			echo '<a href="' . esc_url( $open_page_url ) . '">' . esc_html__( 'Find pages', 'xpressui-bridge' ) . '</a>';
 			if ( $edit_page_url ) {
