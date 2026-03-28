@@ -221,9 +221,11 @@ function xpressui_render_workflows_page() {
 
 	// Handle project settings save.
 	if ( isset( $_POST['xpressui_save_project_settings'] ) && check_admin_referer( 'xpressui_project_settings_action', 'xpressui_settings_nonce' ) ) {
-		$slug           = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
-		$notify_email   = sanitize_email( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) );
-		$redirect_url   = esc_url_raw( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
+		$slug             = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
+		$raw_notify_email = trim( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) );
+		$raw_redirect_url = trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
+		$notify_email     = sanitize_email( $raw_notify_email );
+		$redirect_url     = esc_url_raw( $raw_redirect_url );
 
 		if ( $slug !== '' ) {
 			$all_settings             = get_option( 'xpressui_project_settings', [] );
@@ -235,8 +237,20 @@ function xpressui_render_workflows_page() {
 				'redirectUrl' => $redirect_url,
 			];
 			update_option( 'xpressui_project_settings', $all_settings );
-			$notice_class   = 'notice-success';
-			$notice_message = __( 'Settings saved.', 'xpressui-bridge' );
+			$save_warnings = [];
+			if ( $raw_notify_email !== '' && $notify_email === '' ) {
+				$save_warnings[] = __( 'The notification email was not saved because it is not a valid email address.', 'xpressui-bridge' );
+			}
+			if ( $raw_redirect_url !== '' && $redirect_url === '' ) {
+				$save_warnings[] = __( 'The post-submit redirect was not saved because it is not a valid URL.', 'xpressui-bridge' );
+			}
+			if ( empty( $save_warnings ) ) {
+				$notice_class   = 'notice-success';
+				$notice_message = __( 'Settings saved.', 'xpressui-bridge' );
+			} else {
+				$notice_class   = 'notice-error';
+				$notice_message = implode( ' ', $save_warnings );
+			}
 		}
 	}
 
