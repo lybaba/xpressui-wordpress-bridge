@@ -6,10 +6,9 @@ This package gives you a ready-to-publish document intake workflow for WordPress
 - **The Workflow Package**: A ready-to-publish, multi-step frontend flow.
 - **Project Inbox**: A readable, organized operator view inside `wp-admin`.
 
-## 🚀 Install in 3 minutes
-1. **Install the Plugin**: Install and activate the [XPressUI plugin](https://wordpress.org/plugins/xpressui) from the WordPress plugin directory.
-2. **Upload the Workflow**: Go to **XPressUI > Manage Workflows** in your WordPress admin and drag & drop this `.zip` file.
-3. **Embed**: Copy the generated shortcode and paste it into any WordPress Page or Post.
+## 🚀 Install in 2 steps
+1. **Install the Plugin**: Install and activate the [XPressUI plugin](https://wordpress.org/plugins/xpressui) from the WordPress plugin directory. The document-intake workflow is bundled with the plugin and installed automatically on activation — no manual upload required.
+2. **Embed**: Copy the generated shortcode and paste it into any WordPress Page or Post.
 
 ### Shortcode Options
 You can customize the workflow behavior directly via the shortcode:
