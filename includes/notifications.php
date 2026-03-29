@@ -51,6 +51,24 @@ function xpressui_get_project_setting_flag( $project_slug, $key, $default = fals
 	return in_array( strtolower( $value ), [ '1', 'true', 'yes', 'on' ], true );
 }
 
+/**
+ * Returns an enum-like project setting value.
+ *
+ * @param string $project_slug Project slug.
+ * @param string $key          Setting key.
+ * @param array  $allowed      Allowed string values.
+ * @param string $default      Default when not configured or invalid.
+ * @return string
+ */
+function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $default = '' ) {
+	$value = strtolower( xpressui_get_project_setting( $project_slug, $key ) );
+	if ( '' === $value || ! in_array( $value, $allowed, true ) ) {
+		return (string) $default;
+	}
+
+	return $value;
+}
+
 // ---------------------------------------------------------------------------
 // Notification dispatch
 // ---------------------------------------------------------------------------

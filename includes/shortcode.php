@@ -86,15 +86,25 @@ function xpressui_render_shortcode( $atts ) {
 
 	$show_project_title  = xpressui_get_project_setting_flag( $slug, 'showProjectTitle', false );
 	$show_required_note  = xpressui_get_project_setting_flag( $slug, 'showRequiredFieldsNote', false );
+	$section_label_visibility = xpressui_get_project_setting_choice( $slug, 'sectionLabelVisibility', [ 'auto', 'show', 'hide' ], 'auto' );
+	$section_count = 0;
+	if ( is_array( $template_context['rendered_form']['sections'] ?? null ) ) {
+		$section_count = count( $template_context['rendered_form']['sections'] );
+	}
+	$show_section_headers = 'show' === $section_label_visibility
+		? true
+		: ( 'hide' === $section_label_visibility ? false : $section_count > 1 );
 	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
-		$template_context['rendered_form']['show_title']    = $show_project_title;
-		$template_context['rendered_form']['show_subtitle'] = $show_required_note;
+		$template_context['rendered_form']['show_title']           = $show_project_title;
+		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
+		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 	}
 	if ( is_array( $template_context['runtime'] ?? null ) ) {
 		$form_config = json_decode( (string) ( $template_context['runtime']['form_config_json'] ?? '{}' ), true );
 		if ( is_array( $form_config ) ) {
 			$form_config['showProjectTitle']       = $show_project_title;
 			$form_config['showRequiredFieldsNote'] = $show_required_note;
+			$form_config['sectionLabelVisibility'] = $section_label_visibility;
 			$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
 		}
 	}

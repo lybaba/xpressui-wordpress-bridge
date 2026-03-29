@@ -226,6 +226,10 @@ function xpressui_render_workflows_page() {
 		$raw_redirect_url = trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
+		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
+		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
+			$section_label_visibility = 'auto';
+		}
 		$notify_email     = sanitize_email( $raw_notify_email );
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
 
@@ -239,6 +243,7 @@ function xpressui_render_workflows_page() {
 				'redirectUrl'            => $redirect_url,
 				'showProjectTitle'       => $show_project_title,
 				'showRequiredFieldsNote' => $show_required_note,
+				'sectionLabelVisibility' => $section_label_visibility,
 			];
 			update_option( 'xpressui_project_settings', $all_settings );
 			$save_warnings = [];
@@ -607,6 +612,14 @@ function xpressui_render_workflows_page() {
 		echo '<input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1">';
 		echo ' ' . esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
 		echo '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th><label for="xpressui_section_label_visibility">' . esc_html__( 'Section labels', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><select id="xpressui_section_label_visibility" name="xpressui_section_label_visibility" class="regular-text">';
+		echo '<option value="auto">' . esc_html__( 'Auto', 'xpressui-bridge' ) . '</option>';
+		echo '<option value="show">' . esc_html__( 'Always show', 'xpressui-bridge' ) . '</option>';
+		echo '<option value="hide">' . esc_html__( 'Always hide', 'xpressui-bridge' ) . '</option>';
+		echo '</select>';
+		echo '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '</tbody></table>';
 		echo '<p class="submit">';

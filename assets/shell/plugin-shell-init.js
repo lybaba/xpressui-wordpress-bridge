@@ -68,6 +68,17 @@ async function initXPressUI() {
       : '';
     const showProjectTitle = formConfig.showProjectTitle !== false;
     const showRequiredFieldsNote = formConfig.showRequiredFieldsNote === true;
+    const sectionLabelVisibility = formConfig.sectionLabelVisibility === 'show'
+      ? 'show'
+      : formConfig.sectionLabelVisibility === 'hide'
+        ? 'hide'
+        : 'auto';
+    const customSections = Array.isArray(formConfig.sections.custom) ? formConfig.sections.custom : [];
+    const showSectionHeaders = sectionLabelVisibility === 'show'
+      ? true
+      : sectionLabelVisibility === 'hide'
+        ? false
+        : customSections.length > 1;
     let titleNode = headerNode?.querySelector('.template-form-title');
     let subtitleNode = headerNode?.querySelector('.template-form-subtitle');
 
@@ -108,11 +119,29 @@ async function initXPressUI() {
     }
     
     // Sync Section Titles
-    if (formConfig.sections.custom) {
-      formConfig.sections.custom.forEach(section => {
+    if (customSections.length > 0) {
+      customSections.forEach(section => {
         if (section.name && section.label) {
-          const sectionHeader = mountNode.querySelector(`[data-section-name="${section.name}"] .template-section-label`);
-          if (sectionHeader) sectionHeader.textContent = section.label;
+          const sectionNode = mountNode.querySelector(`[data-section-name="${section.name}"]`);
+          if (!sectionNode) return;
+          const sectionHeaderNode = sectionNode.querySelector('.template-section-header');
+          let sectionHeader = sectionNode.querySelector('.template-section-label');
+          if (showSectionHeaders) {
+            if (!(sectionHeaderNode instanceof HTMLElement)) {
+              const header = document.createElement('header');
+              header.className = 'template-section-header';
+              const title = document.createElement('h2');
+              title.className = 'template-section-label';
+              header.appendChild(title);
+              sectionNode.insertBefore(header, sectionNode.firstChild);
+              sectionHeader = title;
+            }
+            if (sectionHeader instanceof HTMLElement) {
+              sectionHeader.textContent = section.label;
+            }
+          } else if (sectionHeaderNode instanceof HTMLElement) {
+            sectionHeaderNode.remove();
+          }
         }
       });
     }

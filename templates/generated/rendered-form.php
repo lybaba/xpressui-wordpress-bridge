@@ -57,10 +57,12 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
 <?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
 <?php else: ?>
     <section class="template-section" data-template-zone="empty_form">
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_section_headers'))): ?>
       <header class="template-section-header">
         <h2 class="template-section-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Form content", 'xpressui-bridge'))); ?></h2>
         <p class="template-section-desc"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("No sections are configured yet.", 'xpressui-bridge'))); ?></p>
       </header>
+<?php endif; ?>
     </section>
 <?php endif; ?><?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>
