@@ -20,9 +20,9 @@
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
-      "wordpress/README.md": "2ccff79c983f668b",
-      "wordpress/shortcode-example.php": "9ec1872d7fefd985",
-      "form.config.json": "13cf6ab19d439198"
+      "wordpress/README.md": "b4835645b8b5e18a",
+      "wordpress/shortcode-example.php": "6761578c8e762bc4",
+      "form.config.json": "196cce3b5419fe54"
     }
   },
   "workflow": {
