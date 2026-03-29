@@ -160,7 +160,7 @@ function xpressui_load_workflow_manifest( $slug ) {
 
 function xpressui_load_bundled_workflow_manifest( $slug ) {
 	$slug        = sanitize_title( (string) $slug );
-	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	$bundled_dir = xpressui_get_bundled_workflow_source_dir( $slug );
 	if ( '' === $slug || '' === $bundled_dir ) {
 		return [];
 	}
@@ -177,6 +177,39 @@ function xpressui_load_bundled_workflow_manifest( $slug ) {
 
 	$manifest = json_decode( $manifest_json, true );
 	return is_array( $manifest ) ? $manifest : [];
+}
+
+function xpressui_get_bundled_workflow_source_dirs() {
+	$default_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	$dirs        = apply_filters( 'xpressui_bundled_workflow_source_dirs', [ $default_dir ] );
+	$dirs        = is_array( $dirs ) ? $dirs : [];
+
+	$normalized = [];
+	foreach ( $dirs as $dir ) {
+		$dir = is_string( $dir ) ? trailingslashit( $dir ) : '';
+		if ( '' === $dir || ! is_dir( $dir ) ) {
+			continue;
+		}
+		$normalized[] = $dir;
+	}
+
+	return array_values( array_unique( $normalized ) );
+}
+
+function xpressui_get_bundled_workflow_source_dir( $slug ) {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	foreach ( xpressui_get_bundled_workflow_source_dirs() as $dir ) {
+		$workflow_dir = trailingslashit( $dir ) . $slug;
+		if ( is_dir( $workflow_dir ) && xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) ) {
+			return $dir;
+		}
+	}
+
+	return '';
 }
 
 function xpressui_get_manifest_fingerprint( array $manifest ) {
@@ -421,7 +454,45 @@ function xpressui_get_workflow_manifest_meta( $slug ) {
 	$slug     = sanitize_title( (string) $slug );
 	$registry = xpressui_get_workflow_manifest_registry();
 	$entry    = $registry[ $slug ] ?? [];
-	return is_array( $entry ) ? $entry : [];
+	$entry    = is_array( $entry ) ? $entry : [];
+
+	if ( '' === $slug ) {
+		return $entry;
+	}
+
+	$needs_listing_group = empty( $entry['listingGroup'] );
+	$needs_listing_title = empty( $entry['listingTitle'] );
+	$needs_project_name  = empty( $entry['projectName'] );
+
+	if ( ! $needs_listing_group && ! $needs_listing_title && ! $needs_project_name ) {
+		return $entry;
+	}
+
+	$manifest = [];
+	if ( ! empty( $entry['isBundled'] ) ) {
+		$manifest = xpressui_load_bundled_workflow_manifest( $slug );
+	}
+
+	if ( empty( $manifest ) ) {
+		$manifest = xpressui_load_workflow_manifest( $slug );
+	}
+
+	if ( empty( $manifest ) ) {
+		return $entry;
+	}
+
+	$meta = is_array( $manifest['meta'] ?? null ) ? $manifest['meta'] : [];
+	if ( $needs_listing_group && ! empty( $meta['listingGroup'] ) ) {
+		$entry['listingGroup'] = sanitize_key( (string) $meta['listingGroup'] );
+	}
+	if ( $needs_listing_title && ! empty( $meta['listingTitle'] ) ) {
+		$entry['listingTitle'] = sanitize_text_field( (string) $meta['listingTitle'] );
+	}
+	if ( $needs_project_name && ! empty( $manifest['projectName'] ) ) {
+		$entry['projectName'] = sanitize_text_field( (string) $manifest['projectName'] );
+	}
+
+	return $entry;
 }
 
 function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
@@ -453,6 +524,8 @@ function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
 		'themeFeatures' => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['themeFeatures'] ?? [] ) ) ) ),
 		'stepCount'     => isset( $meta['stepCount'] ) ? (int) $meta['stepCount'] : 0,
 		'fieldCount'    => isset( $meta['fieldCount'] ) ? (int) $meta['fieldCount'] : 0,
+		'listingGroup'  => sanitize_key( (string) ( $meta['listingGroup'] ?? '' ) ),
+		'listingTitle'  => sanitize_text_field( (string) ( $meta['listingTitle'] ?? '' ) ),
 		'manifestFingerprint' => xpressui_get_manifest_fingerprint( $manifest ),
 		'usesLegacyShellArtifacts' => xpressui_manifest_uses_legacy_shell_artifacts( $manifest ),
 		'isBundled'     => xpressui_is_bundled_workflow( $slug ),
@@ -483,20 +556,17 @@ function xpressui_delete_workflow_manifest_meta( $slug ) {
 }
 
 function xpressui_get_bundled_workflow_slugs() {
-	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
-	if ( ! is_string( $bundled_dir ) || $bundled_dir === '' || ! is_dir( $bundled_dir ) ) {
-		return [];
-	}
-
 	$slugs = [];
-	foreach ( (array) scandir( $bundled_dir ) as $item ) {
-		$slug = sanitize_title( (string) $item );
-		if ( $slug === '' || $slug !== $item ) {
-			continue;
-		}
-		$workflow_dir  = trailingslashit( $bundled_dir ) . $slug;
-		if ( is_dir( $workflow_dir ) && xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) ) {
-			$slugs[] = $slug;
+	foreach ( xpressui_get_bundled_workflow_source_dirs() as $bundled_dir ) {
+		foreach ( (array) scandir( $bundled_dir ) as $item ) {
+			$slug = sanitize_title( (string) $item );
+			if ( $slug === '' || $slug !== $item ) {
+				continue;
+			}
+			$workflow_dir = trailingslashit( $bundled_dir ) . $slug;
+			if ( is_dir( $workflow_dir ) && xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) ) {
+				$slugs[] = $slug;
+			}
 		}
 	}
 
@@ -559,9 +629,13 @@ function xpressui_install_bundled_workflows() {
 	}
 
 	$installed = [];
-	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
 	foreach ( xpressui_get_bundled_workflow_slugs() as $slug ) {
 		if ( xpressui_is_installed_workflow( $slug ) ) {
+			continue;
+		}
+
+		$bundled_dir = xpressui_get_bundled_workflow_source_dir( $slug );
+		if ( '' === $bundled_dir ) {
 			continue;
 		}
 
@@ -584,7 +658,7 @@ function xpressui_install_bundled_workflows() {
 
 function xpressui_reinstall_bundled_workflow( $slug ) {
 	$slug        = sanitize_title( (string) $slug );
-	$bundled_dir = defined( 'XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR' ) ? XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR : '';
+	$bundled_dir = xpressui_get_bundled_workflow_source_dir( $slug );
 	$base_dir    = xpressui_get_workflows_base_dir();
 	if ( $slug === '' || ! xpressui_is_bundled_workflow( $slug ) || $base_dir === '' ) {
 		return new WP_Error( 'invalid_bundled_workflow', __( 'This bundled workflow could not be found.', 'xpressui-bridge' ) );
@@ -806,6 +880,23 @@ function xpressui_get_masked_license_key() {
 function xpressui_is_pro_extension_active() {
 	$is_active = (bool) apply_filters( 'xpressui_bridge_is_pro_extension_active', false );
 	return $is_active;
+}
+
+function xpressui_is_pro_only_workflow( $slug ) {
+	$slug          = sanitize_title( (string) $slug );
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+	$listing_group = sanitize_key( (string) ( $manifest_meta['listingGroup'] ?? '' ) );
+	$features      = is_array( $manifest_meta['features'] ?? null ) ? $manifest_meta['features'] : [];
+
+	if ( 'included-pro-tools' === $listing_group ) {
+		return true;
+	}
+
+	if ( in_array( 'validation-playground', $features, true ) ) {
+		return true;
+	}
+
+	return 'validation-playground' === $slug;
 }
 
 function xpressui_has_valid_pro_license() {

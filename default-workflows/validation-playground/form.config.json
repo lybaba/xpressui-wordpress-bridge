@@ -1,0 +1,281 @@
+{
+  "mode": "form-multi-step",
+  "navigationLabels": {
+    "prevLabel": "Back",
+    "nextLabel": "Continue",
+    "submitLabel": "Submit validation test"
+  },
+  "workflowConfig": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "wordpress-bridge",
+    "resumeSupport": "disabled",
+    "documentHandling": "basic-upload",
+    "submissionEndpoint": "/wp-json/xpressui/v1/submit",
+    "successMessage": "Your validation test submission was sent successfully.",
+    "errorMessage": "Unable to send this validation test to WordPress right now. Please try again."
+  },
+  "sections": {
+    "custom": [
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 1: Contact",
+        "adminLabel": "Step 1: Contact",
+        "name": "contactStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 2: Validation",
+        "adminLabel": "Step 2: Validation",
+        "name": "validationStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 3: Documents",
+        "adminLabel": "Step 3: Documents",
+        "name": "documentsStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 4: Review",
+        "adminLabel": "Step 4: Review",
+        "name": "reviewStep"
+      }
+    ],
+    "contactStep": [
+      {
+        "type": "text",
+        "label": "First name",
+        "name": "firstName",
+        "required": true,
+        "minLen": 4,
+        "maxLen": 8,
+        "pattern": "^[A-Za-z]{4,8}$",
+        "choices": null
+      },
+      {
+        "type": "email",
+        "label": "Email",
+        "name": "email",
+        "required": true,
+        "maxLen": 120,
+        "choices": null
+      },
+      {
+        "type": "tel",
+        "label": "Phone number",
+        "name": "phoneNumber",
+        "required": true,
+        "minLen": 7,
+        "maxLen": 20,
+        "choices": null
+      },
+      {
+        "type": "radio-buttons",
+        "label": "Experience level",
+        "name": "experienceLevel",
+        "required": true,
+        "choices": [
+          {
+            "label": "Junior",
+            "value": "junior"
+          },
+          {
+            "label": "Senior",
+            "value": "senior"
+          },
+          {
+            "label": "Expert",
+            "value": "expert"
+          }
+        ]
+      },
+      {
+        "type": "radio-buttons",
+        "label": "Remote only",
+        "name": "remoteOnly",
+        "choices": [
+          {
+            "label": "No",
+            "value": "no"
+          },
+          {
+            "label": "Yes",
+            "value": "yes"
+          }
+        ]
+      }
+    ],
+    "validationStep": [
+      {
+        "type": "number",
+        "label": "Years of experience",
+        "name": "yearsExperience",
+        "min": 0,
+        "max": 40,
+        "choices": null
+      },
+      {
+        "type": "price",
+        "label": "Daily rate",
+        "name": "dailyRate",
+        "min": 50,
+        "max": 5000,
+        "step": 25,
+        "choices": null
+      },
+      {
+        "type": "date",
+        "label": "Available from",
+        "name": "availableFrom",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "time",
+        "label": "Preferred call time",
+        "name": "preferredCallTime",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "checkboxes",
+        "label": "Available days",
+        "name": "availableDays",
+        "required": true,
+        "minNumOfChoices": 2,
+        "maxNumOfChoices": 4,
+        "choices": [
+          {
+            "label": "Monday",
+            "value": "monday"
+          },
+          {
+            "label": "Tuesday",
+            "value": "tuesday"
+          },
+          {
+            "label": "Wednesday",
+            "value": "wednesday"
+          },
+          {
+            "label": "Thursday",
+            "value": "thursday"
+          },
+          {
+            "label": "Friday",
+            "value": "friday"
+          }
+        ]
+      },
+      {
+        "type": "select-multiple",
+        "label": "Skills",
+        "name": "skills",
+        "minNumOfChoices": 1,
+        "maxNumOfChoices": 3,
+        "choices": [
+          {
+            "label": "WordPress",
+            "value": "wordpress"
+          },
+          {
+            "label": "PHP",
+            "value": "php"
+          },
+          {
+            "label": "TypeScript",
+            "value": "typescript"
+          },
+          {
+            "label": "React",
+            "value": "react"
+          },
+          {
+            "label": "Python",
+            "value": "python"
+          }
+        ]
+      },
+      {
+        "type": "url",
+        "label": "Portfolio URL",
+        "name": "portfolioUrl",
+        "choices": null
+      }
+    ],
+    "documentsStep": [
+      {
+        "type": "upload-image",
+        "label": "Profile photo",
+        "name": "profilePhoto",
+        "required": true,
+        "accept": "image/*",
+        "maxFileSizeMb": 2,
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Resume / CV",
+        "name": "resumeFile",
+        "accept": ".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf",
+        "maxFileSizeMb": 5,
+        "choices": null
+      }
+    ],
+    "reviewStep": [
+      {
+        "type": "textarea",
+        "label": "Additional notes",
+        "name": "additionalNotes",
+        "minLen": 20,
+        "maxLen": 1000,
+        "choices": null
+      }
+    ],
+    "btngroup": [
+      {
+        "type": "submit",
+        "name": "prevbtn",
+        "label": "Back",
+        "adminLabel": "Back"
+      },
+      {
+        "type": "submit",
+        "name": "nextbtn",
+        "label": "Continue",
+        "adminLabel": "Continue"
+      },
+      {
+        "type": "submit",
+        "name": "submitbtn",
+        "label": "Submit validation test",
+        "adminLabel": "Submit validation test"
+      }
+    ]
+  },
+  "showProjectTitle": true,
+  "submit": {
+    "endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
+    "method": "POST",
+    "mode": "form-data",
+    "includeDocumentData": true,
+    "metadata": {
+      "projectId": "validation-playground-starter",
+      "projectSlug": "validation-playground",
+      "projectConfigVersion": "validation-playground-starter:2026-03-29T00:00:00+00:00"
+    }
+  },
+  "submitFeedback": {
+    "title": "Submission status",
+    "idle_message": "Submission feedback will appear here after the runtime handles the form.",
+    "loading_message": "Submitting...",
+    "success_title": "Validation test received",
+    "success_message": "Your validation test submission was sent successfully.",
+    "error_title": "Submission failed",
+    "error_message": "Unable to send this validation test to WordPress right now. Please try again."
+  }
+}

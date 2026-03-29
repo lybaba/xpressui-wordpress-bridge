@@ -1,10 +1,10 @@
 {
   "schemaVersion": "console.export/v2",
-  "exportId": "api-document-intake-starter",
-  "projectId": "document-intake-starter",
-  "projectSlug": "document-intake",
-  "projectName": "Document Intake",
-  "generatedAt": "2026-03-26T00:00:00+00:00",
+  "exportId": "api-validation-playground-starter",
+  "projectId": "validation-playground-starter",
+  "projectSlug": "validation-playground",
+  "projectName": "Validation Playground",
+  "generatedAt": "2026-03-29T00:00:00+00:00",
   "xpressui": {
     "version": "1.0.0",
     "target": "wordpress"
@@ -16,15 +16,6 @@
       "readme": "wordpress/README.md",
       "shortcode": "wordpress/shortcode-example.php",
       "runtime": "wordpress/runtime/xpressui-light-1.0.0.umd.js"
-    }
-  },
-  "checksums": {
-    "algorithm": "fnv1a-64",
-    "files": {
-      "wordpress/README.md": "2ccff79c983f668b",
-      "wordpress/shortcode-example.php": "9ec1872d7fefd985",
-      "wordpress/runtime/xpressui-light-1.0.0.umd.js": "0047be1b12894915",
-      "form.config.json": "13cf6ab19d439198"
     }
   },
   "workflow": {
@@ -41,19 +32,29 @@
   },
   "capabilities": {
     "components": [
+      "checkboxes",
+      "date",
       "email",
       "file",
+      "number",
       "price",
+      "radio-buttons",
+      "select-multiple",
       "select-one",
+      "checkbox",
       "tel",
       "text",
-      "textarea"
+      "textarea",
+      "time",
+      "upload-image",
+      "url"
     ],
     "features": [
       "basic-upload",
       "email-notifications",
       "multi-step",
-      "submission-storage"
+      "submission-storage",
+      "validation-playground"
     ],
     "themeFeatures": [
       "basic-colors",
@@ -94,6 +95,6 @@
     "projectStatus": "published",
     "assetCount": 0,
     "stepCount": 4,
-    "fieldCount": 10
+    "fieldCount": 14
   }
 }

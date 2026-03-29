@@ -224,6 +224,8 @@ function xpressui_render_workflows_page() {
 		$slug             = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
 		$raw_notify_email = trim( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) );
 		$raw_redirect_url = trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
+		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
+		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$notify_email     = sanitize_email( $raw_notify_email );
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
 
@@ -233,8 +235,10 @@ function xpressui_render_workflows_page() {
 				$all_settings = [];
 			}
 			$all_settings[ $slug ] = [
-				'notifyEmail' => $notify_email,
-				'redirectUrl' => $redirect_url,
+				'notifyEmail'            => $notify_email,
+				'redirectUrl'            => $redirect_url,
+				'showProjectTitle'       => $show_project_title,
+				'showRequiredFieldsNote' => $show_required_note,
 			];
 			update_option( 'xpressui_project_settings', $all_settings );
 			$save_warnings = [];
@@ -378,12 +382,28 @@ function xpressui_render_workflows_page() {
 		echo '</div>';
 	}
 
-	// --- Installed workflows table ---
-	echo '<div class="card xpressui-admin-card">';
-	echo '<h2>' . esc_html__( 'Installed Workflows', 'xpressui-bridge' ) . '</h2>';
-	if ( empty( $installed_slugs ) ) {
-		echo '<p>' . esc_html__( 'No workflows installed yet. Upload a package below to get started.', 'xpressui-bridge' ) . '</p>';
-	} else {
+	$primary_installed_slugs = [];
+	$included_pro_tool_slugs = [];
+	$visible_installed_slugs = [];
+	foreach ( $installed_slugs as $slug ) {
+		$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+		$listing_group = sanitize_key( (string) ( $manifest_meta['listingGroup'] ?? '' ) );
+		$features      = is_array( $manifest_meta['features'] ?? null ) ? $manifest_meta['features'] : [];
+		$is_pro_tool   = in_array( 'validation-playground', $features, true );
+		$is_named_pro_tool = ( 'validation-playground' === $slug );
+		if ( 'included-pro-tools' === $listing_group || $is_pro_tool || $is_named_pro_tool ) {
+			if ( ! $pro_active ) {
+				continue;
+			}
+			$included_pro_tool_slugs[] = $slug;
+			$visible_installed_slugs[] = $slug;
+			continue;
+		}
+		$primary_installed_slugs[] = $slug;
+		$visible_installed_slugs[] = $slug;
+	}
+
+	$render_workflow_table = static function ( array $slugs ) use ( $all_settings ) {
 		echo '<table class="wp-list-table widefat fixed striped">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
@@ -394,12 +414,13 @@ function xpressui_render_workflows_page() {
 		echo '<th>' . esc_html__( 'Redirect URL', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Actions', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
-		foreach ( $installed_slugs as $slug ) {
+		foreach ( $slugs as $slug ) {
 			$settings      = $all_settings[ $slug ] ?? [];
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
 			$notify_email  = (string) ( $settings['notifyEmail'] ?? '' );
 			$redirect_url  = (string) ( $settings['redirectUrl'] ?? '' );
 			$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
+			$display_tier  = xpressui_is_pro_only_workflow( $slug ) ? 'pro' : ( $runtime_tier !== '' ? $runtime_tier : 'light' );
 			$bridge_mode   = (string) ( $manifest_meta['bridgeMode'] ?? 'legacy-shell' );
 			$shortcode_mode = (string) ( $manifest_meta['shortcodeMode'] ?? 'legacy-template' );
 			$template_profile = (string) ( $manifest_meta['templateProfile'] ?? 'light' );
@@ -461,12 +482,13 @@ function xpressui_render_workflows_page() {
 				admin_url( 'edit.php' )
 			);
 			echo '<tr>';
+			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			echo '<td><strong>' . esc_html( $slug ) . '</strong>';
-			if ( $slug === 'document-intake' ) {
-				echo '<br /><span class="xpressui-muted">' . esc_html__( 'Document Intake', 'xpressui-bridge' ) . '</span>';
+			if ( '' !== $project_name ) {
+				echo '<br /><span class="xpressui-muted">' . esc_html( $project_name ) . '</span>';
 			}
 			echo '</td>';
-			echo '<td><span class="xpressui-badge xpressui-badge--muted">' . esc_html( $runtime_tier !== '' ? $runtime_tier : 'light' ) . '</span></td>';
+			echo '<td><span class="xpressui-badge xpressui-badge--muted">' . esc_html( $display_tier ) . '</span></td>';
 			echo '<td>';
 			if ( $is_bundled ) {
 				echo '<span class="xpressui-badge">' . esc_html__( 'Bundled', 'xpressui-bridge' ) . '</span>';
@@ -504,8 +526,25 @@ function xpressui_render_workflows_page() {
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
+	};
+
+	// --- Installed workflows table ---
+	echo '<div class="card xpressui-admin-card">';
+	echo '<h2>' . esc_html__( 'Installed Workflows', 'xpressui-bridge' ) . '</h2>';
+	if ( empty( $primary_installed_slugs ) ) {
+		echo '<p>' . esc_html__( 'No workflows installed yet. Upload a package below to get started.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		$render_workflow_table( $primary_installed_slugs );
 	}
 	echo '</div>';
+
+	if ( $pro_active && ! empty( $included_pro_tool_slugs ) ) {
+		echo '<div class="card xpressui-admin-card">';
+		echo '<h2>' . esc_html__( 'Included Pro Tools', 'xpressui-bridge' ) . '</h2>';
+		echo '<p>' . esc_html__( 'Built-in QA and validation workflows included with the Pro extension.', 'xpressui-bridge' ) . '</p>';
+		$render_workflow_table( $included_pro_tool_slugs );
+		echo '</div>';
+	}
 
 	// --- Install / update pack ---
 	echo '<div class="card xpressui-admin-card">';
@@ -533,7 +572,7 @@ function xpressui_render_workflows_page() {
 	echo '</div>';
 
 	// --- Project settings ---
-	if ( ! empty( $installed_slugs ) ) {
+	if ( ! empty( $visible_installed_slugs ) ) {
 		echo '<div class="card xpressui-admin-card">';
 		echo '<h2>' . esc_html__( 'Project Settings', 'xpressui-bridge' ) . '</h2>';
 		echo '<p>' . esc_html__( 'Configure notifications and the post-submission redirect for each workflow.', 'xpressui-bridge' ) . '</p>';
@@ -544,7 +583,7 @@ function xpressui_render_workflows_page() {
 
 		echo '<tr><th><label for="xpressui_settings_slug">' . esc_html__( 'Project', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><select id="xpressui_settings_slug" name="xpressui_settings_slug" class="regular-text">';
-		foreach ( $installed_slugs as $slug ) {
+		foreach ( $visible_installed_slugs as $slug ) {
 			echo '<option value="' . esc_attr( $slug ) . '">' . esc_html( $slug ) . '</option>';
 		}
 		echo '</select></td></tr>';
@@ -556,6 +595,18 @@ function xpressui_render_workflows_page() {
 		echo '<tr><th><label for="xpressui_redirect_url">' . esc_html__( 'Post-submit redirect', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://">';
 		echo '<p class="description">' . esc_html__( 'Redirect the client to this URL after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th>' . esc_html__( 'Form title', 'xpressui-bridge' ) . '</th>';
+		echo '<td><label for="xpressui_show_project_title">';
+		echo '<input type="checkbox" id="xpressui_show_project_title" name="xpressui_show_project_title" value="1">';
+		echo ' ' . esc_html__( 'Display the workflow title above the form inside the WordPress page.', 'xpressui-bridge' ) . '</label>';
+		echo '<p class="description">' . esc_html__( 'Disabled by default to avoid duplicating the WordPress page title.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th>' . esc_html__( 'Required fields note', 'xpressui-bridge' ) . '</th>';
+		echo '<td><label for="xpressui_show_required_fields_note">';
+		echo '<input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1">';
+		echo ' ' . esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
+		echo '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '</tbody></table>';
 		echo '<p class="submit">';

@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns a single setting value for a project.
  *
  * @param string $project_slug Project slug.
- * @param string $key          Setting key ('notifyEmail', 'redirectUrl', …).
+ * @param string $key          Setting key ('notifyEmail', 'redirectUrl', 'showProjectTitle', …).
  * @return string Setting value, or empty string if not set.
  */
 function xpressui_get_project_setting( $project_slug, $key ) {
@@ -30,6 +30,25 @@ function xpressui_get_project_setting( $project_slug, $key ) {
 		return '';
 	}
 	return (string) ( $slug_settings[ $key ] ?? '' );
+}
+
+/**
+ * Returns a boolean-like project setting flag.
+ *
+ * Stored values accept: "1", "true", "yes", "on".
+ *
+ * @param string $project_slug Project slug.
+ * @param string $key          Setting key.
+ * @param bool   $default      Default when not configured.
+ * @return bool
+ */
+function xpressui_get_project_setting_flag( $project_slug, $key, $default = false ) {
+	$value = xpressui_get_project_setting( $project_slug, $key );
+	if ( '' === $value ) {
+		return (bool) $default;
+	}
+
+	return in_array( strtolower( $value ), [ '1', 'true', 'yes', 'on' ], true );
 }
 
 // ---------------------------------------------------------------------------

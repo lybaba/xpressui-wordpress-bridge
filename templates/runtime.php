@@ -151,6 +151,30 @@ function xpressui_bridge_template_and_value( mixed $left, mixed $right ): mixed 
 	return xpressui_bridge_template_truthy( $left ) ? $right : $left;
 }
 
+function xpressui_bridge_template_not( mixed $value ): bool {
+	return ! xpressui_bridge_template_truthy( $value );
+}
+
+function xpressui_bridge_template_all( array $items ): bool {
+	foreach ( $items as $item ) {
+		if ( ! xpressui_bridge_template_truthy( $item ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function xpressui_bridge_template_any( array $items ): bool {
+	foreach ( $items as $item ) {
+		if ( xpressui_bridge_template_truthy( $item ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function xpressui_bridge_template_equals( mixed $left, mixed $right ): bool {
 	return $left == $right;
 }

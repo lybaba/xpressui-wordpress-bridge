@@ -26,6 +26,7 @@ Every submission lands in a private wp-admin inbox. Your team can review, assign
 | Feature | Details |
 |---|---|
 | **One-click install** | Upload the `.zip` from the XPressUI console under *Submissions › Workflows* |
+| **Bundled starters** | `Document Intake` is available immediately, and the Pro extension can add extra bundled QA tools |
 | **Shortcode embed** | `[xpressui id="slug"]` — works in pages, posts, and the block editor |
 | **Submission inbox** | Private post list with project / status / assignee filters |
 | **Status workflow** | *New → In review → Done*, with a full history log per submission |
@@ -63,20 +64,21 @@ Search for **XPressUI Bridge** in *Plugins › Add New*.
 2. In wp-admin go to **Submissions › Workflows**, upload the package.
 3. Embed the form with `[xpressui id="your-project-slug"]`.
 
+If the Pro extension is active, additional bundled workflows can also appear automatically under:
+
+- **Submissions › Workflows › Included Pro Tools**
+
 ---
 
 ## Shortcode reference
 
 ```
-[xpressui id="slug" width="100%" height="" title="Form"]
+[xpressui id="slug"]
 ```
 
 | Attribute | Default | Description |
 |---|---|---|
 | `id` | *(required)* | Project slug — matches the uploaded package folder name |
-| `width` | `100%` | CSS width of the iframe |
-| `height` | *(auto)* | Fixed pixel height. If omitted, the iframe auto-resizes via `postMessage` |
-| `title` | `XPressUI Form` | Accessible `title` attribute on the `<iframe>` |
 
 ---
 

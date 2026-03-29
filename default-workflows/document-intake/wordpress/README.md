@@ -11,13 +11,15 @@ This package gives you a ready-to-publish document intake workflow for WordPress
 2. **Embed**: Copy the generated shortcode and paste it into any WordPress Page or Post.
 
 ### Shortcode Options
-You can customize the workflow behavior directly via the shortcode:
+Embed the workflow directly in any page or post:
 ```text
    [xpressui id="document-intake"]
-   [xpressui id="document-intake" redirect="https://yoursite.com/thank-you/"]
 ```
-- `redirect`: (Optional) URL to seamlessly redirect the user to after a successful submission.
-- `height`: (Optional) Fallback minimum height of the iframe (defaults to 600px).
+
+Use **XPressUI -> Workflows -> Project Settings** if you want to configure:
+- the post-submit redirect URL
+- whether the workflow title is displayed above the form
+- whether the `* Required fields` note is displayed
 
 ---
 
@@ -41,7 +43,7 @@ Workflow included:
 ## ⚙️ Operational Notes
 - reuse the same bridge plugin for every exported XPressUI project on the site
 - each workflow can live on its own WordPress page
-- the UI is completely isolated from your theme's CSS via a smart auto-resizing iframe
+- the form renders inline inside the WordPress page
 - workflow package path: `/wp-content/uploads/xpressui/document-intake/`
 - plugin shell URL: `/?xpressui_shell=document-intake`
 

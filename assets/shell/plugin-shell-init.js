@@ -1,6 +1,9 @@
 const i18n = window.XPRESSUI_I18N || {};
 const shellMeta = window.XPRESSUI_SHELL_META || {};
-const mountNode = document.getElementById(shellMeta.mountNodeId || 'xpressui-root');
+
+function getMountNode() {
+  return document.getElementById(shellMeta.mountNodeId || 'xpressui-root');
+}
 
 function t(key, fallback) {
   return typeof i18n[key] === 'string' && i18n[key].trim() !== ''
@@ -32,6 +35,7 @@ function logRuntimeResolution() {
 }
 
 async function initXPressUI() {
+  const mountNode = getMountNode();
   if (!mountNode) {
     console.error('Missing #xpressui-root mount node.');
     return;
@@ -63,6 +67,7 @@ async function initXPressUI() {
       ? formConfig.title
       : '';
     const showProjectTitle = formConfig.showProjectTitle !== false;
+    const showRequiredFieldsNote = formConfig.showRequiredFieldsNote === true;
     let titleNode = headerNode?.querySelector('.template-form-title');
     let subtitleNode = headerNode?.querySelector('.template-form-subtitle');
 
@@ -84,13 +89,18 @@ async function initXPressUI() {
         titleNode = null;
       }
 
-      if (!(subtitleNode instanceof HTMLElement)) {
-        subtitleNode = document.createElement('p');
-        subtitleNode.className = 'template-form-subtitle';
-        headerNode.appendChild(subtitleNode);
+      if (showRequiredFieldsNote) {
+        if (!(subtitleNode instanceof HTMLElement)) {
+          subtitleNode = document.createElement('p');
+          subtitleNode.className = 'template-form-subtitle';
+          headerNode.appendChild(subtitleNode);
+        }
+        subtitleNode.textContent = t('requiredFields', '* Required fields');
+        subtitleNode.style.display = '';
+      } else if (subtitleNode instanceof HTMLElement) {
+        subtitleNode.remove();
+        subtitleNode = null;
       }
-      subtitleNode.textContent = t('requiredFields', '* Required fields');
-      subtitleNode.style.display = '';
 
       headerNode.style.display = (titleNode instanceof HTMLElement || subtitleNode instanceof HTMLElement)
         ? ''
@@ -211,6 +221,34 @@ async function initXPressUI() {
   const defaultSuccessMessage = t('submissionReceivedMessage', 'Submission received.');
   const defaultErrorMessage = t('submissionFailedMessage', 'Submission failed. Please review the form and try again.');
 
+  const isMeaningfulSubmitMessage = (value) => {
+    if (typeof value !== 'string') {
+      return false;
+    }
+    const normalized = value.trim();
+    if (!normalized) {
+      return false;
+    }
+    return !/^Submit failed with status \d+\.$/.test(normalized);
+  };
+
+  const resolveSubmitErrorMessage = (result, error) => {
+    const candidates = [
+      result?.message,
+      result?.data?.message,
+      result?.error,
+      error?.result?.message,
+      error?.result?.data?.message,
+      error?.result?.error,
+      error?.message,
+      configuredErrorMessage,
+      defaultErrorMessage,
+    ];
+
+    const resolved = candidates.find(isMeaningfulSubmitMessage);
+    return resolved || defaultErrorMessage;
+  };
+
   const handleSuccessRedirect = (result) => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUrl = urlParams.get('redirect')
@@ -322,7 +360,7 @@ async function initXPressUI() {
     node.addEventListener('xpressui:submit-error', (event) => {
       const result = event?.detail?.result;
       const error = event?.detail?.error;
-      setFeedbackState('error', configuredErrorMessage || result?.message || error?.message || defaultErrorMessage, submitFeedbackConfig.error_title || 'Submission failed');
+      setFeedbackState('error', resolveSubmitErrorMessage(result, error), submitFeedbackConfig.error_title || 'Submission failed');
     });
     node.addEventListener('xpressui:submit-locked', (event) => {
       const result = event?.detail?.result;
@@ -383,14 +421,14 @@ async function initXPressUI() {
         }
 
         if (!response.ok) {
-          throw new Error(result?.message || `Submit failed with status ${response.status}.`);
+          throw new Error(resolveSubmitErrorMessage(result, null) || `Submit failed with status ${response.status}.`);
         }
 
         setFeedbackState('success', configuredSuccessMessage || result?.message || defaultSuccessMessage, submitFeedbackConfig.success_title || 'Submission received');
         handleSuccessRedirect(result);
       } catch (error) {
         console.error(error);
-        setFeedbackState('error', configuredErrorMessage || (error instanceof Error ? error.message : '') || defaultErrorMessage, submitFeedbackConfig.error_title || 'Submission failed');
+        setFeedbackState('error', resolveSubmitErrorMessage(null, error), submitFeedbackConfig.error_title || 'Submission failed');
       }
     });
   };
@@ -457,4 +495,13 @@ async function initXPressUI() {
   }
 }
 
-initXPressUI();
+function bootXPressUI() {
+  if (!getMountNode() && document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootXPressUI, { once: true });
+    return;
+  }
+
+  initXPressUI();
+}
+
+bootXPressUI();

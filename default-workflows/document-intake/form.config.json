@@ -115,12 +115,14 @@
         "label": "Primary document",
         "name": "primaryDocument",
         "required": true,
+        "accept": ".pdf,application/pdf,image/*",
         "choices": null
       },
       {
         "type": "file",
         "label": "Supporting file",
         "name": "supportingFile",
+        "accept": ".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf",
         "choices": null
       }
     ],

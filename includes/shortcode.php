@@ -37,6 +37,15 @@ function xpressui_render_shortcode( $atts ) {
 			. '</p>';
 	}
 
+	if ( xpressui_is_pro_only_workflow( $slug ) && ! xpressui_is_pro_extension_active() ) {
+		return '<div class="xpressui-embed-error xpressui-pro-required">'
+			. '<p><strong>'
+			. esc_html__( 'This workflow requires the XPressUI Pro extension.', 'xpressui-bridge' )
+			. '</strong></p><p>'
+			. esc_html__( 'Install and activate the Pro plugin to use this built-in validation workflow.', 'xpressui-bridge' )
+			. '</p></div>';
+	}
+
 	$base_dir = xpressui_get_workflows_base_dir();
 	if ( $base_dir === '' ) {
 		return '<p class="xpressui-embed-error">'
@@ -74,6 +83,21 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.
 	$template_context = apply_filters( 'xpressui_template_context', $template_context, $slug );
+
+	$show_project_title  = xpressui_get_project_setting_flag( $slug, 'showProjectTitle', false );
+	$show_required_note  = xpressui_get_project_setting_flag( $slug, 'showRequiredFieldsNote', false );
+	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
+		$template_context['rendered_form']['show_title']    = $show_project_title;
+		$template_context['rendered_form']['show_subtitle'] = $show_required_note;
+	}
+	if ( is_array( $template_context['runtime'] ?? null ) ) {
+		$form_config = json_decode( (string) ( $template_context['runtime']['form_config_json'] ?? '{}' ), true );
+		if ( is_array( $form_config ) ) {
+			$form_config['showProjectTitle']       = $show_project_title;
+			$form_config['showRequiredFieldsNote'] = $show_required_note;
+			$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
+		}
+	}
 
 	// Ensure the PHP template runtime helpers are available.
 	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
@@ -124,7 +148,7 @@ function xpressui_render_shortcode( $atts ) {
 		$runtime_url,
 		[],
 		XPRESSUI_BRIDGE_RUNTIME_VERSION,
-		true
+		false
 	);
 
 	// Enqueue the shell init script (depends on the runtime).
@@ -133,7 +157,7 @@ function xpressui_render_shortcode( $atts ) {
 		XPRESSUI_BRIDGE_URL . 'assets/shell/plugin-shell-init.js',
 		[ $runtime_handle ],
 		XPRESSUI_BRIDGE_VERSION,
-		true
+		false
 	);
 
 	// Inject REST endpoint, translations, and shell metadata before init runs.
