@@ -272,6 +272,17 @@ async function initXPressUI() {
     }
   };
 
+  const setActionButtonsDisabled = (disabled) => {
+    const controlsRoot = mountNode instanceof HTMLElement ? mountNode : document;
+    controlsRoot.querySelectorAll('button[data-step-action="back"], button[data-step-action="next"], button[type="submit"], input[type="submit"]').forEach((button) => {
+      if (!(button instanceof HTMLButtonElement) && !(button instanceof HTMLInputElement)) {
+        return;
+      }
+      button.disabled = Boolean(disabled);
+      button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    });
+  };
+
   const setFeedbackState = (state, message, title = submitFeedbackConfig.title || t('submissionStatusTitle', 'Submission status')) => {
     if (feedbackNode instanceof HTMLElement) {
       feedbackNode.style.display = '';
@@ -350,6 +361,7 @@ async function initXPressUI() {
 
     node.dataset.xpressuiRuntimeFeedbackAttached = 'true';
     node.addEventListener('xpressui:submit', () => {
+      setActionButtonsDisabled(true);
       setFeedbackState('loading', submitFeedbackConfig.loading_message || 'Submitting...', 'Submitting');
     });
     node.addEventListener('xpressui:submit-success', (event) => {
@@ -360,10 +372,12 @@ async function initXPressUI() {
     node.addEventListener('xpressui:submit-error', (event) => {
       const result = event?.detail?.result;
       const error = event?.detail?.error;
+      setActionButtonsDisabled(false);
       setFeedbackState('error', resolveSubmitErrorMessage(result, error), submitFeedbackConfig.error_title || 'Submission failed');
     });
     node.addEventListener('xpressui:submit-locked', (event) => {
       const result = event?.detail?.result;
+      setActionButtonsDisabled(false);
       setFeedbackState('warning', result?.message || 'Complete the required fields before submitting.', 'Submission blocked');
     });
   };
@@ -376,6 +390,7 @@ async function initXPressUI() {
     form.dataset.xpressuiFallbackSubmitAttached = 'true';
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      setActionButtonsDisabled(true);
       const formData = new FormData(form);
 
       if (!formData.get('submissionId')) {
@@ -428,6 +443,7 @@ async function initXPressUI() {
         handleSuccessRedirect(result);
       } catch (error) {
         console.error(error);
+        setActionButtonsDisabled(false);
         setFeedbackState('error', resolveSubmitErrorMessage(null, error), submitFeedbackConfig.error_title || 'Submission failed');
       }
     });

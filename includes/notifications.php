@@ -152,12 +152,12 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		}
 	}
 
-	// Helper: format a single choice value as "Label (slug)" when a map is available.
+	// Helper: format a single choice value as its human label when a map is available.
 	$format_choice = static function ( $slug, $choice_map ) {
 		$s     = (string) $slug;
 		$lbl   = isset( $choice_map[ $s ] ) ? (string) $choice_map[ $s ] : '';
-		if ( $lbl !== '' && $lbl !== $s ) {
-			return esc_html( $lbl ) . ' <span style="color:#9ca3af;font-size:11px;">(' . esc_html( $s ) . ')</span>';
+		if ( $lbl !== '' ) {
+			return esc_html( $lbl );
 		}
 		return esc_html( $s );
 	};
