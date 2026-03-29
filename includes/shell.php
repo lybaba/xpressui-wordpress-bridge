@@ -1,6 +1,6 @@
 <?php
 /**
- * Front-end iframe shell for installed workflows.
+ * Front-end shell helpers for installed workflows.
  *
  * @package XPressUI_Bridge
  */

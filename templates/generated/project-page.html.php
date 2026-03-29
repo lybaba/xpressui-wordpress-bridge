@@ -12,7 +12,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php xpressui_bridge_template_include_template('head.php', $xpressui_ctx); ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?>
 <style>
-  /* WordPress iframe integration overrides */
+  /* WordPress plugin-shell overrides */
   html, body { background: transparent !important; height: auto !important; min-height: 0 !important; overflow-x: hidden !important; overflow-y: visible !important; margin: 0 !important; padding: 0 !important; width: 100% !important; }
   * { box-sizing: border-box !important; }
   .page-shell { background: transparent !important; padding: 2px !important; min-height: 0 !important; height: auto !important; overflow: visible !important; align-items: flex-start !important; width: 100% !important; }
@@ -29,9 +29,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <script id="xpressui-custom-config" type="application/json">
 <?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?>
   </script>
-  <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone exported shell loads the runtime directly outside WordPress enqueue APIs. ?>
-  <script src="./wordpress/runtime/xpressui-light-<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'xpressui_version'))); ?>.umd.js"></script>
-  <?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone exported shell bootstraps its runtime entry directly. ?>
+<?php if (!xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?>
   <script src="./init.js"></script>
+<?php endif; ?>
 </body>
 </html>

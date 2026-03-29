@@ -337,15 +337,7 @@ function xpressui_get_workflow_shell_payload( $slug ) {
 	}
 
 	$manifest = xpressui_load_workflow_manifest( $slug );
-
-	$wordpress_artifacts = is_array( $manifest['artifacts']['wordpress'] ?? null )
-		? $manifest['artifacts']['wordpress']
-		: [];
-	$runtime_relative = is_string( $wordpress_artifacts['runtime'] ?? null )
-		? ltrim( (string) $wordpress_artifacts['runtime'], '/' )
-		: '';
-
-	if ( '' === $runtime_relative ) {
+	if ( empty( $manifest ) ) {
 		return [];
 	}
 
@@ -396,11 +388,11 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	$wordpress_artifacts = is_array( $manifest['artifacts']['wordpress'] ?? null ) ? $manifest['artifacts']['wordpress'] : [];
 	$runtime_relative    = is_string( $wordpress_artifacts['runtime'] ?? null ) ? ltrim( (string) $wordpress_artifacts['runtime'], '/' ) : '';
-	$runtime_url         = '';
+	$runtime_url         = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
 	if ( '' !== $runtime_relative ) {
 		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
-		$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 	}
+	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 
 	$init_url = xpressui_get_plugin_shell_init_url();
 	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>';
@@ -427,6 +419,23 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 		$rendered_html = str_replace( '</head>', $translations_script . $shell_meta_script . '</head>', $rendered_html );
 	} else {
 		$rendered_html = $translations_script . $shell_meta_script . $rendered_html;
+	}
+
+	$runtime_script = '';
+	if ( '' !== $runtime_url ) {
+		$runtime_script = '<script src="' . esc_url( $runtime_url ) . '"></script>';
+	}
+	$init_script = '';
+	if ( '' !== $init_url ) {
+		$init_script = '<script src="' . esc_url( $init_url ) . '"></script>';
+	}
+
+	if ( false === strpos( $rendered_html, esc_url_raw( $runtime_url ) ) && false === strpos( $rendered_html, './init.js' ) ) {
+		if ( false !== strpos( $rendered_html, '</body>' ) ) {
+			$rendered_html = str_replace( '</body>', $runtime_script . $init_script . '</body>', $rendered_html );
+		} else {
+			$rendered_html .= $runtime_script . $init_script;
+		}
 	}
 
 	return $rendered_html;
@@ -537,7 +546,7 @@ function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
 function xpressui_manifest_uses_legacy_shell_artifacts( array $manifest ) {
 	$artifacts     = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
 	$compatibility = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
-	$bridge_mode   = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'legacy-shell' ) );
+	$bridge_mode   = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'plugin-shell' ) );
 
 	if ( 'legacy-shell' === $bridge_mode ) {
 		return true;

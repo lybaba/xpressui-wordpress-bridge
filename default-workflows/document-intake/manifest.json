@@ -14,8 +14,7 @@
     "templateContext": "template.context.json",
     "wordpress": {
       "readme": "wordpress/README.md",
-      "shortcode": "wordpress/shortcode-example.php",
-      "runtime": "wordpress/runtime/xpressui-light-1.0.0.umd.js"
+      "shortcode": "wordpress/shortcode-example.php"
     }
   },
   "checksums": {
@@ -23,7 +22,6 @@
     "files": {
       "wordpress/README.md": "2ccff79c983f668b",
       "wordpress/shortcode-example.php": "9ec1872d7fefd985",
-      "wordpress/runtime/xpressui-light-1.0.0.umd.js": "0047be1b12894915",
       "form.config.json": "13cf6ab19d439198"
     }
   },
@@ -64,7 +62,7 @@
   },
   "wordpressCompatibility": {
     "bridgeMode": "plugin-shell",
-    "fallbackBridgeMode": "legacy-shell",
+    "fallbackBridgeMode": "none",
     "shortcodeMode": "config-driven",
     "supportsBundledDemo": false,
     "requiresLicense": false
@@ -73,13 +71,12 @@
     "wordpress": {
       "bridgeMode": "shared-site-plugin",
       "preferredShellMode": "plugin-hosted",
-      "fallbackShellMode": "packaged-legacy",
+      "fallbackShellMode": "none",
+      "runtimeProvider": "site-plugin",
       "endpoint": "rest_url('xpressui/v1/submit')",
       "method": "POST",
       "uploadStrategy": "wordpress-media",
       "visualAssetStrategy": "external-public-assets",
-      "runtimeArtifact": "wordpress/runtime/xpressui-light-1.0.0.umd.js",
-      "runtimeVersion": "1.0.0",
       "expectedRoute": "xpressui/v1/submit",
       "projectIdentityFields": [
         "projectId",

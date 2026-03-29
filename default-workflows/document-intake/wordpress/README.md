@@ -25,7 +25,7 @@ Use **XPressUI -> Workflows -> Project Settings** if you want to configure:
 
 ## 🛠 Included Files (For Developers)
 - `wordpress/shortcode-example.php`: PHP shortcode logic example
-- `wordpress/runtime/xpressui-light-1.0.0.umd.js`: Bundled XPressUI runtime (`1.0.0`)
+- `manifest.json`, `form.config.json`, `template.context.json`: Workflow metadata and render payload consumed by the plugin runtime
 
 Workflow included:
 1. Contact

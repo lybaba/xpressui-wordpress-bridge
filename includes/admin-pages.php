@@ -421,7 +421,7 @@ function xpressui_render_workflows_page() {
 			$redirect_url  = (string) ( $settings['redirectUrl'] ?? '' );
 			$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
 			$display_tier  = xpressui_is_pro_only_workflow( $slug ) ? 'pro' : ( $runtime_tier !== '' ? $runtime_tier : 'light' );
-			$bridge_mode   = (string) ( $manifest_meta['bridgeMode'] ?? 'legacy-shell' );
+			$bridge_mode   = (string) ( $manifest_meta['bridgeMode'] ?? 'plugin-shell' );
 			$shortcode_mode = (string) ( $manifest_meta['shortcodeMode'] ?? 'legacy-template' );
 			$template_profile = (string) ( $manifest_meta['templateProfile'] ?? 'light' );
 			$legacy_shell  = ! empty( $manifest_meta['usesLegacyShellArtifacts'] );
@@ -854,6 +854,7 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 		'css',
 		'js',
 		'json',
+		'md',
 		'txt',
 		'png',
 		'jpg',
@@ -1021,7 +1022,7 @@ function xpressui_get_required_manifest_artifacts( array $manifest ) {
 	$artifacts         = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
 	$compatibility     = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
 	$wordpress_artifacts = is_array( $artifacts['wordpress'] ?? null ) ? $artifacts['wordpress'] : [];
-	$bridge_mode       = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'legacy-shell' ) );
+	$bridge_mode       = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'plugin-shell' ) );
 	$required          = [ 'manifest.json' ];
 
 	$config_path = isset( $artifacts['config'] ) ? sanitize_text_field( (string) $artifacts['config'] ) : '';
@@ -1049,7 +1050,7 @@ function xpressui_get_required_manifest_artifacts( array $manifest ) {
 	}
 
 	$runtime_path = isset( $wordpress_artifacts['runtime'] ) ? sanitize_text_field( (string) $wordpress_artifacts['runtime'] ) : '';
-	if ( $runtime_path !== '' ) {
+	if ( 'legacy-shell' === $bridge_mode && $runtime_path !== '' ) {
 		$required[] = $runtime_path;
 	}
 
