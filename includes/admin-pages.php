@@ -45,14 +45,6 @@ function xpressui_register_submission_admin_pages() {
 		'xpressui-project-inbox',
 		'xpressui_render_project_inbox_page'
 	);
-	add_submenu_page(
-		'edit.php?post_type=xpressui_submission',
-		__( 'My Queue', 'xpressui-bridge' ),
-		__( 'My Queue', 'xpressui-bridge' ),
-		'edit_posts',
-		'xpressui-my-queue',
-		'xpressui_render_my_queue_page'
-	);
 }
 
 function xpressui_register_admin_page() {
@@ -119,17 +111,21 @@ function xpressui_render_project_inbox_page() {
 		return;
 	}
 	$rows = xpressui_get_project_inbox_rows();
-	echo '<div class="wrap">';
+	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'Project Inbox', 'xpressui-bridge' ) . '</h1>';
-	echo '<p>' . esc_html__( 'Review incoming submissions grouped by project, then jump into filtered queues.', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="xpressui-page-intro">' . esc_html__( 'Review incoming submissions grouped by project, then jump into filtered queues.', 'xpressui-bridge' ) . '</p>';
 
 	if ( empty( $rows ) ) {
-		echo '<p>' . esc_html__( 'No submissions recorded yet.', 'xpressui-bridge' ) . '</p>';
+		echo '<div class="card xpressui-admin-card xpressui-empty-state">';
+		echo '<p class="xpressui-empty-state__title">' . esc_html__( 'No submissions recorded yet.', 'xpressui-bridge' ) . '</p>';
+		echo '<p class="xpressui-empty-state__body">' . esc_html__( 'Incoming submissions will appear here once visitors complete one of your installed workflows.', 'xpressui-bridge' ) . '</p>';
+		echo '</div>';
 		echo '</div>';
 		return;
 	}
 
-	echo '<table class="widefat striped"><thead><tr>';
+	echo '<div class="card xpressui-admin-card">';
+	echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--project-inbox"><thead><tr>';
 	echo '<th>' . esc_html__( 'Project', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'Total', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'New', 'xpressui-bridge' ) . '</th>';
@@ -142,21 +138,28 @@ function xpressui_render_project_inbox_page() {
 	foreach ( $rows as $row ) {
 		$all_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'] ], admin_url( 'edit.php' ) );
 		$new_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'], 'xpressui_status' => 'new' ], admin_url( 'edit.php' ) );
-		$latest  = $row['latestSubmissionId'] !== ''
-			? $row['latestSubmissionId'] . ' · ' . $row['latestDate']
-			: __( 'No submissions yet', 'xpressui-bridge' );
 
 		echo '<tr>';
-		echo '<td><strong>' . esc_html( $row['projectSlug'] ) . '</strong></td>';
-		echo '<td>' . esc_html( (string) $row['total'] ) . '</td>';
-		echo '<td>' . esc_html( (string) $row['new'] ) . '</td>';
-		echo '<td>' . esc_html( (string) $row['in-review'] ) . '</td>';
-		echo '<td>' . esc_html( (string) $row['done'] ) . '</td>';
-		echo '<td>' . esc_html( $latest ) . '</td>';
-		echo '<td><a href="' . esc_url( $all_url ) . '">' . esc_html__( 'Open all', 'xpressui-bridge' ) . '</a> · <a href="' . esc_url( $new_url ) . '">' . esc_html__( 'Open new', 'xpressui-bridge' ) . '</a></td>';
+		echo '<td class="xpressui-cell-project"><strong>' . esc_html( $row['projectSlug'] ) . '</strong></td>';
+		echo '<td><span class="xpressui-badge xpressui-badge--count">' . esc_html( (string) $row['total'] ) . '</span></td>';
+		echo '<td><span class="xpressui-badge xpressui-badge--status-new">' . esc_html( (string) $row['new'] ) . '</span></td>';
+		echo '<td><span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html( (string) $row['in-review'] ) . '</span></td>';
+		echo '<td><span class="xpressui-badge xpressui-badge--status-done">' . esc_html( (string) $row['done'] ) . '</span></td>';
+		echo '<td>';
+		if ( $row['latestSubmissionId'] !== '' ) {
+			echo '<code class="xpressui-inline-code">' . esc_html( $row['latestSubmissionId'] ) . '</code>';
+			if ( $row['latestDate'] !== '' ) {
+				echo '<div class="xpressui-muted">' . esc_html( $row['latestDate'] ) . '</div>';
+			}
+		} else {
+			echo '<span class="xpressui-empty">' . esc_html__( 'No submissions yet', 'xpressui-bridge' ) . '</span>';
+		}
+		echo '</td>';
+		echo '<td class="column-actions"><div class="xpressui-row-actions"><a href="' . esc_url( $all_url ) . '">' . esc_html__( 'Open all', 'xpressui-bridge' ) . '</a><span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $new_url ) . '">' . esc_html__( 'Open new', 'xpressui-bridge' ) . '</a></div></td>';
 		echo '</tr>';
 	}
 	echo '</tbody></table>';
+	echo '</div>';
 	echo '</div>';
 }
 
@@ -172,13 +175,15 @@ function xpressui_render_my_queue_page() {
 	$queue_url  = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id ], admin_url( 'edit.php' ) );
 	$review_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id, 'xpressui_status' => 'in-review' ], admin_url( 'edit.php' ) );
 
-	echo '<div class="wrap">';
+	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'My Queue', 'xpressui-bridge' ) . '</h1>';
-	echo '<p>' . esc_html__( 'Open the submissions assigned to you, or jump straight into the ones already in review.', 'xpressui-bridge' ) . '</p>';
-	echo '<p>';
+	echo '<p class="xpressui-page-intro">' . esc_html__( 'Open the submissions assigned to you, or jump straight into the ones already in review.', 'xpressui-bridge' ) . '</p>';
+	echo '<div class="card xpressui-admin-card xpressui-admin-card--compact">';
+	echo '<p class="xpressui-card-intro">' . esc_html__( 'Use these shortcuts to open your current workload in the standard WordPress submission list.', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="xpressui-button-row">';
 	echo '<a class="button button-primary" href="' . esc_url( $queue_url ) . '">' . esc_html__( 'Open my submissions', 'xpressui-bridge' ) . '</a> ';
 	echo '<a class="button" href="' . esc_url( $review_url ) . '">' . esc_html__( 'Open my in-review queue', 'xpressui-bridge' ) . '</a>';
-	echo '</p></div>';
+	echo '</p></div></div>';
 }
 
 // ---------------------------------------------------------------------------
@@ -409,7 +414,7 @@ function xpressui_render_workflows_page() {
 	}
 
 	$render_workflow_table = static function ( array $slugs ) use ( $all_settings ) {
-		echo '<table class="wp-list-table widefat fixed striped">';
+		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Tier', 'xpressui-bridge' ) . '</th>';
@@ -430,12 +435,12 @@ function xpressui_render_workflows_page() {
 			$shortcode_mode = (string) ( $manifest_meta['shortcodeMode'] ?? 'legacy-template' );
 			$template_profile = (string) ( $manifest_meta['templateProfile'] ?? 'light' );
 			$legacy_shell  = ! empty( $manifest_meta['usesLegacyShellArtifacts'] );
-			$is_bundled    = ! empty( $manifest_meta['isBundled'] );
+			$is_bundled    = ! empty( $manifest_meta['isBundled'] ) || xpressui_is_bundled_workflow( $slug );
+			$is_pro_tool_protected = xpressui_is_pro_only_workflow( $slug );
 			$update_available = $is_bundled && xpressui_is_bundled_workflow_update_available( $slug );
 			$generated_at  = (string) ( $manifest_meta['generatedAt'] ?? '' );
 			$runtime_version = (string) ( $manifest_meta['runtimeVersion'] ?? '' );
 			$compiled_shell_ready = xpressui_can_render_compiled_workflow_shell( $slug );
-			$source_label  = $is_bundled ? __( 'Bundled starter', 'xpressui-bridge' ) : __( 'Uploaded pack', 'xpressui-bridge' );
 			$reinstall_url = wp_nonce_url(
 				add_query_arg(
 					[
@@ -488,7 +493,7 @@ function xpressui_render_workflows_page() {
 			);
 			echo '<tr>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
-			echo '<td><strong>' . esc_html( $slug ) . '</strong>';
+			echo '<td class="xpressui-cell-project"><strong>' . esc_html( $slug ) . '</strong>';
 			if ( '' !== $project_name ) {
 				echo '<br /><span class="xpressui-muted">' . esc_html( $project_name ) . '</span>';
 			}
@@ -504,29 +509,34 @@ function xpressui_render_workflows_page() {
 				echo ' <span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html__( 'Update available', 'xpressui-bridge' ) . '</span>';
 			}
 			echo '</td>';
-			echo '<td><code>[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
-			echo '<td>' . esc_html( $notify_email !== '' ? $notify_email : '—' ) . '</td>';
-			echo '<td>' . ( $redirect_url !== '' ? '<a href="' . esc_url( $redirect_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $redirect_url ) . '</a>' : '—' ) . '</td>';
-			echo '<td>';
+			echo '<td class="xpressui-cell-shortcode"><code class="xpressui-inline-code">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
+			echo '<td class="xpressui-cell-email">' . ( $notify_email !== '' ? '<a href="mailto:' . esc_attr( antispambot( $notify_email ) ) . '">' . esc_html( antispambot( $notify_email ) ) . '</a>' : '—' ) . '</td>';
+			echo '<td class="xpressui-cell-url">' . ( $redirect_url !== '' ? '<a href="' . esc_url( $redirect_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $redirect_url ) . '</a>' : '—' ) . '</td>';
+			echo '<td class="column-actions">';
 			// Allow extensions to inject extra action links (e.g. "Customize" from the pro plugin).
 			$extra_row_actions = apply_filters( 'xpressui_workflow_row_actions', [], $slug );
+			echo '<div class="xpressui-row-actions">';
 			foreach ( $extra_row_actions as $action_html ) {
-				echo wp_kses_post( $action_html ) . ' · ';
+				echo wp_kses_post( $action_html );
+				echo '<span class="xpressui-row-actions__sep">·</span>';
 			}
-			echo '<a href="' . esc_url( $create_page_url ) . '">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a> · ';
+			echo '<a href="' . esc_url( $create_page_url ) . '">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a><span class="xpressui-row-actions__sep">·</span>';
 			echo '<a href="' . esc_url( $open_page_url ) . '">' . esc_html__( 'Find pages', 'xpressui-bridge' ) . '</a>';
 			if ( $edit_page_url ) {
-				echo ' · <a href="' . esc_url( $edit_page_url ) . '">' . esc_html__( 'Edit page', 'xpressui-bridge' ) . '</a>';
+				echo '<span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $edit_page_url ) . '">' . esc_html__( 'Edit page', 'xpressui-bridge' ) . '</a>';
 			}
 			if ( $view_page_url ) {
-				echo ' · <a href="' . esc_url( $view_page_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'View page', 'xpressui-bridge' ) . '</a>';
+				echo '<span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $view_page_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'View page', 'xpressui-bridge' ) . '</a>';
 			}
 			if ( $is_bundled ) {
-				echo ' · <a href="' . esc_url( $reinstall_url ) . '">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a>';
-				echo ' · <span class="xpressui-muted" title="' . esc_attr__( 'Bundled starter workflows cannot be deleted.', 'xpressui-bridge' ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</span>';
+				echo '<span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $reinstall_url ) . '">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a>';
+				echo '<span class="xpressui-row-actions__sep">·</span><span class="xpressui-muted" title="' . esc_attr__( 'Bundled starter workflows cannot be deleted.', 'xpressui-bridge' ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</span>';
+			} elseif ( $is_pro_tool_protected ) {
+				echo '<span class="xpressui-row-actions__sep">·</span><span class="xpressui-muted" title="' . esc_attr__( 'Included Pro tools cannot be deleted from this screen.', 'xpressui-bridge' ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</span>';
 			} else {
-				echo ' · <a href="' . esc_url( $delete_url ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a>';
+				echo '<span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $delete_url ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a>';
 			}
+			echo '</div>';
 			echo '</td>';
 			echo '</tr>';
 		}
@@ -537,7 +547,7 @@ function xpressui_render_workflows_page() {
 	echo '<div class="card xpressui-admin-card">';
 	echo '<h2>' . esc_html__( 'Installed Workflows', 'xpressui-bridge' ) . '</h2>';
 	if ( empty( $primary_installed_slugs ) ) {
-		echo '<p>' . esc_html__( 'No workflows installed yet. Upload a package below to get started.', 'xpressui-bridge' ) . '</p>';
+		echo '<div class="xpressui-empty-state"><p class="xpressui-empty-state__title">' . esc_html__( 'No workflows installed yet.', 'xpressui-bridge' ) . '</p><p class="xpressui-empty-state__body">' . esc_html__( 'Upload a workflow package below to get started, or use the bundled starter workflow already included with the plugin.', 'xpressui-bridge' ) . '</p></div>';
 	} else {
 		$render_workflow_table( $primary_installed_slugs );
 	}

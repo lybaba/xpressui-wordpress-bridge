@@ -32,6 +32,11 @@
 	color: #888;
 }
 
+.xpressui-badge--count {
+	background: #eef2f7;
+	color: #334155;
+}
+
 /* Status-specific badge tones */
 .xpressui-badge--status-new {
 	background: #bee3f8;
@@ -65,6 +70,10 @@
 	margin-top: 20px;
 	padding: 20px 24px;
 	max-width: 900px;
+	border-radius: 8px;
+	border-color: #d8dee6;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	box-sizing: border-box;
 }
 
 .xpressui-admin-card h2 {
@@ -76,6 +85,28 @@
 	border-bottom: 1px solid #f0f0f0;
 	padding-bottom: 10px;
 	margin-bottom: 16px;
+}
+
+.xpressui-admin-card p:last-child,
+.xpressui-admin-card .form-table:last-child {
+	margin-bottom: 0;
+}
+
+.xpressui-admin-card--compact {
+	padding-top: 18px;
+	padding-bottom: 18px;
+}
+
+.xpressui-card-intro {
+	margin: 0 0 14px;
+	color: #50575e;
+}
+
+.xpressui-button-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -131,6 +162,129 @@
 .xpressui-pro-gate__body p {
 	margin: 0 0 12px;
 	color: #50575e;
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty states + inline helpers
+ * ------------------------------------------------------------------------- */
+
+.xpressui-empty-state {
+	padding: 18px 20px;
+	background: #fbfcfe;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+}
+
+.xpressui-empty-state__title {
+	margin: 0 0 6px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.xpressui-empty-state__body {
+	margin: 0;
+	color: #646970;
+}
+
+.xpressui-inline-code {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	color: #334155;
+	font-size: 12px;
+	line-height: 1.55;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.xpressui-row-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 6px;
+	line-height: 1.6;
+}
+
+.xpressui-row-actions__sep {
+	color: #c0c4cc;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tables and forms
+ * ------------------------------------------------------------------------- */
+
+.xpressui-table {
+	border: 1px solid #d8dee6;
+	border-radius: 8px;
+	overflow: hidden;
+	table-layout: fixed;
+}
+
+.xpressui-table thead th {
+	background: #f8fafc;
+	color: #334155;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	padding-top: 11px;
+	padding-bottom: 11px;
+}
+
+.xpressui-table tbody td {
+	vertical-align: top;
+	padding-top: 12px;
+	padding-bottom: 12px;
+}
+
+.xpressui-table .column-actions {
+	width: 20%;
+}
+
+.xpressui-cell-project strong {
+	display: inline-block;
+	margin-bottom: 3px;
+}
+
+.xpressui-cell-shortcode,
+.xpressui-cell-url,
+.xpressui-cell-email {
+	word-break: break-word;
+}
+
+.xpressui-table--workflows .xpressui-cell-shortcode {
+	width: 18%;
+}
+
+.xpressui-table--workflows .xpressui-cell-url a,
+.xpressui-table--workflows .xpressui-cell-email a {
+	overflow-wrap: anywhere;
+}
+
+.xpressui-table--project-inbox .xpressui-cell-project {
+	width: 18%;
+}
+
+.xpressui-admin-card .form-table th {
+	width: 210px;
+	color: #1f2937;
+	font-weight: 600;
+}
+
+.xpressui-admin-card .form-table td .description {
+	max-width: 600px;
+}
+
+.xpressui-admin-card .form-table input.regular-text,
+.xpressui-admin-card .form-table select.regular-text {
+	max-width: 420px;
+	width: 100%;
+}
+
+.xpressui-admin-card .submit {
+	margin-bottom: 0;
+	padding-bottom: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -317,6 +471,58 @@
 	min-height: 500px;
 	border: 1px solid #ddd;
 	border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Submission list table polish
+ * ------------------------------------------------------------------------- */
+
+.post-type-xpressui_submission .wp-list-table .column-xpressui_project_slug strong,
+.post-type-xpressui_submission .wp-list-table .column-title strong {
+	color: #1f2937;
+}
+
+.post-type-xpressui_submission .wp-list-table .column-xpressui_submission_id code {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	font-size: 11px;
+}
+
+.post-type-xpressui_submission .wp-list-table .column-xpressui_submission_files .xpressui-badge,
+.post-type-xpressui_submission .wp-list-table .column-xpressui_submission_status .xpressui-badge {
+	vertical-align: middle;
+}
+
+.post-type-xpressui_submission .wp-list-table .column-xpressui_submission_contact,
+.post-type-xpressui_submission .wp-list-table .column-xpressui_submission_assignee,
+.post-type-xpressui_submission .wp-list-table .column-xpressui_project_slug {
+	color: #334155;
+}
+
+.post-type-xpressui_submission .tablenav.top,
+.post-type-xpressui_submission .tablenav.bottom {
+	margin-bottom: 10px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 960px) {
+	.xpressui-admin-card {
+		padding: 18px;
+	}
+
+	.xpressui-table {
+		table-layout: auto;
+	}
+
+	.xpressui-table .column-actions {
+		width: auto;
+	}
 }
 
 /* ---------------------------------------------------------------------------

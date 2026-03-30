@@ -78,6 +78,10 @@ Yes — the `/wp-json/xpressui/v1/submit` endpoint accepts POST requests without
 
 Uploaded files are stored as WordPress media attachments. When a submission is permanently deleted, the plugin also permanently deletes the files linked to that submission. Trashing a submission does not immediately remove the files; permanent deletion does.
 
+= What happens if I reinstall or delete the plugin? =
+
+Workflow packs can be reinstalled without deleting submissions. If you delete and reinstall the plugin itself, submissions are preserved by default. To permanently remove submission data during uninstall, define the `XPRESSUI_BRIDGE_DELETE_SUBMISSIONS_ON_UNINSTALL` constant and set it to `true` before deleting the plugin.
+
 = Does the plugin call any external API at runtime? =
 
 No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at xpressui.iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.

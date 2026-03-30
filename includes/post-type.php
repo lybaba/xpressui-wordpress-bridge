@@ -46,30 +46,45 @@ function xpressui_submission_columns( $columns ) {
 function xpressui_submission_column_content( $column, $post_id ) {
 	switch ( $column ) {
 		case 'xpressui_project_slug':
-			echo esc_html( (string) get_post_meta( $post_id, '_xpressui_project_slug', true ) );
+			echo '<strong>' . esc_html( (string) get_post_meta( $post_id, '_xpressui_project_slug', true ) ) . '</strong>';
 			break;
 
 		case 'xpressui_submission_status':
-			echo esc_html( xpressui_get_status_label( (string) get_post_meta( $post_id, '_xpressui_submission_status', true ) ) );
+			$status = (string) get_post_meta( $post_id, '_xpressui_submission_status', true );
+			$badge_class = 'xpressui-badge xpressui-badge--status-new';
+			if ( 'in-review' === $status ) {
+				$badge_class = 'xpressui-badge xpressui-badge--status-in-review';
+			} elseif ( 'done' === $status ) {
+				$badge_class = 'xpressui-badge xpressui-badge--status-done';
+			}
+			echo '<span class="' . esc_attr( $badge_class ) . '">' . esc_html( xpressui_get_status_label( $status ) ) . '</span>';
 			break;
 
 		case 'xpressui_submission_assignee':
 			$assignee = xpressui_get_assignee_display( $post_id );
-			echo esc_html( $assignee !== '' ? $assignee : __( 'Unassigned', 'xpressui-bridge' ) );
+			if ( $assignee !== '' ) {
+				echo esc_html( $assignee );
+			} else {
+				echo '<span class="xpressui-muted">' . esc_html__( 'Unassigned', 'xpressui-bridge' ) . '</span>';
+			}
 			break;
 
 		case 'xpressui_submission_contact':
 			$payload = xpressui_get_submission_payload( $post_id );
 			$summary = xpressui_get_contact_summary( $payload );
-			echo esc_html( $summary !== '' ? $summary : __( 'No contact details', 'xpressui-bridge' ) );
+			if ( $summary !== '' ) {
+				echo esc_html( $summary );
+			} else {
+				echo '<span class="xpressui-muted">' . esc_html__( 'No contact details', 'xpressui-bridge' ) . '</span>';
+			}
 			break;
 
 		case 'xpressui_submission_files':
-			echo esc_html( (string) xpressui_get_uploaded_file_count( $post_id ) );
+			echo '<span class="xpressui-badge xpressui-badge--count">' . esc_html( (string) xpressui_get_uploaded_file_count( $post_id ) ) . '</span>';
 			break;
 
 		case 'xpressui_submission_id':
-			echo esc_html( (string) get_post_meta( $post_id, '_xpressui_submission_id', true ) );
+			echo '<code>' . esc_html( (string) get_post_meta( $post_id, '_xpressui_submission_id', true ) ) . '</code>';
 			break;
 	}
 }

@@ -11,18 +11,22 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 $xpressui_delete_project_settings = defined( 'XPRESSUI_BRIDGE_DELETE_PROJECT_SETTINGS_ON_UNINSTALL' )
 	&& XPRESSUI_BRIDGE_DELETE_PROJECT_SETTINGS_ON_UNINSTALL;
+$xpressui_delete_submissions = defined( 'XPRESSUI_BRIDGE_DELETE_SUBMISSIONS_ON_UNINSTALL' )
+	&& XPRESSUI_BRIDGE_DELETE_SUBMISSIONS_ON_UNINSTALL;
 
-$xpressui_submission_ids = get_posts(
-	[
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'any',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-	]
-);
+if ( $xpressui_delete_submissions ) {
+	$xpressui_submission_ids = get_posts(
+		[
+			'post_type'      => 'xpressui_submission',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		]
+	);
 
-foreach ( $xpressui_submission_ids as $xpressui_submission_id ) {
-	wp_delete_post( $xpressui_submission_id, true );
+	foreach ( $xpressui_submission_ids as $xpressui_submission_id ) {
+		wp_delete_post( $xpressui_submission_id, true );
+	}
 }
 
 if ( $xpressui_delete_project_settings ) {

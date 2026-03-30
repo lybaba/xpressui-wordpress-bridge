@@ -37,6 +37,37 @@ unset($xpressui_scope);
 <?php echo $xpressui_inline_css; ?>
 /* WordPress inline embed — reset standalone-page layout */
 #<?php echo esc_attr($xpressui_mount_id); ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }
+/* WordPress embed tuning — keep the runtime readable inside typical WP page widths. */
+#<?php echo esc_attr($xpressui_mount_id); ?> .form-frame { padding: 20px; box-shadow: 0 16px 44px rgba(15, 23, 42, 0.1); }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-runtime-shell { gap: 16px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-form-header { gap: 2px; padding-top: 0; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section { gap: 14px; padding: 16px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-label { font-size: 17px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-fields { gap: 12px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-field { gap: 6px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-field-label { font-size: 13px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-field-help { font-size: 12px; line-height: 1.4; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-input,
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-textarea { font-size: 14px; line-height: 1.4; padding: 11px 13px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-textarea { min-height: 124px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-choice-card { padding: 9px 12px; gap: 3px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-choice-title { font-size: 12px; line-height: 1.2; font-weight: 600; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-choice-footer { font-size: 11px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> select.template-input[multiple] { min-height: 120px; padding-top: 7px; padding-bottom: 7px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> select.template-input option { font-size: 14px; line-height: 1.35; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-step-progress-track { height: 7px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-step-actions { margin-top: 14px; gap: 10px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-step-actions [data-step-action] { font-size: 13px; padding: 11px 16px; min-width: 112px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-submit-row { padding-top: 14px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-submit-btn { cursor: pointer; font-size: 13px; line-height: 1.1; padding: 11px 16px; min-width: 112px; }
+@media (max-width: 720px) {
+  #<?php echo esc_attr($xpressui_mount_id); ?> .form-frame { padding: 16px; }
+  #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-title { font-size: clamp(20px, 7vw, 26px); }
+  #<?php echo esc_attr($xpressui_mount_id); ?> .template-section { padding: 14px; }
+  #<?php echo esc_attr($xpressui_mount_id); ?> .template-input,
+  #<?php echo esc_attr($xpressui_mount_id); ?> .template-textarea { font-size: 13px; }
+}
 </style>
 <div id="<?php echo esc_attr($xpressui_mount_id); ?>" class="page-shell xpressui-inline-form" data-template-zone="page_shell">
 <?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?>

@@ -56,7 +56,7 @@ Bloc B - Conformite et privacy
 - Nettoyer les options du plugin si desinstallation complete souhaitee.
 - Definir clairement la politique de conservation des submissions et attachments.
 - Point re-verifie le 27 mars 2026:
-- uninstall.php existe deja et supprime les options plugin et les submissions.
+- uninstall.php existe deja, supprime les options plugin, et preserve desormais les submissions par defaut sauf suppression explicite.
 
 [ ] Clarifier la gestion des pieces jointes
 - Definir si les attachments doivent etre supprimes quand une submission est supprimee.
