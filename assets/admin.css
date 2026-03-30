@@ -62,6 +62,69 @@
 	max-width: 900px;
 }
 
+.xpressui-wrap--project-inbox {
+	max-width: 1240px;
+	padding: 8px 18px 24px 0;
+}
+
+.xpressui-wrap--project-inbox h1 {
+	margin-bottom: 10px;
+}
+
+.xpressui-wrap--project-inbox .xpressui-page-intro {
+	max-width: 980px;
+	margin-bottom: 18px;
+	color: #475569;
+}
+
+.xpressui-inbox-overview {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+	max-width: 1120px;
+	margin: 0 0 14px;
+}
+
+.xpressui-inbox-stat {
+	display: grid;
+	gap: 4px;
+	padding: 16px 18px;
+	border: 1px solid #d7e2ef;
+	border-radius: 14px;
+	background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+	box-shadow: 0 8px 24px -22px rgba(15, 23, 42, 0.24);
+}
+
+.xpressui-inbox-stat__value {
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 1;
+	color: #122033;
+}
+
+.xpressui-inbox-stat__label {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #5b6b82;
+}
+
+.xpressui-inbox-stat--new {
+	background: linear-gradient(180deg, #f4fbff 0%, #ebf7ff 100%);
+	border-color: #cfe4fb;
+}
+
+.xpressui-inbox-stat--review {
+	background: linear-gradient(180deg, #fffdf4 0%, #fff7da 100%);
+	border-color: #f2e3a2;
+}
+
+.xpressui-inbox-stat--done {
+	background: linear-gradient(180deg, #f3fff7 0%, #e8fbef 100%);
+	border-color: #cfeccc;
+}
+
 /* ---------------------------------------------------------------------------
  * Admin cards
  * ------------------------------------------------------------------------- */
@@ -74,6 +137,15 @@
 	border-color: #d8dee6;
 	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 	box-sizing: border-box;
+}
+
+.xpressui-admin-card--project-inbox {
+	max-width: 1120px;
+	padding: 18px 14px 14px;
+	background: linear-gradient(180deg, #f7faff 0%, #eef4fb 100%);
+	border-color: #cfdae8;
+	border-radius: 16px;
+	box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.28);
 }
 
 .xpressui-admin-card h2 {
@@ -221,6 +293,33 @@
 	table-layout: fixed;
 }
 
+.xpressui-table--project-inbox {
+	width: 100%;
+	border-color: #d4deea;
+	background: #fdfefe;
+	border-radius: 14px;
+	table-layout: fixed;
+}
+
+.xpressui-table--project-inbox .xpressui-col-project {
+	width: 28%;
+}
+
+.xpressui-table--project-inbox .xpressui-col-total,
+.xpressui-table--project-inbox .xpressui-col-new,
+.xpressui-table--project-inbox .xpressui-col-review,
+.xpressui-table--project-inbox .xpressui-col-done {
+	width: 9%;
+}
+
+.xpressui-table--project-inbox .xpressui-col-latest {
+	width: 19%;
+}
+
+.xpressui-table--project-inbox .xpressui-col-actions {
+	width: 17%;
+}
+
 .xpressui-table thead th {
 	background: #f8fafc;
 	color: #334155;
@@ -232,10 +331,34 @@
 	padding-bottom: 11px;
 }
 
+.xpressui-table--project-inbox thead th {
+	background: linear-gradient(180deg, #f8fbff 0%, #f2f6fb 100%);
+	font-size: 11px;
+	letter-spacing: 0.05em;
+}
+
 .xpressui-table tbody td {
 	vertical-align: top;
 	padding-top: 12px;
 	padding-bottom: 12px;
+}
+
+.xpressui-table--project-inbox tbody tr:nth-child(odd) td {
+	background: rgba(248, 251, 255, 0.74);
+}
+
+.xpressui-table--project-inbox tbody tr:nth-child(even) td {
+	background: rgba(255, 255, 255, 0.98);
+}
+
+.xpressui-table--project-inbox tbody td {
+	padding-top: 16px;
+	padding-bottom: 16px;
+}
+
+.xpressui-table--project-inbox .xpressui-cell-project strong {
+	font-size: 15px;
+	color: #122033;
 }
 
 .xpressui-table .column-actions {
@@ -265,6 +388,46 @@
 .xpressui-table--project-inbox .xpressui-cell-project {
 	width: 18%;
 }
+
+.xpressui-table--project-inbox .xpressui-cell-latest-submission {
+	padding-right: 24px;
+	overflow: hidden;
+}
+
+.xpressui-table--project-inbox .xpressui-inline-code {
+	display: inline-block;
+	max-width: 100%;
+	background: #f7fafc;
+	border-color: #dbe5f0;
+	white-space: nowrap;
+	word-break: normal;
+	overflow-wrap: normal;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: top;
+	font-size: 11px;
+}
+
+.xpressui-table--project-inbox .column-actions {
+	white-space: normal;
+	padding-left: 24px;
+}
+
+.xpressui-table--project-inbox .xpressui-row-actions {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 3px;
+}
+
+.xpressui-table--project-inbox .xpressui-row-actions__sep {
+	display: none;
+}
+
+.xpressui-table--project-inbox th:nth-child(1),
+.xpressui-table--project-inbox td:nth-child(1) {
+	min-width: 200px;
+}
+
 
 .xpressui-admin-card .form-table th {
 	width: 210px;
@@ -512,6 +675,14 @@
  * ------------------------------------------------------------------------- */
 
 @media (max-width: 960px) {
+	.xpressui-wrap--project-inbox {
+		padding-right: 0;
+	}
+
+	.xpressui-inbox-overview {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
 	.xpressui-admin-card {
 		padding: 18px;
 	}

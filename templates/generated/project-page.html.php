@@ -29,8 +29,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <script id="xpressui-custom-config" type="application/json">
 <?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?>
   </script>
-<?php if (!xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?>
+<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")))): ?>
   <script src="./init.js"></script>
-<?php endif; ?>
-</body>
+<?php endif; ?></body>
 </html>

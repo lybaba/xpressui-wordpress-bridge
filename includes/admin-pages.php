@@ -83,7 +83,10 @@ function xpressui_get_project_inbox_rows() {
 			$status = 'new';
 		}
 		if ( ! isset( $rows[ $project_slug ] ) ) {
+			$manifest_meta = xpressui_get_workflow_manifest_meta( $project_slug );
+			$project_title = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			$rows[ $project_slug ] = [
+				'projectTitle'       => $project_title,
 				'projectSlug'        => $project_slug,
 				'total'              => 0,
 				'new'                => 0,
@@ -111,12 +114,24 @@ function xpressui_render_project_inbox_page() {
 		return;
 	}
 	$rows = xpressui_get_project_inbox_rows();
-	echo '<div class="wrap xpressui-wrap">';
+	$total_projects = count( $rows );
+	$total_submissions = 0;
+	$total_new = 0;
+	$total_in_review = 0;
+	$total_done = 0;
+	foreach ( $rows as $row ) {
+		$total_submissions += (int) ( $row['total'] ?? 0 );
+		$total_new += (int) ( $row['new'] ?? 0 );
+		$total_in_review += (int) ( $row['in-review'] ?? 0 );
+		$total_done += (int) ( $row['done'] ?? 0 );
+	}
+
+	echo '<div class="wrap xpressui-wrap xpressui-wrap--project-inbox">';
 	echo '<h1>' . esc_html__( 'Project Inbox', 'xpressui-bridge' ) . '</h1>';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Review incoming submissions grouped by project, then jump into filtered queues.', 'xpressui-bridge' ) . '</p>';
 
 	if ( empty( $rows ) ) {
-		echo '<div class="card xpressui-admin-card xpressui-empty-state">';
+		echo '<div class="card xpressui-admin-card xpressui-admin-card--project-inbox xpressui-empty-state">';
 		echo '<p class="xpressui-empty-state__title">' . esc_html__( 'No submissions recorded yet.', 'xpressui-bridge' ) . '</p>';
 		echo '<p class="xpressui-empty-state__body">' . esc_html__( 'Incoming submissions will appear here once visitors complete one of your installed workflows.', 'xpressui-bridge' ) . '</p>';
 		echo '</div>';
@@ -124,8 +139,26 @@ function xpressui_render_project_inbox_page() {
 		return;
 	}
 
-	echo '<div class="card xpressui-admin-card">';
-	echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--project-inbox"><thead><tr>';
+	echo '<div class="xpressui-inbox-overview">';
+	echo '<div class="xpressui-inbox-stat"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_projects ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Projects', 'xpressui-bridge' ) . '</span></div>';
+	echo '<div class="xpressui-inbox-stat"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_submissions ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</span></div>';
+	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--new"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_new ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'New', 'xpressui-bridge' ) . '</span></div>';
+	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--review"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_in_review ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'In review', 'xpressui-bridge' ) . '</span></div>';
+	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--done"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_done ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Done', 'xpressui-bridge' ) . '</span></div>';
+	echo '</div>';
+
+	echo '<div class="card xpressui-admin-card xpressui-admin-card--project-inbox">';
+	echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--project-inbox">';
+	echo '<colgroup>';
+	echo '<col class="xpressui-col-project" />';
+	echo '<col class="xpressui-col-total" />';
+	echo '<col class="xpressui-col-new" />';
+	echo '<col class="xpressui-col-review" />';
+	echo '<col class="xpressui-col-done" />';
+	echo '<col class="xpressui-col-latest" />';
+	echo '<col class="xpressui-col-actions" />';
+	echo '</colgroup>';
+	echo '<thead><tr>';
 	echo '<th>' . esc_html__( 'Project', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'Total', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'New', 'xpressui-bridge' ) . '</th>';
@@ -140,12 +173,18 @@ function xpressui_render_project_inbox_page() {
 		$new_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'], 'xpressui_status' => 'new' ], admin_url( 'edit.php' ) );
 
 		echo '<tr>';
-		echo '<td class="xpressui-cell-project"><strong>' . esc_html( $row['projectSlug'] ) . '</strong></td>';
+		$project_title = sanitize_text_field( (string) ( $row['projectTitle'] ?? '' ) );
+		$project_slug  = sanitize_title( (string) ( $row['projectSlug'] ?? '' ) );
+		echo '<td class="xpressui-cell-project"><strong>' . esc_html( $project_title !== '' ? $project_title : $project_slug ) . '</strong>';
+		if ( $project_title !== '' && $project_title !== $project_slug ) {
+			echo '<div class="xpressui-muted">' . esc_html( $project_slug ) . '</div>';
+		}
+		echo '</td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--count">' . esc_html( (string) $row['total'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-new">' . esc_html( (string) $row['new'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html( (string) $row['in-review'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-done">' . esc_html( (string) $row['done'] ) . '</span></td>';
-		echo '<td>';
+		echo '<td class="xpressui-cell-latest-submission">';
 		if ( $row['latestSubmissionId'] !== '' ) {
 			echo '<code class="xpressui-inline-code">' . esc_html( $row['latestSubmissionId'] ) . '</code>';
 			if ( $row['latestDate'] !== '' ) {

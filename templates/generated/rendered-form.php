@@ -62,7 +62,6 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
         <h2 class="template-section-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Form content", 'xpressui-bridge'))); ?></h2>
         <p class="template-section-desc"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("No sections are configured yet.", 'xpressui-bridge'))); ?></p>
       </header>
-<?php endif; ?>
-    </section>
+<?php endif; ?>    </section>
 <?php endif; ?><?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>
