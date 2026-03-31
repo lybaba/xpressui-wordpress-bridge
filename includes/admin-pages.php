@@ -317,21 +317,7 @@ function xpressui_render_workflows_page() {
 		$notice_class   = 'notice-success';
 		$notice_message = __( 'License settings saved.', 'xpressui-bridge' );
 	}
-
-	// Installed workflows.
-	$installed_slugs = xpressui_get_installed_workflow_slugs();
-
-	$all_settings = get_option( 'xpressui_project_settings', [] );
-	if ( ! is_array( $all_settings ) ) {
-		$all_settings = [];
-	}
-	$license_settings  = xpressui_get_license_settings();
-	$license_key       = sanitize_text_field( (string) ( $license_settings['licenseKey'] ?? '' ) );
-	$masked_license    = xpressui_get_masked_license_key();
-	$pro_active        = xpressui_is_pro_extension_active();
-	$license_valid     = xpressui_has_valid_pro_license();
-	$current_tier      = xpressui_get_current_runtime_tier();
-	$runtime_health    = xpressui_get_runtime_health_summary();
+	$pro_active = xpressui_is_pro_extension_active();
 
 	if ( $notice_message ) {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
@@ -343,29 +329,12 @@ function xpressui_render_workflows_page() {
 
 	echo '<div class="card xpressui-admin-card">';
 	echo '<h2>' . esc_html__( 'Pro Extension', 'xpressui-bridge' ) . '</h2>';
-	echo '<div class="xpressui-status-row">';
-	echo '<span class="xpressui-status-item"><span class="xpressui-status-dot ' . ( $pro_active ? 'xpressui-status-dot--on' : 'xpressui-status-dot--off' ) . '"></span>';
-	echo esc_html__( 'Pro extension', 'xpressui-bridge' ) . ' — <strong>' . esc_html( $pro_active ? __( 'Active', 'xpressui-bridge' ) : __( 'Not installed', 'xpressui-bridge' ) ) . '</strong></span>';
-	echo '<span class="xpressui-status-item"><span class="xpressui-status-dot ' . ( $license_valid ? 'xpressui-status-dot--on' : 'xpressui-status-dot--off' ) . '"></span>';
-	echo esc_html__( 'License', 'xpressui-bridge' ) . ' — <strong>' . esc_html( $license_valid ? __( 'Valid', 'xpressui-bridge' ) : __( 'Not validated', 'xpressui-bridge' ) ) . '</strong></span>';
-	echo '</div>';
-	if ( ! $pro_active || ! $license_valid ) {
+	if ( ! $pro_active ) {
 		echo '<p class="description">' . esc_html__( 'Install and activate xpressui-wordpress-bridge-pro to unlock custom workflow packs and other Pro features.', 'xpressui-bridge' ) . '</p>';
 	}
-	echo '<form method="post">';
-	wp_nonce_field( 'xpressui_license_settings_action', 'xpressui_license_nonce' );
-	echo '<input type="hidden" name="xpressui_save_license_settings" value="1">';
-	echo '<table class="form-table"><tbody>';
-	echo '<tr><th><label for="xpressui_license_key">' . esc_html__( 'License key', 'xpressui-bridge' ) . '</label></th>';
-	echo '<td><input type="text" id="xpressui_license_key" name="xpressui_license_key" class="regular-text" value="' . esc_attr( $license_key ) . '" autocomplete="off" />';
-	if ( '' !== $masked_license ) {
-		echo '<p class="description">' . esc_html__( 'Stored key:', 'xpressui-bridge' ) . ' ' . esc_html( $masked_license ) . '</p>';
-	}
-	echo '<p class="description">' . esc_html__( 'Enter your XPressUI Pro license key. The Pro extension will use this value to validate your license.', 'xpressui-bridge' ) . '</p></td></tr>';
-	echo '</tbody></table>';
-	echo '<p class="submit">';
-	submit_button( __( 'Save license key', 'xpressui-bridge' ), 'secondary', 'submit', false );
-	echo '</p></form></div>';
+	do_action( 'xpressui_render_license_form' );
+	echo '</div>';
+	$runtime_health = xpressui_get_runtime_health_summary();
 
 	echo '<div class="card xpressui-admin-card">';
 	echo '<h2>' . esc_html__( 'Runtime Health', 'xpressui-bridge' ) . '</h2>';
@@ -395,6 +364,7 @@ function xpressui_render_workflows_page() {
 	echo '</tbody></table>';
 	echo '</div>';
 
+	$installed_slugs = xpressui_get_installed_workflow_slugs();
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
 	$starter_slug    = 'document-intake';
@@ -452,6 +422,7 @@ function xpressui_render_workflows_page() {
 		$visible_installed_slugs[] = $slug;
 	}
 
+	$all_settings = get_option( 'xpressui_project_settings', [] );
 	$render_workflow_table = static function ( array $slugs ) use ( $all_settings ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
@@ -677,6 +648,31 @@ function xpressui_render_workflows_page() {
 	}
 
 	echo '</div>'; // .wrap
+}
+
+/**
+ * Renders the default license form for the free plugin.
+ * This can be unhooked and replaced by the Pro plugin.
+ */
+function xpressui_render_default_license_form() {
+	$license_settings = xpressui_get_license_settings();
+	$license_key      = sanitize_text_field( (string) ( $license_settings['licenseKey'] ?? '' ) );
+	$masked_license   = xpressui_get_masked_license_key();
+
+	echo '<form method="post">';
+	wp_nonce_field( 'xpressui_license_settings_action', 'xpressui_license_nonce' );
+	echo '<input type="hidden" name="xpressui_save_license_settings" value="1">';
+	echo '<table class="form-table"><tbody>';
+	echo '<tr><th><label for="xpressui_license_key">' . esc_html__( 'License key', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_license_key" name="xpressui_license_key" class="regular-text" value="' . esc_attr( $license_key ) . '" autocomplete="off" />';
+	if ( '' !== $masked_license ) {
+		echo '<p class="description">' . esc_html__( 'Stored key:', 'xpressui-bridge' ) . ' ' . esc_html( $masked_license ) . '</p>';
+	}
+	echo '<p class="description">' . esc_html__( 'Enter your XPressUI Pro license key. The Pro extension will use this value to validate your license.', 'xpressui-bridge' ) . '</p></td></tr>';
+	echo '</tbody></table>';
+	echo '<p class="submit">';
+	submit_button( __( 'Save license key', 'xpressui-bridge' ), 'secondary', 'submit', false );
+	echo '</p></form>';
 }
 
 function xpressui_handle_workflow_admin_actions() {
