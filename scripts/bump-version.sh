@@ -10,6 +10,7 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 PLUGIN_FILE="xpressui-wordpress-bridge.php"
+README_FILE="readme.txt"
 
 # Update WordPress plugin header
 sed -i "s/^ \* Version:.*/ * Version:           ${VERSION}/" "$PLUGIN_FILE"
@@ -17,9 +18,12 @@ sed -i "s/^ \* Version:.*/ * Version:           ${VERSION}/" "$PLUGIN_FILE"
 # Update PHP constant
 sed -i "s/define( 'XPRESSUI_BRIDGE_VERSION', '[^']*' );/define( 'XPRESSUI_BRIDGE_VERSION', '${VERSION}' );/" "$PLUGIN_FILE"
 
-echo "Updated $PLUGIN_FILE to version ${VERSION}"
+# Update readme.txt Stable tag (must match plugin version or Plugin Check fails)
+sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" "$README_FILE"
 
-git add "$PLUGIN_FILE"
+echo "Updated $PLUGIN_FILE and $README_FILE to version ${VERSION}"
+
+git add "$PLUGIN_FILE" "$README_FILE"
 git commit -m "Bump version to ${VERSION}"
 git tag "v${VERSION}"
 
