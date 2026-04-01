@@ -329,7 +329,7 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 			'post_status'    => 'private',
 			'fields'         => 'ids',
 			'posts_per_page' => 1,
-			'meta_query'     => [
+			'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- no alternative without meta_query for this lookup
 				[
 					'key'   => '_xpressui_project_slug',
 					'value' => $project_slug,

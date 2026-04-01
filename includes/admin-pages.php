@@ -266,8 +266,8 @@ function xpressui_render_workflows_page() {
 	// Handle project settings save.
 	if ( isset( $_POST['xpressui_save_project_settings'] ) && check_admin_referer( 'xpressui_project_settings_action', 'xpressui_settings_nonce' ) ) {
 		$slug             = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
-		$notify_email     = sanitize_email( trim( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) ) );
-		$redirect_url     = esc_url_raw( trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) ) );
+		$notify_email     = sanitize_email( trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_email() is applied
+		$redirect_url     = esc_url_raw( trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- esc_url_raw() is applied
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );

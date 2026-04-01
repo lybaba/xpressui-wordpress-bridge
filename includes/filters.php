@@ -25,7 +25,7 @@ function xpressui_render_submission_filters( $post_type ) {
 		'post_status'    => 'private',
 		'posts_per_page' => -1,
 		'fields'         => 'ids',
-		'meta_key'       => '_xpressui_project_slug',
+		'meta_key'       => '_xpressui_project_slug', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- required for ordering submissions by project
 		'orderby'        => 'meta_value',
 		'order'          => 'ASC',
 	] );
