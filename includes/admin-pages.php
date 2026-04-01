@@ -266,16 +266,14 @@ function xpressui_render_workflows_page() {
 	// Handle project settings save.
 	if ( isset( $_POST['xpressui_save_project_settings'] ) && check_admin_referer( 'xpressui_project_settings_action', 'xpressui_settings_nonce' ) ) {
 		$slug             = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
-		$raw_notify_email = trim( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) );
-		$raw_redirect_url = trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) );
+		$notify_email     = sanitize_email( trim( wp_unslash( (string) ( $_POST['xpressui_notify_email'] ?? '' ) ) ) );
+		$redirect_url     = esc_url_raw( trim( wp_unslash( (string) ( $_POST['xpressui_redirect_url'] ?? '' ) ) ) );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
 		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 			$section_label_visibility = 'auto';
 		}
-		$notify_email     = sanitize_email( $raw_notify_email );
-		$redirect_url     = esc_url_raw( $raw_redirect_url );
 
 		if ( $slug !== '' ) {
 			$all_settings             = get_option( 'xpressui_project_settings', [] );

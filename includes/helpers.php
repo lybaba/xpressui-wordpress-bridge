@@ -423,11 +423,11 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	$runtime_script = '';
 	if ( '' !== $runtime_url ) {
-		$runtime_script = '<script src="' . esc_url( $runtime_url ) . '"></script>';
+		$runtime_script = '<script src="' . esc_url( $runtime_url ) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected dynamically into rendered HTML string, wp_enqueue_script() cannot be used here
 	}
 	$init_script = '';
 	if ( '' !== $init_url ) {
-		$init_script = '<script src="' . esc_url( $init_url ) . '"></script>';
+		$init_script = '<script src="' . esc_url( $init_url ) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected dynamically into rendered HTML string, wp_enqueue_script() cannot be used here
 	}
 
 	if ( false === strpos( $rendered_html, esc_url_raw( $runtime_url ) ) && false === strpos( $rendered_html, './init.js' ) ) {

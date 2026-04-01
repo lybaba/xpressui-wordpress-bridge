@@ -27,9 +27,9 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>
   </div>
   <script id="xpressui-custom-config" type="application/json">
-<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?>
+<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- safe JSON string produced by template_mark_safe(), emitted inside <script type="application/json"> ?>
   </script>
 <?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")))): ?>
-  <script src="./init.js"></script>
+  <script src="./init.js"></script><?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone HTML page, not a WordPress template ?>
 <?php endif; ?></body>
 </html>
