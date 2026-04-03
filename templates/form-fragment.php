@@ -42,8 +42,7 @@ unset($xpressui_scope);
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-runtime-shell { gap: 16px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-header { gap: 2px; padding-top: 0; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }
-#<?php echo esc_attr($xpressui_mount_id); ?> .template-section { gap: 14px; padding: 16px; }
-#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-label { font-size: 17px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section { gap: 18px; padding: 20px 18px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-fields { gap: 12px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-field { gap: 6px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-field-label { font-size: 13px; }
@@ -61,10 +60,19 @@ unset($xpressui_scope);
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-step-actions [data-step-action] { font-size: 13px; padding: 11px 16px; min-width: 112px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-submit-row { padding-top: 14px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-submit-btn { cursor: pointer; font-size: 13px; line-height: 1.1; padding: 11px 16px; min-width: 112px; }
+/* Step title — prominent, clearly separated from fields */
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-header { padding-bottom: 14px; border-bottom: 2px solid color-mix(in srgb, var(--template-primary, #2563eb) 18%, transparent); margin-bottom: 2px; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-label { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: var(--template-text, #0f172a); }
+/* Step transition animation */
+@keyframes xpressui-step-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section[data-template-zone="section"] { animation: xpressui-step-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @media (max-width: 720px) {
   #<?php echo esc_attr($xpressui_mount_id); ?> .form-frame { padding: 16px; }
   #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-title { font-size: clamp(20px, 7vw, 26px); }
-  #<?php echo esc_attr($xpressui_mount_id); ?> .template-section { padding: 14px; }
+  #<?php echo esc_attr($xpressui_mount_id); ?> .template-section { padding: 16px 14px; }
   #<?php echo esc_attr($xpressui_mount_id); ?> .template-input,
   #<?php echo esc_attr($xpressui_mount_id); ?> .template-textarea { font-size: 13px; }
 }

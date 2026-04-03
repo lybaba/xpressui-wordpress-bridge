@@ -1237,14 +1237,46 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 	$custom_sections = is_array( $sections_map['custom'] ?? null ) ? $sections_map['custom'] : [];
 	$step_count      = count( $custom_sections );
 
+	// Map form.config.json field types to HTML input types expected by the templates.
+	$input_type_map = [
+		'text'      => 'text',
+		'email'     => 'email',
+		'tel'       => 'tel',
+		'url'       => 'url',
+		'number'    => 'number',
+		'price'     => 'number',
+		'date'      => 'date',
+		'time'      => 'time',
+		'password'  => 'password',
+		'file'      => 'file',
+		'upload-image' => 'file',
+	];
+
 	$sections = [];
 	foreach ( $custom_sections as $section_def ) {
 		if ( ! is_array( $section_def ) ) {
 			continue;
 		}
 		$section_name = (string) ( $section_def['name'] ?? '' );
-		$fields       = is_array( $sections_map[ $section_name ] ?? null ) ? array_values( $sections_map[ $section_name ] ) : [];
-		$sections[]   = [
+		$raw_fields   = is_array( $sections_map[ $section_name ] ?? null ) ? array_values( $sections_map[ $section_name ] ) : [];
+
+		// Normalize each field so templates never receive null for required attributes.
+		$fields = [];
+		foreach ( $raw_fields as $field ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+			$type = (string) ( $field['type'] ?? 'text' );
+			$field['input_type']  = $input_type_map[ $type ] ?? 'text';
+			$field['placeholder'] = $field['placeholder'] ?? '';
+			$field['desc']        = $field['desc'] ?? '';
+			$field['helpText']    = $field['helpText'] ?? '';
+			$field['accept']      = $field['accept'] ?? '';
+			$field['capture']     = $field['capture'] ?? '';
+			$fields[]             = $field;
+		}
+
+		$sections[] = [
 			'name'   => $section_name,
 			'label'  => (string) ( $section_def['label'] ?? '' ),
 			'desc'   => (string) ( $section_def['desc'] ?? '' ),
