@@ -1224,6 +1224,49 @@ function xpressui_build_config_field_index( $config ) {
 	return $index;
 }
 
+/**
+ * Builds a minimal rendered_form array from a parsed form.config.json.
+ * Used as a fallback when template.context.json does not contain rendered_form
+ * (e.g. workflows exported without a full Console context).
+ *
+ * @param array $form_config Parsed form.config.json.
+ * @return array rendered_form structure expected by the PHP templates.
+ */
+function xpressui_build_rendered_form_from_config( array $form_config ): array {
+	$sections_map    = is_array( $form_config['sections'] ?? null ) ? $form_config['sections'] : [];
+	$custom_sections = is_array( $sections_map['custom'] ?? null ) ? $sections_map['custom'] : [];
+	$step_count      = count( $custom_sections );
+
+	$sections = [];
+	foreach ( $custom_sections as $section_def ) {
+		if ( ! is_array( $section_def ) ) {
+			continue;
+		}
+		$section_name = (string) ( $section_def['name'] ?? '' );
+		$fields       = is_array( $sections_map[ $section_name ] ?? null ) ? array_values( $sections_map[ $section_name ] ) : [];
+		$sections[]   = [
+			'name'   => $section_name,
+			'label'  => (string) ( $section_def['label'] ?? '' ),
+			'desc'   => (string) ( $section_def['desc'] ?? '' ),
+			'fields' => $fields,
+		];
+	}
+
+	return [
+		'has_sections'        => ! empty( $sections ),
+		'sections'            => $sections,
+		'show_title'          => false,
+		'show_subtitle'       => false,
+		'show_section_headers' => $step_count > 1,
+		'step_status'         => [
+			'enabled'       => $step_count > 1,
+			'current_index' => 1,
+			'total'         => $step_count,
+			'idle_message'  => '',
+		],
+	];
+}
+
 function xpressui_build_choice_catalog_index( $field_meta = [] ) {
 	$catalog = is_array( $field_meta['choiceCatalog'] ?? null ) ? $field_meta['choiceCatalog'] : [];
 	$index   = [];

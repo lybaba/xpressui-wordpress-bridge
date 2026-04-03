@@ -94,27 +94,39 @@ function xpressui_render_shortcode( $atts ) {
 	$show_section_headers = 'show' === $section_label_visibility
 		? true
 		: ( 'hide' === $section_label_visibility ? false : $section_count > 1 );
-	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
-		$template_context['rendered_form']['show_title']           = $show_project_title;
-		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
-		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
-	}
 	// Resolve form config: prefer inlined runtime.form_config_json, fall back to form.config.json.
 	$raw_form_config_json = $template_context['runtime']['form_config_json'] ?? '';
 	if ( '' === $raw_form_config_json ) {
 		$raw_form_config_json = xpressui_get_workflow_artifact_contents( $slug, 'config', 'form.config.json' );
 	}
-	if ( is_array( $template_context['runtime'] ?? null ) || '' !== $raw_form_config_json ) {
-		$form_config = json_decode( (string) $raw_form_config_json, true );
+	$form_config = is_string( $raw_form_config_json ) && '' !== $raw_form_config_json
+		? json_decode( $raw_form_config_json, true )
+		: null;
+
+	if ( is_array( $form_config ) ) {
+		// Build rendered_form from config when absent from template context (no full Console export).
+		if ( ! is_array( $template_context['rendered_form'] ?? null ) ) {
+			$template_context['rendered_form'] = xpressui_build_rendered_form_from_config( $form_config );
+			// Recompute section count now that rendered_form is populated.
+			$section_count        = count( $template_context['rendered_form']['sections'] );
+			$show_section_headers = 'show' === $section_label_visibility
+				? true
+				: ( 'hide' === $section_label_visibility ? false : $section_count > 1 );
+		}
 		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
 			$template_context['runtime'] = [];
 		}
-		if ( is_array( $form_config ) ) {
-			$form_config['showProjectTitle']       = $show_project_title;
-			$form_config['showRequiredFieldsNote'] = $show_required_note;
-			$form_config['sectionLabelVisibility'] = $section_label_visibility;
-			$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
-		}
+		$form_config['showProjectTitle']       = $show_project_title;
+		$form_config['showRequiredFieldsNote'] = $show_required_note;
+		$form_config['sectionLabelVisibility'] = $section_label_visibility;
+		$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
+	}
+
+	// Apply show_* flags to rendered_form (works whether built above or loaded from template context).
+	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
+		$template_context['rendered_form']['show_title']           = $show_project_title;
+		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
+		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 	}
 
 	// Ensure the PHP template runtime helpers are available.
