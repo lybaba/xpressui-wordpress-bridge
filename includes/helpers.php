@@ -1252,13 +1252,24 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 		];
 	}
 
+	$nav_labels = is_array( $form_config['navigationLabels'] ?? null ) ? $form_config['navigationLabels'] : [];
+
 	return [
-		'has_sections'        => ! empty( $sections ),
-		'sections'            => $sections,
-		'show_title'          => false,
-		'show_subtitle'       => false,
+		'has_sections'         => ! empty( $sections ),
+		'sections'             => $sections,
+		'show_title'           => false,
+		'show_subtitle'        => false,
 		'show_section_headers' => $step_count > 1,
-		'step_status'         => [
+		'navigation_labels'    => [
+			'previous' => (string) ( $nav_labels['prevLabel'] ?? 'Back' ),
+			'next'     => (string) ( $nav_labels['nextLabel'] ?? 'Continue' ),
+		],
+		'submit_label'         => (string) ( $nav_labels['submitLabel'] ?? 'Submit' ),
+		'submit_feedback'      => [
+			'title'        => (string) ( $form_config['submitFeedback']['title'] ?? '' ),
+			'idle_message' => (string) ( $form_config['submitFeedback']['idle_message'] ?? '' ),
+		],
+		'step_status'          => [
 			'enabled'       => $step_count > 1,
 			'current_index' => 1,
 			'total'         => $step_count,
