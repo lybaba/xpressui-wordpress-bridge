@@ -99,8 +99,16 @@ function xpressui_render_shortcode( $atts ) {
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 	}
-	if ( is_array( $template_context['runtime'] ?? null ) ) {
-		$form_config = json_decode( (string) ( $template_context['runtime']['form_config_json'] ?? '{}' ), true );
+	// Resolve form config: prefer inlined runtime.form_config_json, fall back to form.config.json.
+	$raw_form_config_json = $template_context['runtime']['form_config_json'] ?? '';
+	if ( '' === $raw_form_config_json ) {
+		$raw_form_config_json = xpressui_get_workflow_artifact_contents( $slug, 'config', 'form.config.json' );
+	}
+	if ( is_array( $template_context['runtime'] ?? null ) || '' !== $raw_form_config_json ) {
+		$form_config = json_decode( (string) $raw_form_config_json, true );
+		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
+			$template_context['runtime'] = [];
+		}
 		if ( is_array( $form_config ) ) {
 			$form_config['showProjectTitle']       = $show_project_title;
 			$form_config['showRequiredFieldsNote'] = $show_required_note;
@@ -186,9 +194,7 @@ function xpressui_render_shortcode( $atts ) {
 	wp_add_inline_script( 'xpressui-shell-init', $inline_before, 'before' );
 
 	// Embed the form config as an inline JSON script tag (not JavaScript).
-	$form_config_json = isset( $template_context['runtime']['form_config_json'] )
-		? $template_context['runtime']['form_config_json']
-		: '{}';
+	$form_config_json = $template_context['runtime']['form_config_json'] ?? '{}';
 
 	$config_tag = '<script id="' . esc_attr( $config_script_id ) . '" type="application/json">'
 		. wp_json_encode( json_decode( $form_config_json, true ) )
