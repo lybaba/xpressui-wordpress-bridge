@@ -14,6 +14,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'name'))); ?></title>
   <style>
     :root {
+      --template-font-family: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "inherit" : "Inter, system-ui, sans-serif"))); ?>;
       --template-page-background: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'page_background'))); ?>;
       --template-surface: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'surface'))); ?>;
       --template-text: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'text'))); ?>;
@@ -26,7 +27,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     }
     body {
       margin: 0;
-      font-family: Inter, system-ui, sans-serif;
+      font-family: var(--template-font-family);
       color: var(--template-text);
       background: var(--template-page-background);
     }
