@@ -14,7 +14,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'name'))); ?></title>
   <style>
     :root {
-      --template-font-family: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "inherit" : "Inter, system-ui, sans-serif"))); ?>;
+      --template-font-family: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'font_family')) ? xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'font_family') : (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "inherit" : "Inter, system-ui, sans-serif")))); ?>;
       --template-page-background: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'page_background'))); ?>;
       --template-surface: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'surface'))); ?>;
       --template-text: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'text'))); ?>;
@@ -103,15 +103,15 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     .template-form-header { display: grid; gap: 4px; padding: 4px 2px 0; }
     .template-form-title { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.02; letter-spacing: -0.04em; color: var(--template-text); font-weight: 900; }
     .template-form-subtitle { margin: 0; color: var(--template-muted-text); font-size: 12px; line-height: 1.45; max-width: 720px; }
-    .template-step-status { display: grid; gap: 6px; padding: 14px 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 94%, #f8fafc); }
+    .template-step-status { display: grid; gap: 10px; padding: 0 4px 10px; background: transparent; border: none; }
     .template-step-status[data-step-feedback-state='loading'] { background: rgba(239, 246, 255, 0.98); border-color: rgba(96,165,250,0.24); }
     .template-step-status[data-step-feedback-state='success'] { background: rgba(220, 252, 231, 0.9); border-color: rgba(74,222,128,0.28); }
-    .template-step-status-title { font-size: 13px; font-weight: 800; color: var(--template-text); }
-    .template-step-status-message { font-size: 13px; color: var(--template-muted-text); line-height: 1.45; }
+    .template-step-status-title { font-size: 12px; font-weight: 800; color: var(--template-primary); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; align-self: start; background: color-mix(in srgb, var(--template-primary) 8%, transparent); padding: 6px 12px; border-radius: 999px; }
+    .template-step-status-message { display: none; /* Cleaner to hide this and rely on Section labels */ }
     .template-section { display: grid; gap: 16px; padding: 20px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
     .template-section-header { display: grid; gap: 4px; }
-    .template-section-label { margin: 0; font-size: 20px; font-weight: 800; color: var(--template-text); }
-    .template-section-desc { margin: 0; color: var(--template-muted-text); font-size: 14px; }
+    .template-section-label { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--template-text); }
+    .template-section-desc { margin: 0 0 4px 0; color: var(--template-muted-text); font-size: 14px; line-height: 1.5; }
     .template-fields { display: flex; flex-direction: column; gap: 14px; width: 100%; }
     .template-field { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
     .template-field-label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -155,12 +155,13 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     .template-choice-grid--vertical, .template-choice-grid[data-choice-layout="vertical"] { grid-template-columns: 1fr; }
     .template-choice-grid--horizontal, .template-choice-grid[data-choice-layout="horizontal"] { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
     .template-choice-grid--auto, .template-choice-grid[data-choice-layout="auto"] { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-    .template-choice-card { position: relative; display: grid; gap: 4px; align-content: start; min-height: 0; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,0.98); border: 1px solid rgba(15,23,42,0.08); box-shadow: 0 8px 20px -26px rgba(15,23,42,0.24); transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease, transform 160ms ease; cursor: pointer; }
-    .template-choice-card:hover { transform: translateY(-1px); }
-    .template-choice-card[data-selected="true"] { border-color: rgba(15,118,110,0.42); box-shadow: 0 0 0 2px rgba(15,118,110,0.12), 0 18px 34px -28px rgba(15,118,110,0.38); background: linear-gradient(180deg, rgba(240,253,250,0.98) 0%, rgba(236,253,245,0.96) 100%); }
-    .template-choice-card[data-selected="true"]::after { content: "✓"; position: absolute; top: 8px; right: 8px; width: 16px; height: 16px; border-radius: 999px; background: #0f766e; color: #f8fafc; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; box-shadow: 0 0 0 3px rgba(15,118,110,0.12); }
+    .template-choice-card { position: relative; display: grid; gap: 4px; align-content: start; min-height: 0; padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,0.98); border: 1.5px solid rgba(15,23,42,0.08); box-shadow: 0 2px 8px -2px rgba(15,23,42,0.04); transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease, transform 200ms ease; cursor: pointer; }
+    .template-choice-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--template-primary) 40%, rgba(15,23,42,0.15)); box-shadow: 0 8px 24px -6px rgba(15,23,42,0.08); }
+    .template-choice-card[data-selected="true"] { border-color: var(--template-primary); box-shadow: 0 0 0 1px var(--template-primary), 0 8px 24px -6px color-mix(in srgb, var(--template-primary) 30%, transparent); background: color-mix(in srgb, var(--template-primary) 4%, #ffffff); }
+    .template-choice-card[data-selected="true"]::after { content: ""; position: absolute; top: 14px; right: 14px; width: 22px; height: 22px; border-radius: 50%; background-color: var(--template-primary); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E"); background-position: center; background-repeat: no-repeat; background-size: 12px; }
     .template-choice-card[data-disabled="true"] { opacity: 0.6; cursor: not-allowed; }
-    .template-choice-title { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.25; overflow-wrap: anywhere; word-break: break-word; padding-right: 14px; }
+    .template-choice-title { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.25; overflow-wrap: anywhere; word-break: break-word; padding-right: 28px; }
+    .template-choice-card[data-selected="true"] .template-choice-title { color: color-mix(in srgb, var(--template-primary) 80%, #0f172a); }
     .template-choice-footer { min-height: 18px; font-size: 12px; color: #64748b; }
     .template-choice-footer[hidden] { display: none !important; }
     .template-choice-card .template-field-help { margin: 0; color: #64748b; font-size: 11px; line-height: 1.35; }
@@ -252,7 +253,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     button.template-field-pill[data-document-scan-active="true"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
     .template-submit-row { display: flex; justify-content: flex-end; padding-top: 18px; margin-top: 2px; border-top: 1px solid rgba(15,23,42,0.06); }
     .template-submit-btn { border: none; border-radius: var(--template-button-radius); background: var(--template-primary); color: #f8fafc; font: inherit; font-weight: 700; padding: 14px 20px; min-width: 140px; }
-    .template-step-progress-track { background: rgba(15,23,42,0.08); border-radius: 999px; height: 8px; overflow: hidden; }
+    .template-step-progress-track { background: rgba(15,23,42,0.06); border-radius: 999px; height: 4px; overflow: hidden; margin-top: 4px; }
     .template-step-progress-bar { height: 100%; background: linear-gradient(90deg, var(--template-primary) 0%, color-mix(in srgb, var(--template-primary) 76%, #0f172a) 100%); border-radius: 999px; }
     .template-step-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 0; }
     .template-step-actions-leading, .template-step-actions-trailing { display: flex; align-items: center; gap: 12px; }
@@ -261,5 +262,11 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     .template-step-actions [data-step-action="back"] { background: rgba(255,255,255,0.98); color: var(--template-muted-text); }
     .template-step-actions [data-step-action="next"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
     .template-step-actions [data-step-action]:disabled { opacity: 0.54; cursor: not-allowed; transform: none; }
+
+    @keyframes xpressui-step-in {
+      0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    [data-template-zone="section"] { animation: xpressui-step-in 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   </style>
 </head>
