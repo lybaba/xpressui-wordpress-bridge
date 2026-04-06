@@ -398,7 +398,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 
 	$init_url = xpressui_get_plugin_shell_init_url();
-	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>';
+	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected into a standalone HTML document string; wp_add_inline_script() requires a registered handle and cannot be used outside the WordPress enqueue lifecycle
 	$shell_meta_script   = '<script>window.XPRESSUI_SHELL_META = ' . wp_json_encode(
 		[
 			'slug'             => $slug,
@@ -408,7 +408,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 			'workflowPackageUrl' => xpressui_get_workflow_package_url( $slug ),
 			'shellInitUrl'     => $init_url,
 		]
-	) . ';</script>';
+	) . ';</script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected into a standalone HTML document string; wp_add_inline_script() requires a registered handle and cannot be used outside the WordPress enqueue lifecycle
 
 	if ( '' !== $runtime_relative && '' !== $runtime_url ) {
 		$rendered_html = str_replace( './' . $runtime_relative, esc_url_raw( $runtime_url ), $rendered_html );
@@ -451,7 +451,7 @@ function xpressui_can_render_compiled_workflow_shell( $slug ) {
 	}
 
 	$template_context = xpressui_load_workflow_template_context( $slug );
-	$template_file    = XPRESSUI_BRIDGE_DIR . 'templates/generated/project-page.html.php';
+	$template_file    = XPRESSUI_BRIDGE_DIR . 'templates/core/project-page.html.php';
 	$runtime_file     = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
 
 	return ! empty( $template_context ) && file_exists( $template_file ) && file_exists( $runtime_file );

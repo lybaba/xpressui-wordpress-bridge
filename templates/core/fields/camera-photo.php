@@ -3,7 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Generated from export/_partials/fields/upload.j2. Do not edit manually.
 if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
@@ -16,22 +15,13 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php endif; ?>    </div>
   </div>
   <div class="template-upload-box" data-file-drop-zone="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>" data-file-drag-active="false">
-    <span class="template-upload-icon">↑</span>
-    <div class="template-field-label">
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "upload-image"))): ?>
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Upload image", 'xpressui-bridge'))); ?>
-<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "camera-photo"))): ?>
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Take photo", 'xpressui-bridge'))); ?>
-<?php else: ?>
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Upload file", 'xpressui-bridge'))); ?>
-<?php endif; ?>    </div>
+    <span class="template-upload-icon">&#128247;</span>
+    <div class="template-field-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Take photo", 'xpressui-bridge'))); ?></div>
     <div class="template-field-help">
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'placeholder'))): ?>
         <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'placeholder'))); ?>
-<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "upload-image"))): ?>
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Drag an image here or browse from your device.", 'xpressui-bridge'))); ?>
 <?php else: ?>
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Drag a file here or browse from your device.", 'xpressui-bridge'))); ?>
+        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Open the device camera or choose an existing photo from your gallery.", 'xpressui-bridge'))); ?>
 <?php endif; ?>    </div>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'upload_accept_label'))): ?>
       <div class="template-upload-pills">
@@ -57,19 +47,11 @@ required aria-required="true"<?php endif; ?>    />
     data-upload-selection-zone="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
   >
     <div class="template-upload-selection-row">
-      <span class="template-upload-selection-title" data-upload-selection-title="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>">
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "upload-image"))): ?>
-          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Awaiting image", 'xpressui-bridge'))); ?>
-<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "camera-photo"))): ?>
-          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Awaiting camera photo", 'xpressui-bridge'))); ?>
-<?php else: ?>
-          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Awaiting file", 'xpressui-bridge'))); ?>
-<?php endif; ?>      </span>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'upload_type_label'))): ?>
-        <span class="template-field-pill" data-upload-selection-kind="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'upload_type_label'))); ?></span>
-<?php endif; ?>    </div>
+      <span class="template-upload-selection-title" data-upload-selection-title="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Awaiting camera photo", 'xpressui-bridge'))); ?></span>
+      <span class="template-field-pill" data-upload-selection-kind="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'upload_type_label'), xpressui_bridge_template_wp_text("Camera capture", 'xpressui-bridge')))); ?></span>
+    </div>
     <div class="template-field-help" data-upload-selection-message="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>">
-      <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("The runtime can keep this server-rendered selection shell and update file state in place.", 'xpressui-bridge'))); ?>
+      <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("The runtime can keep this server-rendered camera shell and update the selected photo in place.", 'xpressui-bridge'))); ?>
     </div>
     <div data-upload-selection-body="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"></div>
   </div>

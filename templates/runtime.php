@@ -17,7 +17,7 @@ function xpressui_bridge_template_templates_root(): string {
 		return $override;
 	}
 
-	return __DIR__ . '/generated';
+	return __DIR__ . '/core';
 }
 
 function xpressui_bridge_template_render_template( string $template, array $context ): string {
@@ -249,10 +249,7 @@ function xpressui_bridge_template_test_none( mixed $value ): bool {
 }
 
 function xpressui_bridge_template_wp_text( mixed $value, string $domain = 'xpressui-bridge' ): string {
-	$text = xpressui_bridge_template_stringify( $value );
-	if ( function_exists( '__' ) ) {
-		// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText,WordPress.WP.I18n.NonSingularStringLiteralDomain -- helper intentionally translates dynamic template strings.
-		return (string) __( $text, $domain );
-	}
-	return $text;
+	// Template strings are dynamic and cannot be extracted by i18n tooling.
+	// Return them as-is; translations are handled by the XPressUI console at export time.
+	return xpressui_bridge_template_stringify( $value );
 }

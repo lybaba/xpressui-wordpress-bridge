@@ -37,8 +37,7 @@ $xpressui_has_bg = !empty($xpressui_ctx['project']['background_image_url'])
     && $xpressui_ctx['theme']['background_style'] !== 'none';
 ?>
 <style>
-<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- compiled inline CSS is generated from trusted templates. ?>
-<?php echo $xpressui_inline_css; ?>
+<?php echo $xpressui_inline_css; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $xpressui_inline_css is CSS extracted from server-side compiled templates (head.php), scoped and processed within this request. No user input reaches this variable. ?>
 /* WordPress inline embed — reset standalone-page layout */
 <?php if ($xpressui_has_bg): ?>
 #<?php echo esc_attr($xpressui_mount_id); ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: hidden !important; padding: 48px max(5%, 24px) !important; display: grid !important; place-items: center !important; background: transparent !important; position: relative !important; border-radius: 24px !important; }

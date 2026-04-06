@@ -100,6 +100,24 @@ Users may request access to or deletion of their personal data. This plugin inte
 
 For full details on what data is collected and how to manage it, refer to your site's privacy policy.
 
+== Source Code ==
+
+The full source code for this plugin is available at:
+https://github.com/lybaba/xpressui-wordpress-bridge
+
+= Bundled JavaScript runtime =
+
+The file `runtime/xpressui-light-*.umd.js` is the compiled output of the XPressUI library.
+Its source code is available at: https://github.com/lybaba/xpressui
+
+To rebuild the runtime from source:
+
+1. Clone the repository: `git clone https://github.com/lybaba/xpressui.git`
+2. Install dependencies: `npm install`
+3. Build the light runtime: `npm run build:dist:light`
+4. The output file is produced in the `dist/` directory.
+
+
 == Screenshots ==
 
 1. The submission list with status badges, project filter, and row actions.

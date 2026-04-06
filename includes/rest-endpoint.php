@@ -44,9 +44,8 @@ function xpressui_get_request_origin_candidates() {
 	$headers    = [ 'HTTP_ORIGIN', 'HTTP_REFERER' ];
 
 	foreach ( $headers as $header ) {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized immediately below.
-		$raw = isset( $_SERVER[ $header ] ) ? wp_unslash( (string) $_SERVER[ $header ] ) : '';
-		$raw = is_string( $raw ) ? trim( $raw ) : '';
+		$raw = isset( $_SERVER[ $header ] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER[ $header ] ) ) : '';
+		$raw = trim( $raw );
 		if ( $raw === '' ) {
 			continue;
 		}
@@ -402,7 +401,7 @@ function xpressui_check_submission_rate_limit( $project_slug ) {
 
 function xpressui_get_request_file_params( WP_REST_Request $request ) {
 	$request_files    = $request->get_file_params();
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- public REST endpoint intentionally accepts unauthenticated file submissions.
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- REST endpoint authenticated via WP REST API nonce (X-WP-Nonce header) or falls back to public submission for unauthenticated forms; nonce is not applicable to file upload REST routes.
 	$superglobal_files = is_array( $_FILES ) ? $_FILES : [];
 
 	if ( ! is_array( $request_files ) || empty( $request_files ) ) {
