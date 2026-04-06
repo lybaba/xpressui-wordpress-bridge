@@ -107,15 +107,16 @@ https://github.com/lybaba/xpressui-wordpress-bridge
 
 = Bundled JavaScript runtime =
 
-The file `runtime/xpressui-light-*.umd.js` is the compiled output of the XPressUI library.
-Its source code is available at: https://github.com/lybaba/xpressui
+The file `runtime/xpressui-light-*.umd.js` is the compiled output of the XPressUI library
+(free tier). The unminified TypeScript source files used to produce this bundle are included
+in the `xpressui-src/` directory of this plugin.
 
-To rebuild the runtime from source:
+To rebuild the runtime from those sources:
 
-1. Clone the repository: `git clone https://github.com/lybaba/xpressui.git`
+1. Navigate to the source directory: `cd xpressui-src`
 2. Install dependencies: `npm install`
 3. Build the light runtime: `npm run build:dist:light`
-4. The output file is produced in the `dist/` directory.
+4. The output file is produced in `xpressui-src/dist/xpressui-light-*.umd.js`.
 
 
 == Screenshots ==
