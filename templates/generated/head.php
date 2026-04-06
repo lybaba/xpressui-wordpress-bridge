@@ -41,45 +41,52 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       isolation: isolate;
       overflow: hidden;
     }
+    #xpressui-root {
+      position: relative;
+      isolation: isolate;
+      width: 100%;
+      padding: 48px 16px;
+      box-sizing: border-box;
+    }
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "panel")))): ?>
-    .page-shell::before {
+    <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : ".page-shell"))); ?>::before {
       content: "";
       position: absolute;
-      inset: 18px;
+      inset: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "0" : "18px"))); ?>;
       z-index: -2;
-      border-radius: 36px;
+      border-radius: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "24px" : "36px"))); ?>;
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.32)),
-        url('<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
+        url('<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
     }
-    .page-shell::after {
+    <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : ".page-shell"))); ?>::after {
       content: "";
       position: absolute;
-      inset: 18px;
+      inset: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "0" : "18px"))); ?>;
       z-index: -1;
-      border-radius: 36px;
+      border-radius: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "24px" : "36px"))); ?>;
       background:
         linear-gradient(180deg, rgba(255,255,255,0.06), rgba(15,23,42,0.08)),
         linear-gradient(180deg, color-mix(in srgb, var(--template-page-background) 8%, transparent), color-mix(in srgb, var(--template-page-background) 36%, rgba(15,23,42,0.10)));
       pointer-events: none;
     }
 <?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>
-    body::before {
+    <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : "body"))); ?>::before {
       content: "";
-      position: fixed;
+      position: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "absolute" : "fixed"))); ?>;
       inset: 0;
       z-index: -2;
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.38)),
         radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 34%),
-        url('<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
+        url('<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       filter: saturate(0.9) contrast(0.92) brightness(0.82);
       transform: scale(1.02);
     }
-    body::after {
+    <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : "body"))); ?>::after {
       content: "";
-      position: fixed;
+      position: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "absolute" : "fixed"))); ?>;
       inset: 0;
       z-index: -1;
       background: linear-gradient(
@@ -91,10 +98,10 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     }
 <?php endif; ?>    .form-frame {
       width: min(100%, 960px);
-      background: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>rgba(255,255,255,0.965)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
+      background: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>color-mix(in srgb, var(--template-surface) 96%, transparent)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
       border-radius: var(--template-card-radius);
       padding: 24px;
-      box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(15,23,42,0.42)<?php else: ?>0 20px 60px rgba(15, 23, 42, 0.12)<?php endif; ?>;
+      box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(0,0,0,0.42)<?php else: ?>0 20px 60px rgba(0,0,0,0.08)<?php endif; ?>;
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>
 backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
       z-index: 1;
@@ -126,34 +133,46 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     .template-field-meta { display: flex; flex-wrap: wrap; gap: 8px; }
     .template-field-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--template-border) 40%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); color: var(--template-text); font-size: 12px; font-weight: 700; line-height: 1; }
     .template-input,
-    .template-textarea,
-    select.template-input { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 14px 16px; }
+    .template-textarea { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 14px 16px; }
+    .template-runtime-shell select { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border) !important; border-radius: var(--template-input-radius) !important; background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 16px center !important; background-size: 16px !important; color: var(--template-text) !important; font: inherit; padding: 14px 40px 14px 16px !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; }
     .template-textarea { min-height: 144px; resize: vertical; }
     .template-input::placeholder,
     .template-textarea::placeholder { color: var(--template-muted-text); opacity: 0.8; }
-    .template-input:focus,
-    .template-textarea:focus,
-    select.template-input:focus {
-      outline: none;
-      border-color: var(--template-primary);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent);
+    .template-runtime-shell .template-input:focus,
+    .template-runtime-shell .template-textarea:focus,
+    .template-runtime-shell select:focus,
+    .template-runtime-shell input[type="text"]:focus,
+    .template-runtime-shell input[type="email"]:focus,
+    .template-runtime-shell input[type="tel"]:focus,
+    .template-runtime-shell input[type="number"]:focus,
+    .template-runtime-shell input[type="url"]:focus {
+      outline: none !important;
+      border-color: var(--template-primary) !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent) !important;
     }
     .template-input.input-error,
     .template-textarea.textarea-error,
-    select.select-error {
-      border-color: #ef4444;
-      box-shadow: 0 0 0 3px color-mix(in srgb, #ef4444 15%, transparent);
+    .template-runtime-shell select.select-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, #ef4444 15%, transparent) !important;
     }
     .template-runtime-shell input[type="radio"],
     .template-runtime-shell input[type="checkbox"],
     .template-runtime-shell input[type="range"] {
+      -webkit-appearance: auto !important;
+      -moz-appearance: auto !important;
+      appearance: auto !important;
       accent-color: var(--template-primary) !important;
     }
+    .template-runtime-shell input[type="radio"]:focus,
+    .template-runtime-shell input[type="checkbox"]:focus,
+    .template-runtime-shell input[type="range"]:focus,
     .template-runtime-shell input[type="radio"]:focus-visible,
     .template-runtime-shell input[type="checkbox"]:focus-visible,
     .template-runtime-shell input[type="range"]:focus-visible {
       outline: 2px solid var(--template-primary) !important;
       outline-offset: 2px !important;
+      box-shadow: none !important;
     }
     .template-product-grid,
     .template-choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
