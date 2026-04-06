@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 PLUGIN_DIR = Path(__file__).resolve().parent.parent
-VERSION_FILE = PLUGIN_DIR / ".xpressui-version"
+VERSION_FILE = PLUGIN_DIR / "xpressui-version.txt"
 RUNTIME_DIR = PLUGIN_DIR / "runtime"
 XPRESSUI_SOURCES_DIR = PLUGIN_DIR / "xpressui-src"
 
@@ -79,7 +79,7 @@ def _install_runtime(dist_dir: Path, version: str) -> None:
 
 
 def _check_sources(version: str) -> None:
-    """Warn if xpressui-src/ is missing or .xpressui-version mismatches."""
+    """Warn if xpressui-src/ is missing or xpressui-version.txt mismatches."""
     if not XPRESSUI_SOURCES_DIR.is_dir() or not any(XPRESSUI_SOURCES_DIR.rglob("*.ts")):
         print(
             "WARNING: xpressui-src/ is missing or empty. "
