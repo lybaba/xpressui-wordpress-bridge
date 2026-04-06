@@ -56,7 +56,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       border-radius: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "24px" : "36px"))); ?>;
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.32)),
-        url('<?php echo esc_url(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
+        url('<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
     }
     <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : ".page-shell"))); ?>::after {
@@ -79,7 +79,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       background:
         linear-gradient(180deg, rgba(15,23,42,0.18), rgba(15,23,42,0.38)),
         radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 34%),
-        url('<?php echo esc_url(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
+        url('<?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))); ?>') center center / cover no-repeat;
       filter: saturate(0.9) contrast(0.92) brightness(0.82);
       transform: scale(1.02);
     }
