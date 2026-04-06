@@ -370,6 +370,9 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 		return '';
 	}
 
+	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.
+	$template_context = apply_filters( 'xpressui_template_context', $template_context, $slug );
+
 	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
 	if ( ! file_exists( $runtime_file ) ) {
 		return '';

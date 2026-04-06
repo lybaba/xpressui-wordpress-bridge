@@ -22,23 +22,31 @@ $xpressui_inline_css = implode("\n", $xpressui_style_blocks[1] ?? []);
 unset($xpressui_head_html, $xpressui_style_blocks);
 
 // Scope global selectors to the form container so they don't bleed into
-// the surrounding WordPress page. Replace :root and body with the mount ID.
+// the surrounding WordPress page. Replace :root, #xpressui-root and body with the mount ID.
 $xpressui_scope = '#' . $xpressui_mount_id;
-$xpressui_inline_css = str_replace(':root', $xpressui_scope, $xpressui_inline_css);
+$xpressui_inline_css = preg_replace('/(?<![#\w-]):root\b/', $xpressui_scope, $xpressui_inline_css);
+$xpressui_inline_css = preg_replace('/#xpressui-root(?![-\w])/', $xpressui_scope, $xpressui_inline_css);
 $xpressui_inline_css = str_replace(
     ['body::', 'body {', 'body,', 'body '],
     [$xpressui_scope . '::', $xpressui_scope . ' {', $xpressui_scope . ',', $xpressui_scope . ' '],
     $xpressui_inline_css
 );
 unset($xpressui_scope);
+$xpressui_has_bg = !empty($xpressui_ctx['project']['background_image_url'])
+    && isset($xpressui_ctx['theme']['background_style'])
+    && $xpressui_ctx['theme']['background_style'] !== 'none';
 ?>
 <style>
 <?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- compiled inline CSS is generated from trusted templates. ?>
 <?php echo $xpressui_inline_css; ?>
 /* WordPress inline embed — reset standalone-page layout */
+<?php if ($xpressui_has_bg): ?>
+#<?php echo esc_attr($xpressui_mount_id); ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: hidden !important; padding: 48px max(5%, 24px) !important; display: grid !important; place-items: center !important; background: transparent !important; position: relative !important; border-radius: 24px !important; }
+<?php else: ?>
 #<?php echo esc_attr($xpressui_mount_id); ?>.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }
+<?php endif; ?>
 /* WordPress embed tuning — keep the runtime readable inside typical WP page widths. */
-#<?php echo esc_attr($xpressui_mount_id); ?> .form-frame { padding: 20px; box-shadow: 0 16px 44px rgba(15, 23, 42, 0.1); }
+#<?php echo esc_attr($xpressui_mount_id); ?> .form-frame { padding: 20px; box-shadow: <?php echo $xpressui_has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)'; ?>; <?php echo $xpressui_has_bg ? 'max-width: 680px !important; width: 100% !important;' : ''; ?> }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-runtime-shell { gap: 16px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-header { gap: 2px; padding-top: 0; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }
@@ -55,6 +63,9 @@ unset($xpressui_scope);
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-choice-footer { font-size: 11px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> select.template-input[multiple] { min-height: 120px; padding-top: 7px; padding-bottom: 7px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> select.template-input option { font-size: 14px; line-height: 1.35; }
+/* Scoped select overrides — ensures overlay theme colors win over the WP theme */
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-runtime-shell select { background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; color: var(--template-text) !important; border-color: var(--template-border) !important; accent-color: var(--template-primary) !important; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-runtime-shell select:focus { border-color: var(--template-primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent) !important; outline: none !important; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-step-progress-track { height: 7px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-step-actions { margin-top: 14px; gap: 10px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-step-actions [data-step-action] { font-size: 13px; padding: 11px 16px; min-width: 112px; }
