@@ -32,13 +32,18 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@lybaba"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Fetch xpressui light runtime
-        run: |
-          npm install @lybaba/xpressui@${{ steps.xpressui.outputs.version }}
-          mkdir -p runtime
-          cp node_modules/@lybaba/xpressui/dist/xpressui-light-${{ steps.xpressui.outputs.version }}.umd.js runtime/
+        run: npm install @lybaba/xpressui@${{ steps.xpressui.outputs.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install runtime + apply WP.org patches
+        run: python3 scripts/ci-install-runtime.py
 
       - name: Build plugin ZIP
         run: |
