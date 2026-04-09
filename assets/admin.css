@@ -697,6 +697,90 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Submission preview metabox
+ * ------------------------------------------------------------------------- */
+
+.xpressui-section-heading {
+	margin: 16px 0 6px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #1d2327;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.xpressui-section-meta {
+	margin: 0 0 8px;
+	font-size: 12px;
+	color: #888;
+}
+
+.xpressui-preview-table {
+	margin-bottom: 14px;
+}
+
+.xpressui-preview-th {
+	width: 30%;
+	vertical-align: top;
+	color: #3c434a;
+	font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+ * Payload metabox
+ * ------------------------------------------------------------------------- */
+
+.xpressui-payload-pre {
+	max-height: 400px;
+	overflow: auto;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	padding: 10px 12px;
+	font-size: 12px;
+	white-space: pre;
+	border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Utility helpers
+ * ------------------------------------------------------------------------- */
+
+.xpressui-break-all {
+	word-break: break-all;
+}
+
+.xpressui-hint {
+	font-size: 12px;
+	color: #888;
+	margin: 8px 0 0;
+}
+
+.xpressui-mt-12 {
+	display: block;
+	margin-top: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * File list metabox
+ * ------------------------------------------------------------------------- */
+
+.xpressui-file-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.xpressui-file-list li {
+	padding: 6px 0;
+	border-bottom: 1px solid #f0f0f0;
+	font-size: 13px;
+}
+
+.xpressui-file-list li:last-child {
+	border-bottom: none;
+}
+
+/* ---------------------------------------------------------------------------
  * Column widths in submission list table
  * ------------------------------------------------------------------------- */
 
