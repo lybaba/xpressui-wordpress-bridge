@@ -292,19 +292,9 @@ async function initXPressUI() {
   };
 
   const syncPostSubmitUi = (state) => {
-    const hideActions = state === 'success';
-    if (submitRowNode instanceof HTMLElement) {
-      submitRowNode.style.display = hideActions ? 'none' : '';
-    }
-    if (stepActionsNode instanceof HTMLElement) {
-      stepActionsNode.style.display = hideActions ? 'none' : '';
-    }
+    const hideForm = state === 'success';
     if (formElement instanceof HTMLElement) {
-      formElement.querySelectorAll(
-        '[data-template-zone="form_header"], [data-template-zone="step_status"], [data-template-zone="section"]'
-      ).forEach((el) => {
-        el.style.display = hideActions ? 'none' : '';
-      });
+      formElement.style.display = hideForm ? 'none' : '';
     }
   };
 
