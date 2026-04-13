@@ -299,6 +299,13 @@ async function initXPressUI() {
     if (stepActionsNode instanceof HTMLElement) {
       stepActionsNode.style.display = hideActions ? 'none' : '';
     }
+    if (formElement instanceof HTMLElement) {
+      formElement.querySelectorAll(
+        '[data-template-zone="form_header"], [data-template-zone="step_status"], [data-template-zone="section"]'
+      ).forEach((el) => {
+        el.style.display = hideActions ? 'none' : '';
+      });
+    }
   };
 
   const setActionButtonsDisabled = (disabled) => {
