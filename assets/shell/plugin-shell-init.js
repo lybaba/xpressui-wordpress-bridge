@@ -292,9 +292,23 @@ async function initXPressUI() {
   };
 
   const syncPostSubmitUi = (state) => {
-    const hideForm = state === 'success';
+    const isSuccess = state === 'success';
     if (formElement instanceof HTMLElement) {
-      formElement.style.display = hideForm ? 'none' : '';
+      // On success, hide all form content *except* the feedback area.
+      // On other states (e.g. error), show the form content again.
+      for (const child of Array.from(formElement.children)) {
+        if (isSuccess) {
+          // Hide children that are not the feedback node or one of its containers.
+          if (feedbackNode && (child === feedbackNode || child.contains(feedbackNode))) {
+            child.style.display = '';
+          } else {
+            child.style.display = 'none';
+          }
+        } else {
+          // Restore visibility for all children.
+          child.style.display = '';
+        }
+      }
     }
   };
 
