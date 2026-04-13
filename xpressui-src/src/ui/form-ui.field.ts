@@ -144,6 +144,20 @@ export function bindSimpleFieldEvents(options: {
     options.onAfterChange();
   });
   input.addEventListener("focus", () => options.onFocus());
+
+  if (
+    input instanceof HTMLInputElement &&
+    (input.type === "date" || input.type === "time" || input.type === "datetime-local")
+  ) {
+    input.addEventListener("click", () => {
+      try {
+        (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
+      } catch {
+        // showPicker not supported or not triggered by user gesture — ignore
+      }
+    });
+    input.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+  }
 }
 
 export function bindSelectionFieldEvents(options: {

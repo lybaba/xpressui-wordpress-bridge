@@ -12,14 +12,7 @@ import { FormEngineRuntime, TDocumentDataViewOptions } from "./common/form-engin
 import {
   DOCUMENT_NORMALIZED_CONTRACT_VERSION,
   createNormalizedDocumentContract,
-  isDocumentNormalizedContractV2,
-  summarizeNormalizedDocumentContract,
   TDocumentMrzResult,
-  TDocumentNormalizedContractV2,
-  TDocumentNormalizedFields,
-  TDocumentNormalizedQuality,
-  TDocumentNormalizedStatus,
-  TDocumentNormalizedContractVersion,
   TDocumentScanInsight,
 } from "./common/document-contract";
 import {
@@ -1679,7 +1672,8 @@ export class HydratedFormHost extends HTMLElement {
         status.setAttribute("data-upload-status", fieldConfig.name);
         bodyElement.appendChild(status);
       }
-      status.className = "text-xs font-medium";
+      status.className = "";
+      status.dataset.state = uploadState.status;
       status.textContent =
         uploadState.status === "uploading"
           ? `Uploading... ${uploadState.progress}%`
@@ -3006,6 +3000,9 @@ export class HydratedFormHost extends HTMLElement {
 
     this.workflowState = nextState;
     this.steps.setWorkflowState(nextState);
+    // Immediately sync controls so spinner / disabled state reflects the new state
+    // (e.g. shows spinner as soon as "submitting" begins, removes it on "submitted"/"error")
+    this.syncStepControls();
     const moved = this.goToWorkflowStep(nextState);
     const routed = moved || (workflowTarget !== null && workflowTarget === this.getCurrentStepName());
     this.emitFormEvent("xpressui:workflow-state", {
@@ -3018,11 +3015,88 @@ export class HydratedFormHost extends HTMLElement {
       },
     });
     this.emitWorkflowSnapshotEvent(detail, response);
+    // Bug 3: hide form fields and surface the success message after submission
+    if (nextState === "submitted" && !routed) {
+      this.applySubmittedLayout();
+    }
     return {
       routed,
       stepIndex: this.getCurrentStepIndex(),
       stepName: this.getCurrentStepName(),
     };
+  }
+
+  /**
+   * Called when the form transitions to "submitted" and there is no dedicated
+   * workflow step to route to.  Hides all field containers so only the
+   * confirmation / success message remains visible.
+   *
+   * The host page can mark a confirmation element with
+   *   data-form-submitted="true"   (shown after submission)
+   * and any element it wants hidden can carry
+   *   data-form-hide-on-submit="true"
+   *
+   * Without those attributes the method falls back to hiding every label
+   * that wraps an input / select / textarea inside the <form>.
+   */
+  applySubmittedLayout = (): void => {
+    const formElem = this.querySelector("form") as HTMLFormElement | null;
+    if (!formElem) {
+      return;
+    }
+
+    // 1. Mark the host element so external CSS can target it
+    this.setAttribute("data-workflow-state", "submitted");
+    formElem.setAttribute("data-workflow-state", "submitted");
+
+    // 2. Show elements explicitly tagged as success / confirmation content
+    Array.from(
+      this.querySelectorAll<HTMLElement>('[data-form-submitted="true"], [data-form-success]'),
+    ).forEach((el) => {
+      el.style.display = "";
+      el.removeAttribute("hidden");
+    });
+
+    // 3. Always hide step UI controls (progress bar, navigation buttons)
+    Array.from(
+      formElem.querySelectorAll<HTMLElement>(
+        "[data-form-step-progress-container], [data-form-step-actions]",
+      ),
+    ).forEach((el) => {
+      el.style.display = "none";
+    });
+
+    // 4. Hide elements explicitly tagged for hiding on submit
+    const explicitHide = Array.from(
+      formElem.querySelectorAll<HTMLElement>('[data-form-hide-on-submit="true"]'),
+    );
+
+    // 5. Fall back: collect field containers (labels wrapping inputs, and
+    //    section containers) when no explicit hide targets are present
+    const fieldLabels = Array.from(
+      formElem.querySelectorAll<HTMLElement>("label"),
+    ).filter(
+      (label) =>
+        label.querySelector("input, select, textarea") !== null &&
+        !label.hasAttribute("data-form-submitted") &&
+        !label.hasAttribute("data-form-success"),
+    );
+
+    const sectionContainers = Array.from(
+      formElem.querySelectorAll<HTMLElement>('[data-type="section"]'),
+    );
+
+    const submitButtons = Array.from(
+      formElem.querySelectorAll<HTMLElement>('button[type="submit"], input[type="submit"]'),
+    );
+
+    const toHide = explicitHide.length > 0
+      ? explicitHide
+      : [...fieldLabels, ...sectionContainers, ...submitButtons];
+
+    toHide.forEach((el) => {
+      el.style.display = "none";
+    });
   }
 
   resolveProviderStepTargetIndex = (target: string | number): number | null => {

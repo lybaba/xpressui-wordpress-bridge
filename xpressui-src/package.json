@@ -1,6 +1,6 @@
 {
   "name": "@lybaba/xpressui",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "repository": "https://github.com/lybaba/xpressui",
   "description": "Schema-driven web components for forms and post UIs",
   "main": "./lib/index.js",

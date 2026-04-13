@@ -373,7 +373,8 @@ export const getHtmlInputProps = (fieldConfig: TFieldConfig): Record<string, any
 
         case DATE_TYPE:
             {
-                const minProp = minString ? { min: minString } : {};
+                // Default min to 1900-01-01 so the native picker cannot scroll back to 1 AD
+                const minProp = { min: minString ?? "1900-01-01" };
                 const maxProp = maxString ? { max: maxString } : {};
                 const stepProp = fieldConfig.step ? { step: fieldConfig.step } : {};
 
@@ -385,6 +386,19 @@ export const getHtmlInputProps = (fieldConfig: TFieldConfig): Record<string, any
             }
 
         case DATETIME_TYPE:
+            {
+                // Default min to 1900-01-01T00:00 to prevent going back to year 1
+                const minProp = { min: minString ?? "1900-01-01T00:00" };
+                const maxProp = maxString ? { max: maxString } : {};
+                const stepProp = fieldConfig.step ? { step: fieldConfig.step } : {};
+
+                return {
+                    ...minProp,
+                    ...maxProp,
+                    ...stepProp
+                }
+            }
+
         case TIME_TYPE:
             {
                 const minProp = minString ? { min: minString } : {};
