@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'XPRESSUI_BRIDGE_VERSION', '1.0.47' );
-define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.3' );
+define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.4' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_TEXT_DOMAIN', 'xpressui-bridge' );
