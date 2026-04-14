@@ -5,6 +5,7 @@ import {
   assertRuntimeCompatibility,
   TXPressUIRuntimeTier,
 } from './runtime-compatibility';
+import { syncShellPostSubmitUi } from './shell-dom-sync';
 
 export type THydratableFormInput = TSimpleFormInput | TFormConfig;
 
@@ -49,6 +50,13 @@ export function hydrateFormForRuntime(
   ) {
     element.initialize();
   }
+
+  // Auto-hide shell content zones on first submit success.
+  container.addEventListener(
+    'xpressui:submit-success',
+    () => syncShellPostSubmitUi(container, 'success'),
+    { once: true },
+  );
 
   return element;
 }

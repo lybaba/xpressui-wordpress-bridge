@@ -34,6 +34,194 @@ function logRuntimeResolution() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Minimal local fallbacks used only when the runtime bundle fails to load.
+// The full implementations live in window.XPressUI (shell-dom-sync / shell-embed).
+// ---------------------------------------------------------------------------
+
+function _localIsMeaningfulMessage(value) {
+  if (typeof value !== 'string') return false;
+  const normalized = value.trim();
+  if (!normalized) return false;
+  return !/^Submit failed with status \d+\.$/.test(normalized);
+}
+
+function _localResolveErrorMessage(result, error, configuredMsg, defaultMsg) {
+  const candidates = [
+    result?.message, result?.data?.message, result?.error,
+    error?.result?.message, error?.result?.data?.message, error?.result?.error,
+    error?.message, configuredMsg, defaultMsg,
+  ];
+  return candidates.find(_localIsMeaningfulMessage) || defaultMsg;
+}
+
+function _localSetActionButtonsDisabled(mountNode, disabled) {
+  mountNode
+    .querySelectorAll('button[data-step-action="back"], button[data-step-action="next"], button[type="submit"], input[type="submit"]')
+    .forEach((btn) => {
+      btn.disabled = Boolean(disabled);
+      btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    });
+}
+
+function _localSetFeedbackState(mountNode, state, message, title) {
+  const feedbackNode = mountNode.querySelector('[data-submit-feedback]');
+  const feedbackMessageNode = mountNode.querySelector('[data-submit-feedback-message]');
+  const feedbackTitleNode = mountNode.querySelector('.template-submit-feedback-title');
+  if (feedbackNode instanceof HTMLElement) {
+    feedbackNode.style.display = '';
+    feedbackNode.dataset.submitFeedbackState = state;
+  }
+  if (feedbackTitleNode instanceof HTMLElement) feedbackTitleNode.textContent = title;
+  if (feedbackMessageNode instanceof HTMLElement) feedbackMessageNode.textContent = message;
+}
+
+// ---------------------------------------------------------------------------
+
+const resolveWordPressRestEndpoint = () => {
+  if (window.location.protocol === 'file:' || !['http:', 'https:'].includes(window.location.protocol)) {
+    return '';
+  }
+  if (typeof window.XPRESSUI_WORDPRESS_REST_URL === 'string' && window.XPRESSUI_WORDPRESS_REST_URL.trim() !== '') {
+    return window.XPRESSUI_WORDPRESS_REST_URL;
+  }
+  const apiRootLink = document.querySelector('link[rel="https://api.w.org/"]');
+  const apiRootHref = apiRootLink instanceof HTMLLinkElement ? apiRootLink.href : '';
+  if (apiRootHref) {
+    return new URL('xpressui/v1/submit', apiRootHref).toString();
+  }
+  const currentUrl = new URL(window.location.href);
+  const contentIndex = currentUrl.pathname.indexOf('/wp-content/');
+  const sitePath = contentIndex >= 0 ? currentUrl.pathname.slice(0, contentIndex) : '';
+  const basePath = sitePath ? `${sitePath.replace(/\/$/, '')}/` : '/';
+  return new URL(`${basePath}?rest_route=/xpressui/v1/submit`, currentUrl.origin).toString();
+};
+
+const buildSubmissionId = () => {
+  const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const encodeTime = (value, length) => {
+    let result = '';
+    let nextValue = value;
+    for (let index = 0; index < length; index += 1) {
+      result = alphabet[nextValue % 32] + result;
+      nextValue = Math.floor(nextValue / 32);
+    }
+    return result;
+  };
+
+  const randomValues = new Uint8Array(16);
+  if (window.crypto?.getRandomValues) {
+    window.crypto.getRandomValues(randomValues);
+  } else {
+    for (let index = 0; index < randomValues.length; index += 1) {
+      randomValues[index] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  let randomPart = '';
+  for (let index = 0; index < 16; index += 1) {
+    randomPart += alphabet[randomValues[index] % 32];
+  }
+
+  return `${encodeTime(Date.now(), 10)}${randomPart}`;
+};
+
+const ensureSubmitMetadata = (values, formConfig) => ({
+  ...(values || {}),
+  projectId: formConfig.submit?.metadata?.projectId || '',
+  projectSlug: formConfig.submit?.metadata?.projectSlug || '',
+  projectConfigVersion: formConfig.submit?.metadata?.projectConfigVersion || '',
+  submissionId: values?.submissionId || buildSubmissionId(),
+  projectConfigSnapshotJson: JSON.stringify(formConfig),
+});
+
+const attachFallbackSubmitHandler = (form, mountNode, formConfig) => {
+  if (!(form instanceof HTMLFormElement) || form.dataset.xpressuiFallbackSubmitAttached === 'true') {
+    return;
+  }
+
+  // Prefer runtime feedback helpers; fall back to local stubs if runtime never loaded.
+  const setFeedback = window.XPressUI?.setShellFeedbackState
+    ? (state, message, title) => window.XPressUI.setShellFeedbackState(mountNode, state, message, title)
+    : (state, message, title) => _localSetFeedbackState(mountNode, state, message, title);
+
+  const setButtonsDisabled = window.XPressUI?.setShellActionButtonsDisabled
+    ? (disabled) => window.XPressUI.setShellActionButtonsDisabled(mountNode, disabled)
+    : (disabled) => _localSetActionButtonsDisabled(mountNode, disabled);
+
+  const resolveErrorMessage = window.XPressUI?.resolveShellSubmitErrorMessage
+    || _localResolveErrorMessage;
+
+  const defaultErrorMessage = t('submissionFailedMessage', 'Submission failed. Please review the form and try again.');
+  const defaultSuccessMessage = t('submissionReceivedMessage', 'Submission received.');
+
+  form.dataset.xpressuiFallbackSubmitAttached = 'true';
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setButtonsDisabled(true);
+    const formData = new FormData(form);
+
+    if (!formData.get('submissionId')) formData.append('submissionId', buildSubmissionId());
+    if (!formData.get('projectId')) formData.append('projectId', formConfig.submit?.metadata?.projectId || '');
+    if (!formData.get('projectSlug')) formData.append('projectSlug', formConfig.submit?.metadata?.projectSlug || '');
+    if (!formData.get('projectConfigVersion')) formData.append('projectConfigVersion', formConfig.submit?.metadata?.projectConfigVersion || '');
+    if (!formData.get('projectConfigSnapshotJson')) formData.append('projectConfigSnapshotJson', JSON.stringify(formConfig));
+
+    const configuredErrorMessage = formConfig.submitFeedback?.error_message || defaultErrorMessage;
+    const configuredSuccessMessage = formConfig.submitFeedback?.success_message || '';
+
+    setFeedback('loading', formConfig.submitFeedback?.loading_message || 'Submitting...', 'Submitting');
+
+    try {
+      const submitEndpoint =
+        typeof formConfig.submit?.endpoint === 'string' &&
+        formConfig.submit.endpoint &&
+        formConfig.submit.endpoint !== '__XPRESSUI_WORDPRESS_REST_URL__'
+          ? formConfig.submit.endpoint
+          : resolveWordPressRestEndpoint();
+      if (!submitEndpoint) {
+        throw new Error('Missing WordPress submit endpoint. Open this package inside WordPress or define XPRESSUI_WORDPRESS_REST_URL.');
+      }
+
+      const response = await fetch(submitEndpoint, {
+        method: (form.method || 'POST').toUpperCase(),
+        body: formData,
+        headers: { Accept: 'application/json' },
+      });
+      const responseText = await response.text();
+      let result = null;
+      try { result = responseText ? JSON.parse(responseText) : null; } catch { result = null; }
+
+      if (!response.ok) {
+        throw new Error(resolveErrorMessage(result, null, configuredErrorMessage, defaultErrorMessage) || `Submit failed with status ${response.status}.`);
+      }
+
+      setFeedback(
+        'success',
+        configuredSuccessMessage || result?.message || defaultSuccessMessage,
+        formConfig.submitFeedback?.success_title || 'Submission received',
+      );
+
+      // hydrateForm did not run — hide shell zones manually.
+      if (window.XPressUI?.syncShellPostSubmitUi) {
+        window.XPressUI.syncShellPostSubmitUi(mountNode, 'success');
+      }
+
+      if (window.XPressUI?.handleShellSuccessRedirect) {
+        window.XPressUI.handleShellSuccessRedirect(result, formConfig);
+      }
+    } catch (error) {
+      console.error(error);
+      setButtonsDisabled(false);
+      setFeedback(
+        'error',
+        resolveErrorMessage(null, error, configuredErrorMessage, defaultErrorMessage),
+        formConfig.submitFeedback?.error_title || 'Submission failed',
+      );
+    }
+  });
+};
+
 async function initXPressUI() {
   const mountNode = getMountNode();
   if (!mountNode) {
@@ -42,7 +230,7 @@ async function initXPressUI() {
   }
 
   let formConfig;
-  
+
   try {
     const configNode = document.getElementById(shellMeta.configId || 'xpressui-custom-config');
     if (configNode) {
@@ -58,163 +246,12 @@ async function initXPressUI() {
     return;
   }
 
-  // --- DYNAMIC DOM SYNCHRONIZATION ---
-  // Apply customizations from JSON config directly to the HTML DOM
-  const syncDomWithConfig = () => {
-    if (!formConfig || !formConfig.sections) return;
-    const headerNode = mountNode.querySelector('.template-form-header');
-    const titleText = typeof formConfig.title === 'string' && formConfig.title.trim() !== ''
-      ? formConfig.title
-      : '';
-    const showProjectTitle = formConfig.showProjectTitle !== false;
-    const showRequiredFieldsNote = formConfig.showRequiredFieldsNote === true;
-    const sectionLabelVisibility = formConfig.sectionLabelVisibility === 'show'
-      ? 'show'
-      : formConfig.sectionLabelVisibility === 'hide'
-        ? 'hide'
-        : 'auto';
-    const customSections = Array.isArray(formConfig.sections.custom) ? formConfig.sections.custom : [];
-    const showSectionHeaders = sectionLabelVisibility === 'show'
-      ? true
-      : sectionLabelVisibility === 'hide'
-        ? false
-        : customSections.length > 1;
-    let titleNode = headerNode?.querySelector('.template-form-title');
-    let subtitleNode = headerNode?.querySelector('.template-form-subtitle');
+  // Sync pre-rendered DOM with config overrides (labels, required, choices, etc.)
+  if (window.XPressUI?.syncShellDomWithConfig) {
+    window.XPressUI.syncShellDomWithConfig(mountNode, formConfig, t);
+  }
 
-    if (headerNode instanceof HTMLElement) {
-      if (showProjectTitle && titleText) {
-        if (!(titleNode instanceof HTMLElement)) {
-          titleNode = document.createElement('h1');
-          titleNode.className = 'template-form-title';
-          if (subtitleNode instanceof HTMLElement) {
-            headerNode.insertBefore(titleNode, subtitleNode);
-          } else {
-            headerNode.appendChild(titleNode);
-          }
-        }
-        titleNode.textContent = titleText;
-        titleNode.style.display = '';
-      } else if (titleNode instanceof HTMLElement) {
-        titleNode.remove();
-        titleNode = null;
-      }
-
-      if (showRequiredFieldsNote) {
-        if (!(subtitleNode instanceof HTMLElement)) {
-          subtitleNode = document.createElement('p');
-          subtitleNode.className = 'template-form-subtitle';
-          headerNode.appendChild(subtitleNode);
-        }
-        subtitleNode.textContent = t('requiredFields', '* Required fields');
-        subtitleNode.style.display = '';
-      } else if (subtitleNode instanceof HTMLElement) {
-        subtitleNode.remove();
-        subtitleNode = null;
-      }
-
-      headerNode.style.display = (titleNode instanceof HTMLElement || subtitleNode instanceof HTMLElement)
-        ? ''
-        : 'none';
-    }
-    
-    // Sync Section Titles
-    if (customSections.length > 0) {
-      customSections.forEach(section => {
-        if (section.name && section.label) {
-          const sectionNode = mountNode.querySelector(`[data-section-name="${section.name}"]`);
-          if (!sectionNode) return;
-          const sectionHeaderNode = sectionNode.querySelector('.template-section-header');
-          let sectionHeader = sectionNode.querySelector('.template-section-label');
-          if (showSectionHeaders) {
-            if (!(sectionHeaderNode instanceof HTMLElement)) {
-              const header = document.createElement('header');
-              header.className = 'template-section-header';
-              const title = document.createElement('h2');
-              title.className = 'template-section-label';
-              header.appendChild(title);
-              sectionNode.insertBefore(header, sectionNode.firstChild);
-              sectionHeader = title;
-            }
-            if (sectionHeader instanceof HTMLElement) {
-              sectionHeader.textContent = section.label;
-            }
-          } else if (sectionHeaderNode instanceof HTMLElement) {
-            sectionHeaderNode.remove();
-          }
-        }
-      });
-    }
-
-    // Sync Fields (Labels, Required state, Select choices)
-    Object.keys(formConfig.sections).forEach(sectionKey => {
-      if (sectionKey === 'custom' || sectionKey === 'btngroup') return;
-      const fields = formConfig.sections[sectionKey];
-      if (!Array.isArray(fields)) return;
-      
-      fields.forEach(field => {
-        if (!field.name) return;
-        const fieldNode = mountNode.querySelector(`[data-field-name="${field.name}"]`);
-        if (!fieldNode) return;
-
-        if (field.label) {
-          const labelSpan = fieldNode.querySelector('.template-field-label span:not(.template-required)');
-          if (labelSpan) labelSpan.textContent = field.label;
-          const input = fieldNode.querySelector(`[name="${field.name}"]`);
-          if (input) input.dataset.label = field.label;
-        }
-
-        if (field.required !== undefined) {
-          let reqSpan = fieldNode.querySelector('.template-required');
-          const input = fieldNode.querySelector(`[name="${field.name}"]`);
-          
-          if (field.required && !reqSpan) {
-            const labelElem = fieldNode.querySelector('.template-field-label');
-            if (labelElem) {
-              reqSpan = document.createElement('span');
-              reqSpan.className = 'template-required';
-              reqSpan.setAttribute('aria-hidden', 'true');
-              reqSpan.textContent = '*';
-              labelElem.appendChild(reqSpan);
-            }
-          } else if (!field.required && reqSpan) {
-            reqSpan.remove();
-          }
-          
-          if (input) {
-            if (field.required) {
-              input.setAttribute('required', 'true');
-              input.setAttribute('aria-required', 'true');
-            } else {
-              input.removeAttribute('required');
-              input.removeAttribute('aria-required');
-            }
-          }
-        }
-
-        if (field.choices && Array.isArray(field.choices)) {
-          const select = fieldNode.querySelector(`select[name="${field.name}"]`);
-          if (select) {
-            const hasEmptyFirst = select.options.length > 0 && select.options[0].value === "";
-            const firstOption = hasEmptyFirst ? select.options[0].outerHTML : "";
-            select.innerHTML = firstOption + field.choices.map(c => {
-              const val = c.value || c.id || c.name || '';
-              const lbl = c.label || c.name || val;
-              const safeVal = val.replace(/"/g, '&quot;');
-              const safeLbl = lbl.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-              return `<option value="${safeVal}">${safeLbl}</option>`;
-            }).join('');
-          }
-        }
-      });
-    });
-  };
-  syncDomWithConfig();
-  // --- END DOM SYNCHRONIZATION ---
-
-  // --- HONEYPOT ---
-  // Inject a visually-hidden input that legitimate users cannot fill in.
-  // Bots that auto-fill all fields will populate it; the server rejects such submissions.
+  // Inject honeypot — bots that auto-fill all fields will populate it; server rejects such submissions.
   const formElement0 = mountNode.querySelector('form');
   if (formElement0 instanceof HTMLFormElement && !formElement0.querySelector('[name="xpressui_confirm_email"]')) {
     const hp = document.createElement('input');
@@ -226,270 +263,8 @@ async function initXPressUI() {
     hp.style.cssText = 'opacity:0;position:absolute;top:0;left:0;height:0;width:0;z-index:-1;pointer-events:none;';
     formElement0.appendChild(hp);
   }
-  // --- END HONEYPOT ---
 
-  const feedbackNode = document.querySelector('[data-submit-feedback]');
-  const feedbackMessageNode = document.querySelector('[data-submit-feedback-message]');
-  const feedbackTitleNode = document.querySelector('.template-submit-feedback-title');
-  const submitRowNode = document.querySelector('[data-template-zone="submit_actions"]');
-  const stepActionsNode = document.querySelector('[data-form-step-actions]');
   const formElement = mountNode.querySelector('form');
-
-  const submitFeedbackConfig = formConfig.submitFeedback || {
-    error_title: t('submissionFailedTitle', 'Submission failed'),
-    error_message: t('submissionFailedMessage', 'Submission failed. Please review the form and try again.'),
-    idle_message: t('submissionFeedbackIdle', 'Submission feedback will appear here after the runtime handles the form.'),
-    loading_message: t('submitting', 'Submitting...'),
-    success_title: t('submissionReceivedTitle', 'Submission received'),
-    success_message: t('submissionReceivedMessage', 'Submission received.'),
-    title: t('submissionStatusTitle', 'Submission status')
-  };
-
-  const configuredSuccessMessage = submitFeedbackConfig.success_message || '';
-  const configuredErrorMessage = submitFeedbackConfig.error_message || '';
-  const defaultSuccessMessage = t('submissionReceivedMessage', 'Submission received.');
-  const defaultErrorMessage = t('submissionFailedMessage', 'Submission failed. Please review the form and try again.');
-
-  const isMeaningfulSubmitMessage = (value) => {
-    if (typeof value !== 'string') {
-      return false;
-    }
-    const normalized = value.trim();
-    if (!normalized) {
-      return false;
-    }
-    return !/^Submit failed with status \d+\.$/.test(normalized);
-  };
-
-  const resolveSubmitErrorMessage = (result, error) => {
-    const candidates = [
-      result?.message,
-      result?.data?.message,
-      result?.error,
-      error?.result?.message,
-      error?.result?.data?.message,
-      error?.result?.error,
-      error?.message,
-      configuredErrorMessage,
-      defaultErrorMessage,
-    ];
-
-    const resolved = candidates.find(isMeaningfulSubmitMessage);
-    return resolved || defaultErrorMessage;
-  };
-
-  const handleSuccessRedirect = (result) => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirectUrl = urlParams.get('redirect')
-      || (result && result.redirectUrl)
-      || (formConfig.workflowConfig && formConfig.workflowConfig.redirectUrl);
-    if (redirectUrl) {
-      setTimeout(() => {
-        try { window.top.location.href = redirectUrl; }
-        catch (e) { window.location.href = redirectUrl; }
-      }, 1500);
-    }
-  };
-
-  const syncPostSubmitUi = (state) => {
-    if (state !== 'success') {
-      return;
-    }
-
-    // On success, hide all form content elements to show the feedback message cleanly.
-    const selectorsToHide = [
-      '[data-template-zone="form_header"]',
-      '[data-template-zone="step_status"]',
-      '[data-template-zone="section"]',
-      '[data-template-zone="submit_actions"]',
-      '[data-form-step-actions]',
-    ];
-
-    selectorsToHide.forEach(selector => {
-      mountNode.querySelectorAll(selector).forEach(node => {
-        if (node instanceof HTMLElement) {
-          node.style.display = 'none';
-        }
-      });
-    });
-  };
-
-  const setActionButtonsDisabled = (disabled) => {
-    const controlsRoot = mountNode instanceof HTMLElement ? mountNode : document;
-    controlsRoot.querySelectorAll('button[data-step-action="back"], button[data-step-action="next"], button[type="submit"], input[type="submit"]').forEach((button) => {
-      if (!(button instanceof HTMLButtonElement) && !(button instanceof HTMLInputElement)) {
-        return;
-      }
-      button.disabled = Boolean(disabled);
-      button.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-    });
-  };
-
-  const setFeedbackState = (state, message, title = submitFeedbackConfig.title || t('submissionStatusTitle', 'Submission status')) => {
-    if (feedbackNode instanceof HTMLElement) {
-      feedbackNode.style.display = '';
-      feedbackNode.dataset.submitFeedbackState = state;
-    }
-    syncPostSubmitUi(state);
-    if (feedbackTitleNode instanceof HTMLElement) {
-      feedbackTitleNode.textContent = title;
-    }
-    if (feedbackMessageNode instanceof HTMLElement) {
-      feedbackMessageNode.textContent = message;
-    }
-  };
-
-  const buildSubmissionId = () => {
-    const alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-    const encodeTime = (value, length) => {
-      let result = '';
-      let nextValue = value;
-      for (let index = 0; index < length; index += 1) {
-        result = alphabet[nextValue % 32] + result;
-        nextValue = Math.floor(nextValue / 32);
-      }
-      return result;
-    };
-
-    const randomValues = new Uint8Array(16);
-    if (window.crypto?.getRandomValues) {
-      window.crypto.getRandomValues(randomValues);
-    } else {
-      for (let index = 0; index < randomValues.length; index += 1) {
-        randomValues[index] = Math.floor(Math.random() * 256);
-      }
-    }
-
-    let randomPart = '';
-    for (let index = 0; index < 16; index += 1) {
-      randomPart += alphabet[randomValues[index] % 32];
-    }
-
-    return `${encodeTime(Date.now(), 10)}${randomPart}`;
-  };
-
-  const resolveWordPressRestEndpoint = () => {
-    if (window.location.protocol === 'file:' || !['http:', 'https:'].includes(window.location.protocol)) {
-      return '';
-    }
-    if (typeof window.XPRESSUI_WORDPRESS_REST_URL === 'string' && window.XPRESSUI_WORDPRESS_REST_URL.trim() !== '') {
-      return window.XPRESSUI_WORDPRESS_REST_URL;
-    }
-    const apiRootLink = document.querySelector('link[rel="https://api.w.org/"]');
-    const apiRootHref = apiRootLink instanceof HTMLLinkElement ? apiRootLink.href : '';
-    if (apiRootHref) {
-      return new URL('xpressui/v1/submit', apiRootHref).toString();
-    }
-    const currentUrl = new URL(window.location.href);
-    const contentIndex = currentUrl.pathname.indexOf('/wp-content/');
-    const sitePath = contentIndex >= 0 ? currentUrl.pathname.slice(0, contentIndex) : '';
-    const basePath = sitePath ? `${sitePath.replace(/\/$/, '')}/` : '/';
-    return new URL(`${basePath}?rest_route=/xpressui/v1/submit`, currentUrl.origin).toString();
-  };
-
-  const ensureSubmitMetadata = (values) => ({
-    ...(values || {}),
-    projectId: formConfig.submit?.metadata?.projectId || "",
-    projectSlug: formConfig.submit?.metadata?.projectSlug || "",
-    projectConfigVersion: formConfig.submit?.metadata?.projectConfigVersion || "",
-    submissionId: values?.submissionId || buildSubmissionId(),
-    projectConfigSnapshotJson: JSON.stringify(formConfig),
-  });
-
-  const attachRuntimeFeedbackHandlers = (node) => {
-    if (!(node instanceof HTMLElement) || node.dataset.xpressuiRuntimeFeedbackAttached === 'true') {
-      return;
-    }
-
-    node.dataset.xpressuiRuntimeFeedbackAttached = 'true';
-    node.addEventListener('xpressui:submit', () => {
-      setActionButtonsDisabled(true);
-      setFeedbackState('loading', submitFeedbackConfig.loading_message || 'Submitting...', 'Submitting');
-    });
-    node.addEventListener('xpressui:submit-success', (event) => {
-      const result = event?.detail?.result;
-      setFeedbackState('success', configuredSuccessMessage || result?.message || defaultSuccessMessage, submitFeedbackConfig.success_title || 'Submission received');
-      handleSuccessRedirect(result);
-    });
-    node.addEventListener('xpressui:submit-error', (event) => {
-      const result = event?.detail?.result;
-      const error = event?.detail?.error;
-      setActionButtonsDisabled(false);
-      setFeedbackState('error', resolveSubmitErrorMessage(result, error), submitFeedbackConfig.error_title || 'Submission failed');
-    });
-    node.addEventListener('xpressui:submit-locked', (event) => {
-      const result = event?.detail?.result;
-      setActionButtonsDisabled(false);
-      setFeedbackState('warning', result?.message || 'Complete the required fields before submitting.', 'Submission blocked');
-    });
-  };
-
-  const attachFallbackSubmitHandler = (form) => {
-    if (!(form instanceof HTMLFormElement) || form.dataset.xpressuiFallbackSubmitAttached === 'true') {
-      return;
-    }
-
-    form.dataset.xpressuiFallbackSubmitAttached = 'true';
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      setActionButtonsDisabled(true);
-      const formData = new FormData(form);
-
-      if (!formData.get('submissionId')) {
-        formData.append('submissionId', buildSubmissionId());
-      }
-      if (!formData.get('projectId')) {
-        formData.append('projectId', formConfig.submit?.metadata?.projectId || "");
-      }
-      if (!formData.get('projectSlug')) {
-        formData.append('projectSlug', formConfig.submit?.metadata?.projectSlug || "");
-      }
-      if (!formData.get('projectConfigVersion')) {
-        formData.append('projectConfigVersion', formConfig.submit?.metadata?.projectConfigVersion || "");
-      }
-      if (!formData.get('projectConfigSnapshotJson')) {
-        formData.append('projectConfigSnapshotJson', JSON.stringify(formConfig));
-      }
-
-      setFeedbackState('loading', submitFeedbackConfig.loading_message || 'Submitting...', 'Submitting');
-
-      try {
-        const submitEndpoint = typeof formConfig.submit?.endpoint === 'string' && formConfig.submit.endpoint && formConfig.submit.endpoint !== '__XPRESSUI_WORDPRESS_REST_URL__'
-          ? formConfig.submit.endpoint
-          : resolveWordPressRestEndpoint();
-        if (!submitEndpoint) {
-          throw new Error('Missing WordPress submit endpoint. Open this package inside WordPress or define XPRESSUI_WORDPRESS_REST_URL.');
-        }
-        
-        const response = await fetch(submitEndpoint, {
-          method: (form.method || 'POST').toUpperCase(),
-          body: formData,
-          headers: {
-            Accept: 'application/json',
-          },
-        });
-        const responseText = await response.text();
-        let result = null;
-
-        try {
-          result = responseText ? JSON.parse(responseText) : null;
-        } catch {
-          result = null;
-        }
-
-        if (!response.ok) {
-          throw new Error(resolveSubmitErrorMessage(result, null) || `Submit failed with status ${response.status}.`);
-        }
-
-        setFeedbackState('success', configuredSuccessMessage || result?.message || defaultSuccessMessage, submitFeedbackConfig.success_title || 'Submission received');
-        handleSuccessRedirect(result);
-      } catch (error) {
-        console.error(error);
-        setActionButtonsDisabled(false);
-        setFeedbackState('error', resolveSubmitErrorMessage(null, error), submitFeedbackConfig.error_title || 'Submission failed');
-      }
-    });
-  };
 
   try {
     logRuntimeResolution();
@@ -515,41 +290,27 @@ async function initXPressUI() {
     if (hydrated.formConfig) {
       hydrated.formConfig.submit = hydrated.formConfig.submit || {};
       hydrated.formConfig.submit.lifecycle = hydrated.formConfig.submit.lifecycle || {};
-      hydrated.formConfig.submit.lifecycle.preSubmit = ({ values }) => ensureSubmitMetadata(values);
+      hydrated.formConfig.submit.lifecycle.preSubmit = ({ values }) => ensureSubmitMetadata(values, formConfig);
     }
-    attachRuntimeFeedbackHandlers(mountNode);
 
-    // Definitive iframe autoresize: observe document.body from inside the iframe
-    // and postMessage the height to the parent on every layout change.
-    //
-    // Why body, not the form-ui element:
-    //   form-ui is a custom HTMLElement whose default display is 'inline'.
-    //   ResizeObserver behaviour on inline elements is inconsistent across browsers.
-    //   document.body is always display:block and is the canonical source of truth
-    //   for the total iframe content height.
-    //
-    // Why from inside (postMessage) rather than relying only on the parent's observer:
-    //   The parent's ResizeObserver observes the same body but resets frame height to
-    //   0 before measuring (iOS Safari workaround), which can race with React renders.
-    //   Measuring from inside avoids that reset and fires in the same JS context as
-    //   the DOM mutation, giving the most up-to-date value.
-    if (window.parent !== window && window.ResizeObserver) {
-      new ResizeObserver(function () {
-        var h = Math.max(
-          document.body.scrollHeight  || 0,
-          document.body.offsetHeight  || 0,
-          document.documentElement ? (document.documentElement.scrollHeight || 0) : 0,
-          document.documentElement ? (document.documentElement.offsetHeight || 0) : 0
-        );
-        if (h > 0) {
-          try { window.parent.postMessage({ type: 'xpressui:resize', height: h }, '*'); } catch (_e) {}
-        }
-      }).observe(document.body);
+    // Attach runtime event listeners → update feedback UI
+    if (window.XPressUI?.attachShellFeedbackHandlers) {
+      window.XPressUI.attachShellFeedbackHandlers(mountNode, formConfig, { t });
+    }
+
+    // Attach embed resize reporter
+    if (window.XPressUI?.attachEmbedResizeReporter) {
+      window.XPressUI.attachEmbedResizeReporter();
     }
   } catch (error) {
     console.error(error);
-    attachFallbackSubmitHandler(formElement);
-    setFeedbackState('warning', error instanceof Error ? error.message : 'Runtime hydration failed. Native browser fallback is active.', 'Runtime warning');
+    attachFallbackSubmitHandler(formElement, mountNode, formConfig);
+    _localSetFeedbackState(
+      mountNode,
+      'warning',
+      error instanceof Error ? error.message : 'Runtime hydration failed. Native browser fallback is active.',
+      'Runtime warning',
+    );
   }
 }
 

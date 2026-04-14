@@ -149,3 +149,20 @@ export type {
   TFormSubmitLifecycleHookResult,
   TFormSubmitLifecycleStage,
 } from "./common/TFormConfig";
+export {
+  syncShellDomWithConfig,
+  setShellActionButtonsDisabled,
+  syncShellPostSubmitUi,
+  setShellFeedbackState,
+  resolveShellSubmitErrorMessage,
+  handleShellSuccessRedirect,
+  attachShellFeedbackHandlers,
+} from "./common/shell-dom-sync";
+export type {
+  TShellFeedbackState,
+  TShellI18nResolver,
+  TShellSubmitFeedbackConfig,
+  TShellFormConfig,
+  TAttachShellFeedbackOptions,
+} from "./common/shell-dom-sync";
+export { attachEmbedResizeReporter } from "./common/shell-embed";
