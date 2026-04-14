@@ -298,6 +298,20 @@ async function initXPressUI() {
       window.XPressUI.attachShellFeedbackHandlers(mountNode, formConfig, { t });
     }
 
+    // Attach submit overlay controller — show while submitting, hide on result
+    const submitOverlay = mountNode.querySelector('[data-submit-overlay]');
+    if (submitOverlay instanceof HTMLElement) {
+      mountNode.addEventListener('xpressui:submit', function () {
+        submitOverlay.setAttribute('data-active', '');
+      });
+      mountNode.addEventListener('xpressui:submit-success', function () {
+        submitOverlay.removeAttribute('data-active');
+      });
+      mountNode.addEventListener('xpressui:submit-error', function () {
+        submitOverlay.removeAttribute('data-active');
+      });
+    }
+
     // Attach embed resize reporter
     if (window.XPressUI?.attachEmbedResizeReporter) {
       window.XPressUI.attachEmbedResizeReporter();
