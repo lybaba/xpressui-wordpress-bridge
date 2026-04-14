@@ -306,5 +306,10 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     [data-template-zone="section"] { animation: xpressui-step-in 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    @keyframes xpressui-spin { to { transform: rotate(360deg); } }
+    .template-submit-overlay { display: none; position: absolute; inset: 0; z-index: 20; border-radius: var(--template-card-radius); background: color-mix(in srgb, var(--template-surface) 82%, transparent); backdrop-filter: blur(4px); place-items: center; flex-direction: column; gap: 14px; }
+    .template-submit-overlay[data-active] { display: grid; }
+    .template-submit-overlay-spinner { width: 36px; height: 36px; border: 3px solid color-mix(in srgb, var(--template-primary) 22%, transparent); border-top-color: var(--template-primary); border-radius: 50%; animation: xpressui-spin 0.7s linear infinite; }
+    .template-submit-overlay-label { font-size: 13px; font-weight: 700; color: var(--template-muted-text); }
   </style>
 </head>
