@@ -3,3 +3,5 @@
 /runtime/*.umd.js.map
 /runtime/*.mjs
 /runtime/*.mjs.map
+xpressui-src/dist/
+xpressui-src/tsconfig.tsbuildinfo
