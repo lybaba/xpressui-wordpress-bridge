@@ -239,7 +239,7 @@ export type TFormRuleCondition = {
 };
 
 export type TFormRuleAction = {
-    type: 'show' | 'hide' | 'enable' | 'disable' | 'clear-value' | 'set-value' | 'fetch-options' | 'set-error' | 'lock-submit' | 'emit-event';
+    type: 'show' | 'hide' | 'enable' | 'disable' | 'clear-value' | 'set-value' | 'fetch-options' | 'set-error' | 'lock-submit' | 'emit-event' | 'show-section' | 'hide-section' | 'set-required' | 'clear-required';
     field: string;
     value?: any;
     message?: string;

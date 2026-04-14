@@ -27,7 +27,11 @@ export type TFormRuleAppliedDetail = {
       | "fetch-options"
       | "set-error"
       | "lock-submit"
-      | "emit-event";
+      | "emit-event"
+      | "show-section"
+      | "hide-section"
+      | "set-required"
+      | "clear-required";
     field: string;
     value?: any;
     message?: string;
@@ -87,7 +91,11 @@ type TFormDynamicRuntimeOptions = {
         | "fetch-options"
         | "set-error"
         | "lock-submit"
-        | "emit-event";
+        | "emit-event"
+        | "show-section"
+        | "hide-section"
+        | "set-required"
+        | "clear-required";
       field: string;
       value?: any;
       message?: string;
@@ -112,6 +120,8 @@ type TFormDynamicRuntimeOptions = {
   getFormValues(): Record<string, any>;
   emitEvent(eventName: string, detail: Record<string, any>): boolean;
   getEventContext(): { formConfig: any; submit?: any };
+  getSectionContainer?(sectionName: string): HTMLElement | null;
+  setFieldRequired?(fieldName: string, required: boolean): void;
 };
 
 type TDynamicRule = ReturnType<TFormDynamicRuntimeOptions["getRules"]>[number];
@@ -121,12 +131,16 @@ export class FormDynamicRuntime {
   loadingOptions: Record<string, boolean>;
   activeTemplateWarnings: Record<string, TFormActiveTemplateWarning>;
   recentAppliedRules: TFormRuleAppliedDetail[];
+  requiredOverrides: Record<string, boolean>;
+  originalRequiredState: Record<string, boolean>;
 
   constructor(options: TFormDynamicRuntimeOptions) {
     this.options = options;
     this.loadingOptions = {};
     this.activeTemplateWarnings = {};
     this.recentAppliedRules = [];
+    this.requiredOverrides = {};
+    this.originalRequiredState = {};
   }
 
   transformRuleValue(
@@ -374,6 +388,8 @@ export class FormDynamicRuntime {
   updateConditionalFields(): void {
     const visibilityOverrides: Record<string, boolean> = {};
     const disabledOverrides: Record<string, boolean> = {};
+    const sectionVisibilityOverrides: Record<string, boolean> = {};
+    const requiredOverrides: Record<string, boolean> = {};
     let submitLocked = false;
     let submitLockMessage: string | undefined;
     const visibilityRuleByField: Record<string, TDynamicRule> = {};
@@ -484,6 +500,14 @@ export class FormDynamicRuntime {
             },
           });
           matchedRule.changed = true;
+        } else if (action.type === "show-section") {
+          sectionVisibilityOverrides[action.field] = true;
+        } else if (action.type === "hide-section") {
+          sectionVisibilityOverrides[action.field] = false;
+        } else if (action.type === "set-required") {
+          requiredOverrides[action.field] = true;
+        } else if (action.type === "clear-required") {
+          requiredOverrides[action.field] = false;
         }
       });
     });
@@ -527,6 +551,41 @@ export class FormDynamicRuntime {
         this.options.setFieldDisabled(fieldConfig.name, nextDisabled);
       }
     });
+
+    // Apply section visibility overrides
+    Object.entries(sectionVisibilityOverrides).forEach(([sectionName, isVisible]) => {
+      const container = this.options.getSectionContainer?.(sectionName);
+      if (container) {
+        container.style.display = isVisible ? "" : "none";
+      }
+    });
+
+    // Apply required overrides — diff against previous state to avoid redundant DOM/validator work
+    const allRequiredFields = new Set([
+      ...Object.keys(requiredOverrides),
+      ...Object.keys(this.requiredOverrides),
+    ]);
+    allRequiredFields.forEach((fieldName) => {
+      const newRequired = requiredOverrides[fieldName];
+      const prevRequired = this.requiredOverrides[fieldName];
+      if (newRequired === prevRequired) return;
+
+      // Determine effective required value: override if present, else restore original
+      let effectiveRequired: boolean;
+      if (newRequired !== undefined) {
+        // Capture original state on first override for this field
+        if (this.originalRequiredState[fieldName] === undefined) {
+          const fieldConfig = this.options.getFieldConfigs().find((f) => f.name === fieldName);
+          this.originalRequiredState[fieldName] = Boolean(fieldConfig?.required);
+        }
+        effectiveRequired = newRequired;
+      } else {
+        // Override removed — restore original
+        effectiveRequired = this.originalRequiredState[fieldName] ?? false;
+      }
+      this.options.setFieldRequired?.(fieldName, effectiveRequired);
+    });
+    this.requiredOverrides = requiredOverrides;
 
     matchedRules
       .filter((matchedRule) => matchedRule.changed)

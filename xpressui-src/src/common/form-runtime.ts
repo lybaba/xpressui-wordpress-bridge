@@ -83,6 +83,7 @@ export type TFormRuntimeDynamicAdapters = {
   ): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
   getFieldValue(fieldName: string): any;
   clearFieldValue(fieldName: string): void;
+  getSectionContainer?(sectionName: string): HTMLElement | null;
 };
 
 export type TFormRuntimeOptions = {
@@ -258,6 +259,12 @@ export class FormRuntime {
             formConfig: this.formConfig,
             submit: this.formConfig?.submit,
           }),
+          getSectionContainer: options.dynamic?.getSectionContainer
+            ? (sectionName) => options.dynamic!.getSectionContainer!(sectionName)
+            : undefined,
+          setFieldRequired: () => {
+            // No built-in required surface in the headless runtime.
+          },
         })
       : null;
 

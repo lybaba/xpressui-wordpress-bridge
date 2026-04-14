@@ -257,6 +257,10 @@ export class FormEngineRuntime {
     }
   }
 
+  rebuildValidators(): void {
+    this.validators = this.formConfig ? getValidators(this.formConfig) : [];
+  }
+
   setField(fieldName: string, fieldConfig: TFieldConfig): void {
     this.inputFields[fieldName] = fieldConfig;
   }
