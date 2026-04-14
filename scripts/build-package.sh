@@ -26,6 +26,9 @@ rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.github" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org" \
        "${STAGE_DIR:?}/${DIST_SLUG}/scripts"
+rm -f "${STAGE_DIR:?}/${DIST_SLUG}/.gitignore" \
+      "${STAGE_DIR:?}/${DIST_SLUG}/.gitkeep" \
+      "${STAGE_DIR:?}/${DIST_SLUG}/.gitmodules"
 rm -f "${STAGE_DIR:?}/${DIST_SLUG}/WP_ORG_PRE_SUBMISSION_CHECKLIST.txt" \
       "${STAGE_DIR:?}/${DIST_SLUG}/WP_PLUGIN_CHECK.txt" \
       "${STAGE_DIR:?}/${DIST_SLUG}/render-compiled-template.php" \
