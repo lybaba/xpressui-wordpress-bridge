@@ -37,6 +37,25 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Wait for @lybaba/xpressui@${{ steps.xpressui.outputs.version }} on GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          XPRESSUI_VERSION: ${{ steps.xpressui.outputs.version }}
+        run: |
+          echo "Waiting for @lybaba/xpressui@${XPRESSUI_VERSION} to be available on GitHub Packages..."
+          for i in $(seq 1 20); do
+            if npm view @lybaba/xpressui@${XPRESSUI_VERSION} version 2>/dev/null | grep -qF "${XPRESSUI_VERSION}"; then
+              echo "Package @lybaba/xpressui@${XPRESSUI_VERSION} is available."
+              break
+            fi
+            echo "Attempt $i/20 — not available yet, retrying in 30s..."
+            sleep 30
+          done
+          if ! npm view @lybaba/xpressui@${XPRESSUI_VERSION} version 2>/dev/null | grep -qF "${XPRESSUI_VERSION}"; then
+            echo "ERROR: @lybaba/xpressui@${XPRESSUI_VERSION} did not appear after 10 minutes."
+            exit 1
+          fi
+
       - name: Fetch xpressui light runtime
         run: npm install @lybaba/xpressui@${{ steps.xpressui.outputs.version }}
         env:
