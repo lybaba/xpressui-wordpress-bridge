@@ -114,17 +114,28 @@ type TFormDynamicRuntimeOptions = {
   setFieldError?(fieldName: string, message?: string): void;
   clearFieldErrors?(): void;
   setSubmitLocked?(locked: boolean, message?: string): void;
+  setFieldRequired?(fieldName: string, required: boolean): void;
+  getSectionContainer?(sectionName: string): HTMLElement | null;
   getFieldValue(fieldName: string): any;
   clearFieldValue(fieldName: string): void;
   setFieldValue(fieldName: string, value: any): void;
   getFormValues(): Record<string, any>;
   emitEvent(eventName: string, detail: Record<string, any>): boolean;
   getEventContext(): { formConfig: any; submit?: any };
-  getSectionContainer?(sectionName: string): HTMLElement | null;
-  setFieldRequired?(fieldName: string, required: boolean): void;
 };
 
 type TDynamicRule = ReturnType<TFormDynamicRuntimeOptions["getRules"]>[number];
+type TMatchedRuleState = { rule: TDynamicRule; changed: boolean };
+type TConditionalRuleState = {
+  matchedTrueRules: TDynamicRule[];
+  matchedFalseRules: TDynamicRule[];
+  hasTrueRule: boolean;
+  hasFalseRule: boolean;
+};
+type TResolvedConditionalState = {
+  value: boolean;
+  winningRules: TDynamicRule[];
+};
 
 export class FormDynamicRuntime {
   options: TFormDynamicRuntimeOptions;
@@ -133,14 +144,133 @@ export class FormDynamicRuntime {
   recentAppliedRules: TFormRuleAppliedDetail[];
   requiredOverrides: Record<string, boolean>;
   originalRequiredState: Record<string, boolean>;
+  originalFieldVisibilityState: Record<string, boolean>;
+  originalFieldDisabledState: Record<string, boolean>;
+  originalSectionVisibilityState: Record<string, boolean>;
 
   constructor(options: TFormDynamicRuntimeOptions) {
     this.options = options;
     this.loadingOptions = {};
     this.activeTemplateWarnings = {};
-    this.recentAppliedRules = [];
     this.requiredOverrides = {};
     this.originalRequiredState = {};
+    this.originalFieldVisibilityState = {};
+    this.originalFieldDisabledState = {};
+    this.originalSectionVisibilityState = {};
+    this.recentAppliedRules = [];
+  }
+
+  getOriginalFieldVisibility(fieldName: string, container: HTMLElement): boolean {
+    if (this.originalFieldVisibilityState[fieldName] === undefined) {
+      this.originalFieldVisibilityState[fieldName] = container.style.display !== "none";
+    }
+    return this.originalFieldVisibilityState[fieldName];
+  }
+
+  getOriginalFieldDisabled(fieldName: string, fieldElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean {
+    if (this.originalFieldDisabledState[fieldName] === undefined) {
+      this.originalFieldDisabledState[fieldName] = Boolean(fieldElement.disabled);
+    }
+    return this.originalFieldDisabledState[fieldName];
+  }
+
+  getOriginalSectionVisibility(sectionName: string, container: HTMLElement): boolean {
+    if (this.originalSectionVisibilityState[sectionName] === undefined) {
+      this.originalSectionVisibilityState[sectionName] = container.style.display !== "none";
+    }
+    return this.originalSectionVisibilityState[sectionName];
+  }
+
+  getConditionalRuleState(
+    states: Record<string, TConditionalRuleState>,
+    target: string,
+  ): TConditionalRuleState {
+    if (!states[target]) {
+      states[target] = {
+        matchedTrueRules: [],
+        matchedFalseRules: [],
+        hasTrueRule: false,
+        hasFalseRule: false,
+      };
+    }
+    return states[target];
+  }
+
+  resolveConditionalState(
+    state: TConditionalRuleState | undefined,
+    options: {
+      baseValue: boolean;
+      fallbackValueWhenOnlyTrueRule: boolean;
+      fallbackValueWhenOnlyFalseRule: boolean;
+      fallbackValueWhenBothRuleTypes: boolean;
+      preferFalseWhenConflictingMatches?: boolean;
+    },
+  ): TResolvedConditionalState {
+    if (!state) {
+      return {
+        value: options.baseValue,
+        winningRules: [],
+      };
+    }
+
+    const preferFalse = options.preferFalseWhenConflictingMatches !== false;
+    if (state.matchedTrueRules.length && state.matchedFalseRules.length) {
+      return preferFalse
+        ? { value: false, winningRules: state.matchedFalseRules }
+        : { value: true, winningRules: state.matchedTrueRules };
+    }
+
+    if (state.matchedFalseRules.length) {
+      return {
+        value: false,
+        winningRules: state.matchedFalseRules,
+      };
+    }
+
+    if (state.matchedTrueRules.length) {
+      return {
+        value: true,
+        winningRules: state.matchedTrueRules,
+      };
+    }
+
+    if (state.hasTrueRule && state.hasFalseRule) {
+      return {
+        value: options.fallbackValueWhenBothRuleTypes,
+        winningRules: [],
+      };
+    }
+
+    if (state.hasTrueRule) {
+      return {
+        value: options.fallbackValueWhenOnlyTrueRule,
+        winningRules: [],
+      };
+    }
+
+    if (state.hasFalseRule) {
+      return {
+        value: options.fallbackValueWhenOnlyFalseRule,
+        winningRules: [],
+      };
+    }
+
+    return {
+      value: options.baseValue,
+      winningRules: [],
+    };
+  }
+
+  markRulesChanged(
+    matchedRuleMap: Map<TDynamicRule, TMatchedRuleState>,
+    rules: TDynamicRule[],
+  ): void {
+    rules.forEach((rule) => {
+      const matchedRule = matchedRuleMap.get(rule);
+      if (matchedRule) {
+        matchedRule.changed = true;
+      }
+    });
   }
 
   transformRuleValue(
@@ -387,14 +517,14 @@ export class FormDynamicRuntime {
 
   updateConditionalFields(): void {
     const visibilityOverrides: Record<string, boolean> = {};
-    const disabledOverrides: Record<string, boolean> = {};
-    const sectionVisibilityOverrides: Record<string, boolean> = {};
     const requiredOverrides: Record<string, boolean> = {};
     let submitLocked = false;
     let submitLockMessage: string | undefined;
-    const visibilityRuleByField: Record<string, TDynamicRule> = {};
-    const disabledRuleByField: Record<string, TDynamicRule> = {};
-    const matchedRules: Array<{ rule: TDynamicRule; changed: boolean }> = [];
+    const fieldVisibilityStates: Record<string, TConditionalRuleState> = {};
+    const fieldEnabledStates: Record<string, TConditionalRuleState> = {};
+    const sectionVisibilityStates: Record<string, TConditionalRuleState> = {};
+    const requiredStates: Record<string, TConditionalRuleState> = {};
+    const matchedRuleMap = new Map<TDynamicRule, TMatchedRuleState>();
 
     this.options.clearFieldErrors?.();
     this.options.setSubmitLocked?.(false);
@@ -419,95 +549,134 @@ export class FormDynamicRuntime {
     });
 
     this.options.getRules().forEach((rule) => {
+      rule.actions.forEach((action) => {
+        switch (action.type) {
+          case "show":
+            this.getConditionalRuleState(fieldVisibilityStates, action.field).hasTrueRule = true;
+            break;
+          case "hide":
+            this.getConditionalRuleState(fieldVisibilityStates, action.field).hasFalseRule = true;
+            break;
+          case "enable":
+            this.getConditionalRuleState(fieldEnabledStates, action.field).hasTrueRule = true;
+            break;
+          case "disable":
+            this.getConditionalRuleState(fieldEnabledStates, action.field).hasFalseRule = true;
+            break;
+          case "show-section":
+            this.getConditionalRuleState(sectionVisibilityStates, action.field).hasTrueRule = true;
+            break;
+          case "hide-section":
+            this.getConditionalRuleState(sectionVisibilityStates, action.field).hasFalseRule = true;
+            break;
+          case "set-required":
+            this.getConditionalRuleState(requiredStates, action.field).hasTrueRule = true;
+            break;
+          case "clear-required":
+            this.getConditionalRuleState(requiredStates, action.field).hasFalseRule = true;
+            break;
+        }
+      });
+
       if (!rule.conditions.length || !rule.actions.length || !this.matchesRule(rule)) {
         return;
       }
 
       const matchedRule = { rule, changed: false };
-      matchedRules.push(matchedRule);
+      matchedRuleMap.set(rule, matchedRule);
 
       rule.actions.forEach((action) => {
-        if (action.type === "show") {
-          visibilityOverrides[action.field] = true;
-          visibilityRuleByField[action.field] = rule;
-        } else if (action.type === "hide") {
-          visibilityOverrides[action.field] = false;
-          visibilityRuleByField[action.field] = rule;
-        } else if (action.type === "enable") {
-          disabledOverrides[action.field] = false;
-          disabledRuleByField[action.field] = rule;
-        } else if (action.type === "disable") {
-          disabledOverrides[action.field] = true;
-          disabledRuleByField[action.field] = rule;
-        } else if (action.type === "clear-value") {
-          if (this.options.getFieldValue(action.field) !== undefined) {
+        switch (action.type) {
+          case "show":
+            this.getConditionalRuleState(fieldVisibilityStates, action.field).matchedTrueRules.push(rule);
+            break;
+          case "hide":
+            this.getConditionalRuleState(fieldVisibilityStates, action.field).matchedFalseRules.push(rule);
+            break;
+          case "enable":
+            this.getConditionalRuleState(fieldEnabledStates, action.field).matchedTrueRules.push(rule);
+            break;
+          case "disable":
+            this.getConditionalRuleState(fieldEnabledStates, action.field).matchedFalseRules.push(rule);
+            break;
+          case "show-section":
+            this.getConditionalRuleState(sectionVisibilityStates, action.field).matchedTrueRules.push(rule);
+            break;
+          case "hide-section":
+            this.getConditionalRuleState(sectionVisibilityStates, action.field).matchedFalseRules.push(rule);
+            break;
+          case "set-required":
+            this.getConditionalRuleState(requiredStates, action.field).matchedTrueRules.push(rule);
+            break;
+          case "clear-required":
+            this.getConditionalRuleState(requiredStates, action.field).matchedFalseRules.push(rule);
+            break;
+          case "clear-value":
+            if (this.options.getFieldValue(action.field) !== undefined) {
+              matchedRule.changed = true;
+            }
+            this.options.clearFieldValue(action.field);
+            break;
+          case "set-value": {
+            const nextValue = action.template !== undefined
+              ? this.renderRuleTemplate(action.template, rule.id, action.field)
+              : action.sourceField
+                ? this.options.getFieldValue(action.sourceField)
+                : action.value;
+            const transformedValue = this.transformRuleValue(nextValue, action.transform);
+            if (!Object.is(this.options.getFieldValue(action.field), transformedValue)) {
+              matchedRule.changed = true;
+            }
+            this.options.setFieldValue(action.field, transformedValue);
+            break;
+          }
+          case "fetch-options": {
+            const fieldConfig = this.options
+              .getFieldConfigs()
+              .find((candidate) => candidate.name === action.field && Boolean(candidate.optionsEndpoint));
+            if (fieldConfig && !this.loadingOptions[fieldConfig.name]) {
+              matchedRule.changed = true;
+              void this.fetchOptionsForField(action.field);
+            }
+            break;
+          }
+          case "set-error": {
+            const nextMessage = action.message || action.value;
+            if (nextMessage !== undefined) {
+              matchedRule.changed = true;
+              this.options.setFieldError?.(action.field, String(nextMessage));
+            }
+            break;
+          }
+          case "lock-submit":
+            submitLocked = true;
+            submitLockMessage = action.message
+              || (action.value !== undefined ? String(action.value) : undefined);
             matchedRule.changed = true;
-          }
-          this.options.clearFieldValue(action.field);
-        } else if (action.type === "set-value") {
-          const nextValue = action.template !== undefined
-            ? this.renderRuleTemplate(action.template, rule.id, action.field)
-            : action.sourceField
-              ? this.options.getFieldValue(action.sourceField)
-              : action.value;
-          const transformedValue = this.transformRuleValue(nextValue, action.transform);
-          if (!Object.is(this.options.getFieldValue(action.field), transformedValue)) {
+            break;
+          case "emit-event": {
+            const eventName = String(action.field || "").trim();
+            if (!eventName) break;
+            const payload = action.template !== undefined
+              ? this.renderRuleTemplate(action.template, rule.id, action.field)
+              : action.sourceField
+                ? this.options.getFieldValue(action.sourceField)
+                : action.value;
+            const context = this.options.getEventContext();
+            this.options.emitEvent(eventName, {
+              values: this.options.getFormValues(),
+              formConfig: context.formConfig,
+              submit: context.submit,
+              result: {
+                ruleId: rule.id,
+                action: "emit-event",
+                eventName,
+                payload,
+              },
+            });
             matchedRule.changed = true;
+            break;
           }
-          this.options.setFieldValue(
-            action.field,
-            transformedValue,
-          );
-        } else if (action.type === "fetch-options") {
-          const fieldConfig = this.options
-            .getFieldConfigs()
-            .find((candidate) => candidate.name === action.field && Boolean(candidate.optionsEndpoint));
-          if (fieldConfig && !this.loadingOptions[fieldConfig.name]) {
-            matchedRule.changed = true;
-            void this.fetchOptionsForField(action.field);
-          }
-        } else if (action.type === "set-error") {
-          const nextMessage = action.message || action.value;
-          if (nextMessage !== undefined) {
-            matchedRule.changed = true;
-            this.options.setFieldError?.(action.field, String(nextMessage));
-          }
-        } else if (action.type === "lock-submit") {
-          submitLocked = true;
-          submitLockMessage = action.message
-            || (action.value !== undefined ? String(action.value) : undefined);
-          matchedRule.changed = true;
-        } else if (action.type === "emit-event") {
-          const eventName = String(action.field || "").trim();
-          if (!eventName) {
-            return;
-          }
-          const payload = action.template !== undefined
-            ? this.renderRuleTemplate(action.template, rule.id, action.field)
-            : action.sourceField
-              ? this.options.getFieldValue(action.sourceField)
-              : action.value;
-          const context = this.options.getEventContext();
-          this.options.emitEvent(eventName, {
-            values: this.options.getFormValues(),
-            formConfig: context.formConfig,
-            submit: context.submit,
-            result: {
-              ruleId: rule.id,
-              action: "emit-event",
-              eventName,
-              payload,
-            },
-          });
-          matchedRule.changed = true;
-        } else if (action.type === "show-section") {
-          sectionVisibilityOverrides[action.field] = true;
-        } else if (action.type === "hide-section") {
-          sectionVisibilityOverrides[action.field] = false;
-        } else if (action.type === "set-required") {
-          requiredOverrides[action.field] = true;
-        } else if (action.type === "clear-required") {
-          requiredOverrides[action.field] = false;
         }
       });
     });
@@ -519,45 +688,72 @@ export class FormDynamicRuntime {
         return;
       }
 
-      const isVisible = visibilityOverrides[fieldConfig.name];
-      if (isVisible !== undefined) {
-        const wasVisible = container.style.display !== "none";
-        const hadValue = this.options.getFieldValue(fieldConfig.name) !== undefined;
-        container.style.display = isVisible ? "" : "none";
-        fieldElement.disabled = !isVisible;
-        if (!isVisible) {
-          this.options.clearFieldValue(fieldConfig.name);
-        }
-        if (wasVisible !== isVisible || (!isVisible && hadValue)) {
-          const matchedRule = matchedRules.find(
-            (candidate) => candidate.rule === visibilityRuleByField[fieldConfig.name],
-          );
-          if (matchedRule) {
-            matchedRule.changed = true;
-          }
-        }
+      const baseVisible = visibilityOverrides[fieldConfig.name]
+        ?? this.getOriginalFieldVisibility(fieldConfig.name, container);
+      const baseEnabled = !this.getOriginalFieldDisabled(fieldConfig.name, fieldElement);
+      const resolvedVisibility = this.resolveConditionalState(fieldVisibilityStates[fieldConfig.name], {
+        baseValue: baseVisible,
+        fallbackValueWhenOnlyTrueRule: false,
+        fallbackValueWhenOnlyFalseRule: true,
+        fallbackValueWhenBothRuleTypes: false,
+      });
+      const wasVisible = container.style.display !== "none";
+      const hadValue = this.options.getFieldValue(fieldConfig.name) !== undefined;
+      container.style.display = resolvedVisibility.value ? "" : "none";
+      fieldElement.disabled = !resolvedVisibility.value;
+      if (!resolvedVisibility.value) {
+        this.options.clearFieldValue(fieldConfig.name);
+      }
+      if (wasVisible !== resolvedVisibility.value || (!resolvedVisibility.value && hadValue)) {
+        this.markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
       }
 
-      if (disabledOverrides[fieldConfig.name] !== undefined) {
-        const nextDisabled = disabledOverrides[fieldConfig.name];
-        if (!Object.is(fieldElement.disabled, nextDisabled)) {
-          const matchedRule = matchedRules.find(
-            (candidate) => candidate.rule === disabledRuleByField[fieldConfig.name],
-          );
-          if (matchedRule) {
-            matchedRule.changed = true;
-          }
-        }
-        this.options.setFieldDisabled(fieldConfig.name, nextDisabled);
+      const resolvedEnabled = this.resolveConditionalState(fieldEnabledStates[fieldConfig.name], {
+        baseValue: baseEnabled,
+        fallbackValueWhenOnlyTrueRule: false,
+        fallbackValueWhenOnlyFalseRule: true,
+        fallbackValueWhenBothRuleTypes: false,
+      });
+      const nextDisabled = !resolvedEnabled.value || !resolvedVisibility.value;
+      if (!Object.is(fieldElement.disabled, nextDisabled)) {
+        this.markRulesChanged(matchedRuleMap, resolvedEnabled.winningRules);
+      }
+      this.options.setFieldDisabled(fieldConfig.name, nextDisabled);
+    });
+
+    Object.keys(sectionVisibilityStates).forEach((sectionName) => {
+      const container = this.options.getSectionContainer?.(sectionName);
+      if (!container) {
+        return;
+      }
+
+      const resolvedVisibility = this.resolveConditionalState(sectionVisibilityStates[sectionName], {
+        baseValue: this.getOriginalSectionVisibility(sectionName, container),
+        fallbackValueWhenOnlyTrueRule: false,
+        fallbackValueWhenOnlyFalseRule: true,
+        fallbackValueWhenBothRuleTypes: false,
+      });
+      const wasVisible = container.style.display !== "none";
+      container.style.display = resolvedVisibility.value ? "" : "none";
+      if (wasVisible !== resolvedVisibility.value) {
+        this.markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
       }
     });
 
-    // Apply section visibility overrides
-    Object.entries(sectionVisibilityOverrides).forEach(([sectionName, isVisible]) => {
-      const container = this.options.getSectionContainer?.(sectionName);
-      if (container) {
-        container.style.display = isVisible ? "" : "none";
+    Object.keys(requiredStates).forEach((fieldName) => {
+      const state = requiredStates[fieldName];
+      if (this.originalRequiredState[fieldName] === undefined) {
+        const fieldConfig = this.options.getFieldConfigs().find((candidate) => candidate.name === fieldName);
+        this.originalRequiredState[fieldName] = Boolean(fieldConfig?.required);
       }
+      const resolvedRequired = this.resolveConditionalState(state, {
+        baseValue: this.originalRequiredState[fieldName] ?? false,
+        fallbackValueWhenOnlyTrueRule: this.originalRequiredState[fieldName] ?? false,
+        fallbackValueWhenOnlyFalseRule: this.originalRequiredState[fieldName] ?? false,
+        fallbackValueWhenBothRuleTypes: this.originalRequiredState[fieldName] ?? false,
+        preferFalseWhenConflictingMatches: false,
+      });
+      requiredOverrides[fieldName] = resolvedRequired.value;
     });
 
     // Apply required overrides — diff against previous state to avoid redundant DOM/validator work
@@ -570,24 +766,25 @@ export class FormDynamicRuntime {
       const prevRequired = this.requiredOverrides[fieldName];
       if (newRequired === prevRequired) return;
 
-      // Determine effective required value: override if present, else restore original
       let effectiveRequired: boolean;
       if (newRequired !== undefined) {
-        // Capture original state on first override for this field
         if (this.originalRequiredState[fieldName] === undefined) {
           const fieldConfig = this.options.getFieldConfigs().find((f) => f.name === fieldName);
           this.originalRequiredState[fieldName] = Boolean(fieldConfig?.required);
         }
         effectiveRequired = newRequired;
       } else {
-        // Override removed — restore original
         effectiveRequired = this.originalRequiredState[fieldName] ?? false;
       }
       this.options.setFieldRequired?.(fieldName, effectiveRequired);
+      if (newRequired !== undefined) {
+        this.markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedTrueRules ?? []);
+        this.markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedFalseRules ?? []);
+      }
     });
     this.requiredOverrides = requiredOverrides;
 
-    matchedRules
+    Array.from(matchedRuleMap.values())
       .filter((matchedRule) => matchedRule.changed)
       .forEach((matchedRule) => this.emitRuleApplied(matchedRule.rule));
 

@@ -270,6 +270,7 @@ export type TFormStepUiConfig = {
 export type TWorkflowConfig = {
     errorMessage?: string;
     providerMode?: 'wordpress-bridge' | string;
+    redirectUrl?: string;
     resumeSupport?: 'disabled' | 'enabled' | string;
     submissionMode?: 'multi-step-submit' | 'single-step-submit' | string;
     successMessage?: string;

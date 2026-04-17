@@ -461,6 +461,14 @@ export class HydratedFormHost extends HTMLElement {
           });
         }
       },
+      setFieldRequired: (fieldName, required) => {
+        this.engine.setRequiredOverride(fieldName, required);
+      },
+      getSectionContainer: (sectionName) => {
+        return (
+          this.querySelector<HTMLElement>(`[data-type="section"][data-name="${sectionName}"]`) ?? null
+        );
+      },
       getFieldValue: (fieldName) => this.getFieldValue(fieldName),
       clearFieldValue: (fieldName) => {
         if (this.form) {
@@ -479,54 +487,6 @@ export class HydratedFormHost extends HTMLElement {
         formConfig: this.formConfig,
         submit: this.formConfig?.submit,
       }),
-      getSectionContainer: (sectionName) =>
-        (this.querySelector(
-          `[data-type="section"][data-name="${sectionName}"]`,
-        ) as HTMLElement | null),
-      setFieldRequired: (fieldName, required) => {
-        // 1. Patch the live field config in the engine
-        const fieldConfig = this.engine.getField(fieldName);
-        if (fieldConfig) {
-          fieldConfig.required = required;
-        }
-        // Patch formConfig.sections so rebuildValidators reads the updated state
-        if (this.formConfig?.sections) {
-          Object.values(this.formConfig.sections).forEach((fields) => {
-            const f = fields.find((candidate) => candidate.name === fieldName);
-            if (f) { f.required = required; }
-          });
-        }
-        // 2. Recompile AJV validators
-        this.engine.rebuildValidators();
-        // 3. Update DOM required attribute + aria-required
-        const fieldNode = this.getFieldContainer(fieldName);
-        const inputEl = this.getFieldElement(fieldName);
-        if (inputEl) {
-          if (required) {
-            inputEl.setAttribute("required", "true");
-            inputEl.setAttribute("aria-required", "true");
-          } else {
-            inputEl.removeAttribute("required");
-            inputEl.removeAttribute("aria-required");
-          }
-        }
-        // 4. Update the required asterisk span in the label
-        if (fieldNode) {
-          let reqSpan = fieldNode.querySelector(".template-required") as HTMLElement | null;
-          if (required && !reqSpan) {
-            const labelElem = fieldNode.querySelector(".template-field-label");
-            if (labelElem) {
-              reqSpan = document.createElement("span");
-              reqSpan.className = "template-required";
-              reqSpan.setAttribute("aria-hidden", "true");
-              reqSpan.textContent = "*";
-              labelElem.appendChild(reqSpan);
-            }
-          } else if (!required && reqSpan) {
-            reqSpan.remove();
-          }
-        }
-      },
     });
     this.steps = new FormStepRuntime();
     this.persistence = new FormPersistenceRuntime({

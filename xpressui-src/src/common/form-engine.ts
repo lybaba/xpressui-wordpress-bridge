@@ -3,6 +3,7 @@ import TFieldConfig from "./TFieldConfig";
 import TFormConfig from "./TFormConfig";
 import { CUSTOM_SECTION } from "./Constants";
 import validate, { getValidators, TValidator } from "./Validator";
+import { REQUIRED_FIELD_MSG } from "./validation-messages";
 import { isFileFieldType, isFileLikeValue, normalizeFormValues } from "./field";
 
 export type TStoredDocumentData = {
@@ -232,18 +233,24 @@ export class FormEngineRuntime {
   validators: TValidator[];
   inputFields: Record<string, TFieldConfig>;
   documentData: Record<string, TStoredDocumentData>;
+  /** Tracks required-state overrides applied at runtime (via setField) that differ from
+   *  the compiled AJV schema. Keyed by field name, value is the override (true = required,
+   *  false = not-required). Cleared on setFormConfig. */
+  dynamicRequiredOverrides: Record<string, boolean>;
 
   constructor() {
     this.formConfig = null;
     this.validators = [];
     this.inputFields = {};
     this.documentData = {};
+    this.dynamicRequiredOverrides = {};
   }
 
   setFormConfig(formConfig: TFormConfig | null): void {
     this.formConfig = formConfig;
     this.validators = formConfig ? getValidators(formConfig) : [];
     this.inputFields = {};
+    this.dynamicRequiredOverrides = {};
     if (formConfig?.sections) {
       Object.entries(formConfig.sections).forEach(([sectionName, fields]) => {
         if (sectionName === CUSTOM_SECTION) {
@@ -257,12 +264,15 @@ export class FormEngineRuntime {
     }
   }
 
-  rebuildValidators(): void {
-    this.validators = this.formConfig ? getValidators(this.formConfig) : [];
-  }
-
   setField(fieldName: string, fieldConfig: TFieldConfig): void {
     this.inputFields[fieldName] = fieldConfig;
+  }
+
+  /** Called exclusively by the setFieldRequired option — bypasses setField so that
+   *  DOM re-registration (which calls setField with the original config) cannot
+   *  silently clear a rule-driven required override. */
+  setRequiredOverride(fieldName: string, required: boolean): void {
+    this.dynamicRequiredOverrides[fieldName] = required;
   }
 
   getField(fieldName: string): TFieldConfig | undefined {
@@ -536,6 +546,17 @@ export class FormEngineRuntime {
     const validationErrors = validator
       ? validate(validator, formValues, this.formConfig?.validation?.i18n)
       : {};
+
+    // Enforce dynamically-overridden required state (set-required / clear-required rules).
+    // The AJV schema is compiled once at init and won't reflect runtime changes.
+    Object.entries(this.dynamicRequiredOverrides).forEach(([fieldName, required]) => {
+      if (validationErrors[fieldName]) return; // already has an error
+      const value = formValues[fieldName];
+      const isEmpty = value === undefined || value === null || value === "";
+      if (required && isEmpty) {
+        validationErrors[fieldName] = { errorMessage: REQUIRED_FIELD_MSG };
+      }
+    });
 
     Object.values(this.inputFields).forEach((fieldConfig) => {
       if (!isFileFieldType(fieldConfig.type)) {

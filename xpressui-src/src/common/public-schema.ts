@@ -112,7 +112,7 @@ const PUBLIC_FORM_SCHEMA = {
             minItems: 1,
             items: {
               type: "object",
-              required: ["type", "field"],
+              required: ["type"],
               additionalProperties: true,
               properties: {
                 type: {
@@ -134,7 +134,7 @@ const PUBLIC_FORM_SCHEMA = {
                     "clear-required",
                   ],
                 },
-                field: { type: "string", minLength: 1 },
+                field: { type: "string" },
                 message: { type: "string" },
                 sourceField: { type: "string", minLength: 1 },
                 template: { type: "string" },
