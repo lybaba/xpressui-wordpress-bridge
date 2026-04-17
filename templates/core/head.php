@@ -315,5 +315,9 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relati
     .template-submit-overlay[data-active] { display: grid; }
     .template-submit-overlay-spinner { width: 36px; height: 36px; border: 3px solid color-mix(in srgb, var(--template-primary) 22%, transparent); border-top-color: var(--template-primary); border-radius: 50%; animation: xpressui-spin 0.7s linear infinite; }
     .template-submit-overlay-label { font-size: 13px; font-weight: 700; color: var(--template-muted-text); }
+    #xpressui-preview-runtime-banner { font-size: 12px; color: #44515f; background: #eef4f8; padding: 8px 12px; border-bottom: 1px solid #d8e2ea; }
+    #xpressui-preview-selection-banner { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #1f2937; background: #f8fafc; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+    .xpressui-preview-selection-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; background: #dbeafe; color: #1d4ed8; font-weight: 600; }
+    .xpressui-preview-selection-chip-warning { background: #fef3c7; color: #92400e; }
   </style>
 </head>

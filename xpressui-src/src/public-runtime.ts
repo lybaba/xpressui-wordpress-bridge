@@ -152,6 +152,7 @@ export type {
 export {
   syncShellDomWithConfig,
   setShellActionButtonsDisabled,
+  attachShellSubmitOverlayHandlers,
   syncShellPostSubmitUi,
   setShellFeedbackState,
   resolveShellSubmitErrorMessage,
@@ -164,5 +165,33 @@ export type {
   TShellSubmitFeedbackConfig,
   TShellFormConfig,
   TAttachShellFeedbackOptions,
+  TAttachShellSubmitOverlayOptions,
 } from "./common/shell-dom-sync";
 export { attachEmbedResizeReporter } from "./common/shell-embed";
+export {
+  WORDPRESS_REST_SUBMIT_ROUTE,
+  WORDPRESS_REST_SUBMIT_ENDPOINT_PLACEHOLDER,
+  getDefaultWordPressSubmitEndpoints,
+  isWordPressBridgeProviderMode,
+  isDefaultWordPressSubmitEndpoint,
+  getWordPressIntegrationEndpoint,
+  resolveExportSubmissionEndpoint,
+  resolveHydrationSubmissionEndpoint,
+} from "./common/export-runtime";
+export {
+  createExportHydrationRuntimeConfig,
+  normalizeExportHydrationRules,
+} from "./common/export-hydration";
+export type {
+  TCreateExportHydrationRuntimeConfigOptions,
+} from "./common/export-hydration";
+export { createExportManifest } from "./common/export-manifest";
+export type { TCreateExportManifestOptions } from "./common/export-manifest";
+export {
+  createExportReactMountSnippet,
+  createExportStaticHtmlSnippet,
+} from "./common/export-snippets";
+export type {
+  TCreateExportReactMountSnippetOptions,
+  TCreateExportStaticHtmlSnippetOptions,
+} from "./common/export-snippets";

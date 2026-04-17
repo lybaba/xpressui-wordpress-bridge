@@ -28,29 +28,6 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <script id="xpressui-custom-config" type="application/json">
 <?php echo xpressui_bridge_template_stringify(xpressui_bridge_template_mark_safe(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json'))); ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?><?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- safe JSON string produced by template_mark_safe(), emitted inside <script type="application/json"> ?><?php endif; ?>  </script>
 <?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")))): ?>
-  <script src="./init.js"></script><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?><?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone HTML page, not a WordPress template ?><?php endif; ?><?php endif; ?>  <script>
-  (function () {
-    var overlay = document.querySelector('[data-submit-overlay]');
-    var form = document.querySelector('[data-template-zone="rendered_form"]');
-    var feedback = document.querySelector('[data-submit-feedback]');
-    if (!overlay || !form) return;
-
-    function showLoader() { overlay.setAttribute('data-active', ''); }
-    function hideLoader() { overlay.removeAttribute('data-active'); }
-
-    form.addEventListener('submit', showLoader);
-
-    if (feedback) {
-      new MutationObserver(function (mutations) {
-        mutations.forEach(function (m) {
-          if (m.attributeName === 'data-submit-feedback-state') {
-            var state = feedback.getAttribute('data-submit-feedback-state');
-            if (state === 'success' || state === 'error') hideLoader();
-          }
-        });
-      }).observe(feedback, { attributes: true });
-    }
-  })();
-  </script>
+  <script src="./init.js"></script><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress"))): ?><?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- standalone HTML page, not a WordPress template ?><?php endif; ?><?php endif; ?>
 </body>
 </html>

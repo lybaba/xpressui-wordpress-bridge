@@ -48,6 +48,19 @@ const ADVANCED_PUBLIC_API = [
   "validateProviderRequest",
   "getProviderSuccessEventName",
   "getProviderErrorEventName",
+  "WORDPRESS_REST_SUBMIT_ROUTE",
+  "WORDPRESS_REST_SUBMIT_ENDPOINT_PLACEHOLDER",
+  "getDefaultWordPressSubmitEndpoints",
+  "isWordPressBridgeProviderMode",
+  "isDefaultWordPressSubmitEndpoint",
+  "getWordPressIntegrationEndpoint",
+  "resolveExportSubmissionEndpoint",
+  "resolveHydrationSubmissionEndpoint",
+  "createExportHydrationRuntimeConfig",
+  "normalizeExportHydrationRules",
+  "createExportManifest",
+  "createExportReactMountSnippet",
+  "createExportStaticHtmlSnippet",
 ];
 
 export function getPublicApiManifest(): TPublicApiManifest {

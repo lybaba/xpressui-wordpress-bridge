@@ -35,6 +35,10 @@ export interface TAttachShellFeedbackOptions {
   t?: TShellI18nResolver;
 }
 
+export interface TAttachShellSubmitOverlayOptions {
+  overlaySelector?: string;
+}
+
 function defaultT(_key: string, fallback: string): string {
   return fallback;
 }
@@ -228,6 +232,46 @@ export function setShellActionButtonsDisabled(mountNode: Element, disabled: bool
     });
 }
 
+function showShellSubmitOverlay(overlay: HTMLElement | null): void {
+  overlay?.setAttribute('data-active', '');
+}
+
+function hideShellSubmitOverlay(overlay: HTMLElement | null): void {
+  overlay?.removeAttribute('data-active');
+}
+
+/**
+ * Toggle the submit overlay in response to runtime submit events.
+ * Safe to call multiple times — attaches only once per mount node.
+ */
+export function attachShellSubmitOverlayHandlers(
+  mountNode: HTMLElement,
+  options: TAttachShellSubmitOverlayOptions = {},
+): void {
+  if (mountNode.dataset.xpressuiShellSubmitOverlayAttached === 'true') return;
+  mountNode.dataset.xpressuiShellSubmitOverlayAttached = 'true';
+
+  const overlaySelector = options.overlaySelector ?? '[data-submit-overlay]';
+  const overlay = mountNode.querySelector(overlaySelector) as HTMLElement | null;
+  if (!(overlay instanceof HTMLElement)) {
+    return;
+  }
+
+  mountNode.addEventListener('xpressui:submit', () => {
+    showShellSubmitOverlay(overlay);
+  });
+
+  const hide = () => {
+    hideShellSubmitOverlay(overlay);
+  };
+
+  mountNode.addEventListener('xpressui:submit-success', hide);
+  mountNode.addEventListener('xpressui:submit-error', hide);
+  mountNode.addEventListener('xpressui:submit-locked', hide);
+  mountNode.addEventListener('xpressui:validation-blocked-submit', hide);
+  mountNode.addEventListener('xpressui:submit-canceled', hide);
+}
+
 const SHELL_SUCCESS_HIDE_SELECTOR =
   '[data-template-zone="form_header"],' +
   '[data-template-zone="step_status"],' +
@@ -272,6 +316,26 @@ function isMeaningfulSubmitMessage(value: unknown): value is string {
   const normalized = value.trim();
   if (!normalized) return false;
   return !/^Submit failed with status \d+\.$/.test(normalized);
+}
+
+function resolveValidationBlockedMessage(result: any): string {
+  const fieldNames = Array.isArray(result?.fieldNames)
+    ? result.fieldNames.filter((fieldName: unknown): fieldName is string => typeof fieldName === 'string' && fieldName.trim() !== '')
+    : [];
+
+  if (fieldNames.length === 1) {
+    return `Please review the highlighted field before submitting.`;
+  }
+
+  if (fieldNames.length > 1) {
+    return `Please review the highlighted fields before submitting.`;
+  }
+
+  return 'Please review the form and correct the highlighted fields before submitting.';
+}
+
+function getBlockedSubmissionTitle(): string {
+  return 'Submission blocked';
 }
 
 /**
@@ -394,7 +458,28 @@ export function attachShellFeedbackHandlers(
       mountNode,
       'warning',
       result?.message ?? 'Complete the required fields before submitting.',
-      'Submission blocked',
+      getBlockedSubmissionTitle(),
+    );
+  });
+
+  mountNode.addEventListener('xpressui:validation-blocked-submit', (event) => {
+    const result = (event as CustomEvent)?.detail?.result;
+    setShellActionButtonsDisabled(mountNode, false);
+    setShellFeedbackState(
+      mountNode,
+      'warning',
+      resolveValidationBlockedMessage(result),
+      getBlockedSubmissionTitle(),
+    );
+  });
+
+  mountNode.addEventListener('xpressui:submit-canceled', () => {
+    setShellActionButtonsDisabled(mountNode, false);
+    setShellFeedbackState(
+      mountNode,
+      'warning',
+      'Submission canceled.',
+      'Submission canceled',
     );
   });
 }

@@ -5,7 +5,11 @@ import {
   assertRuntimeCompatibility,
   TXPressUIRuntimeTier,
 } from './runtime-compatibility';
-import { attachShellFeedbackHandlers, syncShellPostSubmitUi } from './shell-dom-sync';
+import {
+  attachShellFeedbackHandlers,
+  attachShellSubmitOverlayHandlers,
+  syncShellPostSubmitUi,
+} from './shell-dom-sync';
 
 export type THydratableFormInput = TSimpleFormInput | TFormConfig;
 
@@ -84,6 +88,7 @@ export function hydrateFormForRuntime(
   // zone hiding. Safe to call multiple times — attachShellFeedbackHandlers is idempotent.
   if (container instanceof HTMLElement) {
     attachShellFeedbackHandlers(container, config);
+    attachShellSubmitOverlayHandlers(container);
   }
   container.addEventListener(
     'xpressui:submit-success',

@@ -310,6 +310,15 @@ async function initXPressUI() {
       mountNode.addEventListener('xpressui:submit-error', function () {
         submitOverlay.removeAttribute('data-active');
       });
+      mountNode.addEventListener('xpressui:validation-blocked-submit', function () {
+        submitOverlay.removeAttribute('data-active');
+      });
+      mountNode.addEventListener('xpressui:submit-locked', function () {
+        submitOverlay.removeAttribute('data-active');
+      });
+      mountNode.addEventListener('xpressui:submit-canceled', function () {
+        submitOverlay.removeAttribute('data-active');
+      });
     }
 
     // Attach embed resize reporter

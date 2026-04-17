@@ -2132,6 +2132,23 @@ export class HydratedFormHost extends HTMLElement {
           blockingFields.forEach((fieldName) => {
             this.form?.blur(fieldName);
           });
+          // Final Form's internal errors may be stale when dynamicRequiredOverrides
+          // are updated in onAfterChange (after Final Form already ran validation on
+          // the triggering change). Force-render errors from the fresh submitErrors.
+          blockingFields.forEach((fieldName) => {
+            const inputElement = this.getFieldElement(fieldName);
+            const errorElement = (this.querySelector(`#${fieldName}_error`) || this.querySelector(`[data-field-error="${fieldName}"]`)) as HTMLElement | null;
+            const fieldState = this.form?.getFieldState(fieldName);
+            this.renderFieldErrorState(
+              fieldName,
+              inputElement,
+              errorElement,
+              true,
+              submitErrors[fieldName],
+              Boolean(fieldState?.submitFailed) || this.stepSubmitFailed,
+              this.getCurrentStepIndex(),
+            );
+          });
           this.emitFormEvent("xpressui:validation-blocked-submit", {
             values: this.engine.normalizeValues(submitValues),
             formConfig: this.formConfig,
