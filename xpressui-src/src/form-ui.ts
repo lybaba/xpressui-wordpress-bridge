@@ -463,6 +463,9 @@ export class HydratedFormHost extends HTMLElement {
       },
       setFieldRequired: (fieldName, required) => {
         this.engine.setRequiredOverride(fieldName, required);
+        this.syncFieldRequiredState(fieldName, required);
+        this.forceRevalidation();
+        this.syncFieldErrorDisplay(fieldName);
       },
       getSectionContainer: (sectionName) => {
         return (
@@ -3645,6 +3648,41 @@ export class HydratedFormHost extends HTMLElement {
     );
   }
 
+  syncFieldRequiredState = (fieldName: string, required: boolean) => {
+    const inputElement = this.getFieldElement(fieldName);
+    const fieldConfig = this.engine.getField(fieldName);
+    const baseRequired = Boolean(fieldConfig?.required);
+    if (inputElement) {
+      if (required && baseRequired) {
+        inputElement.setAttribute("required", "true");
+      } else {
+        inputElement.removeAttribute("required");
+      }
+
+      if (required) {
+        inputElement.setAttribute("aria-required", "true");
+      } else {
+        inputElement.removeAttribute("aria-required");
+      }
+    }
+
+    const fieldContainer = this.getFieldContainer(fieldName);
+    const labelElement = fieldContainer?.querySelector(".template-field-label");
+    let requiredMarker = fieldContainer?.querySelector(".template-required") as HTMLElement | null;
+
+    if (required) {
+      if (!requiredMarker && labelElement instanceof HTMLElement) {
+        requiredMarker = document.createElement("span");
+        requiredMarker.className = "template-required";
+        requiredMarker.setAttribute("aria-hidden", "true");
+        requiredMarker.textContent = "*";
+        labelElement.appendChild(requiredMarker);
+      }
+    } else if (requiredMarker instanceof HTMLElement) {
+      requiredMarker.remove();
+    }
+  }
+
   getFieldContainer = (fieldName: string) => {
     return getConfiguredFieldContainer(this, fieldName);
   }
@@ -3656,6 +3694,14 @@ export class HydratedFormHost extends HTMLElement {
 
   updateConditionalFields = () => {
     this.dynamic.updateConditionalFields();
+  }
+
+  queuePostChangeEffects = (sourceFieldName?: string) => {
+    queueMicrotask(() => {
+      this.scheduleDraftSave();
+      this.updateConditionalFields();
+      void this.refreshRemoteOptions(sourceFieldName);
+    });
   }
 
   refreshRemoteOptions = async (sourceFieldName?: string) => {
@@ -3697,9 +3743,7 @@ export class HydratedFormHost extends HTMLElement {
                 change(nextValue);
               },
               onAfterChange: () => {
-                this.scheduleDraftSave();
-                this.updateConditionalFields();
-                void this.refreshRemoteOptions(name);
+                this.queuePostChangeEffects(name);
               },
               resolveFileInputValue: async (nextFieldConfig, nextInput) =>
                 this.resolveFileInputValue(nextFieldConfig as TFieldConfig, nextInput),
@@ -3726,9 +3770,7 @@ export class HydratedFormHost extends HTMLElement {
                 change(nextValue);
               },
               onAfterChange: () => {
-                this.scheduleDraftSave();
-                this.updateConditionalFields();
-                void this.refreshRemoteOptions(name);
+                this.queuePostChangeEffects(name);
               },
               getNextProductCartItems: (action, productId) =>
                 this.getNextProductCartItems(fieldConfig, this.getFieldValue(name), action, productId),
