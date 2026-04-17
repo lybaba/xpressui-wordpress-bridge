@@ -18,8 +18,10 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   .page-shell { background: transparent !important; padding: 2px !important; min-height: 0 !important; height: auto !important; overflow: visible !important; align-items: flex-start !important; width: 100% !important; }
   body::before, body::after, .page-shell::before, .page-shell::after { display: none !important; }
   .form-frame { background: transparent !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-<?php endif; ?></style>
-<?php endif; ?><body>
+<?php endif; ?>
+</style>
+<?php endif; ?>
+<body>
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
 <?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?>
 <?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?>

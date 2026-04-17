@@ -70,7 +70,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
         linear-gradient(180deg, color-mix(in srgb, var(--template-page-background) 8%, transparent), color-mix(in srgb, var(--template-page-background) 36%, rgba(15,23,42,0.10)));
       pointer-events: none;
     }
-<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>
+<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "full-bleed")))): ?>
     <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : "body"))); ?>::before {
       content: "";
       position: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "absolute" : "fixed"))); ?>;
@@ -95,14 +96,16 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       );
       pointer-events: none;
     }
-<?php endif; ?>    .form-frame {
+<?php endif; ?>
+    .form-frame {
       width: min(100%, 960px);
       background: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>color-mix(in srgb, var(--template-surface) 96%, transparent)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
       border-radius: var(--template-card-radius);
       padding: 24px;
       box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(0,0,0,0.42)<?php else: ?>0 20px 60px rgba(0,0,0,0.08)<?php endif; ?>;
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>
-backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>      position: relative;
+backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
+      position: relative;
       z-index: 1;
     }
     .template-runtime-shell { display: grid; gap: 20px; }

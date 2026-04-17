@@ -16,4 +16,5 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   data-type="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'))); ?>"
   data-section-name="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'name'))); ?>"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'include_in_submit'))): ?>
-data-include-in-submit="true"<?php endif; ?>/>
+data-include-in-submit="true"<?php endif; ?>
+/>

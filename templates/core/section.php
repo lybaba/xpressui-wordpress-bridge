@@ -18,8 +18,10 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     <h2 class="template-section-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'label'))); ?></h2>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'desc'))): ?>
       <p class="template-section-desc"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'desc'))); ?></p>
-<?php endif; ?>  </header>
-<?php endif; ?>  <div class="template-fields">
+<?php endif; ?>
+  </header>
+<?php endif; ?>
+  <div class="template-fields">
 <?php
 $xpressui_loop_parent_ctx_2 = $xpressui_ctx;
 $xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'fields'));
@@ -34,5 +36,6 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
     ];
 ?>
 <?php xpressui_bridge_template_include_template('field.php', $xpressui_ctx); ?>
-<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>  </div>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
+  </div>
 </section>

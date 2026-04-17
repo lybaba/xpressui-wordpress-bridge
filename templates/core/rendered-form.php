@@ -12,15 +12,18 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   method="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_method'))); ?>"
   action="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_endpoint'))); ?>"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_enctype'))): ?>
-enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_enctype'))); ?>"<?php endif; ?>>
+enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_enctype'))); ?>"<?php endif; ?>
+>
   <input type="hidden" name="projectId" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'id'))); ?>" />
   <input type="hidden" name="projectSlug" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'slug'))); ?>" />
   <header class="template-form-header" data-template-zone="form_header">
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_title'))): ?>
     <h1 class="template-form-title"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'title'))); ?></h1>
-<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))): ?>
+<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))): ?>
       <p class="template-form-subtitle"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
-<?php endif; ?>  </header>
+<?php endif; ?>
+  </header>
 
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
     <section
@@ -38,7 +41,8 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
       </div>
       <div class="template-step-status-message" data-form-step-summary><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'idle_message'))); ?></div>
     </section>
-<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'has_sections'))): ?>
+<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'has_sections'))): ?>
 <?php
 $xpressui_loop_parent_ctx_2 = $xpressui_ctx;
 $xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'sections'));
@@ -61,6 +65,8 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
         <h2 class="template-section-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Form content", 'xpressui-bridge'))); ?></h2>
         <p class="template-section-desc"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("No sections are configured yet.", 'xpressui-bridge'))); ?></p>
       </header>
-<?php endif; ?>    </section>
-<?php endif; ?><?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
+<?php endif; ?>
+    </section>
+<?php endif; ?>
+<?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>

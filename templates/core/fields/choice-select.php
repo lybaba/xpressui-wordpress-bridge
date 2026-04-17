@@ -12,7 +12,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       <span><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'label'))); ?></span>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'required'))): ?>
         <span class="template-required" aria-hidden="true">*</span>
-<?php endif; ?>    </label>
+<?php endif; ?>
+    </label>
   </div>
 
   <select
@@ -24,11 +25,14 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     data-type="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'))); ?>"
     data-section-name="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'name'))); ?>"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "select-multiple"))): ?>
-multiple<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'required'))): ?>
-required aria-required="true"<?php endif; ?>  >
+multiple<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'required'))): ?>
+required aria-required="true"<?php endif; ?>
+  >
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "select-one"))): ?>
       <option value=""></option>
-<?php endif; ?><?php
+<?php endif; ?>
+<?php
 $xpressui_loop_parent_ctx_2 = $xpressui_ctx;
 $xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'choices'));
 foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_value_4):
@@ -42,9 +46,11 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
     ];
 ?>
       <option value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'choice'), 'value'))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'choice'), 'label'))); ?></option>
-<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>  </select>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
+  </select>
 
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'desc'))): ?>
     <div class="template-field-help"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'desc'))); ?></div>
-<?php endif; ?><?php xpressui_bridge_template_include_template('field-meta.php', $xpressui_ctx); ?>
+<?php endif; ?>
+<?php xpressui_bridge_template_include_template('field-meta.php', $xpressui_ctx); ?>
 </div>

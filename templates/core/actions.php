@@ -25,6 +25,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       <button type="button" data-step-action="next"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'navigation_labels'), 'next'))); ?></button>
     </div>
   </div>
-<?php endif; ?><div class="template-submit-row" data-template-zone="submit_actions">
+<?php endif; ?>
+<div class="template-submit-row" data-template-zone="submit_actions">
   <button type="submit" class="template-submit-btn"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'submit_label'))); ?></button>
 </div>
