@@ -11,13 +11,19 @@
 
 ## What it does
 
-Build multi-step forms and document-intake workflows in the XPressUI console builder *(currently being deployed — not yet available)*, export them as a `.zip` package, upload to WordPress in one click — then embed anywhere with a shortcode.
+Build multi-step forms and document-intake workflows in the XPressUI Console,
+export them as a `.zip` package, upload them to WordPress, then embed them
+anywhere with a shortcode.
 
 ```
 [xpressui id="loan-application"]
 ```
 
 Every submission lands in a private wp-admin inbox. Your team can review, assign, and track status without leaving WordPress.
+
+The WordPress bridge is the main delivery path today. Over time, the same
+builder/export pipeline is also intended to produce standalone packages for
+non-WordPress hosts.
 
 ---
 
@@ -42,15 +48,11 @@ Every submission lands in a private wp-admin inbox. Your team can review, assign
 
 - WordPress 6.0 or later
 - PHP 8.0 or later
-- A workflow package exported from the XPressUI console builder *(currently being deployed — not yet available)*
+- A workflow package exported from the XPressUI Console
 
 ---
 
 ## Installation
-
-### From the WordPress Plugin Directory *(coming soon)*
-
-Search for **XPressUI Bridge** in *Plugins › Add New*.
 
 ### Manual installation
 
@@ -135,4 +137,3 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 - Product page: [xpressui.iakpress.com](https://xpressui.iakpress.com/)
 - Demo gallery: [xpressui.iakpress.com/#/demos](https://xpressui.iakpress.com/#/demos)
 - Support: [hello@iakpress.com](mailto:hello@iakpress.com)
-- WordPress.org listing: *(coming soon)*
