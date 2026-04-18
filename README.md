@@ -31,8 +31,8 @@ non-WordPress hosts.
 
 | Feature | Details |
 |---|---|
-| **One-click install** | Upload the `.zip` from the XPressUI console under *Submissions › Workflows* |
-| **Bundled starters** | `Document Intake` is available immediately, and the Pro extension can add extra bundled QA tools |
+| **Bundled starter** | `Document Intake` is ready immediately — no upload needed |
+| **Custom pack install** | Upload `.zip` packages exported from the XPressUI Console *(Pro extension required)* |
 | **Shortcode embed** | `[xpressui id="slug"]` — works in pages, posts, and the block editor |
 | **Submission inbox** | Private post list with project / status / assignee filters |
 | **Status workflow** | *New → In review → Done*, with a full history log per submission |
@@ -60,13 +60,23 @@ non-WordPress hosts.
 2. In wp-admin go to **Plugins › Add New › Upload Plugin**, select the zip, click **Install Now**.
 3. Activate the plugin.
 
-### Install a workflow package
+### Use the bundled starter (free)
 
-1. In the XPressUI console, export your workflow as a package (`.zip`).
-2. In wp-admin go to **Submissions › Workflows**, upload the package.
-3. Embed the form with `[xpressui id="your-project-slug"]`.
+The free plugin ships with the `Document Intake` workflow ready to use — no upload required.
 
-If the Pro extension is active, additional bundled workflows can also appear automatically under:
+1. Go to **Submissions › Workflows** in wp-admin.
+2. Copy the shortcode for `document-intake` and paste it into any page or post.
+
+### Install a custom workflow package (Pro)
+
+Uploading packages exported from the XPressUI Console requires the **Pro extension**.
+
+1. Install and activate [XPressUI WordPress Bridge Pro](https://xpressui.iakpress.com/).
+2. In the XPressUI Console, export your workflow as a package (`.zip`).
+3. In wp-admin go to **Submissions › Workflows**, upload the package.
+4. Embed the form with `[xpressui id="your-project-slug"]`.
+
+If the Pro extension is active, additional bundled QA workflows also appear automatically under:
 
 - **Submissions › Workflows › Included Pro Tools**
 
