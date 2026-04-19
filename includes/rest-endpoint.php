@@ -262,6 +262,9 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
 
+	// Send outbound webhook (best-effort — failure does not affect submission response).
+	xpressui_maybe_send_webhook( $post_id, $project_slug, $payload_with_files );
+
 	// Read per-project redirect URL.
 	$redirect_url = xpressui_get_project_setting( $project_slug, 'redirectUrl' );
 

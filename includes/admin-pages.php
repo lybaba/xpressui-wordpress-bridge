@@ -270,6 +270,8 @@ function xpressui_render_workflows_page() {
 		$notify_email     = sanitize_email( $raw_notify_email );
 		$raw_redirect_url = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
+		$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$webhook_url      = esc_url_raw( $raw_webhook_url );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
@@ -285,6 +287,7 @@ function xpressui_render_workflows_page() {
 			$all_settings[ $slug ] = [
 				'notifyEmail'            => $notify_email,
 				'redirectUrl'            => $redirect_url,
+				'webhookUrl'             => $webhook_url,
 				'showProjectTitle'       => $show_project_title,
 				'showRequiredFieldsNote' => $show_required_note,
 				'sectionLabelVisibility' => $section_label_visibility,
@@ -296,6 +299,9 @@ function xpressui_render_workflows_page() {
 			}
 			if ( $raw_redirect_url !== '' && $redirect_url === '' ) {
 				$save_warnings[] = __( 'The post-submit redirect was not saved because it is not a valid URL.', 'xpressui-bridge' );
+			}
+			if ( $raw_webhook_url !== '' && $webhook_url === '' ) {
+				$save_warnings[] = __( 'The webhook URL was not saved because it is not a valid URL.', 'xpressui-bridge' );
 			}
 			if ( empty( $save_warnings ) ) {
 				$notice_class   = 'notice-success';
@@ -605,6 +611,7 @@ function xpressui_render_workflows_page() {
 			$settings_map[ $s ] = [
 				'notifyEmail'            => (string) ( $ps['notifyEmail'] ?? '' ),
 				'redirectUrl'            => (string) ( $ps['redirectUrl'] ?? '' ),
+				'webhookUrl'             => (string) ( $ps['webhookUrl'] ?? '' ),
 				'showProjectTitle'       => (string) ( $ps['showProjectTitle'] ?? '0' ),
 				'showRequiredFieldsNote' => (string) ( $ps['showRequiredFieldsNote'] ?? '0' ),
 				'sectionLabelVisibility' => (string) ( $ps['sectionLabelVisibility'] ?? 'auto' ),
@@ -636,6 +643,10 @@ function xpressui_render_workflows_page() {
 		echo '<tr><th><label for="xpressui_redirect_url">' . esc_html__( 'Post-submit redirect', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $init['redirectUrl'] ) . '">';
 		echo '<p class="description">' . esc_html__( 'Redirect the client to this URL after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th><label for="xpressui_webhook_url">' . esc_html__( 'Webhook destination', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( $init['webhookUrl'] ) . '">';
+		echo '<p class="description">' . esc_html__( 'Receive a POST JSON payload at this URL after each successful submission. Leave empty to disable. Webhook failure does not affect submission storage.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Form title', 'xpressui-bridge' ) . '</th>';
 		echo '<td><label for="xpressui_show_project_title">';
@@ -671,13 +682,15 @@ function xpressui_render_workflows_page() {
 			if (!sel) return;
 			function applySettings(slug) {
 				var s = settings[slug] || {};
-				var email = document.getElementById('xpressui_notify_email');
-				var url   = document.getElementById('xpressui_redirect_url');
-				var title = document.getElementById('xpressui_show_project_title');
-				var req   = document.getElementById('xpressui_show_required_fields_note');
-				var vis   = document.getElementById('xpressui_section_label_visibility');
-				if (email) email.value = s.notifyEmail || '';
-				if (url)   url.value   = s.redirectUrl  || '';
+				var email   = document.getElementById('xpressui_notify_email');
+				var url     = document.getElementById('xpressui_redirect_url');
+				var webhook = document.getElementById('xpressui_webhook_url');
+				var title   = document.getElementById('xpressui_show_project_title');
+				var req     = document.getElementById('xpressui_show_required_fields_note');
+				var vis     = document.getElementById('xpressui_section_label_visibility');
+				if (email)   email.value   = s.notifyEmail  || '';
+				if (url)     url.value     = s.redirectUrl   || '';
+				if (webhook) webhook.value = s.webhookUrl    || '';
 				if (title) title.checked = s.showProjectTitle === '1';
 				if (req)   req.checked   = s.showRequiredFieldsNote === '1';
 				if (vis)   vis.value     = s.sectionLabelVisibility || 'auto';
