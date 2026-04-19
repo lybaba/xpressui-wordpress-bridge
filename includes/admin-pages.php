@@ -266,8 +266,10 @@ function xpressui_render_workflows_page() {
 	// Handle project settings save.
 	if ( isset( $_POST['xpressui_save_project_settings'] ) && check_admin_referer( 'xpressui_project_settings_action', 'xpressui_settings_nonce' ) ) {
 		$slug             = sanitize_title( wp_unslash( (string) ( $_POST['xpressui_settings_slug'] ?? '' ) ) );
-		$notify_email     = sanitize_email( trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_email() is applied
-		$redirect_url     = esc_url_raw( trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- esc_url_raw() is applied
+		$raw_notify_email = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$notify_email     = sanitize_email( $raw_notify_email );
+		$raw_redirect_url = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$redirect_url     = esc_url_raw( $raw_redirect_url );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
@@ -596,6 +598,22 @@ function xpressui_render_workflows_page() {
 
 	// --- Project settings ---
 	if ( ! empty( $visible_installed_slugs ) ) {
+		// Build per-project settings map for JS, and pre-populate with first slug.
+		$settings_map = [];
+		foreach ( $visible_installed_slugs as $s ) {
+			$ps = $all_settings[ $s ] ?? [];
+			$settings_map[ $s ] = [
+				'notifyEmail'            => (string) ( $ps['notifyEmail'] ?? '' ),
+				'redirectUrl'            => (string) ( $ps['redirectUrl'] ?? '' ),
+				'showProjectTitle'       => (string) ( $ps['showProjectTitle'] ?? '0' ),
+				'showRequiredFieldsNote' => (string) ( $ps['showRequiredFieldsNote'] ?? '0' ),
+				'sectionLabelVisibility' => (string) ( $ps['sectionLabelVisibility'] ?? 'auto' ),
+			];
+		}
+		$first_slug     = reset( $visible_installed_slugs );
+		$init           = $settings_map[ $first_slug ];
+		$settings_json  = wp_json_encode( $settings_map );
+
 		echo '<div class="card xpressui-admin-card">';
 		echo '<h2>' . esc_html__( 'Project Settings', 'xpressui-bridge' ) . '</h2>';
 		echo '<p>' . esc_html__( 'Configure notifications and the post-submission redirect for each workflow.', 'xpressui-bridge' ) . '</p>';
@@ -612,37 +630,63 @@ function xpressui_render_workflows_page() {
 		echo '</select></td></tr>';
 
 		echo '<tr><th><label for="xpressui_notify_email">' . esc_html__( 'Notification email', 'xpressui-bridge' ) . '</label></th>';
-		echo '<td><input type="email" id="xpressui_notify_email" name="xpressui_notify_email" class="regular-text" placeholder="' . esc_attr__( 'hello@example.com', 'xpressui-bridge' ) . '">';
+		echo '<td><input type="email" id="xpressui_notify_email" name="xpressui_notify_email" class="regular-text" placeholder="' . esc_attr__( 'hello@example.com', 'xpressui-bridge' ) . '" value="' . esc_attr( $init['notifyEmail'] ) . '">';
 		echo '<p class="description">' . esc_html__( 'Receive an email on each new submission for this project. Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th><label for="xpressui_redirect_url">' . esc_html__( 'Post-submit redirect', 'xpressui-bridge' ) . '</label></th>';
-		echo '<td><input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://">';
+		echo '<td><input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $init['redirectUrl'] ) . '">';
 		echo '<p class="description">' . esc_html__( 'Redirect the client to this URL after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Form title', 'xpressui-bridge' ) . '</th>';
 		echo '<td><label for="xpressui_show_project_title">';
-		echo '<input type="checkbox" id="xpressui_show_project_title" name="xpressui_show_project_title" value="1">';
+		echo '<input type="checkbox" id="xpressui_show_project_title" name="xpressui_show_project_title" value="1"' . checked( '1', $init['showProjectTitle'], false ) . '>';
 		echo ' ' . esc_html__( 'Display the workflow title above the form inside the WordPress page.', 'xpressui-bridge' ) . '</label>';
 		echo '<p class="description">' . esc_html__( 'Disabled by default to avoid duplicating the WordPress page title.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Required fields note', 'xpressui-bridge' ) . '</th>';
 		echo '<td><label for="xpressui_show_required_fields_note">';
-		echo '<input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1">';
+		echo '<input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1"' . checked( '1', $init['showRequiredFieldsNote'], false ) . '>';
 		echo ' ' . esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
 		echo '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th><label for="xpressui_section_label_visibility">' . esc_html__( 'Section labels', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><select id="xpressui_section_label_visibility" name="xpressui_section_label_visibility" class="regular-text">';
-		echo '<option value="auto">' . esc_html__( 'Auto', 'xpressui-bridge' ) . '</option>';
-		echo '<option value="show">' . esc_html__( 'Always show', 'xpressui-bridge' ) . '</option>';
-		echo '<option value="hide">' . esc_html__( 'Always hide', 'xpressui-bridge' ) . '</option>';
+		foreach ( [ 'auto' => __( 'Auto', 'xpressui-bridge' ), 'show' => __( 'Always show', 'xpressui-bridge' ), 'hide' => __( 'Always hide', 'xpressui-bridge' ) ] as $val => $label ) {
+			echo '<option value="' . esc_attr( $val ) . '"' . selected( $init['sectionLabelVisibility'], $val, false ) . '>' . esc_html( $label ) . '</option>';
+		}
 		echo '</select>';
 		echo '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '</tbody></table>';
 		echo '<p class="submit">';
 		submit_button( __( 'Save settings', 'xpressui-bridge' ), 'primary', 'submit', false );
-		echo '</p></form></div>';
+		echo '</p></form>';
+
+		// JS: update fields when project changes.
+		?>
+		<script>
+		(function () {
+			var settings = <?php echo $settings_json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output ?>;
+			var sel = document.getElementById('xpressui_settings_slug');
+			if (!sel) return;
+			function applySettings(slug) {
+				var s = settings[slug] || {};
+				var email = document.getElementById('xpressui_notify_email');
+				var url   = document.getElementById('xpressui_redirect_url');
+				var title = document.getElementById('xpressui_show_project_title');
+				var req   = document.getElementById('xpressui_show_required_fields_note');
+				var vis   = document.getElementById('xpressui_section_label_visibility');
+				if (email) email.value = s.notifyEmail || '';
+				if (url)   url.value   = s.redirectUrl  || '';
+				if (title) title.checked = s.showProjectTitle === '1';
+				if (req)   req.checked   = s.showRequiredFieldsNote === '1';
+				if (vis)   vis.value     = s.sectionLabelVisibility || 'auto';
+			}
+			sel.addEventListener('change', function () { applySettings(this.value); });
+		})();
+		</script>
+		<?php
+		echo '</div>';
 	}
 
 	echo '</div>'; // .wrap
