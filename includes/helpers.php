@@ -55,9 +55,11 @@ function xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) {
 		$artifacts[] = $config_path;
 	}
 
-	$template_context_path = isset( $manifest['artifacts']['templateContext'] ) ? sanitize_text_field( (string) $manifest['artifacts']['templateContext'] ) : 'template.context.json';
-	if ( '' !== $template_context_path ) {
-		$artifacts[] = $template_context_path;
+	if ( isset( $manifest['artifacts']['templateContext'] ) ) {
+		$template_context_path = sanitize_text_field( (string) $manifest['artifacts']['templateContext'] );
+		if ( '' !== $template_context_path ) {
+			$artifacts[] = $template_context_path;
+		}
 	}
 
 	$runtime_path = isset( $manifest['artifacts']['wordpress']['runtime'] ) ? sanitize_text_field( (string) $manifest['artifacts']['wordpress']['runtime'] ) : '';

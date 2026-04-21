@@ -1113,11 +1113,11 @@ function xpressui_get_required_manifest_artifacts( array $manifest ) {
 		$required[] = 'form.config.json';
 	}
 
-	$template_context_path = isset( $artifacts['templateContext'] ) ? sanitize_text_field( (string) $artifacts['templateContext'] ) : '';
-	if ( $template_context_path !== '' ) {
-		$required[] = $template_context_path;
-	} else {
-		$required[] = 'template.context.json';
+	if ( isset( $artifacts['templateContext'] ) ) {
+		$template_context_path = sanitize_text_field( (string) $artifacts['templateContext'] );
+		if ( '' !== $template_context_path ) {
+			$required[] = $template_context_path;
+		}
 	}
 
 	$html_path = isset( $artifacts['html'] ) ? sanitize_text_field( (string) $artifacts['html'] ) : '';

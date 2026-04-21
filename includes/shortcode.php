@@ -61,15 +61,14 @@ function xpressui_render_shortcode( $atts ) {
 	// Load template context from uploads — JSON data only, no executable code.
 	$template_context = xpressui_load_workflow_template_context( $slug );
 	if ( empty( $template_context ) ) {
-		return '<p class="xpressui-embed-error">'
-			. esc_html(
-				sprintf(
-					/* translators: %s: project slug */
-					__( '[xpressui] error: could not load template context for "%s".', 'xpressui-bridge' ),
-					$slug
-				)
-			)
-			. '</p>';
+		// No template.context.json — build a minimal skeleton; rendered_form will be
+		// populated from form.config.json below if that file exists.
+		$template_context = [
+			'project' => [ 'id' => $slug, 'slug' => $slug, 'name' => $slug ],
+			'theme'   => [],
+			'target'  => 'wordpress',
+			'runtime' => [],
+		];
 	}
 
 	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.

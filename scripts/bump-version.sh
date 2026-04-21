@@ -11,6 +11,7 @@ fi
 
 PLUGIN_FILE="xpressui-wordpress-bridge.php"
 README_FILE="readme.txt"
+VERSION_FILE="xpressui-version.txt"
 
 # Update WordPress plugin header
 sed -i "s/^ \* Version:.*/ * Version:           ${VERSION}/" "$PLUGIN_FILE"
@@ -21,9 +22,12 @@ sed -i "s/define( 'XPRESSUI_BRIDGE_VERSION', '[^']*' );/define( 'XPRESSUI_BRIDGE
 # Update readme.txt Stable tag (must match plugin version or Plugin Check fails)
 sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" "$README_FILE"
 
-echo "Updated $PLUGIN_FILE and $README_FILE to version ${VERSION}"
+# Update xpressui-version.txt (tracks the @lybaba/xpressui runtime version, kept in sync)
+echo "${VERSION}" > "$VERSION_FILE"
 
-git add "$PLUGIN_FILE" "$README_FILE"
+echo "Updated $PLUGIN_FILE, $README_FILE and $VERSION_FILE to version ${VERSION}"
+
+git add "$PLUGIN_FILE" "$README_FILE" "$VERSION_FILE"
 git commit -m "Bump version to ${VERSION}"
 git tag "v${VERSION}"
 
