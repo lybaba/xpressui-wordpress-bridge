@@ -62,72 +62,6 @@ function xpressui_pro_workflow_row_actions( array $actions, string $slug ): arra
 	return $actions;
 }
 
-add_action( 'admin_head', 'xpressui_pro_render_workflow_action_styles' );
-
-function xpressui_pro_render_workflow_action_styles(): void {
-	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-	if ( ! $screen || 'xpressui_submission_page_xpressui-bridge' !== $screen->id ) {
-		return;
-	}
-
-echo '<style>
-.xpressui-pro-action-link{
-	display:inline-flex;
-	align-items:center;
-	gap:5px;
-	max-width:100%;
-	padding:4px 8px;
-	border-radius:999px;
-	border:1px solid #c7d2fe;
-	background:#eef2ff;
-	color:#243b7a !important;
-	font-size:12px;
-	font-weight:600;
-	line-height:1.2;
-	text-decoration:none;
-	box-shadow:none;
-	transition:background-color .15s ease, border-color .15s ease, color .15s ease;
-	white-space:nowrap;
-	vertical-align:middle;
-	box-sizing:border-box;
-}
-.xpressui-pro-action-link:hover,
-.xpressui-pro-action-link:focus{
-	color:#1e3268 !important;
-	background:#e0e7ff;
-	border-color:#a5b4fc;
-}
-.xpressui-pro-action-link:focus{
-	outline:none;
-	box-shadow:0 0 0 2px rgba(255,255,255,.92),0 0 0 4px rgba(99,102,241,.18);
-}
-.wp-list-table .column-actions .xpressui-pro-action-link{
-	margin:0 0 6px;
-	max-width:100%;
-	overflow:hidden;
-}
-.wp-list-table .column-actions{
-	overflow-wrap:anywhere;
-	line-height:1.55;
-}
-.wp-list-table .column-actions a:not(.xpressui-pro-action-link),
-.wp-list-table .column-actions .xpressui-muted{
-	font-size:12px;
-}
-.wp-list-table .column-actions a:not(.xpressui-pro-action-link){
-	color:#3858a6;
-	text-decoration:none;
-}
-.wp-list-table .column-actions a:not(.xpressui-pro-action-link):hover,
-.wp-list-table .column-actions a:not(.xpressui-pro-action-link):focus{
-	color:#243b7a;
-	text-decoration:underline;
-}
-.wp-list-table .column-actions .xpressui-muted{
-	color:#8a8f98;
-}
-</style>';
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -421,7 +355,6 @@ function xpressui_pro_render_customize_page(): void {
 	// -----------------------------------------------------------------------
 
 	echo '<div class="wrap xpressui-admin-wrap">';
-	xpressui_pro_render_overlay_styles();
 	xpressui_pro_render_overlay_header( $slug, $back_url, $summary_stats, $notice_class, $notice_messages );
 
 	echo '<form method="post" action="">';
@@ -454,7 +387,6 @@ function xpressui_pro_render_customize_page(): void {
 
 	echo '</form>';
 
-	xpressui_pro_render_overlay_scripts();
 	echo '<br class="clear">';
 	echo '</div>';
 }
@@ -762,85 +694,6 @@ function xpressui_pro_handle_overlay_submission( string $slug, array $pack_field
 	return $result;
 }
 
-function xpressui_pro_render_overlay_styles(): void {
-	echo '<style>
-	.xpressui-admin-card{background:#fff;border:1px solid #c3c4c7;border-radius:4px;margin-bottom:10px;box-shadow:0 1px 1px rgba(0,0,0,.04)}
-	.xpressui-card-summary{cursor:pointer;padding:10px 14px;display:flex;align-items:center;gap:8px;list-style:none;user-select:none;border-bottom:1px solid transparent}
-	.xpressui-card-summary::-webkit-details-marker{display:none}
-	.xpressui-card-summary::before{content:"▶";font-size:9px;color:#2966ff;flex-shrink:0;transition:transform .15s}
-	.xpressui-admin-card[open]>.xpressui-card-summary::before{transform:rotate(90deg)}
-	.xpressui-admin-card[open]>.xpressui-card-summary{border-bottom-color:#dfe8f2}
-	.xpressui-card-summary h2{margin:0;font-size:13px;font-weight:600;flex:1;text-transform:uppercase;letter-spacing:.04em;color:#122033}
-	.xpressui-card-body{padding:0 12px}
-	.xpressui-sticky-actions{position:sticky;top:32px;z-index:100;background:#fff;border-left:3px solid #2966ff;border-radius:0 4px 4px 0;padding:7px 14px;margin-bottom:14px;box-shadow:0 2px 10px rgba(41,102,255,.15);display:flex;align-items:center;gap:10px}
-	.xpressui-sticky-actions-buttons{display:inline-flex;align-items:center;gap:10px;margin-left:auto}
-	.xpressui-pro-header{background:radial-gradient(circle at top right, rgba(109,77,255,.28), transparent 28%),radial-gradient(circle at 85% 20%, rgba(56,189,248,.18), transparent 24%),linear-gradient(125deg,#0f172a 0%,#14213d 34%,#2b4fd8 68%,#6d4dff 100%);margin:-10px -20px 12px;padding:16px 18px 15px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;position:relative;overflow:hidden;box-shadow:inset 0 -1px 0 rgba(255,255,255,.08)}
-	.xpressui-pro-header::after{content:"";position:absolute;right:-56px;top:-56px;width:220px;height:220px;background:rgba(255,255,255,.05);border-radius:50%}
-	.xpressui-pro-header::before{content:"";position:absolute;left:-48px;bottom:-72px;width:220px;height:220px;background:rgba(56,189,248,.08);border-radius:50%}
-	.xpressui-pro-header-left{position:relative;z-index:1}
-	.xpressui-pro-header-left h1{margin:0 0 3px;font-size:18px;font-weight:700;color:#fff;line-height:1.12}
-	.xpressui-pro-header-left p{margin:0;max-width:640px;font-size:11px;color:rgba(255,255,255,.76);line-height:1.4}
-	.xpressui-pro-header-right{position:relative;z-index:1;text-align:right;flex-shrink:0;display:grid;justify-items:end;gap:6px}
-	.xpressui-pro-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.24);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#fff;text-transform:uppercase;box-shadow:0 10px 24px rgba(15,23,42,.18)}
-	.xpressui-pro-back{display:block;margin-top:0;font-size:12px;color:rgba(255,255,255,.68);text-decoration:none}
-	.xpressui-pro-back:hover{color:#fff}
-	.xpressui-inline-notice{margin:0 0 14px;padding:10px 14px;border-radius:6px;border-left:4px solid #00a32a;background:#fff;color:#1d2327;box-shadow:0 1px 2px rgba(15,23,42,.06)}
-	.xpressui-inline-notice p{margin:0;font-size:12px;font-weight:600;color:#1d2327;line-height:1.45}
-	.xpressui-inline-notice.is-error{border-left-color:#d63638}
-	.xpressui-inline-notice.is-warning{border-left-color:#dba617;background:#fffbf0}
-	.xpressui-inline-notice ul{margin:6px 0 0 18px;padding:0}
-	.xpressui-inline-notice li{margin:0 0 3px;font-size:12px;color:#1d2327;line-height:1.4}
-	.xpressui-pro-summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-	.xpressui-pro-summary-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#fff;border:1px solid #dfe8f2;color:#122033;box-shadow:0 1px 2px rgba(15,23,42,.05)}
-	.xpressui-pro-summary-chip strong{font-size:12px}
-	.xpressui-pro-summary-chip span{font-size:10px;color:#5b6b82;text-transform:uppercase;letter-spacing:.06em}
-	.xpressui-pro-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px}
-	.xpressui-pro-toolbar button{border:1px solid #c5d4ee;background:#fff;color:#183ea8;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer}
-	.xpressui-pro-toolbar button:hover{background:#f5f9ff}
-	.xpressui-pro-toolbar button.is-accent{background:#183ea8;border-color:#183ea8;color:#fff}
-	.xpressui-pro-toolbar button.is-accent:hover{background:#122f80}
-	.xpressui-pro-toolbar button.is-active{background:#e9f0ff;border-color:#9db6f7;color:#183ea8}
-	.xpressui-pro-toolbar-search{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:min(360px,100%)}
-	.xpressui-pro-toolbar-search input{width:100%;min-height:34px;border:1px solid #c5d4ee;border-radius:999px;padding:0 14px;font-size:12px;box-shadow:none}
-	.xpressui-pro-toolbar-search input:focus{border-color:#183ea8;box-shadow:0 0 0 1px rgba(24,62,168,.15)}
-	.xpressui-pro-toolbar-meta{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#5b6b82}
-	.xpressui-pro-toolbar-meta strong{color:#122033}
-	.xpressui-pro-empty-state{display:none;margin:0 0 14px;padding:14px 16px;border:1px dashed #c7d7f6;border-radius:10px;background:linear-gradient(180deg,#f8fbff 0%,#f1f6ff 100%);color:#36507a;font-size:13px}
-	.xpressui-admin-card.is-filtered-out{display:none}
-	.xpressui-card-meta{display:inline-flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
-	.xpressui-card-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#183ea8;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-	.xpressui-card-badge.is-customized{background:#e9f7ef;color:#0a7a32}
-	.xpressui-sticky-status{font-size:12px;font-weight:600;color:#5b6b82}
-	.xpressui-sticky-status.is-dirty{color:#b45309}
-	.xpressui-sticky-status.is-saved{color:#0a7a32}
-	.xpressui-reset-chip{display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;border:1px solid #d6def2;background:#fff;color:#183ea8;font-size:11px;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease}
-	.xpressui-reset-chip:hover{background:#f5f9ff;border-color:#b7c8eb}
-	.xpressui-field-block{padding:12px 14px;border:1px solid #e5edf8;border-radius:10px;background:#fff}
-	.xpressui-field-block.is-customized{border-color:#b8ccff;background:linear-gradient(180deg,#f9fbff 0%,#f3f7ff 100%)}
-	.xpressui-field-block-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
-	.xpressui-field-block-title{font-size:13px;font-weight:700;color:#122033}
-	.xpressui-field-block-type{font-size:11px;color:#5b6b82;text-transform:uppercase;letter-spacing:.06em}
-	.xpressui-field-block-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 12px}
-	.xpressui-field-control label{display:block;font-size:12px;color:#5b6b82;margin-bottom:4px;font-weight:600}
-	.xpressui-field-control.is-full{grid-column:1 / -1}
-	.xpressui-field-control-row{grid-column:1 / -1;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 12px}
-	.xpressui-choice-group{margin-top:10px;padding-left:12px;border-left:3px solid #d8e3f7}
-	.xpressui-sortable-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
-	.xpressui-choice-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid transparent;border-radius:6px;padding:4px;margin-left:-8px;transition:all .15s}
-	.xpressui-choice-row.is-dragging{opacity:.4;background:#f5f9ff;border:1px dashed #9db6f7}
-	.xpressui-drag-handle{cursor:grab;padding:0 4px;color:#a7b6cc;user-select:none;font-size:16px;line-height:1}
-	.xpressui-drag-handle:active{cursor:grabbing}
-	.xpressui-choice-label{min-width:120px;color:#5b6b82;font-size:12px;font-weight:600}
-	.xpressui-choice-toggle{display:inline-flex;align-items:center;gap:6px;padding:0 8px;height:32px;border:1px solid #d6def2;border-radius:999px;background:#f8fbff;color:#183ea8;font-size:12px;font-weight:600}
-	.xpressui-choice-toggle input{margin:0}
-	.xpressui-muted{color:#5b6b82;font-size:12px}
-	.xpressui-input-invalid{border-color:#d63638 !important;box-shadow:0 0 0 1px rgba(214,54,56,.18)}
-	.xpressui-inline-field-error{margin:6px 0 0;color:#b42318;font-size:12px;font-weight:600}
-	#wpfooter{position:relative !important;margin-top:40px}
-	@media (max-width: 960px){.xpressui-pro-header-right{width:100%;justify-items:start;text-align:left}}
-	@media (max-width: 782px){.xpressui-field-control-row{grid-template-columns:1fr}.xpressui-pro-header{padding:14px 14px 13px}.xpressui-pro-header-left h1{font-size:17px}.xpressui-pro-summary{gap:7px}}
-	</style>';
-}
 
 function xpressui_pro_render_overlay_header( string $slug, string $back_url, array $summary_stats, string $notice_class, array $notice_messages ): void {
 	echo '<div class="xpressui-pro-header">';
@@ -1440,174 +1293,6 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 	}
 }
 
-function xpressui_pro_render_overlay_scripts(): void {
-	echo '<script>
-let xpressuiProFormDirty = false;
-const xpressuiProForm = document.querySelector(".xpressui-admin-wrap form");
-const xpressuiDirtyStatus = document.querySelector("[data-xpressui-dirty-status]");
-const xpressuiCardSearch = document.querySelector("[data-xpressui-card-search]");
-const xpressuiVisibleCount = document.querySelector("[data-xpressui-visible-count]");
-const xpressuiEmptyState = document.querySelector("[data-xpressui-empty-state]");
-let xpressuiCustomizedOnly = false;
-function xpressuiSetDirtyState(isDirty){
-	xpressuiProFormDirty = isDirty;
-	if(!xpressuiDirtyStatus){return;}
-	xpressuiDirtyStatus.classList.toggle("is-dirty", isDirty);
-	xpressuiDirtyStatus.classList.toggle("is-saved", !isDirty);
-	xpressuiDirtyStatus.textContent = isDirty ? "Unsaved changes" : "No unsaved changes";
-}
-function xpressuiApplyCardFilters(){
-	const container = document.querySelector(".xpressui-admin-wrap");
-	if(!container){return;}
-	const query = xpressuiCardSearch && typeof xpressuiCardSearch.value === "string"
-		? xpressuiCardSearch.value.trim().toLowerCase()
-		: "";
-	let visibleCount = 0;
-	container.querySelectorAll("details.xpressui-admin-card").forEach(function(card){
-		const searchText = (card.getAttribute("data-xpressui-search-text") || "").toLowerCase();
-		const isCustomized = card.getAttribute("data-xpressui-customized") === "1";
-		const matchesQuery = !query || searchText.indexOf(query) !== -1;
-		const matchesCustomized = !xpressuiCustomizedOnly || isCustomized;
-		const isVisible = matchesQuery && matchesCustomized;
-		card.classList.toggle("is-filtered-out", !isVisible);
-		if(isVisible){
-			visibleCount += 1;
-			if(query){
-				card.open = true;
-			}
-		}
-	});
-	if(xpressuiVisibleCount){
-		xpressuiVisibleCount.textContent = String(visibleCount);
-	}
-	if(xpressuiEmptyState){
-		xpressuiEmptyState.style.display = visibleCount === 0 ? "" : "none";
-	}
-}
-if(xpressuiProForm){
-	xpressuiProForm.addEventListener("input", function(){ xpressuiSetDirtyState(true); });
-	xpressuiProForm.addEventListener("change", function(){ xpressuiSetDirtyState(true); });
-	xpressuiProForm.addEventListener("submit", function(){ xpressuiSetDirtyState(false); });
-	window.addEventListener("beforeunload", function(event){
-		if(!xpressuiProFormDirty){return;}
-		event.preventDefault();
-		event.returnValue = "";
-	});
-}
-if(xpressuiCardSearch){
-	xpressuiCardSearch.addEventListener("input", function(){
-		xpressuiApplyCardFilters();
-	});
-}
-document.addEventListener("click", function(event){
-	const trigger = event.target.closest(".xpressui-pro-details-toggle");
-	if(!trigger){return;}
-	const container = document.querySelector(".xpressui-admin-wrap");
-	if(!container){return;}
-	const target = trigger.getAttribute("data-target");
-	if(target === "jump-customized"){
-		const firstCustomized = container.querySelector("details.xpressui-admin-card[data-xpressui-customized=\"1\"]");
-		if(firstCustomized){
-			firstCustomized.open = true;
-			firstCustomized.scrollIntoView({behavior:"smooth", block:"start"});
-		}
-		return;
-	}
-	container.querySelectorAll("details.xpressui-admin-card").forEach(function(card){
-		if(target === "all"){
-			card.open = true;
-		}else if(target === "none"){
-			card.open = false;
-		}else if(target === "customized"){
-			card.open = card.getAttribute("data-xpressui-customized") === "1";
-		}
-	});
-});
-document.addEventListener("click", function(event){
-	const clearTrigger = event.target.closest("[data-action=\"clear-search\"]");
-	if(clearTrigger && xpressuiCardSearch){
-		event.preventDefault();
-		xpressuiCardSearch.value = "";
-		xpressuiApplyCardFilters();
-		xpressuiCardSearch.focus();
-		return;
-	}
-	const filterTrigger = event.target.closest(".xpressui-pro-filter-toggle");
-	if(!filterTrigger){return;}
-	event.preventDefault();
-	xpressuiCustomizedOnly = !xpressuiCustomizedOnly;
-	filterTrigger.classList.toggle("is-active", xpressuiCustomizedOnly);
-	filterTrigger.setAttribute("aria-pressed", xpressuiCustomizedOnly ? "true" : "false");
-	xpressuiApplyCardFilters();
-});
-document.addEventListener("click", function(event){
-	const trigger = event.target.closest("[data-xpressui-reset-trigger]");
-	if(!trigger){return;}
-	event.preventDefault();
-	event.stopPropagation();
-	const scopeId = trigger.getAttribute("data-xpressui-reset-trigger");
-	if(!scopeId){return;}
-	let scope = null;
-	if(scopeId.indexOf("field-") === 0){
-		scope = trigger.closest("tr");
-	}else{
-		scope = document.querySelector("[data-xpressui-reset-scope=\"" + scopeId + "\"]");
-	}
-	if(!scope){return;}
-	scope.querySelectorAll("input, textarea, select").forEach(function(field){
-		if(field.tagName === "SELECT"){
-			field.value = "";
-		}else if(field.type === "checkbox" || field.type === "radio"){
-			field.checked = false;
-		}else{
-			field.value = "";
-		}
-		field.dispatchEvent(new Event("input", { bubbles: true }));
-		field.dispatchEvent(new Event("change", { bubbles: true }));
-	});
-});
-xpressuiApplyCardFilters();
-
-document.querySelectorAll("[data-xpressui-sortable]").forEach(function(list) {
-	let draggedItem = null;
-	list.addEventListener("dragstart", function(e) {
-		draggedItem = e.target.closest(".xpressui-choice-row");
-		if (draggedItem) {
-			setTimeout(function() { draggedItem.classList.add("is-dragging"); }, 0);
-		}
-	});
-	list.addEventListener("dragend", function(e) {
-		if (draggedItem) {
-			draggedItem.classList.remove("is-dragging");
-			draggedItem = null;
-		}
-		xpressuiSetDirtyState(true);
-	});
-	list.addEventListener("dragover", function(e) {
-		e.preventDefault();
-		const draggableElements = Array.prototype.slice.call(list.querySelectorAll(".xpressui-choice-row:not(.is-dragging)"));
-		const afterElement = draggableElements.reduce(function(closest, child) {
-			const box = child.getBoundingClientRect();
-			const offset = e.clientY - box.top - box.height / 2;
-			if (offset < 0 && offset > closest.offset) {
-				return { offset: offset, element: child };
-			} else {
-				return closest;
-			}
-		}, { offset: Number.NEGATIVE_INFINITY }).element;
-		
-		if (draggedItem) {
-			if (afterElement == null) {
-				list.appendChild(draggedItem);
-			} else {
-				list.insertBefore(draggedItem, afterElement);
-			}
-		}
-	});
-});
-</script>';
-	echo '</div>';
-}
 
 
 // ---------------------------------------------------------------------------
