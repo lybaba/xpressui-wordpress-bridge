@@ -94,6 +94,7 @@ function xpressui_render_shortcode( $atts ) {
 		: null;
 
 	if ( is_array( $form_config ) ) {
+		$form_config = xpressui_normalize_form_config( $form_config, $slug );
 		// Build rendered_form from config when absent from template context (no full Console export).
 		if ( ! is_array( $template_context['rendered_form'] ?? null ) ) {
 			$template_context['rendered_form'] = xpressui_build_rendered_form_from_config( $form_config );
