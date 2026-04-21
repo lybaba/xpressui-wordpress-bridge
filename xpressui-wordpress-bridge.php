@@ -3,7 +3,7 @@
  * Plugin Name:       XPressUI Bridge
  * Plugin URI:        https://xpressui.iakpress.com/
  * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your site with a shortcode and review submissions in wp-admin.
- * Version:           1.0.74
+ * Version:           1.0.75
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            IAKPress
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'XPRESSUI_BRIDGE_VERSION', '1.0.74' );
+define( 'XPRESSUI_BRIDGE_VERSION', '1.0.75' );
 define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.12' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );
@@ -101,4 +101,28 @@ function xpressui_enqueue_admin_assets( $hook ) {
 		[],
 		XPRESSUI_BRIDGE_VERSION
 	);
+	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id ) {
+		wp_enqueue_script(
+			'xpressui-bridge-admin-wf',
+			XPRESSUI_BRIDGE_URL . 'assets/admin-workflows.js',
+			[],
+			XPRESSUI_BRIDGE_VERSION,
+			true
+		);
+		wp_localize_script(
+			'xpressui-bridge-admin-wf',
+			'xpressuiBridgeAdmin',
+			[
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'settingsMap' => [],
+				'i18n'        => [
+					'saving'        => __( 'Saving…', 'xpressui-bridge' ),
+					'saved'         => __( 'Saved.', 'xpressui-bridge' ),
+					'error'         => __( 'Error.', 'xpressui-bridge' ),
+					'networkError'  => __( 'Network error.', 'xpressui-bridge' ),
+					'toggleSection' => __( 'Toggle section', 'xpressui-bridge' ),
+				],
+			]
+		);
+	}
 }
