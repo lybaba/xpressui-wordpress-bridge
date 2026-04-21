@@ -472,10 +472,10 @@ function xpressui_pro_handle_overlay_submission( string $slug, array $pack_field
 	];
 
 	if ( isset( $_POST['xpressui_save_overlay'] ) && check_admin_referer( 'xpressui_overlay_' . $slug, 'xpressui_overlay_nonce' ) ) {
-		$raw_notify_email         = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) );
-		$raw_redirect_url         = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) );
-		$notify_email             = sanitize_email( $raw_notify_email ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$redirect_url             = esc_url_raw( $raw_redirect_url ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_notify_email         = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via sanitize_email() on the next line
+		$raw_redirect_url         = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via esc_url_raw() on the next line
+		$notify_email             = sanitize_email( $raw_notify_email );
+		$redirect_url             = esc_url_raw( $raw_redirect_url );
 		$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
@@ -550,14 +550,14 @@ function xpressui_pro_handle_overlay_submission( string $slug, array $pack_field
 			$theme_overlay['font_family'] = $font_family;
 		}
 
-		$raw_colors    = isset( $_POST['xpressui_overlay_theme']['colors'] ) && is_array( $_POST['xpressui_overlay_theme']['colors'] ) ? $_POST['xpressui_overlay_theme']['colors'] : [];
+		$raw_colors    = isset( $_POST['xpressui_overlay_theme']['colors'] ) && is_array( $_POST['xpressui_overlay_theme']['colors'] ) ? wp_unslash( $_POST['xpressui_overlay_theme']['colors'] ) : []; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value sanitized via sanitize_hex_color() in the foreach below
 		foreach ( [ 'primary', 'surface', 'page_background', 'text', 'muted_text', 'border' ] as $c ) {
 			$val = sanitize_hex_color( wp_unslash( $raw_colors[ $c ] ?? '' ) );
 			if ( $val ) {
 				$theme_overlay['colors'][ $c ] = $val;
 			}
 		}
-		$raw_radius = isset( $_POST['xpressui_overlay_theme']['radius'] ) && is_array( $_POST['xpressui_overlay_theme']['radius'] ) ? $_POST['xpressui_overlay_theme']['radius'] : [];
+		$raw_radius = isset( $_POST['xpressui_overlay_theme']['radius'] ) && is_array( $_POST['xpressui_overlay_theme']['radius'] ) ? wp_unslash( $_POST['xpressui_overlay_theme']['radius'] ) : []; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value cast to int in the foreach below
 		foreach ( [ 'card', 'input', 'button' ] as $r ) {
 			$val = trim( wp_unslash( (string) ( $raw_radius[ $r ] ?? '' ) ) );
 			if ( $val !== '' && is_numeric( $val ) ) {
@@ -1431,7 +1431,7 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			$html .= '</div></div>';
 
 			echo '<tr><td colspan="2" style="padding:0; padding-bottom: 12px;">';
-			echo $header . $html;
+			echo $header . $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $header and $html are built exclusively with esc_attr()/esc_html() throughout the loop above
 			echo '</td></tr>';
 		}
 
