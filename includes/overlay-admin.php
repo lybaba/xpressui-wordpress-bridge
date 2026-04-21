@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 // ---------------------------------------------------------------------------
 
 add_action( 'admin_menu', 'xpressui_pro_register_customize_page' );
-add_action( 'admin_menu', 'xpressui_pro_register_console_link' );
+add_action( 'admin_menu', 'xpressui_pro_register_console_link', 20 );
 
 function xpressui_pro_register_customize_page(): void {
 	add_submenu_page(
