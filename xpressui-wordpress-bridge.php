@@ -37,8 +37,12 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/webhooks.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/light-runtime.php';
-require_once XPRESSUI_BRIDGE_DIR . 'includes/overlay.php';
-require_once XPRESSUI_BRIDGE_DIR . 'includes/overlay-admin.php';
+// Guard: older versions of the Pro plugin also loaded these files.
+// Skip if already defined to avoid fatal redeclaration errors during the transition.
+if ( ! function_exists( 'xpressui_pro_filter_template_context' ) ) {
+	require_once XPRESSUI_BRIDGE_DIR . 'includes/overlay.php';
+	require_once XPRESSUI_BRIDGE_DIR . 'includes/overlay-admin.php';
+}
 
 // --- Post type ---
 add_action( 'init', 'xpressui_register_submission_post_type' );
