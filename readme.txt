@@ -46,7 +46,38 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 = Where do I get the workflow package (.zip) to upload? =
 
-You build and export it in the XPressUI console at [xpressui.iakpress.com](https://xpressui.iakpress.com/). The console lets you design multi-step forms and document-intake workflows without code, then export them as self-contained packages.
+The recommended way is to design and export it from the XPressUI console at [xpressui.iakpress.com](https://xpressui.iakpress.com/). You can also create a minimal package by hand — see the next question.
+
+= Can I create a workflow package without the XPressUI console? =
+
+Yes. A minimal package only needs two files:
+
+* `manifest.json` — declares the project slug and schema version.
+* `form.config.json` — declares the form sections and fields.
+
+The plugin automatically fills in the technical defaults (submission endpoint, provider mode, metadata) that the console normally generates. Example `manifest.json`:
+
+  {
+    "$schema": "console.export/v2",
+    "projectSlug": "my-form",
+    "projectName": "My Form"
+  }
+
+Example `form.config.json` (single-step, two fields):
+
+  {
+    "sections": {
+      "custom": [
+        { "type": "section", "name": "main", "label": "Contact" }
+      ],
+      "main": [
+        { "type": "text",  "name": "name",  "label": "Full name",  "required": true },
+        { "type": "email", "name": "email", "label": "Email",      "required": true }
+      ]
+    }
+  }
+
+Zip both files inside a folder named after the project slug (`my-form/manifest.json`, `my-form/form.config.json`), then upload the zip in **Submissions › Workflows**.
 
 = What does the [xpressui] shortcode accept? =
 
