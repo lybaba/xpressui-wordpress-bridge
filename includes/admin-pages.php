@@ -333,6 +333,17 @@ function xpressui_render_workflows_page() {
 	echo '<td>' . ( ! empty( $runtime_health['bridge']['exists'] ) ? '<span class="xpressui-badge">' . esc_html__( 'Present', 'xpressui-bridge' ) . '</span>' : '<span class="xpressui-badge xpressui-badge--status-new">' . esc_html__( 'Missing', 'xpressui-bridge' ) . '</span>' ) . '</td>';
 	echo '<td><code>' . esc_html( (string) ( $runtime_health['bridge']['url'] ?? '' ) ) . '</code></td>';
 	echo '</tr>';
+	echo '<tr>';
+	echo '<td><strong>' . esc_html__( 'Pro runtime', 'xpressui-bridge' ) . '</strong></td>';
+	$pro_runtime_status = ! empty( $runtime_health['pro']['available'] )
+		? ( ! empty( $runtime_health['pro']['exists'] ) ? __( 'Present', 'xpressui-bridge' ) : __( 'Missing', 'xpressui-bridge' ) )
+		: __( 'Unavailable', 'xpressui-bridge' );
+	$pro_runtime_badge_class = ! empty( $runtime_health['pro']['available'] ) && ! empty( $runtime_health['pro']['exists'] )
+		? 'xpressui-badge'
+		: 'xpressui-badge xpressui-badge--status-new';
+	echo '<td><span class="' . esc_attr( $pro_runtime_badge_class ) . '">' . esc_html( $pro_runtime_status ) . '</span></td>';
+	echo '<td><code>' . esc_html( (string) ( $runtime_health['pro']['url'] ?? '' ) ) . '</code></td>';
+	echo '</tr>';
 	echo '</tbody></table>';
 	echo '</div>';
 
@@ -511,6 +522,8 @@ function xpressui_render_workflows_page() {
 	submit_button( __( 'Install workflow', 'xpressui-bridge' ), 'primary', 'submit', false );
 	echo '</p></form>';
 	echo '</div>';
+
+	do_action( 'xpressui_workflows_page_sections' );
 
 	// --- Installed workflows table ---
 	echo '<div class="card xpressui-admin-card">';
