@@ -530,7 +530,6 @@ function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
 		'bridgeMode'    => sanitize_key( (string) ( $compatibility['bridgeMode'] ?? '' ) ),
 		'shortcodeMode' => sanitize_key( (string) ( $compatibility['shortcodeMode'] ?? '' ) ),
 		'templateProfile' => sanitize_key( (string) ( $compatibility['templateProfile'] ?? '' ) ),
-		'requiresLicense' => ! empty( $compatibility['requiresLicense'] ),
 		'components'    => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['components'] ?? [] ) ) ) ),
 		'features'      => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['features'] ?? [] ) ) ) ),
 		'themeFeatures' => array_values( array_filter( array_map( 'sanitize_key', (array) ( $capabilities['themeFeatures'] ?? [] ) ) ) ),
@@ -861,75 +860,14 @@ function xpressui_get_status_options() {
 	];
 }
 
-// ---------------------------------------------------------------------------
-// License and Pro capability helpers
-// ---------------------------------------------------------------------------
-
-function xpressui_get_license_settings() {
-	$settings = get_option( 'xpressui_license_settings', [] );
-	return is_array( $settings ) ? $settings : [];
-}
-
-function xpressui_update_license_settings( array $settings ) {
-	update_option( 'xpressui_license_settings', $settings, false );
-}
-
-function xpressui_get_masked_license_key() {
-	$settings = xpressui_get_license_settings();
-	$key      = sanitize_text_field( (string) ( $settings['licenseKey'] ?? '' ) );
-	if ( '' === $key ) {
-		return '';
-	}
-
-	$length = strlen( $key );
-	if ( $length <= 8 ) {
-		return str_repeat( '*', $length );
-	}
-
-	return substr( $key, 0, 4 ) . str_repeat( '*', max( 0, $length - 8 ) ) . substr( $key, -4 );
-}
-
-function xpressui_is_pro_extension_active() {
-	$is_active = (bool) apply_filters( 'xpressui_bridge_is_pro_extension_active', false );
-	return $is_active;
-}
-
-function xpressui_is_pro_only_workflow( $slug ) {
-	$slug          = sanitize_title( (string) $slug );
-	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
-	$listing_group = sanitize_key( (string) ( $manifest_meta['listingGroup'] ?? '' ) );
-	$features      = is_array( $manifest_meta['features'] ?? null ) ? $manifest_meta['features'] : [];
-
-	if ( 'included-pro-tools' === $listing_group ) {
-		return true;
-	}
-
-	if ( in_array( 'validation-playground', $features, true ) ) {
-		return true;
-	}
-
-	return 'validation-playground' === $slug;
-}
-
-function xpressui_has_valid_pro_license() {
-	$settings = xpressui_get_license_settings();
-	$is_valid = (bool) apply_filters( 'xpressui_bridge_has_valid_pro_license', false, $settings );
-	return $is_valid;
-}
-
 function xpressui_get_current_runtime_tier() {
-	return xpressui_is_pro_extension_active() && xpressui_has_valid_pro_license() ? 'pro' : 'light';
+	return 'light';
 }
 
-function xpressui_runtime_supports_workflow( $required_tier = 'light', $requires_license = false ) {
+function xpressui_runtime_supports_workflow( $required_tier = 'light' ) {
 	$required_tier = sanitize_key( (string) $required_tier );
-	$current_tier  = xpressui_get_current_runtime_tier();
 
-	if ( 'pro' === $required_tier || $requires_license ) {
-		return 'pro' === $current_tier;
-	}
-
-	return true;
+	return 'pro' !== $required_tier;
 }
 
 function xpressui_get_runtime_health_summary() {
@@ -943,36 +881,15 @@ function xpressui_get_runtime_health_summary() {
 		? XPRESSUI_BRIDGE_URL . 'runtime/' . $bridge_runtime_name
 		: '';
 
-	$pro_runtime_name = ( defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ) )
-		? 'xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js'
-		: '';
-	$pro_runtime_path = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
-		? XPRESSUI_PRO_DIR . 'runtime/' . $pro_runtime_name
-		: '';
-	$pro_runtime_url  = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
-		? plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' ) . 'runtime/' . $pro_runtime_name
-		: '';
-
-	$current_tier = xpressui_get_current_runtime_tier();
-	$active_runtime_source = 'pro' === $current_tier && $pro_runtime_url !== '' ? 'plugin-pro' : 'plugin-bridge';
-	$active_runtime_url = 'plugin-pro' === $active_runtime_source ? $pro_runtime_url : $bridge_runtime_url;
-
 	return [
-		'currentTier' => $current_tier,
-		'activeRuntimeSource' => $active_runtime_source,
-		'activeRuntimeUrl' => $active_runtime_url,
+		'currentTier' => xpressui_get_current_runtime_tier(),
+		'activeRuntimeSource' => 'plugin-bridge',
+		'activeRuntimeUrl' => $bridge_runtime_url,
 		'bridge' => [
 			'name' => $bridge_runtime_name,
 			'path' => $bridge_runtime_path,
 			'url' => $bridge_runtime_url,
 			'exists' => $bridge_runtime_path !== '' && file_exists( $bridge_runtime_path ),
-		],
-		'pro' => [
-			'name' => $pro_runtime_name,
-			'path' => $pro_runtime_path,
-			'url' => $pro_runtime_url,
-			'exists' => $pro_runtime_path !== '' && file_exists( $pro_runtime_path ),
-			'available' => defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ),
 		],
 	];
 }

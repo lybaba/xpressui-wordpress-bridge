@@ -37,4 +37,3 @@ delete_option( 'xpressui_bundled_workflows_installed' );
 delete_option( 'xpressui_bundled_workflows_version' );
 delete_option( 'xpressui_user_deleted_workflows' );
 delete_option( 'xpressui_project_config_registry' );
-delete_option( 'xpressui_license_settings' );

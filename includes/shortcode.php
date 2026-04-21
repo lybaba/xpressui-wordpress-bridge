@@ -37,15 +37,6 @@ function xpressui_render_shortcode( $atts ) {
 			. '</p>';
 	}
 
-	if ( xpressui_is_pro_only_workflow( $slug ) && ! xpressui_is_pro_extension_active() ) {
-		return '<div class="xpressui-embed-error xpressui-pro-required">'
-			. '<p><strong>'
-			. esc_html__( 'This workflow requires the XPressUI Pro extension.', 'xpressui-bridge' )
-			. '</strong></p><p>'
-			. esc_html__( 'Install and activate the Pro plugin to use this built-in validation workflow.', 'xpressui-bridge' )
-			. '</p></div>';
-	}
-
 	$base_dir = xpressui_get_workflows_base_dir();
 	if ( $base_dir === '' ) {
 		return '<p class="xpressui-embed-error">'

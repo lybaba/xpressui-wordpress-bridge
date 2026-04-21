@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.69
+Stable tag: 1.0.70
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -128,6 +128,11 @@ To rebuild the runtime from those sources:
 
 == Changelog ==
 
+= 1.0.70 =
+* Custom workflow ZIP upload is available in the free plugin.
+* Removed license and Pro-only gating from the WordPress.org build.
+* Packaging now keeps the readable `xpressui-src/` sources while excluding dependency folders from release archives.
+
 = 1.0.21 =
 * Native inline rendering: the [xpressui] shortcode now renders the form directly inside the WordPress page without an iframe.
 * Bundled XPressUI light runtime served from plugin assets — no JavaScript loaded from uploads or external URLs.
@@ -147,6 +152,9 @@ To rebuild the runtime from those sources:
 * Manage Workflows page with ZIP upload and project settings.
 
 == Upgrade Notice ==
+
+= 1.0.70 =
+This release removes WordPress.org-incompatible feature gating and keeps the readable runtime source files in release archives.
 
 = 1.0.21 =
 The shortcode now renders the form inline — no iframe. If you have custom CSS targeting the `.xpressui-embed-wrapper iframe`, update your styles to target `.xpressui-inline-embed` instead.

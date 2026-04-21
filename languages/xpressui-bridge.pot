@@ -265,18 +265,6 @@ msgstr ""
 msgid "Latest submission"
 msgstr ""
 
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:251
-msgid "License and Pro Extension"
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:263
-msgid "License key"
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:255
-msgid "License validated:"
-msgstr ""
-
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:38
 msgid "Manage Workflows"
 msgstr ""
@@ -429,14 +417,6 @@ msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:309
 msgid "Preview starter page"
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:254
-msgid "Pro extension detected:"
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:257
-msgid "Pro workflows remain blocked in the free bridge until a separate Pro extension is active and confirms the license via plugin hooks."
 msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:110

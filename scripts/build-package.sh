@@ -27,7 +27,9 @@ rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org" \
        "${STAGE_DIR:?}/${DIST_SLUG}/scripts" \
        "${STAGE_DIR:?}/${DIST_SLUG}/node_modules" \
-       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src"
+       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src/node_modules" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src/dist" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/default-workflows/validation-playground"
 rm -f "${STAGE_DIR:?}/${DIST_SLUG}/.gitignore" \
       "${STAGE_DIR:?}/${DIST_SLUG}/.gitkeep" \
       "${STAGE_DIR:?}/${DIST_SLUG}/.gitmodules" \
