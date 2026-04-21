@@ -4,4 +4,5 @@
 /runtime/*.mjs
 /runtime/*.mjs.map
 xpressui-src/dist/
+xpressui-src/node_modules/
 xpressui-src/tsconfig.tsbuildinfo

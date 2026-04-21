@@ -1096,16 +1096,6 @@ function xpressui_validate_workflow_manifest( array $manifest, $root_slug ) {
 		return new WP_Error( 'manifest_slug_mismatch', __( 'The workflow manifest project slug must match the package folder name.', 'xpressui-bridge' ) );
 	}
 
-	$runtime_requirements = is_array( $manifest['runtimeRequirements'] ?? null ) ? $manifest['runtimeRequirements'] : [];
-	$tier                 = sanitize_key( (string) ( $runtime_requirements['tier'] ?? 'light' ) );
-
-	if ( ! xpressui_runtime_supports_workflow( $tier ) ) {
-		return new WP_Error(
-			'xpressui_unsupported_workflow',
-			__( 'This workflow requires runtime capabilities that are not available in the current bridge installation.', 'xpressui-bridge' )
-		);
-	}
-
 	return true;
 }
 
