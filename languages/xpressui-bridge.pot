@@ -488,20 +488,12 @@ msgstr ""
 msgid "Runtime"
 msgstr ""
 
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:271
-msgid "Save license key"
-msgstr ""
-
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:485
 msgid "Save settings"
 msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:141
 msgid "Saved with the current status and added to the review history when changed."
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:268
-msgid "Saving a key here does not activate Pro by itself. The future Pro add-on will use this stored value to validate the license."
 msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:329
@@ -531,10 +523,6 @@ msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/metaboxes.php:16
 msgid "Status History"
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:266
-msgid "Stored key:"
 msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/post-type.php:20
@@ -637,10 +625,6 @@ msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:509
 msgid "The bundled workflow was reinstalled successfully."
-msgstr ""
-
-#: dev/wordpress/xpressui-wordpress-bridge/includes/admin-pages.php:252
-msgid "The free bridge stays self-contained. A future XPressUI Pro add-on can hook into this screen to validate a license and unlock pro workflows."
 msgstr ""
 
 #: dev/wordpress/xpressui-wordpress-bridge/includes/privacy.php:20
