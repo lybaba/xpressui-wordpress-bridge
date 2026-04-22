@@ -1,0 +1,55 @@
+name: Ensure Release Tag
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - xpressui-wordpress-bridge.php
+
+permissions:
+  contents: write
+
+jobs:
+  ensure-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read plugin version
+        id: version
+        run: |
+          VERSION=$(grep -oP "define\( 'XPRESSUI_BRIDGE_VERSION', '\K[^']+" xpressui-wordpress-bridge.php)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create missing release tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TAG="v${VERSION}"
+          HEAD_SHA=$(git rev-parse HEAD)
+
+          git fetch --tags --force
+
+          if git rev-parse "refs/tags/${TAG}" >/dev/null 2>&1; then
+            TAG_SHA=$(git rev-list -n 1 "${TAG}")
+            if [ "$TAG_SHA" = "$HEAD_SHA" ]; then
+              echo "Tag ${TAG} already points to HEAD."
+              exit 0
+            fi
+
+            echo "ERROR: ${TAG} already exists on ${TAG_SHA}, but HEAD is ${HEAD_SHA}."
+            echo "Refusing to reuse an existing release tag for a different commit."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin "${TAG}"
+          echo "Created and pushed ${TAG} for ${HEAD_SHA}."
