@@ -143,4 +143,4 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 - Product page: [XpressUI](https://iakpress.com/document-intake/xpressui)
 - Demo : [Document-Intake](https://iakpress.com/document-intake/)
 - Pro add-on: [XPressUI WordPress Bridge PRO](https://github.com/lybaba/xpressui-wordpress-bridge-pro)
-- Support: [hello@iakpress.com](mailto:hello@iakpress.com)
+- Support: [Contact](https://iakpress.com/document-intake/contact)
