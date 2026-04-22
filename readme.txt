@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.76
+Stable tag: 1.0.77
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,6 +164,11 @@ To rebuild the runtime from those sources:
 
 == Changelog ==
 
+= 1.0.77 =
+* Cleaned legacy Pro-related strings from the free package.
+* Clarified public messaging around the free bridge and the separate Pro add-on.
+* Internal cleanup to keep the WordPress.org build focused on the free operational bridge.
+
 = 1.0.70 =
 * Custom workflow ZIP upload is available in the free plugin.
 * Removed license and Pro-only gating from the WordPress.org build.
@@ -188,6 +193,9 @@ To rebuild the runtime from those sources:
 * Manage Workflows page with ZIP upload and project settings.
 
 == Upgrade Notice ==
+
+= 1.0.77 =
+This release cleans up legacy Pro references in the free package and clarifies the public positioning of the free bridge.
 
 = 1.0.70 =
 This release removes WordPress.org-incompatible feature gating and keeps the readable runtime source files in release archives.
