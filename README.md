@@ -25,6 +25,9 @@ The WordPress bridge is the main delivery path today. Over time, the same
 builder/export pipeline is also intended to produce standalone packages for
 non-WordPress hosts.
 
+Need advanced field types, direct Console sync, or local workflow customization?
+Those live in the separate `xpressui-wordpress-bridge-pro` add-on.
+
 ---
 
 ## Features
@@ -139,4 +142,5 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 
 - Product page: [xpressui.iakpress.com](https://xpressui.iakpress.com/)
 - Demo gallery: [xpressui.iakpress.com/#/demos](https://xpressui.iakpress.com/#/demos)
+- Pro add-on: [XPressUI WordPress Bridge PRO](https://github.com/lybaba/xpressui-wordpress-bridge-pro)
 - Support: [hello@iakpress.com](mailto:hello@iakpress.com)

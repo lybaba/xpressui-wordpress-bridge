@@ -16,6 +16,8 @@ Embed any XPressUI workflow on your WordPress site with a shortcode and review i
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
+If you need advanced field types, direct Console Sync, or local workflow customization, those are available through the separate commercial add-on **XPressUI Bridge PRO**.
+
 = Key features =
 
 * **One-click installation** — upload the exported `.zip` file from the XPressUI console directly inside wp-admin.
@@ -135,6 +137,9 @@ For full details on what data is collected and how to manage it, refer to your s
 
 The full source code for this plugin is available at:
 https://github.com/lybaba/xpressui-wordpress-bridge
+
+The commercial Pro add-on is documented here:
+https://github.com/lybaba/xpressui-wordpress-bridge-pro
 
 = Bundled JavaScript runtime =
 
