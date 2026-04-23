@@ -95,6 +95,15 @@ function xpressui_enqueue_admin_assets( $hook ) {
 		[],
 		XPRESSUI_BRIDGE_VERSION
 	);
+	if ( $screen->post_type === 'xpressui_submission' ) {
+		wp_enqueue_script(
+			'xpressui-bridge-admin-submissions',
+			XPRESSUI_BRIDGE_URL . 'assets/admin-submissions.js',
+			[],
+			XPRESSUI_BRIDGE_VERSION,
+			true
+		);
+	}
 	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id ) {
 		wp_enqueue_script(
 			'xpressui-bridge-admin-wf',

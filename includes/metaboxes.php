@@ -130,17 +130,41 @@ function xpressui_save_submission_status( $post_id ) {
 	if ( ! current_user_can( 'edit_post', $post_id ) ) {
 		return;
 	}
+	$previous_status = (string) get_post_meta( $post_id, '_xpressui_submission_status', true );
+	$previous_note   = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
+	$previous_flagged_fields = xpressui_get_flagged_fields( $post_id );
 	$status      = isset( $_POST['xpressui_submission_status'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submission_status'] ) ) : 'new';
 	$note        = isset( $_POST['xpressui_review_note'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_review_note'] ) ) : '';
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized with absint() after unslashing.
 	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_assignee_id'] ) ) : 0;
 	$options     = xpressui_get_status_options();
 
-	$raw_flagged    = isset( $_POST['xpressui_flagged_fields'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_flagged_fields'] ) ) : '';
-	$flagged_fields = array_values( array_filter(
-		array_map( 'trim', explode( ',', $raw_flagged ) ),
-		static function ( $f ) { return preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
-	) );
+	$flagged_fields = [];
+	if ( isset( $_POST['xpressui_flagged_fields'] ) ) {
+		$raw_flagged = wp_unslash( $_POST['xpressui_flagged_fields'] );
+		if ( is_array( $raw_flagged ) ) {
+			$flagged_fields = array_values( array_filter(
+				array_map( 'sanitize_text_field', $raw_flagged ),
+				static function ( $f ) { return is_string( $f ) && preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
+			) );
+		} else {
+			$flagged_fields = array_values( array_filter(
+				array_map( 'trim', explode( ',', sanitize_text_field( (string) $raw_flagged ) ) ),
+				static function ( $f ) { return preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
+			) );
+		}
+	}
+	$raw_legacy_flagged = isset( $_POST['xpressui_flagged_fields_legacy'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_flagged_fields_legacy'] ) ) : '';
+	if ( $raw_legacy_flagged !== '' ) {
+		$flagged_fields = array_merge(
+			$flagged_fields,
+			array_values( array_filter(
+				array_map( 'trim', explode( ',', $raw_legacy_flagged ) ),
+				static function ( $f ) { return preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
+			) )
+		);
+	}
+	$flagged_fields = array_values( array_unique( $flagged_fields ) );
 	update_post_meta( $post_id, '_xpressui_flagged_fields', wp_json_encode( $flagged_fields ) );
 
 	if ( ! isset( $options[ $status ] ) ) {
@@ -148,23 +172,98 @@ function xpressui_save_submission_status( $post_id ) {
 	}
 	xpressui_set_submission_status( $post_id, $status, $note );
 	xpressui_set_assignee( $post_id, $assignee_id );
+
+	$normalized_note = trim( (string) $note );
+	$pending_info_changed = 'pending_info' === $status
+		&& 'pending_info' === $previous_status
+		&& (
+			$previous_note !== $normalized_note
+			|| $previous_flagged_fields !== $flagged_fields
+		);
+	if ( $pending_info_changed ) {
+		xpressui_generate_resume_token( $post_id );
+		xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
+	}
 }
 
 // ---------------------------------------------------------------------------
 // Review notes metabox
 // ---------------------------------------------------------------------------
 
+function xpressui_get_review_field_groups( $post_id ) {
+	$payload      = xpressui_get_submission_payload( $post_id );
+	$config       = xpressui_get_config_snapshot( $post_id );
+	$field_index  = xpressui_build_config_field_index( $config );
+	$hidden_keys  = [ 'projectId', 'projectSlug', 'projectConfigVersion', 'submissionId', 'projectConfigSnapshotJson', 'rest_route' ];
+	$grouped      = [];
+	$rendered     = [];
+
+	if ( ! empty( $field_index ) ) {
+		foreach ( $field_index as $field_name => $field_meta ) {
+			if ( ! array_key_exists( $field_name, $payload ) ) {
+				continue;
+			}
+			$section_label = (string) ( $field_meta['sectionLabel'] ?? __( 'Submission', 'xpressui-bridge' ) );
+			if ( ! isset( $grouped[ $section_label ] ) ) {
+				$grouped[ $section_label ] = [];
+			}
+			$grouped[ $section_label ][ $field_name ] = is_array( $field_meta ) ? $field_meta : [];
+			$rendered[ $field_name ]                  = true;
+		}
+	}
+
+	foreach ( $payload as $field_name => $value ) {
+		if ( isset( $rendered[ $field_name ] ) || in_array( $field_name, $hidden_keys, true ) ) {
+			continue;
+		}
+		if ( ! isset( $grouped[ __( 'Additional fields', 'xpressui-bridge' ) ] ) ) {
+			$grouped[ __( 'Additional fields', 'xpressui-bridge' ) ] = [];
+		}
+		$grouped[ __( 'Additional fields', 'xpressui-bridge' ) ][ $field_name ] = [
+			'label' => $field_name,
+			'type'  => '',
+		];
+	}
+
+	return [
+		'payload' => $payload,
+		'groups'  => $grouped,
+	];
+}
+
+function xpressui_get_review_field_value_preview( $value, $field_meta = [] ) {
+	$formatted = wp_strip_all_tags( (string) xpressui_format_submission_value( $value, $field_meta ), true );
+	$formatted = preg_replace( '/\s+/', ' ', $formatted );
+	$formatted = is_string( $formatted ) ? trim( $formatted ) : '';
+	if ( $formatted === '' ) {
+		return __( 'Empty', 'xpressui-bridge' );
+	}
+	if ( function_exists( 'mb_strimwidth' ) ) {
+		return mb_strimwidth( $formatted, 0, 96, '…' );
+	}
+	return strlen( $formatted ) > 96 ? substr( $formatted, 0, 93 ) . '...' : $formatted;
+}
+
+function xpressui_render_flagged_field_toggle( $field_name, $is_checked ) {
+	return '<label class="xpressui-inline-flagged-switch" aria-label="' . esc_attr__( 'Needs correction', 'xpressui-bridge' ) . '">'
+		. '<span class="xpressui-inline-flagged-switch__text"' . ( $is_checked ? '' : ' style="display:none;"' ) . '>' . esc_html__( 'Needs modification', 'xpressui-bridge' ) . '</span>'
+		. '<span class="xpressui-flagged-switch">'
+		. '<input type="checkbox" name="xpressui_flagged_fields[]" value="' . esc_attr( $field_name ) . '"' . checked( $is_checked, true, false ) . ' />'
+		. '<span class="xpressui-flagged-switch__track" aria-hidden="true"></span>'
+		. '</span>'
+		. '</label>';
+}
+
 function xpressui_render_review_metabox( $post ) {
-	$note           = (string) get_post_meta( $post->ID, '_xpressui_review_note', true );
-	$flagged_fields = xpressui_get_flagged_fields( $post->ID );
+	$note              = (string) get_post_meta( $post->ID, '_xpressui_review_note', true );
 
 	echo '<label for="xpressui_review_note"><strong>' . esc_html__( 'Operator notes', 'xpressui-bridge' ) . '</strong></label>';
 	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width">' . esc_textarea( $note ) . '</textarea>';
 	echo '<p class="xpressui-hint">' . esc_html__( 'Saved with the current status and added to the review history when changed.', 'xpressui-bridge' ) . '</p>';
-
-	echo '<label for="xpressui_flagged_fields" style="display:block;margin-top:12px;"><strong>' . esc_html__( 'Fields to correct', 'xpressui-bridge' ) . '</strong></label>';
-	echo '<input type="text" id="xpressui_flagged_fields" name="xpressui_flagged_fields" class="xpressui-full-width" value="' . esc_attr( implode( ', ', $flagged_fields ) ) . '" placeholder="field_name_1, field_name_2">';
-	echo '<p class="xpressui-hint">' . esc_html__( 'Comma-separated field names the submitter must correct. Non-flagged fields are locked on resubmission.', 'xpressui-bridge' ) . '</p>';
+	echo '<div class="xpressui-review-flagged">';
+	echo '<strong>' . esc_html__( 'Fields to correct', 'xpressui-bridge' ) . '</strong>';
+	echo '<p class="xpressui-hint">' . esc_html__( 'Use the switches directly in Submission Preview to mark the fields the submitter must correct.', 'xpressui-bridge' ) . '</p>';
+	echo '</div>';
 }
 
 // ---------------------------------------------------------------------------
@@ -200,6 +299,7 @@ function xpressui_render_history_metabox( $post ) {
 
 function xpressui_render_preview_metabox( $post ) {
 	$payload     = xpressui_get_submission_payload( $post->ID );
+	$flagged_fields = xpressui_get_flagged_fields( $post->ID );
 	if ( empty( $payload ) ) {
 		echo '<p>' . esc_html__( 'No structured submission data recorded.', 'xpressui-bridge' ) . '</p>';
 		return;
@@ -236,9 +336,11 @@ function xpressui_render_preview_metabox( $post ) {
 			echo '<p class="xpressui-muted xpressui-section-meta">' . esc_html( $section_meta ) . '</p>';
 			echo '<table class="widefat striped xpressui-preview-table"><tbody>';
 			foreach ( $fields as $field_name => $field_meta ) {
+				$is_checked = in_array( $field_name, $flagged_fields, true );
 				echo '<tr>';
 				echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ) . '</th>';
 				echo '<td>' . wp_kses_post( xpressui_format_submission_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
+				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
 			}
 			echo '</tbody></table>';
@@ -257,9 +359,11 @@ function xpressui_render_preview_metabox( $post ) {
 		echo '<table class="widefat striped xpressui-preview-table"><tbody>';
 		foreach ( $remaining as $key => $value ) {
 			$field_meta = is_array( $field_index[ $key ] ?? null ) ? $field_index[ $key ] : [];
+			$is_checked = in_array( $key, $flagged_fields, true );
 			echo '<tr>';
 			echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ?? $key ) . '</th>';
 			echo '<td>' . wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) ) . '</td>';
+			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
