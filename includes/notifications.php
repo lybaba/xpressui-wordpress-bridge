@@ -306,3 +306,98 @@ function xpressui_build_notification_headers() {
 		'Content-Type: text/html; charset=UTF-8',
 	];
 }
+
+// ---------------------------------------------------------------------------
+// Pending-info submitter notification
+// ---------------------------------------------------------------------------
+
+/**
+ * Send a "we need more information" email to the submitter when an operator
+ * marks a submission as pending_info. Silently skips if no submitter email
+ * is found in the stored payload.
+ *
+ * @param int    $post_id Submission post ID.
+ * @param string $note    Operator review note explaining what is needed.
+ */
+function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
+	$payload      = xpressui_get_submission_payload( $post_id );
+	$to_email     = trim( (string) ( is_array( $payload ) ? ( $payload['email'] ?? '' ) : '' ) );
+
+	if ( $to_email === '' || ! is_email( $to_email ) ) {
+		return;
+	}
+
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$subject      = xpressui_build_pending_info_subject( $project_slug );
+	$body         = xpressui_build_pending_info_body( $post_id, $project_slug, $note );
+	$headers      = xpressui_build_notification_headers();
+
+	wp_mail( $to_email, $subject, $body, $headers );
+}
+
+/**
+ * @param string $project_slug
+ * @return string
+ */
+function xpressui_build_pending_info_subject( $project_slug ) {
+	$site_name = get_bloginfo( 'name' );
+	/* translators: 1: site name, 2: project slug */
+	return sprintf( __( '[%1$s] Your submission for %2$s needs additional information', 'xpressui-bridge' ), $site_name, $project_slug );
+}
+
+/**
+ * @param int    $post_id
+ * @param string $project_slug
+ * @param string $note
+ * @return string HTML email body.
+ */
+function xpressui_build_pending_info_body( $post_id, $project_slug, $note ) {
+	$site_name  = esc_html( get_bloginfo( 'name' ) );
+	$note_html  = $note !== ''
+		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">'
+		  . nl2br( esc_html( $note ) )
+		  . '</p>'
+		: '';
+
+	$intro = esc_html( sprintf(
+		/* translators: %s: project slug */
+		__( 'Thank you for your submission for %s. After review, our team needs some additional information before we can proceed.', 'xpressui-bridge' ),
+		$project_slug,
+	) );
+
+	$footer_note = esc_html( sprintf(
+		/* translators: %s: site name */
+		__( 'Sent by %s.', 'xpressui-bridge' ),
+		get_bloginfo( 'name' )
+	) );
+
+	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
+		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
+		. '<tr><td align="center">'
+		. '<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:600px;">'
+
+		// Header
+		. '<tr><td style="background:#1d2327;padding:22px 28px;">'
+		. '<p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">' . $site_name . '</p>'
+		. '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">'
+		. esc_html__( 'Additional information required', 'xpressui-bridge' )
+		. '</p></td></tr>'
+
+		// Body
+		. '<tr><td style="padding:28px 28px 24px;">'
+		. '<p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">' . $intro . '</p>'
+		. $note_html
+		. '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
+		. esc_html__( 'Please reply to this email or contact us directly to provide the required information.', 'xpressui-bridge' )
+		. '</p>'
+		. '</td></tr>'
+
+		// Footer
+		. '<tr><td style="padding:16px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
+		. '<p style="margin:0;font-size:11px;color:#d1d5db;">' . $footer_note . '</p>'
+		. '</td></tr>'
+
+		. '</table>'
+		. '</td></tr></table>'
+		. '</body></html>';
+}

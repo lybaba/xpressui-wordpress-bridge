@@ -1426,6 +1426,9 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 	}
 	if ( $status === 'pending_info' ) {
 		update_post_meta( $post_id, '_xpressui_pending_info_at', current_time( 'mysql' ) );
+		if ( $current_status !== 'pending_info' ) {
+			xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
+		}
 	} elseif ( $current_status === 'pending_info' && $status !== 'pending_info' ) {
 		delete_post_meta( $post_id, '_xpressui_pending_info_at' );
 	}
