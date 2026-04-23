@@ -53,6 +53,11 @@
 	color: #276749;
 }
 
+.xpressui-badge--status-rejected {
+	background: #fed7d7;
+	color: #9b2c2c;
+}
+
 /* ---------------------------------------------------------------------------
  * Page wrapper + intro — cap everything at the same max-width as the cards
  * ------------------------------------------------------------------------- */
@@ -123,6 +128,11 @@
 .xpressui-inbox-stat--done {
 	background: linear-gradient(180deg, #f3fff7 0%, #e8fbef 100%);
 	border-color: #cfeccc;
+}
+
+.xpressui-inbox-stat--rejected {
+	background: linear-gradient(180deg, #fff5f5 0%, #ffecec 100%);
+	border-color: #fcc;
 }
 
 /* ---------------------------------------------------------------------------

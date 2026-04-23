@@ -31,6 +31,7 @@ function xpressui_render_summary_metabox( $post ) {
 	$status         = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
 	$reviewed_at    = (string) get_post_meta( $post->ID, '_xpressui_reviewed_at', true );
 	$done_at        = (string) get_post_meta( $post->ID, '_xpressui_done_at', true );
+	$rejected_at    = (string) get_post_meta( $post->ID, '_xpressui_rejected_at', true );
 	$config         = xpressui_get_config_snapshot( $post->ID );
 	$field_index    = xpressui_build_config_field_index( $config );
 	$capture        = xpressui_get_submission_capture_summary( $field_index, $payload );
@@ -50,6 +51,9 @@ function xpressui_render_summary_metabox( $post ) {
 	}
 	if ( $done_at !== '' ) {
 		echo '<dt>' . esc_html__( 'Done at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $done_at ) . '</dd>';
+	}
+	if ( $rejected_at !== '' ) {
+		echo '<dt>' . esc_html__( 'Rejected at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $rejected_at ) . '</dd>';
 	}
 	if ( $capture['fieldCount'] > 0 ) {
 		$capture_text = sprintf(

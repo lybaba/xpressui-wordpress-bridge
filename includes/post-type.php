@@ -56,6 +56,8 @@ function xpressui_submission_column_content( $column, $post_id ) {
 				$badge_class = 'xpressui-badge xpressui-badge--status-in-review';
 			} elseif ( 'done' === $status ) {
 				$badge_class = 'xpressui-badge xpressui-badge--status-done';
+			} elseif ( 'rejected' === $status ) {
+				$badge_class = 'xpressui-badge xpressui-badge--status-rejected';
 			}
 			echo '<span class="' . esc_attr( $badge_class ) . '">' . esc_html( xpressui_get_status_label( $status ) ) . '</span>';
 			break;
