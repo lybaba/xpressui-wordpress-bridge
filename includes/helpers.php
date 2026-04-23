@@ -1163,7 +1163,22 @@ function xpressui_get_config_snapshot( $post_id ) {
 		? 'config:' . $config_version
 		: ( $project_id !== '' ? 'project:' . $project_id : 'slug:' . $project_slug );
 	$entry = is_array( $registry ) ? ( $registry[ $key ] ?? null ) : null;
-	return is_array( $entry['config'] ?? null ) ? $entry['config'] : [];
+	$config = is_array( $entry['config'] ?? null ) ? $entry['config'] : [];
+	if ( ! empty( $config ) ) {
+		return $config;
+	}
+
+	if ( $project_slug !== '' && xpressui_is_installed_workflow( $project_slug ) ) {
+		$raw_form_config_json = xpressui_get_workflow_artifact_contents( $project_slug, 'config', 'form.config.json' );
+		if ( is_string( $raw_form_config_json ) && trim( $raw_form_config_json ) !== '' ) {
+			$live_config = json_decode( $raw_form_config_json, true );
+			if ( is_array( $live_config ) ) {
+				return xpressui_normalize_form_config( $live_config, $project_slug );
+			}
+		}
+	}
+
+	return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -1190,19 +1205,25 @@ function xpressui_build_field_choice_map( $field ) {
 }
 
 function xpressui_build_config_field_index( $config ) {
-	$index           = [];
-	$sections        = is_array( $config['sections'] ?? null ) ? $config['sections'] : [];
-	$custom_sections = is_array( $sections['custom'] ?? null ) ? $sections['custom'] : [];
+	$index         = [];
+	$sections      = is_array( $config['sections'] ?? null ) ? $config['sections'] : [];
+	$step_sections = [];
 
-	foreach ( $custom_sections as $section ) {
+	if ( is_array( $sections['custom'] ?? null ) ) {
+		$step_sections = array_values( $sections['custom'] );
+	} elseif ( is_array( $config['stepSections'] ?? null ) ) {
+		$step_sections = array_values( $config['stepSections'] );
+	}
+
+	foreach ( $step_sections as $section ) {
 		if ( ! is_array( $section ) ) {
 			continue;
 		}
-		$section_name  = (string) ( $section['name'] ?? '' );
+		$section_name = (string) ( $section['name'] ?? '' );
 		if ( $section_name === '' ) {
 			continue;
 		}
-		$section_label = (string) ( $section['label'] ?? $section['title'] ?? $section_name );
+		$section_label = (string) ( $section['label'] ?? $section['adminLabel'] ?? $section['title'] ?? $section_name );
 		$fields        = is_array( $sections[ $section_name ] ?? null ) ? $sections[ $section_name ] : [];
 
 		foreach ( $fields as $field ) {
@@ -1214,14 +1235,41 @@ function xpressui_build_config_field_index( $config ) {
 				continue;
 			}
 			$index[ $field_name ] = [
-				'label'        => (string) ( $field['label'] ?? $field['adminLabel'] ?? $field_name ),
-				'sectionLabel' => $section_label,
-				'type'         => (string) ( $field['type'] ?? '' ),
-				'choices'      => xpressui_build_field_choice_map( $field ),
+				'label'         => (string) ( $field['label'] ?? $field['adminLabel'] ?? $field['title'] ?? $field_name ),
+				'sectionLabel'  => $section_label,
+				'type'          => (string) ( $field['type'] ?? '' ),
+				'choices'       => xpressui_build_field_choice_map( $field ),
 				'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
 			];
 		}
 	}
+
+	// Fallback for snapshots that lost sections.custom/stepSections but still keep per-section field arrays.
+	if ( empty( $index ) ) {
+		foreach ( $sections as $section_name => $fields ) {
+			if ( ! is_string( $section_name ) || in_array( $section_name, [ 'custom', 'btngroup' ], true ) || ! is_array( $fields ) ) {
+				continue;
+			}
+			$section_label = $section_name;
+			foreach ( $fields as $field ) {
+				if ( ! is_array( $field ) ) {
+					continue;
+				}
+				$field_name = (string) ( $field['name'] ?? '' );
+				if ( $field_name === '' ) {
+					continue;
+				}
+				$index[ $field_name ] = [
+					'label'         => (string) ( $field['label'] ?? $field['adminLabel'] ?? $field['title'] ?? $field_name ),
+					'sectionLabel'  => $section_label,
+					'type'          => (string) ( $field['type'] ?? '' ),
+					'choices'       => xpressui_build_field_choice_map( $field ),
+					'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
+				];
+			}
+		}
+	}
+
 	return $index;
 }
 
