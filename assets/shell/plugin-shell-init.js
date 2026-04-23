@@ -78,7 +78,7 @@ function _localSetFeedbackState(mountNode, state, message, title) {
 
 // ---------------------------------------------------------------------------
 
-function injectBookingButton(mountNode, bookingUrl, label) {
+function _localInjectBookingButton(mountNode, bookingUrl, label) {
   const feedbackNode = mountNode.querySelector('[data-submit-feedback]');
   if (!feedbackNode || feedbackNode.querySelector('.xpressui-booking-btn')) return;
   const btn = document.createElement('a');
@@ -89,6 +89,11 @@ function injectBookingButton(mountNode, bookingUrl, label) {
   btn.textContent = label;
   btn.style.cssText = 'display:inline-block;margin-top:16px;padding:10px 20px;background:#2271b1;color:#fff;text-decoration:none;border-radius:4px;font-size:14px;font-weight:600;';
   feedbackNode.appendChild(btn);
+}
+
+function injectBookingButton(mountNode, bookingUrl, label) {
+  const fn = window.XPressUI?.injectBookingButton || _localInjectBookingButton;
+  fn(mountNode, bookingUrl, label);
 }
 
 const resolveWordPressRestEndpoint = () => {
