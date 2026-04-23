@@ -18,7 +18,6 @@ export type TCreateExportManifestOptions = {
   configArtifactPath: string;
   projectArtifactPath: string;
   assetsDirPath: string;
-  reactSnippetPath: string;
   staticHtmlSnippetPath: string;
   assetCount: number;
   checksums?: Record<string, string>;
@@ -61,7 +60,6 @@ export function createExportManifest(options: TCreateExportManifestOptions) {
       project: options.projectArtifactPath,
       assetsDir: options.assetsDirPath,
       snippets: {
-        react: options.reactSnippetPath,
         staticHtml: options.staticHtmlSnippetPath,
       },
       wordpress: {

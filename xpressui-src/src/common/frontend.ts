@@ -3,7 +3,7 @@ import addFormats from 'ajv-formats';
 import addErrors from 'ajv-errors';
 
 export const ajv = new Ajv({ allErrors: true });
-addFormats(ajv, { keywords: true });
+addFormats(ajv, { formats: ['email', 'uri', 'date', 'date-time', 'time'], keywords: true });
 addErrors(ajv);
 
 

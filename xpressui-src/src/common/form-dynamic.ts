@@ -1,6 +1,17 @@
-import slugify from "slugify";
 import TChoice from "./TChoice";
 import TFieldConfig from "./TFieldConfig";
+import {
+  TConditionalRuleState,
+  TMatchedRuleState,
+  TResolvedConditionalState,
+  getConditionalRuleState,
+  markRulesChanged,
+  matchesCondition,
+  matchesRule,
+  resolveConditionalState,
+  transformRuleValue,
+} from "./form-dynamic-eval";
+import { normalizeRemoteChoices, syncSelectOptionChildren } from "./form-dynamic-options";
 
 export type TFormRemoteOptionsDetail = {
   field: string;
@@ -104,9 +115,7 @@ type TFormDynamicRuntimeOptions = {
       transform?: "copy" | "trim" | "lowercase" | "uppercase" | "slugify";
     }>;
   }>;
-  getFieldContainer(
-    fieldName: string,
-  ): HTMLElement | null;
+  getFieldContainer(fieldName: string): HTMLElement | null;
   getFieldElement(
     fieldName: string,
   ): HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
@@ -125,17 +134,6 @@ type TFormDynamicRuntimeOptions = {
 };
 
 type TDynamicRule = ReturnType<TFormDynamicRuntimeOptions["getRules"]>[number];
-type TMatchedRuleState = { rule: TDynamicRule; changed: boolean };
-type TConditionalRuleState = {
-  matchedTrueRules: TDynamicRule[];
-  matchedFalseRules: TDynamicRule[];
-  hasTrueRule: boolean;
-  hasFalseRule: boolean;
-};
-type TResolvedConditionalState = {
-  value: boolean;
-  winningRules: TDynamicRule[];
-};
 
 export class FormDynamicRuntime {
   options: TFormDynamicRuntimeOptions;
@@ -160,6 +158,10 @@ export class FormDynamicRuntime {
     this.recentAppliedRules = [];
   }
 
+  // -------------------------------------------------------------------------
+  // Original state capture
+  // -------------------------------------------------------------------------
+
   getOriginalFieldVisibility(fieldName: string, container: HTMLElement): boolean {
     if (this.originalFieldVisibilityState[fieldName] === undefined) {
       this.originalFieldVisibilityState[fieldName] = container.style.display !== "none";
@@ -167,7 +169,10 @@ export class FormDynamicRuntime {
     return this.originalFieldVisibilityState[fieldName];
   }
 
-  getOriginalFieldDisabled(fieldName: string, fieldElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean {
+  getOriginalFieldDisabled(
+    fieldName: string,
+    fieldElement: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement,
+  ): boolean {
     if (this.originalFieldDisabledState[fieldName] === undefined) {
       this.originalFieldDisabledState[fieldName] = Boolean(fieldElement.disabled);
     }
@@ -181,23 +186,19 @@ export class FormDynamicRuntime {
     return this.originalSectionVisibilityState[sectionName];
   }
 
+  // -------------------------------------------------------------------------
+  // Delegated rule evaluation helpers
+  // -------------------------------------------------------------------------
+
   getConditionalRuleState(
-    states: Record<string, TConditionalRuleState>,
+    states: Record<string, TConditionalRuleState<TDynamicRule>>,
     target: string,
-  ): TConditionalRuleState {
-    if (!states[target]) {
-      states[target] = {
-        matchedTrueRules: [],
-        matchedFalseRules: [],
-        hasTrueRule: false,
-        hasFalseRule: false,
-      };
-    }
-    return states[target];
+  ): TConditionalRuleState<TDynamicRule> {
+    return getConditionalRuleState(states, target);
   }
 
   resolveConditionalState(
-    state: TConditionalRuleState | undefined,
+    state: TConditionalRuleState<TDynamicRule> | undefined,
     options: {
       baseValue: boolean;
       fallbackValueWhenOnlyTrueRule: boolean;
@@ -205,146 +206,81 @@ export class FormDynamicRuntime {
       fallbackValueWhenBothRuleTypes: boolean;
       preferFalseWhenConflictingMatches?: boolean;
     },
-  ): TResolvedConditionalState {
-    if (!state) {
-      return {
-        value: options.baseValue,
-        winningRules: [],
-      };
-    }
-
-    const preferFalse = options.preferFalseWhenConflictingMatches !== false;
-    if (state.matchedTrueRules.length && state.matchedFalseRules.length) {
-      return preferFalse
-        ? { value: false, winningRules: state.matchedFalseRules }
-        : { value: true, winningRules: state.matchedTrueRules };
-    }
-
-    if (state.matchedFalseRules.length) {
-      return {
-        value: false,
-        winningRules: state.matchedFalseRules,
-      };
-    }
-
-    if (state.matchedTrueRules.length) {
-      return {
-        value: true,
-        winningRules: state.matchedTrueRules,
-      };
-    }
-
-    if (state.hasTrueRule && state.hasFalseRule) {
-      return {
-        value: options.fallbackValueWhenBothRuleTypes,
-        winningRules: [],
-      };
-    }
-
-    if (state.hasTrueRule) {
-      return {
-        value: options.fallbackValueWhenOnlyTrueRule,
-        winningRules: [],
-      };
-    }
-
-    if (state.hasFalseRule) {
-      return {
-        value: options.fallbackValueWhenOnlyFalseRule,
-        winningRules: [],
-      };
-    }
-
-    return {
-      value: options.baseValue,
-      winningRules: [],
-    };
+  ): TResolvedConditionalState<TDynamicRule> {
+    return resolveConditionalState(state, options);
   }
 
   markRulesChanged(
-    matchedRuleMap: Map<TDynamicRule, TMatchedRuleState>,
+    matchedRuleMap: Map<TDynamicRule, TMatchedRuleState<TDynamicRule>>,
     rules: TDynamicRule[],
   ): void {
-    rules.forEach((rule) => {
-      const matchedRule = matchedRuleMap.get(rule);
-      if (matchedRule) {
-        matchedRule.changed = true;
-      }
-    });
+    markRulesChanged(matchedRuleMap, rules);
   }
 
   transformRuleValue(
     value: any,
     transform?: "copy" | "trim" | "lowercase" | "uppercase" | "slugify",
   ): any {
-    const nextTransform = transform || "copy";
-    if (nextTransform === "copy" || value === undefined || value === null) {
-      return value;
-    }
-
-    const normalizedValue = String(value);
-    if (nextTransform === "trim") {
-      return normalizedValue.trim();
-    }
-
-    if (nextTransform === "lowercase") {
-      return normalizedValue.toLowerCase();
-    }
-
-    if (nextTransform === "uppercase") {
-      return normalizedValue.toUpperCase();
-    }
-
-    if (nextTransform === "slugify") {
-      return slugify(normalizedValue, {
-        lower: true,
-        strict: true,
-        trim: true,
-      });
-    }
-
-    return value;
+    return transformRuleValue(value, transform);
   }
+
+  matchesCondition(condition: Parameters<typeof matchesCondition>[0]): boolean {
+    return matchesCondition(condition, this.options.getFieldValue.bind(this.options));
+  }
+
+  matchesRule(rule: Parameters<typeof matchesRule>[0]): boolean {
+    return matchesRule(rule, this.options.getFieldValue.bind(this.options));
+  }
+
+  // -------------------------------------------------------------------------
+  // Template rendering
+  // -------------------------------------------------------------------------
 
   renderRuleTemplate(template: string, ruleId?: string, targetField?: string): string {
     const templateWarningKey = `${ruleId || ""}:${targetField || ""}`;
     let hasMissingField = false;
-    const renderedValue = template.replace(/\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g, (_, fieldName: string) => {
-      const hasField = this.options.getFieldConfigs().some((fieldConfig) => fieldConfig.name === fieldName);
-      if (!hasField) {
-        hasMissingField = true;
-        const nextWarning: TFormActiveTemplateWarning = {
-          ruleId,
-          field: targetField || "",
-          template,
-          missingField: fieldName,
-        };
-        const previousWarning = this.activeTemplateWarnings[templateWarningKey];
-        const warningChanged = !previousWarning
-          || previousWarning.template !== nextWarning.template
-          || previousWarning.missingField !== nextWarning.missingField;
-        if (warningChanged) {
-          this.activeTemplateWarnings[templateWarningKey] = nextWarning;
-          const context = this.options.getEventContext();
-          this.options.emitEvent("xpressui:rule-template-missing-field", {
-            values: this.options.getFormValues(),
-            formConfig: context.formConfig,
-            submit: context.submit,
-            result: {
-              ruleId: nextWarning.ruleId,
-              field: nextWarning.field,
-              template: nextWarning.template,
-              missingField: nextWarning.missingField,
-            } satisfies TFormRuleTemplateMissingFieldDetail,
-          });
-          this.emitTemplateWarningState();
+    const renderedValue = template.replace(
+      /\{\{\s*([a-zA-Z0-9_-]+)\s*\}\}/g,
+      (_, fieldName: string) => {
+        const hasField = this.options
+          .getFieldConfigs()
+          .some((fieldConfig) => fieldConfig.name === fieldName);
+        if (!hasField) {
+          hasMissingField = true;
+          const nextWarning: TFormActiveTemplateWarning = {
+            ruleId,
+            field: targetField || "",
+            template,
+            missingField: fieldName,
+          };
+          const previousWarning = this.activeTemplateWarnings[templateWarningKey];
+          const warningChanged =
+            !previousWarning ||
+            previousWarning.template !== nextWarning.template ||
+            previousWarning.missingField !== nextWarning.missingField;
+          if (warningChanged) {
+            this.activeTemplateWarnings[templateWarningKey] = nextWarning;
+            const context = this.options.getEventContext();
+            this.options.emitEvent("xpressui:rule-template-missing-field", {
+              values: this.options.getFormValues(),
+              formConfig: context.formConfig,
+              submit: context.submit,
+              result: {
+                ruleId: nextWarning.ruleId,
+                field: nextWarning.field,
+                template: nextWarning.template,
+                missingField: nextWarning.missingField,
+              } satisfies TFormRuleTemplateMissingFieldDetail,
+            });
+            this.emitTemplateWarningState();
+          }
+          return "";
         }
-        return "";
-      }
 
-      const value = this.options.getFieldValue(fieldName);
-      return value === undefined || value === null ? "" : String(value);
-    });
+        const value = this.options.getFieldValue(fieldName);
+        return value === undefined || value === null ? "" : String(value);
+      },
+    );
 
     if (!hasMissingField) {
       const previousWarning = this.activeTemplateWarnings[templateWarningKey];
@@ -369,82 +305,9 @@ export class FormDynamicRuntime {
     return renderedValue;
   }
 
-  matchesCondition(
-    condition: {
-      field: string;
-      operator?: "equals" | "not_equals" | "contains" | "in" | "gt" | "lt" | "exists" | "empty";
-      value?: any;
-    },
-  ): boolean {
-    const currentValue = this.options.getFieldValue(condition.field);
-    const operator = condition.operator || "equals";
-
-    if (operator === "exists") {
-      if (Array.isArray(currentValue)) {
-        return currentValue.length > 0;
-      }
-
-      return !(
-        currentValue === undefined ||
-        currentValue === null ||
-        (typeof currentValue === "string" && currentValue.trim() === "")
-      );
-    }
-
-    if (operator === "empty") {
-      if (Array.isArray(currentValue)) {
-        return currentValue.length === 0;
-      }
-
-      return (
-        currentValue === undefined ||
-        currentValue === null ||
-        (typeof currentValue === "string" && currentValue.trim() === "")
-      );
-    }
-
-    if (operator === "contains") {
-      return String(currentValue ?? "")
-        .toLowerCase()
-        .includes(String(condition.value ?? "").toLowerCase());
-    }
-
-    if (operator === "in") {
-      const allowedValues = Array.isArray(condition.value)
-        ? condition.value
-        : [condition.value];
-      return allowedValues.map((value) => String(value ?? "")).includes(String(currentValue ?? ""));
-    }
-
-    if (operator === "gt") {
-      return Number(currentValue) > Number(condition.value);
-    }
-
-    if (operator === "lt") {
-      return Number(currentValue) < Number(condition.value);
-    }
-
-    if (operator === "not_equals") {
-      return String(currentValue ?? "") !== String(condition.value ?? "");
-    }
-
-    return String(currentValue ?? "") === String(condition.value ?? "");
-  }
-
-  matchesRule(
-    rule: {
-      logic?: "AND" | "OR";
-      conditions: Array<{
-        field: string;
-        operator?: "equals" | "not_equals" | "contains" | "in" | "gt" | "lt" | "exists" | "empty";
-        value?: any;
-      }>;
-    },
-  ): boolean {
-    const logic = rule.logic || "AND";
-    const matches = rule.conditions.map((condition) => this.matchesCondition(condition));
-    return logic === "OR" ? matches.some(Boolean) : matches.every(Boolean);
-  }
+  // -------------------------------------------------------------------------
+  // State & events
+  // -------------------------------------------------------------------------
 
   emitRuleApplied(rule: TDynamicRule): void {
     const result: TFormRuleAppliedDetail = {
@@ -473,8 +336,7 @@ export class FormDynamicRuntime {
   }
 
   clearActiveTemplateWarnings(): void {
-    const warningKeys = Object.keys(this.activeTemplateWarnings);
-    if (!warningKeys.length) {
+    if (!Object.keys(this.activeTemplateWarnings).length) {
       return;
     }
 
@@ -515,16 +377,20 @@ export class FormDynamicRuntime {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // Main rule application loop
+  // -------------------------------------------------------------------------
+
   updateConditionalFields(): void {
     const visibilityOverrides: Record<string, boolean> = {};
     const requiredOverrides: Record<string, boolean> = {};
     let submitLocked = false;
     let submitLockMessage: string | undefined;
-    const fieldVisibilityStates: Record<string, TConditionalRuleState> = {};
-    const fieldEnabledStates: Record<string, TConditionalRuleState> = {};
-    const sectionVisibilityStates: Record<string, TConditionalRuleState> = {};
-    const requiredStates: Record<string, TConditionalRuleState> = {};
-    const matchedRuleMap = new Map<TDynamicRule, TMatchedRuleState>();
+    const fieldVisibilityStates: Record<string, TConditionalRuleState<TDynamicRule>> = {};
+    const fieldEnabledStates: Record<string, TConditionalRuleState<TDynamicRule>> = {};
+    const sectionVisibilityStates: Record<string, TConditionalRuleState<TDynamicRule>> = {};
+    const requiredStates: Record<string, TConditionalRuleState<TDynamicRule>> = {};
+    const matchedRuleMap = new Map<TDynamicRule, TMatchedRuleState<TDynamicRule>>();
 
     this.options.clearFieldErrors?.();
     this.options.setSubmitLocked?.(false);
@@ -542,9 +408,10 @@ export class FormDynamicRuntime {
 
       const currentValue = this.options.getFieldValue(fieldConfig.visibleWhenField);
       const expectedValue = fieldConfig.visibleWhenEquals;
-      const isVisible = expectedValue === undefined
-        ? Boolean(currentValue)
-        : String(currentValue ?? "") === String(expectedValue);
+      const isVisible =
+        expectedValue === undefined
+          ? Boolean(currentValue)
+          : String(currentValue ?? "") === String(expectedValue);
       visibilityOverrides[fieldConfig.name] = isVisible;
     });
 
@@ -552,33 +419,33 @@ export class FormDynamicRuntime {
       rule.actions.forEach((action) => {
         switch (action.type) {
           case "show":
-            this.getConditionalRuleState(fieldVisibilityStates, action.field).hasTrueRule = true;
+            getConditionalRuleState(fieldVisibilityStates, action.field).hasTrueRule = true;
             break;
           case "hide":
-            this.getConditionalRuleState(fieldVisibilityStates, action.field).hasFalseRule = true;
+            getConditionalRuleState(fieldVisibilityStates, action.field).hasFalseRule = true;
             break;
           case "enable":
-            this.getConditionalRuleState(fieldEnabledStates, action.field).hasTrueRule = true;
+            getConditionalRuleState(fieldEnabledStates, action.field).hasTrueRule = true;
             break;
           case "disable":
-            this.getConditionalRuleState(fieldEnabledStates, action.field).hasFalseRule = true;
+            getConditionalRuleState(fieldEnabledStates, action.field).hasFalseRule = true;
             break;
           case "show-section":
-            this.getConditionalRuleState(sectionVisibilityStates, action.field).hasTrueRule = true;
+            getConditionalRuleState(sectionVisibilityStates, action.field).hasTrueRule = true;
             break;
           case "hide-section":
-            this.getConditionalRuleState(sectionVisibilityStates, action.field).hasFalseRule = true;
+            getConditionalRuleState(sectionVisibilityStates, action.field).hasFalseRule = true;
             break;
           case "set-required":
-            this.getConditionalRuleState(requiredStates, action.field).hasTrueRule = true;
+            getConditionalRuleState(requiredStates, action.field).hasTrueRule = true;
             break;
           case "clear-required":
-            this.getConditionalRuleState(requiredStates, action.field).hasFalseRule = true;
+            getConditionalRuleState(requiredStates, action.field).hasFalseRule = true;
             break;
         }
       });
 
-      if (!rule.conditions.length || !rule.actions.length || !this.matchesRule(rule)) {
+      if (!rule.conditions.length || !rule.actions.length || !matchesRule(rule, this.options.getFieldValue.bind(this.options))) {
         return;
       }
 
@@ -588,28 +455,28 @@ export class FormDynamicRuntime {
       rule.actions.forEach((action) => {
         switch (action.type) {
           case "show":
-            this.getConditionalRuleState(fieldVisibilityStates, action.field).matchedTrueRules.push(rule);
+            getConditionalRuleState(fieldVisibilityStates, action.field).matchedTrueRules.push(rule);
             break;
           case "hide":
-            this.getConditionalRuleState(fieldVisibilityStates, action.field).matchedFalseRules.push(rule);
+            getConditionalRuleState(fieldVisibilityStates, action.field).matchedFalseRules.push(rule);
             break;
           case "enable":
-            this.getConditionalRuleState(fieldEnabledStates, action.field).matchedTrueRules.push(rule);
+            getConditionalRuleState(fieldEnabledStates, action.field).matchedTrueRules.push(rule);
             break;
           case "disable":
-            this.getConditionalRuleState(fieldEnabledStates, action.field).matchedFalseRules.push(rule);
+            getConditionalRuleState(fieldEnabledStates, action.field).matchedFalseRules.push(rule);
             break;
           case "show-section":
-            this.getConditionalRuleState(sectionVisibilityStates, action.field).matchedTrueRules.push(rule);
+            getConditionalRuleState(sectionVisibilityStates, action.field).matchedTrueRules.push(rule);
             break;
           case "hide-section":
-            this.getConditionalRuleState(sectionVisibilityStates, action.field).matchedFalseRules.push(rule);
+            getConditionalRuleState(sectionVisibilityStates, action.field).matchedFalseRules.push(rule);
             break;
           case "set-required":
-            this.getConditionalRuleState(requiredStates, action.field).matchedTrueRules.push(rule);
+            getConditionalRuleState(requiredStates, action.field).matchedTrueRules.push(rule);
             break;
           case "clear-required":
-            this.getConditionalRuleState(requiredStates, action.field).matchedFalseRules.push(rule);
+            getConditionalRuleState(requiredStates, action.field).matchedFalseRules.push(rule);
             break;
           case "clear-value":
             if (this.options.getFieldValue(action.field) !== undefined) {
@@ -618,12 +485,13 @@ export class FormDynamicRuntime {
             this.options.clearFieldValue(action.field);
             break;
           case "set-value": {
-            const nextValue = action.template !== undefined
-              ? this.renderRuleTemplate(action.template, rule.id, action.field)
-              : action.sourceField
-                ? this.options.getFieldValue(action.sourceField)
-                : action.value;
-            const transformedValue = this.transformRuleValue(nextValue, action.transform);
+            const nextValue =
+              action.template !== undefined
+                ? this.renderRuleTemplate(action.template, rule.id, action.field)
+                : action.sourceField
+                  ? this.options.getFieldValue(action.sourceField)
+                  : action.value;
+            const transformedValue = transformRuleValue(nextValue, action.transform);
             if (!Object.is(this.options.getFieldValue(action.field), transformedValue)) {
               matchedRule.changed = true;
             }
@@ -633,7 +501,10 @@ export class FormDynamicRuntime {
           case "fetch-options": {
             const fieldConfig = this.options
               .getFieldConfigs()
-              .find((candidate) => candidate.name === action.field && Boolean(candidate.optionsEndpoint));
+              .find(
+                (candidate) =>
+                  candidate.name === action.field && Boolean(candidate.optionsEndpoint),
+              );
             if (fieldConfig && !this.loadingOptions[fieldConfig.name]) {
               matchedRule.changed = true;
               void this.fetchOptionsForField(action.field);
@@ -650,18 +521,19 @@ export class FormDynamicRuntime {
           }
           case "lock-submit":
             submitLocked = true;
-            submitLockMessage = action.message
-              || (action.value !== undefined ? String(action.value) : undefined);
+            submitLockMessage =
+              action.message || (action.value !== undefined ? String(action.value) : undefined);
             matchedRule.changed = true;
             break;
           case "emit-event": {
             const eventName = String(action.field || "").trim();
             if (!eventName) break;
-            const payload = action.template !== undefined
-              ? this.renderRuleTemplate(action.template, rule.id, action.field)
-              : action.sourceField
-                ? this.options.getFieldValue(action.sourceField)
-                : action.value;
+            const payload =
+              action.template !== undefined
+                ? this.renderRuleTemplate(action.template, rule.id, action.field)
+                : action.sourceField
+                  ? this.options.getFieldValue(action.sourceField)
+                  : action.value;
             const context = this.options.getEventContext();
             this.options.emitEvent(eventName, {
               values: this.options.getFormValues(),
@@ -688,15 +560,19 @@ export class FormDynamicRuntime {
         return;
       }
 
-      const baseVisible = visibilityOverrides[fieldConfig.name]
-        ?? this.getOriginalFieldVisibility(fieldConfig.name, container);
+      const baseVisible =
+        visibilityOverrides[fieldConfig.name] ??
+        this.getOriginalFieldVisibility(fieldConfig.name, container);
       const baseEnabled = !this.getOriginalFieldDisabled(fieldConfig.name, fieldElement);
-      const resolvedVisibility = this.resolveConditionalState(fieldVisibilityStates[fieldConfig.name], {
-        baseValue: baseVisible,
-        fallbackValueWhenOnlyTrueRule: false,
-        fallbackValueWhenOnlyFalseRule: true,
-        fallbackValueWhenBothRuleTypes: false,
-      });
+      const resolvedVisibility = resolveConditionalState(
+        fieldVisibilityStates[fieldConfig.name],
+        {
+          baseValue: baseVisible,
+          fallbackValueWhenOnlyTrueRule: false,
+          fallbackValueWhenOnlyFalseRule: true,
+          fallbackValueWhenBothRuleTypes: false,
+        },
+      );
       const wasVisible = container.style.display !== "none";
       const hadValue = this.options.getFieldValue(fieldConfig.name) !== undefined;
       container.style.display = resolvedVisibility.value ? "" : "none";
@@ -705,10 +581,10 @@ export class FormDynamicRuntime {
         this.options.clearFieldValue(fieldConfig.name);
       }
       if (wasVisible !== resolvedVisibility.value || (!resolvedVisibility.value && hadValue)) {
-        this.markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
+        markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
       }
 
-      const resolvedEnabled = this.resolveConditionalState(fieldEnabledStates[fieldConfig.name], {
+      const resolvedEnabled = resolveConditionalState(fieldEnabledStates[fieldConfig.name], {
         baseValue: baseEnabled,
         fallbackValueWhenOnlyTrueRule: false,
         fallbackValueWhenOnlyFalseRule: true,
@@ -716,7 +592,7 @@ export class FormDynamicRuntime {
       });
       const nextDisabled = !resolvedEnabled.value || !resolvedVisibility.value;
       if (!Object.is(fieldElement.disabled, nextDisabled)) {
-        this.markRulesChanged(matchedRuleMap, resolvedEnabled.winningRules);
+        markRulesChanged(matchedRuleMap, resolvedEnabled.winningRules);
       }
       this.options.setFieldDisabled(fieldConfig.name, nextDisabled);
     });
@@ -727,7 +603,7 @@ export class FormDynamicRuntime {
         return;
       }
 
-      const resolvedVisibility = this.resolveConditionalState(sectionVisibilityStates[sectionName], {
+      const resolvedVisibility = resolveConditionalState(sectionVisibilityStates[sectionName], {
         baseValue: this.getOriginalSectionVisibility(sectionName, container),
         fallbackValueWhenOnlyTrueRule: false,
         fallbackValueWhenOnlyFalseRule: true,
@@ -736,17 +612,19 @@ export class FormDynamicRuntime {
       const wasVisible = container.style.display !== "none";
       container.style.display = resolvedVisibility.value ? "" : "none";
       if (wasVisible !== resolvedVisibility.value) {
-        this.markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
+        markRulesChanged(matchedRuleMap, resolvedVisibility.winningRules);
       }
     });
 
     Object.keys(requiredStates).forEach((fieldName) => {
       const state = requiredStates[fieldName];
       if (this.originalRequiredState[fieldName] === undefined) {
-        const fieldConfig = this.options.getFieldConfigs().find((candidate) => candidate.name === fieldName);
+        const fieldConfig = this.options
+          .getFieldConfigs()
+          .find((candidate) => candidate.name === fieldName);
         this.originalRequiredState[fieldName] = Boolean(fieldConfig?.required);
       }
-      const resolvedRequired = this.resolveConditionalState(state, {
+      const resolvedRequired = resolveConditionalState(state, {
         baseValue: this.originalRequiredState[fieldName] ?? false,
         fallbackValueWhenOnlyTrueRule: this.originalRequiredState[fieldName] ?? false,
         fallbackValueWhenOnlyFalseRule: this.originalRequiredState[fieldName] ?? false,
@@ -756,7 +634,6 @@ export class FormDynamicRuntime {
       requiredOverrides[fieldName] = resolvedRequired.value;
     });
 
-    // Apply required overrides — diff against previous state to avoid redundant DOM/validator work
     const allRequiredFields = new Set([
       ...Object.keys(requiredOverrides),
       ...Object.keys(this.requiredOverrides),
@@ -769,7 +646,9 @@ export class FormDynamicRuntime {
       let effectiveRequired: boolean;
       if (newRequired !== undefined) {
         if (this.originalRequiredState[fieldName] === undefined) {
-          const fieldConfig = this.options.getFieldConfigs().find((f) => f.name === fieldName);
+          const fieldConfig = this.options
+            .getFieldConfigs()
+            .find((f) => f.name === fieldName);
           this.originalRequiredState[fieldName] = Boolean(fieldConfig?.required);
         }
         effectiveRequired = newRequired;
@@ -778,8 +657,8 @@ export class FormDynamicRuntime {
       }
       this.options.setFieldRequired?.(fieldName, effectiveRequired);
       if (newRequired !== undefined) {
-        this.markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedTrueRules ?? []);
-        this.markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedFalseRules ?? []);
+        markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedTrueRules ?? []);
+        markRulesChanged(matchedRuleMap, requiredStates[fieldName]?.matchedFalseRules ?? []);
       }
     });
     this.requiredOverrides = requiredOverrides;
@@ -791,59 +670,16 @@ export class FormDynamicRuntime {
     this.options.setSubmitLocked?.(submitLocked, submitLockMessage);
   }
 
+  // -------------------------------------------------------------------------
+  // Remote options
+  // -------------------------------------------------------------------------
+
   normalizeRemoteChoices(payload: any, fieldConfig: TFieldConfig): TChoice[] {
-    const optionList = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.items)
-        ? payload.items
-        : Array.isArray(payload?.options)
-          ? payload.options
-          : [];
-    const labelKey = fieldConfig.optionsLabelKey || "label";
-    const valueKey = fieldConfig.optionsValueKey || "value";
-
-    return optionList
-      .map((item: any) => {
-        if (typeof item === "string") {
-          return { value: item, label: item };
-        }
-
-        return {
-          value: String(item?.[valueKey] ?? item?.value ?? ""),
-          label: String(item?.[labelKey] ?? item?.label ?? item?.[valueKey] ?? ""),
-        };
-      })
-      .filter((choice: TChoice) => Boolean(choice.value));
+    return normalizeRemoteChoices(payload, fieldConfig);
   }
 
-  syncSelectOptionChildren(
-    fieldElement: HTMLSelectElement,
-    options: TChoice[],
-  ): void {
-    const desiredOptions = fieldElement.multiple
-      ? options
-      : [{ value: "", label: "" }, ...options];
-    const desiredValues = new Set(desiredOptions.map((choice) => choice.value));
-
-    desiredOptions.forEach((choice, index) => {
-      let option = Array.from(fieldElement.options).find((candidate) => candidate.value === choice.value) || null;
-      if (!option) {
-        option = document.createElement("option");
-      }
-
-      option.value = choice.value;
-      option.textContent = choice.label;
-      const currentOptionAtIndex = fieldElement.options[index] || null;
-      if (currentOptionAtIndex !== option) {
-        fieldElement.insertBefore(option, currentOptionAtIndex);
-      }
-    });
-
-    Array.from(fieldElement.options).forEach((option) => {
-      if (!desiredValues.has(option.value)) {
-        option.remove();
-      }
-    });
+  syncSelectOptionChildren(fieldElement: HTMLSelectElement, options: TChoice[]): void {
+    syncSelectOptionChildren(fieldElement, options);
   }
 
   populateSelectOptions(fieldName: string, options: TChoice[], sourceField?: string): void {
@@ -855,7 +691,7 @@ export class FormDynamicRuntime {
     const currentValue = fieldElement.multiple
       ? Array.from(fieldElement.selectedOptions).map((option) => option.value)
       : fieldElement.value;
-    this.syncSelectOptionChildren(fieldElement, options);
+    syncSelectOptionChildren(fieldElement, options);
 
     if (fieldElement.multiple && Array.isArray(currentValue)) {
       Array.from(fieldElement.options).forEach((option) => {
@@ -899,7 +735,11 @@ export class FormDynamicRuntime {
       : undefined;
 
     if (fieldConfig.optionsDependsOn && !dependencyValue) {
-      this.populateSelectOptions(fieldConfig.name, [], sourceFieldName || fieldConfig.optionsDependsOn);
+      this.populateSelectOptions(
+        fieldConfig.name,
+        [],
+        sourceFieldName || fieldConfig.optionsDependsOn,
+      );
       return;
     }
 
@@ -915,7 +755,7 @@ export class FormDynamicRuntime {
 
       const response = await fetch(url);
       const payload = await response.json();
-      const options = this.normalizeRemoteChoices(payload, fieldConfig);
+      const options = normalizeRemoteChoices(payload, fieldConfig);
       this.populateSelectOptions(fieldConfig.name, options, sourceFieldName);
     } catch {
       this.populateSelectOptions(fieldConfig.name, [], sourceFieldName);
@@ -932,7 +772,9 @@ export class FormDynamicRuntime {
     );
 
     await Promise.all(
-      fieldConfigs.map((fieldConfig) => this.fetchOptionsForField(fieldConfig.name, sourceFieldName))
+      fieldConfigs.map((fieldConfig) =>
+        this.fetchOptionsForField(fieldConfig.name, sourceFieldName),
+      ),
     );
   }
 }

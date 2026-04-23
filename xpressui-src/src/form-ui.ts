@@ -1341,9 +1341,12 @@ export class HydratedFormHost extends HTMLElement {
     if (currentValues.includes(choiceValue)) {
       return currentValues.filter((entry) => entry !== choiceValue);
     }
-    const maxChoices = typeof fieldConfig.maxNumOfChoices === "number" ? fieldConfig.maxNumOfChoices : null;
+    const maxChoices =
+      typeof fieldConfig.maxNumOfChoices === "number"
+        ? fieldConfig.maxNumOfChoices
+        : fieldConfig.type === CHECKBOXES_TYPE ? 1 : null;
     if (maxChoices !== null && maxChoices > 0 && currentValues.length >= maxChoices) {
-      return currentValues;
+      return maxChoices === 1 ? [choiceValue] : currentValues;
     }
     return [...currentValues, choiceValue];
   }
@@ -1536,7 +1539,7 @@ export class HydratedFormHost extends HTMLElement {
         ? fieldConfig.maxNumOfChoices
         : 1;
     const limitReached =
-      fieldConfig.type === CHECKBOXES_TYPE && selectionLimit > 0 && selectedValues.length >= selectionLimit;
+      fieldConfig.type === CHECKBOXES_TYPE && selectionLimit > 1 && selectedValues.length >= selectionLimit;
 
     const grid =
       (selectionElement.querySelector(

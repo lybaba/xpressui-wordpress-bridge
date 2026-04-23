@@ -1,11 +1,24 @@
 
 import TFieldConfig from './TFieldConfig';
 
-import slugify from 'slugify';
-import { isEmpty, lowerCase } from 'lodash';
 import TFieldType from './TFieldType';
 import { TValidator } from './Validator';
-import { FieldConfig } from 'final-form';
+import type { FieldConfig } from 'final-form';
+
+function lowerCaseWords(str: string): string {
+    return str.replace(/([A-Z])/g, ' $1').replace(/[_-]+/g, ' ').trim().toLowerCase();
+}
+
+export function toSlug(str: string, replacement: '-' | '_' = '-', strict = false): string {
+    const normalized = str
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')  // strip combining diacritics (é→e, ü→u, etc.)
+        .toLowerCase();
+    const cleaned = strict
+        ? normalized.replace(/[^a-z0-9\s]/g, '')
+        : normalized.replace(/[^\w\s-]/g, '');
+    return cleaned.trim().replace(/[\s_-]+/g, replacement);
+}
 
 export const SECTION_TYPE = 'section';
 
@@ -195,15 +208,15 @@ export const isFileLikeValue = (value: any): boolean => {
 }
 
 export const buildSlug = (name: string) => {
-    return slugify(lowerCase(name), { replacement: '-' });
+    return toSlug(lowerCaseWords(name));
 }
 
 export const normalizeFormName = (name: string) => {
-    return slugify(lowerCase(name), { replacement: '-' });
+    return toSlug(lowerCaseWords(name));
 }
 
 export const normalizeFieldName = (name: string) => {
-    return slugify(lowerCase(name), { replacement: '_' });
+    return toSlug(lowerCaseWords(name), '_');
 }
 
 export const getFieldName = (fieldIndex: number, fieldConfig: TFieldConfig): string => {
@@ -272,7 +285,7 @@ export function normalizeFormValues(fieldMap: Record<string, TFieldConfig>, form
             } else if (typeof fieldVal === 'string') {
                 hasValue = fieldVal.trim().length > 0;
             } else {
-                hasValue = !isEmpty(fieldVal);
+                hasValue = Object.keys(fieldVal as object).length > 0;
             }
         }
         

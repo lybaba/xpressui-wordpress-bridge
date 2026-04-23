@@ -1,11 +1,3 @@
-export type TCreateExportReactMountSnippetOptions = {
-  configImportPath: string;
-  mountNodeId?: string;
-  projectSlug: string;
-  xpressuiVersion: string;
-  themePreset?: string | null;
-};
-
 export type TCreateExportStaticHtmlSnippetOptions = {
   embeddedConfigJson: string;
   runtimeScriptPath: string;
@@ -22,27 +14,6 @@ export type TCreateExportStaticHtmlSnippetOptions = {
   wordpressRestSubmitRoute: string;
   wordpressRestSubmitEndpointPlaceholder: string;
 };
-
-export function createExportReactMountSnippet(options: TCreateExportReactMountSnippetOptions): string {
-  const mountNodeId = options.mountNodeId ?? 'xpressui-root';
-
-  return [
-    "import { hydrateForm } from '@lybaba/xpressui';",
-    `import formConfig from '${options.configImportPath}';`,
-    '',
-    `const container = document.getElementById('${mountNodeId}');`,
-    '',
-    'if (!container) {',
-    `  throw new Error('Missing #${mountNodeId} mount node.');`,
-    '}',
-    '',
-    'hydrateForm(container, formConfig);',
-    '',
-    `// Generated for project: ${options.projectSlug}`,
-    `// Target XPressUI version: ${options.xpressuiVersion}`,
-    `// Theme preset: ${options.themePreset ?? 'console-clean'}`,
-  ].join('\n');
-}
 
 export function createExportStaticHtmlSnippet(options: TCreateExportStaticHtmlSnippetOptions): string {
   const mountNodeId = options.mountNodeId ?? 'xpressui-root';

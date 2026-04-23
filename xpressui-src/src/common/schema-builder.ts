@@ -27,7 +27,6 @@ import { FORM_MULTI_STEP_MODE } from "./TFormConfig";
 import type TChoice from "./TChoice";
 import type TSchema from "./TSchema";
 import { shouldRenderField, getCustomSectionList, getSectionByIndex } from "./post";
-import { isEmpty } from 'lodash';
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
@@ -281,7 +280,7 @@ export function buildSchema(formConfig: TFormConfig, sectionIndex: number = 0): 
     for (const fieldConfig of fields) {
         if (shouldRenderField(formConfig, fieldConfig)) {
             const ajvType = toAjvFieldType(fieldConfig);
-            if (!isEmpty(ajvType)) {
+            if (ajvType !== null && Object.keys(ajvType).length > 0) {
                 fieldMap[fieldConfig.name] = fieldConfig;
                 properties[fieldConfig.name] = ajvType;
                 if (fieldConfig.required) required.push(fieldConfig.name);
@@ -295,7 +294,7 @@ export function buildSchema(formConfig: TFormConfig, sectionIndex: number = 0): 
         properties,
         ...(required.length ? { required } : {}),
         additionalProperties: true,
-        ...(!isEmpty(errorMessage) ? { errorMessage: { properties: errorMessage } } : {}),
+        ...(Object.keys(errorMessage).length > 0 ? { errorMessage: { properties: errorMessage } } : {}),
     };
 
     return { ajvSchema, fieldMap };

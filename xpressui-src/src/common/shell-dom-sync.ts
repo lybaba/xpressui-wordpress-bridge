@@ -77,43 +77,31 @@ export function syncShellDomWithConfig(
         ? false
         : customSections.length > 1;
 
-  let titleNode = (headerNode?.querySelector('.template-form-title') as HTMLElement | null) ?? null;
-  let subtitleNode =
+  const titleNode = (headerNode?.querySelector('.template-form-title') as HTMLElement | null) ?? null;
+  const subtitleNode =
     (headerNode?.querySelector('.template-form-subtitle') as HTMLElement | null) ?? null;
 
   if (headerNode instanceof HTMLElement) {
-    if (showProjectTitle && titleText) {
-      if (!(titleNode instanceof HTMLElement)) {
-        titleNode = document.createElement('h1');
-        titleNode.className = 'template-form-title';
-        if (subtitleNode instanceof HTMLElement) {
-          headerNode.insertBefore(titleNode, subtitleNode);
-        } else {
-          headerNode.appendChild(titleNode);
-        }
+    if (titleNode instanceof HTMLElement) {
+      if (showProjectTitle && titleText) {
+        titleNode.textContent = titleText;
+        titleNode.style.display = '';
+      } else {
+        titleNode.style.display = 'none';
       }
-      titleNode.textContent = titleText;
-      titleNode.style.display = '';
-    } else if (titleNode instanceof HTMLElement) {
-      titleNode.remove();
-      titleNode = null;
     }
 
-    if (showRequiredFieldsNote) {
-      if (!(subtitleNode instanceof HTMLElement)) {
-        subtitleNode = document.createElement('p');
-        subtitleNode.className = 'template-form-subtitle';
-        headerNode.appendChild(subtitleNode);
+    if (subtitleNode instanceof HTMLElement) {
+      if (showRequiredFieldsNote) {
+        subtitleNode.textContent = t('requiredFields', '* Required fields');
+        subtitleNode.style.display = '';
+      } else {
+        subtitleNode.style.display = 'none';
       }
-      subtitleNode.textContent = t('requiredFields', '* Required fields');
-      subtitleNode.style.display = '';
-    } else if (subtitleNode instanceof HTMLElement) {
-      subtitleNode.remove();
-      subtitleNode = null;
     }
 
     headerNode.style.display =
-      titleNode instanceof HTMLElement || subtitleNode instanceof HTMLElement ? '' : 'none';
+      (showProjectTitle && titleText) || showRequiredFieldsNote ? '' : 'none';
   }
 
   // Sync Section Titles
@@ -121,24 +109,16 @@ export function syncShellDomWithConfig(
     if (!section.name || !section.label) return;
     const sectionNode = mountNode.querySelector(`[data-section-name="${section.name}"]`);
     if (!sectionNode) return;
-    const sectionHeaderNode = sectionNode.querySelector('.template-section-header');
-    let sectionLabel =
-      (sectionNode.querySelector('.template-section-label') as HTMLElement | null) ?? null;
-    if (showSectionHeaders) {
-      if (!(sectionHeaderNode instanceof HTMLElement)) {
-        const header = document.createElement('header');
-        header.className = 'template-section-header';
-        const title = document.createElement('h2');
-        title.className = 'template-section-label';
-        header.appendChild(title);
-        sectionNode.insertBefore(header, sectionNode.firstChild);
-        sectionLabel = title;
+    const sectionHeaderNode = sectionNode.querySelector('.template-section-header') as HTMLElement | null;
+    const sectionLabel = sectionNode.querySelector('.template-section-label') as HTMLElement | null;
+
+    if (sectionHeaderNode instanceof HTMLElement) {
+      if (showSectionHeaders) {
+        sectionHeaderNode.style.display = '';
+        if (sectionLabel instanceof HTMLElement) sectionLabel.textContent = section.label;
+      } else {
+        sectionHeaderNode.style.display = 'none';
       }
-      if (sectionLabel instanceof HTMLElement) {
-        sectionLabel.textContent = section.label;
-      }
-    } else if (sectionHeaderNode instanceof HTMLElement) {
-      sectionHeaderNode.remove();
     }
   });
 
@@ -163,23 +143,13 @@ export function syncShellDomWithConfig(
       }
 
       if (field.required !== undefined) {
-        let reqSpan =
-          (fieldNode.querySelector('.template-required') as HTMLElement | null) ?? null;
+        const reqSpan = fieldNode.querySelector('.template-required') as HTMLElement | null;
         const input = fieldNode.querySelector(
           `[name="${field.name}"]`,
         ) as HTMLInputElement | null;
 
-        if (field.required && !reqSpan) {
-          const labelElem = fieldNode.querySelector('.template-field-label');
-          if (labelElem) {
-            reqSpan = document.createElement('span');
-            reqSpan.className = 'template-required';
-            reqSpan.setAttribute('aria-hidden', 'true');
-            reqSpan.textContent = '*';
-            labelElem.appendChild(reqSpan);
-          }
-        } else if (!field.required && reqSpan) {
-          reqSpan.remove();
+        if (reqSpan instanceof HTMLElement) {
+          reqSpan.style.display = field.required ? '' : 'none';
         }
 
         if (input) {

@@ -3,7 +3,6 @@ import TFieldConfig from "./TFieldConfig";
 import TFormConfig, { RenderingMode } from "./TFormConfig";
 import { CUSTOM_SECTION } from './Constants';
 import TMediaFile, { TMediaInfo, MediaSizeType } from './TMediaFile';
-import { isObject } from 'lodash';
 
 export const FORM_ID = "form";
 export const SECTION_ID = 'attrgroup';
@@ -193,7 +192,7 @@ export const getMediaUrlByMediaId = (fieldConfig: TFieldConfig, mediaSize: Media
 export function isJSON(str: string) {
     try {
         const obj = JSON.parse(str);
-        return isObject(obj);
+        return typeof obj === 'object' && obj !== null;
     } catch (e) {
         return false;
     }
