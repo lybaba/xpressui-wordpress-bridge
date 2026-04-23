@@ -78,23 +78,7 @@ function _localSetFeedbackState(mountNode, state, message, title) {
 
 // ---------------------------------------------------------------------------
 
-function _localInjectBookingButton(mountNode, bookingUrl, label) {
-  const feedbackNode = mountNode.querySelector('[data-submit-feedback]');
-  if (!feedbackNode || feedbackNode.querySelector('.xpressui-booking-btn')) return;
-  const btn = document.createElement('a');
-  btn.className = 'xpressui-booking-btn';
-  btn.href = bookingUrl;
-  btn.target = '_blank';
-  btn.rel = 'noopener noreferrer';
-  btn.textContent = label;
-  btn.style.cssText = 'display:inline-block;margin-top:16px;padding:10px 20px;background:#2271b1;color:#fff;text-decoration:none;border-radius:4px;font-size:14px;font-weight:600;';
-  feedbackNode.appendChild(btn);
-}
 
-function injectBookingButton(mountNode, bookingUrl, label) {
-  const fn = window.XPressUI?.injectBookingButton || _localInjectBookingButton;
-  fn(mountNode, bookingUrl, label);
-}
 
 const resolveWordPressRestEndpoint = () => {
   if (window.location.protocol === 'file:' || !['http:', 'https:'].includes(window.location.protocol)) {
@@ -220,11 +204,6 @@ const attachFallbackSubmitHandler = (form, mountNode, formConfig) => {
         formConfig.submitFeedback?.success_title || 'Submission received',
       );
 
-      const fallbackBookingUrl = typeof shellMeta.bookingUrl === 'string' ? shellMeta.bookingUrl.trim() : '';
-      if (fallbackBookingUrl) {
-        injectBookingButton(mountNode, fallbackBookingUrl, t('bookingButtonLabel', 'Book an appointment →'));
-      }
-
       // hydrateForm did not run — hide shell zones manually.
       if (window.XPressUI?.syncShellPostSubmitUi) {
         window.XPressUI.syncShellPostSubmitUi(mountNode, 'success');
@@ -329,10 +308,6 @@ async function initXPressUI() {
       });
       mountNode.addEventListener('xpressui:submit-success', function () {
         submitOverlay.removeAttribute('data-active');
-        const bookingUrl = typeof shellMeta.bookingUrl === 'string' ? shellMeta.bookingUrl.trim() : '';
-        if (bookingUrl) {
-          injectBookingButton(mountNode, bookingUrl, t('bookingButtonLabel', 'Book an appointment →'));
-        }
       });
       mountNode.addEventListener('xpressui:submit-error', function () {
         submitOverlay.removeAttribute('data-active');
