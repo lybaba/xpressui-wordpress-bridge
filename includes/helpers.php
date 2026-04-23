@@ -851,6 +851,62 @@ function xpressui_maybe_install_bundled_workflows() {
 }
 
 // ---------------------------------------------------------------------------
+// Resume token helpers
+// ---------------------------------------------------------------------------
+
+function xpressui_generate_resume_token( $post_id ) {
+	$token = bin2hex( random_bytes( 32 ) ); // 64 hex chars
+	update_post_meta( $post_id, '_xpressui_resume_token', $token );
+	update_post_meta( $post_id, '_xpressui_resume_token_expires', time() + 7 * DAY_IN_SECONDS );
+	return $token;
+}
+
+function xpressui_get_resume_post_id_by_token( $token ) {
+	$token = (string) $token;
+	if ( strlen( $token ) !== 64 || ! ctype_xdigit( $token ) ) {
+		return 0;
+	}
+	global $wpdb;
+	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
+		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_xpressui_resume_token' AND meta_value = %s LIMIT 1",
+		$token
+	) );
+	if ( $post_id <= 0 ) {
+		return 0;
+	}
+	$expires = (int) get_post_meta( $post_id, '_xpressui_resume_token_expires', true );
+	if ( $expires > 0 && $expires < time() ) {
+		delete_post_meta( $post_id, '_xpressui_resume_token' );
+		delete_post_meta( $post_id, '_xpressui_resume_token_expires' );
+		return 0;
+	}
+	return $post_id;
+}
+
+function xpressui_invalidate_resume_token( $post_id ) {
+	delete_post_meta( $post_id, '_xpressui_resume_token' );
+	delete_post_meta( $post_id, '_xpressui_resume_token_expires' );
+}
+
+function xpressui_build_resume_url( $post_id, $token ) {
+	if ( $token === '' ) {
+		return '';
+	}
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$base_url     = xpressui_get_project_setting( $project_slug, 'resumeUrl' );
+	if ( $base_url === '' ) {
+		return '';
+	}
+	return add_query_arg( 'xpressui_resume', rawurlencode( $token ), $base_url );
+}
+
+function xpressui_get_flagged_fields( $post_id ) {
+	$raw     = (string) get_post_meta( $post_id, '_xpressui_flagged_fields', true );
+	$decoded = $raw !== '' ? json_decode( $raw, true ) : null;
+	return is_array( $decoded ) ? array_values( array_filter( $decoded, 'is_string' ) ) : [];
+}
+
+// ---------------------------------------------------------------------------
 // Status helpers
 // ---------------------------------------------------------------------------
 
@@ -1430,10 +1486,12 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 	if ( $status === 'pending_info' ) {
 		update_post_meta( $post_id, '_xpressui_pending_info_at', current_time( 'mysql' ) );
 		if ( $current_status !== 'pending_info' ) {
+			xpressui_generate_resume_token( $post_id );
 			xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
 		}
 	} elseif ( $current_status === 'pending_info' && $status !== 'pending_info' ) {
 		delete_post_meta( $post_id, '_xpressui_pending_info_at' );
+		xpressui_invalidate_resume_token( $post_id );
 	}
 	if ( $status === 'rejected' ) {
 		if ( get_post_meta( $post_id, '_xpressui_reviewed_at', true ) === '' ) {

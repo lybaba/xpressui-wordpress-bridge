@@ -80,6 +80,121 @@ function _localSetFeedbackState(mountNode, state, message, title) {
 
 
 
+// ---------------------------------------------------------------------------
+// Resume / partial-resubmission mode
+// ---------------------------------------------------------------------------
+
+function resolveResumeEndpoint(token) {
+  const apiRootLink = document.querySelector('link[rel="https://api.w.org/"]');
+  const apiRootHref = apiRootLink instanceof HTMLLinkElement ? apiRootLink.href : '';
+  if (apiRootHref) {
+    return new URL(`xpressui/v1/resume?token=${encodeURIComponent(token)}`, apiRootHref).toString();
+  }
+  const currentUrl = new URL(window.location.href);
+  const contentIndex = currentUrl.pathname.indexOf('/wp-content/');
+  const sitePath = contentIndex >= 0 ? currentUrl.pathname.slice(0, contentIndex) : '';
+  const basePath = sitePath ? `${sitePath.replace(/\/$/, '')}/` : '/';
+  return `${currentUrl.origin}${basePath}?rest_route=/xpressui/v1/resume&token=${encodeURIComponent(token)}`;
+}
+
+async function fetchResumeData(token) {
+  try {
+    const response = await fetch(resolveResumeEndpoint(token), {
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data?.success ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function applyResumeMode(mountNode, form, resumeData, token) {
+  const { payload, flaggedFields, note } = resumeData;
+  if (!payload || !form) return;
+
+  const flaggedSet = new Set(Array.isArray(flaggedFields) ? flaggedFields : []);
+  const allFlagged = flaggedSet.size === 0;
+
+  // Banner explaining the situation
+  if (note && note.trim()) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fffaf0;border:1px solid #f6cc87;border-radius:4px;padding:12px 16px;font-size:13px;color:#374151;margin-bottom:16px;line-height:1.5;';
+    const title = document.createElement('strong');
+    title.textContent = 'Correction requested: ';
+    banner.appendChild(title);
+    banner.appendChild(document.createTextNode(note));
+    form.parentNode?.insertBefore(banner, form);
+  }
+
+  // Prefill and lock non-flagged text/select/checkbox fields
+  form.querySelectorAll('input:not([type="file"]):not([type="submit"]):not([type="button"]):not([type="hidden"]), textarea, select').forEach((input) => {
+    const name = input.name;
+    if (!name || name === 'xpressui_confirm_email') return;
+
+    const value = payload[name];
+    const isFlagged = allFlagged || flaggedSet.has(name);
+
+    if (value !== undefined && value !== null) {
+      if (input instanceof HTMLSelectElement) {
+        input.value = String(value);
+      } else if (input instanceof HTMLInputElement && (input.type === 'checkbox' || input.type === 'radio')) {
+        input.checked = input.value === String(value) || value === true || value === 'true';
+      } else {
+        input.value = typeof value === 'object' ? '' : String(value);
+      }
+    }
+
+    if (!isFlagged) {
+      if (input instanceof HTMLSelectElement || (input instanceof HTMLInputElement && (input.type === 'checkbox' || input.type === 'radio'))) {
+        input.disabled = true;
+      } else {
+        input.readOnly = true;
+      }
+      input.style.opacity = '0.55';
+      input.style.cursor = 'not-allowed';
+    }
+  });
+
+  // Handle file fields
+  form.querySelectorAll('input[type="file"]').forEach((fileInput) => {
+    const name = fileInput.name;
+    if (!name) return;
+    const existingValue = payload[name];
+    const isFlagged = allFlagged || flaggedSet.has(name);
+
+    if (existingValue && !isFlagged) {
+      const fileName = typeof existingValue === 'object'
+        ? (existingValue.originalName || 'file')
+        : String(existingValue);
+      const msg = document.createElement('p');
+      msg.style.cssText = 'font-size:12px;color:#6b7280;margin:4px 0;';
+      msg.textContent = `Already provided: ${fileName}`;
+      fileInput.style.display = 'none';
+      fileInput.removeAttribute('required');
+      fileInput.removeAttribute('aria-required');
+      const fieldNode = fileInput.closest('[data-field-name]');
+      if (fieldNode) {
+        fieldNode.appendChild(msg);
+      } else {
+        fileInput.parentNode?.insertBefore(msg, fileInput.nextSibling);
+      }
+    }
+  });
+
+  // Inject resume token into form submission
+  if (!form.querySelector('[name="xpressui_resume_token"]')) {
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'xpressui_resume_token';
+    tokenInput.value = token;
+    form.appendChild(tokenInput);
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 const resolveWordPressRestEndpoint = () => {
   if (window.location.protocol === 'file:' || !['http:', 'https:'].includes(window.location.protocol)) {
     return '';
@@ -231,6 +346,13 @@ async function initXPressUI() {
     return;
   }
 
+  // Detect resume token before anything else
+  const resumeToken = new URLSearchParams(window.location.search).get('xpressui_resume') || '';
+  let resumeData = null;
+  if (resumeToken) {
+    resumeData = await fetchResumeData(resumeToken);
+  }
+
   let formConfig;
 
   try {
@@ -295,6 +417,11 @@ async function initXPressUI() {
       hydrated.formConfig.submit.lifecycle.preSubmit = ({ values }) => ensureSubmitMetadata(values, formConfig);
     }
 
+    // Apply resume mode after hydration so the runtime doesn't reset our values
+    if (resumeData) {
+      applyResumeMode(mountNode, formElement, resumeData, resumeToken);
+    }
+
     // Attach runtime event listeners → update feedback UI
     if (window.XPressUI?.attachShellFeedbackHandlers) {
       window.XPressUI.attachShellFeedbackHandlers(mountNode, formConfig, { t });
@@ -329,6 +456,10 @@ async function initXPressUI() {
     }
   } catch (error) {
     console.error(error);
+    const formElement = mountNode.querySelector('form');
+    if (resumeData) {
+      applyResumeMode(mountNode, formElement, resumeData, resumeToken);
+    }
     attachFallbackSubmitHandler(formElement, mountNode, formConfig);
     _localSetFeedbackState(
       mountNode,

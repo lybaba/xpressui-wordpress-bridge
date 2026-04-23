@@ -284,6 +284,8 @@ function xpressui_render_workflows_page() {
 		$webhook_url      = esc_url_raw( $raw_webhook_url );
 		$raw_booking_url  = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$booking_url      = esc_url_raw( $raw_booking_url );
+		$raw_resume_url   = trim( wp_unslash( $_POST['xpressui_resume_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$resume_url       = esc_url_raw( $raw_resume_url );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$notify_submitter    = ! empty( $_POST['xpressui_notify_submitter'] ) ? '1' : '0';
@@ -302,6 +304,7 @@ function xpressui_render_workflows_page() {
 				'redirectUrl'            => $redirect_url,
 				'webhookUrl'             => $webhook_url,
 				'bookingUrl'             => $booking_url,
+				'resumeUrl'              => $resume_url,
 				'showProjectTitle'       => $show_project_title,
 				'showRequiredFieldsNote' => $show_required_note,
 				'notifySubmitter'        => $notify_submitter,
@@ -572,6 +575,7 @@ function xpressui_render_workflows_page() {
 				'redirectUrl'            => (string) ( $ps['redirectUrl'] ?? '' ),
 				'webhookUrl'             => (string) ( $ps['webhookUrl'] ?? '' ),
 				'bookingUrl'             => (string) ( $ps['bookingUrl'] ?? '' ),
+				'resumeUrl'              => (string) ( $ps['resumeUrl'] ?? '' ),
 				'showProjectTitle'       => (string) ( $ps['showProjectTitle'] ?? '0' ),
 				'showRequiredFieldsNote' => (string) ( $ps['showRequiredFieldsNote'] ?? '0' ),
 				'notifySubmitter'        => (string) ( $ps['notifySubmitter'] ?? '0' ),
@@ -612,6 +616,10 @@ function xpressui_render_workflows_page() {
 		echo '<tr><th><label for="xpressui_booking_url">' . esc_html__( 'Booking link', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( $init['bookingUrl'] ) . '">';
 		echo '<p class="description">' . esc_html__( 'Show a "Book an appointment" button on the success screen after submission. Accepts any booking URL (Calendly, Cal.com, Acuity…). Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th><label for="xpressui_resume_url">' . esc_html__( 'Resubmission page URL', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="url" id="xpressui_resume_url" name="xpressui_resume_url" class="regular-text" placeholder="https://example.com/apply/" value="' . esc_attr( $init['resumeUrl'] ) . '">';
+		echo '<p class="description">' . esc_html__( 'URL of the WordPress page where this form is embedded. Used to generate the "Correct and resubmit" link in pending info emails. Leave empty to omit the link.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Form title', 'xpressui-bridge' ) . '</th>';
 		echo '<td><label for="xpressui_show_project_title">';
@@ -1109,6 +1117,8 @@ function xpressui_ajax_save_project_settings() {
 	$webhook_url      = esc_url_raw( $raw_webhook_url );
 	$raw_booking_url  = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$booking_url      = esc_url_raw( $raw_booking_url );
+	$raw_resume_url           = trim( wp_unslash( $_POST['xpressui_resume_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$resume_url               = esc_url_raw( $raw_resume_url );
 	$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 	$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 	$notify_submitter         = ! empty( $_POST['xpressui_notify_submitter'] ) ? '1' : '0';
@@ -1128,6 +1138,7 @@ function xpressui_ajax_save_project_settings() {
 		'redirectUrl'            => $redirect_url,
 		'webhookUrl'             => $webhook_url,
 		'bookingUrl'             => $booking_url,
+		'resumeUrl'              => $resume_url,
 		'showProjectTitle'       => $show_project_title,
 		'showRequiredFieldsNote' => $show_required_note,
 		'notifySubmitter'        => $notify_submitter,

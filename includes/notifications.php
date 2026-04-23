@@ -351,9 +351,11 @@ function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
 	if ( $to_email === '' ) {
 		return;
 	}
+	$token      = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
+	$resume_url = xpressui_build_resume_url( $post_id, $token );
 
 	$subject = xpressui_build_pending_info_subject( $project_slug );
-	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note );
+	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url );
 	$headers = xpressui_build_notification_headers();
 
 	wp_mail( $to_email, $subject, $body, $headers );
@@ -441,7 +443,13 @@ function xpressui_build_rejected_subject( $project_slug ) {
  * Shared HTML email shell. $accent_color and $header_label set the visual tone.
  * $intro_text and $note_html are injected into the body.
  */
-function xpressui_build_submitter_email_html( $site_name, $header_label, $accent_color, $intro_text, $note_html, $footer_note ) {
+function xpressui_build_submitter_email_html( $site_name, $header_label, $accent_color, $intro_text, $note_html, $footer_note, $cta_html = '' ) {
+	$action_html = $cta_html !== ''
+		? $cta_html
+		: '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
+		  . esc_html__( 'If you have any questions, please reply to this email.', 'xpressui-bridge' )
+		  . '</p>';
+
 	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
 		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
 		. '<tr><td align="center">'
@@ -453,9 +461,7 @@ function xpressui_build_submitter_email_html( $site_name, $header_label, $accent
 		. '<tr><td style="padding:28px 28px 24px;">'
 		. '<p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">' . $intro_text . '</p>'
 		. $note_html
-		. '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
-		. esc_html__( 'If you have any questions, please reply to this email.', 'xpressui-bridge' )
-		. '</p>'
+		. $action_html
 		. '</td></tr>'
 		. '<tr><td style="padding:16px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
 		. '<p style="margin:0;font-size:11px;color:#d1d5db;">' . esc_html( $footer_note ) . '</p>'
@@ -535,7 +541,7 @@ function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
  * @param string $note
  * @return string HTML email body.
  */
-function xpressui_build_pending_info_body( $post_id, $project_slug, $note ) {
+function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url = '' ) {
 	$site_name   = get_bloginfo( 'name' );
 	$footer_note = sprintf(
 		/* translators: %s: site name */
@@ -550,6 +556,15 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note ) {
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
+	$cta_html = $resume_url !== ''
+		? '<p style="margin:20px 0 0;">'
+		  . '<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
+		  . esc_html__( 'Correct and resubmit →', 'xpressui-bridge' )
+		  . '</a></p>'
+		  . '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">'
+		  . esc_html__( 'This link expires in 7 days and can only be used once.', 'xpressui-bridge' )
+		  . '</p>'
+		: '';
 
 	return xpressui_build_submitter_email_html(
 		$site_name,
@@ -558,5 +573,6 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note ) {
 		$intro,
 		$note_html,
 		$footer_note,
+		$cta_html,
 	);
 }

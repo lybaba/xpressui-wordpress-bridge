@@ -33,6 +33,7 @@ function xpressui_render_summary_metabox( $post ) {
 	$done_at        = (string) get_post_meta( $post->ID, '_xpressui_done_at', true );
 	$rejected_at       = (string) get_post_meta( $post->ID, '_xpressui_rejected_at', true );
 	$pending_info_at   = (string) get_post_meta( $post->ID, '_xpressui_pending_info_at', true );
+	$resubmitted_at    = (string) get_post_meta( $post->ID, '_xpressui_resubmitted_at', true );
 	$config         = xpressui_get_config_snapshot( $post->ID );
 	$field_index    = xpressui_build_config_field_index( $config );
 	$capture        = xpressui_get_submission_capture_summary( $field_index, $payload );
@@ -55,6 +56,9 @@ function xpressui_render_summary_metabox( $post ) {
 	}
 	if ( $pending_info_at !== '' ) {
 		echo '<dt>' . esc_html__( 'Pending info since', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $pending_info_at ) . '</dd>';
+	}
+	if ( $resubmitted_at !== '' ) {
+		echo '<dt>' . esc_html__( 'Resubmitted at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $resubmitted_at ) . '</dd>';
 	}
 	if ( $rejected_at !== '' ) {
 		echo '<dt>' . esc_html__( 'Rejected at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $rejected_at ) . '</dd>';
@@ -132,6 +136,13 @@ function xpressui_save_submission_status( $post_id ) {
 	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_assignee_id'] ) ) : 0;
 	$options     = xpressui_get_status_options();
 
+	$raw_flagged    = isset( $_POST['xpressui_flagged_fields'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_flagged_fields'] ) ) : '';
+	$flagged_fields = array_values( array_filter(
+		array_map( 'trim', explode( ',', $raw_flagged ) ),
+		static function ( $f ) { return preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
+	) );
+	update_post_meta( $post_id, '_xpressui_flagged_fields', wp_json_encode( $flagged_fields ) );
+
 	if ( ! isset( $options[ $status ] ) ) {
 		$status = 'new';
 	}
@@ -144,10 +155,16 @@ function xpressui_save_submission_status( $post_id ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_render_review_metabox( $post ) {
-	$note = (string) get_post_meta( $post->ID, '_xpressui_review_note', true );
+	$note           = (string) get_post_meta( $post->ID, '_xpressui_review_note', true );
+	$flagged_fields = xpressui_get_flagged_fields( $post->ID );
+
 	echo '<label for="xpressui_review_note"><strong>' . esc_html__( 'Operator notes', 'xpressui-bridge' ) . '</strong></label>';
 	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width">' . esc_textarea( $note ) . '</textarea>';
 	echo '<p class="xpressui-hint">' . esc_html__( 'Saved with the current status and added to the review history when changed.', 'xpressui-bridge' ) . '</p>';
+
+	echo '<label for="xpressui_flagged_fields" style="display:block;margin-top:12px;"><strong>' . esc_html__( 'Fields to correct', 'xpressui-bridge' ) . '</strong></label>';
+	echo '<input type="text" id="xpressui_flagged_fields" name="xpressui_flagged_fields" class="xpressui-full-width" value="' . esc_attr( implode( ', ', $flagged_fields ) ) . '" placeholder="field_name_1, field_name_2">';
+	echo '<p class="xpressui-hint">' . esc_html__( 'Comma-separated field names the submitter must correct. Non-flagged fields are locked on resubmission.', 'xpressui-bridge' ) . '</p>';
 }
 
 // ---------------------------------------------------------------------------

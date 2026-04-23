@@ -19,6 +19,11 @@ function xpressui_register_rest_routes() {
 		'callback'            => 'xpressui_handle_submission',
 		'permission_callback' => 'xpressui_submission_permissions_check',
 	] );
+	register_rest_route( 'xpressui/v1', '/resume', [
+		'methods'             => 'GET',
+		'callback'            => 'xpressui_handle_resume_request',
+		'permission_callback' => '__return_true',
+	] );
 }
 
 function xpressui_submission_permissions_check( WP_REST_Request $request ) {
@@ -205,6 +210,41 @@ function xpressui_validate_submission_identifiers( $project_slug, $project_id, $
 	];
 }
 
+function xpressui_handle_resume_request( WP_REST_Request $request ) {
+	$token   = sanitize_text_field( (string) $request->get_param( 'token' ) );
+	$post_id = xpressui_get_resume_post_id_by_token( $token );
+
+	if ( $post_id <= 0 ) {
+		return new WP_Error(
+			'xpressui_invalid_token',
+			__( 'Invalid or expired resume token.', 'xpressui-bridge' ),
+			[ 'status' => 404 ]
+		);
+	}
+
+	$status = (string) get_post_meta( $post_id, '_xpressui_submission_status', true );
+	if ( $status !== 'pending_info' ) {
+		return new WP_Error(
+			'xpressui_token_not_applicable',
+			__( 'This submission is not awaiting corrections.', 'xpressui-bridge' ),
+			[ 'status' => 410 ]
+		);
+	}
+
+	$payload        = xpressui_get_submission_payload( $post_id );
+	$flagged_fields = xpressui_get_flagged_fields( $post_id );
+	$project_slug   = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$note           = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
+
+	return new WP_REST_Response( [
+		'success'       => true,
+		'projectSlug'   => $project_slug,
+		'payload'        => is_array( $payload ) ? $payload : [],
+		'flaggedFields' => $flagged_fields,
+		'note'          => $note,
+	], 200 );
+}
+
 function xpressui_handle_submission( WP_REST_Request $request ) {
 	$payload              = $request->get_param( 'payload' );
 	$project_id           = xpressui_sanitize_request_identifier( $request->get_param( 'projectId' ) );
@@ -222,6 +262,12 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		if ( is_array( $payload ) ) {
 			unset( $payload['payload'], $payload['projectConfigSnapshotJson'] );
 		}
+	}
+
+	// Resume resubmission path: bypass normal insert when a resume token is present.
+	$resume_token = is_array( $payload ) ? sanitize_text_field( (string) ( $payload['xpressui_resume_token'] ?? '' ) ) : '';
+	if ( $resume_token !== '' ) {
+		return xpressui_handle_resubmission( $request, $payload, $resume_token, $project_slug );
 	}
 
 	$validation = xpressui_validate_submission_request( $request, $project_slug, $submission_id, $payload );
@@ -280,6 +326,80 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	}
 
 	return new WP_REST_Response( $response, 200 );
+}
+
+function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $token, $project_slug ) {
+	$post_id = xpressui_get_resume_post_id_by_token( $token );
+	if ( $post_id <= 0 ) {
+		return new WP_Error(
+			'xpressui_invalid_token',
+			__( 'Invalid or expired resume link. Please contact us to request a new one.', 'xpressui-bridge' ),
+			[ 'status' => 404 ]
+		);
+	}
+
+	$stored_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	if ( $stored_slug !== $project_slug ) {
+		return new WP_Error(
+			'xpressui_token_mismatch',
+			__( 'Resume token does not match the submitted project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
+	$status = (string) get_post_meta( $post_id, '_xpressui_submission_status', true );
+	if ( $status !== 'pending_info' ) {
+		return new WP_Error(
+			'xpressui_token_not_applicable',
+			__( 'This submission is no longer awaiting corrections.', 'xpressui-bridge' ),
+			[ 'status' => 410 ]
+		);
+	}
+
+	$flagged_fields   = xpressui_get_flagged_fields( $post_id );
+	$existing_payload = xpressui_get_submission_payload( $post_id );
+	$merged           = is_array( $existing_payload ) ? $existing_payload : [];
+
+	$skip_keys = [
+		'xpressui_resume_token', 'xpressui_confirm_email',
+		'projectId', 'projectSlug', 'projectConfigVersion',
+		'submissionId', 'projectConfigSnapshotJson', 'rest_route',
+	];
+
+	if ( empty( $flagged_fields ) ) {
+		// No specific fields flagged — update all non-internal keys.
+		foreach ( (array) $payload as $key => $value ) {
+			if ( in_array( $key, $skip_keys, true ) ) {
+				continue;
+			}
+			$merged[ $key ] = $value;
+		}
+	} else {
+		// Update only explicitly flagged fields.
+		foreach ( $flagged_fields as $field_name ) {
+			if ( array_key_exists( $field_name, (array) $payload ) ) {
+				$merged[ $field_name ] = $payload[ $field_name ];
+			}
+		}
+	}
+
+	// Handle new file uploads for flagged fields only.
+	$stored_files = xpressui_store_uploaded_files( $post_id, $request );
+	$merged       = xpressui_attach_file_references( $merged, $stored_files );
+
+	// Invalidate token before status change (avoids any race on double-submit).
+	xpressui_invalidate_resume_token( $post_id );
+
+	update_post_meta( $post_id, '_xpressui_payload_json', wp_json_encode( $merged ) );
+	update_post_meta( $post_id, '_xpressui_resubmitted_at', current_time( 'mysql' ) );
+
+	xpressui_set_submission_status( $post_id, 'in-review', __( 'Resubmitted by submitter', 'xpressui-bridge' ) );
+
+	return new WP_REST_Response( [
+		'success' => true,
+		'message' => __( 'Your corrections have been received. Thank you.', 'xpressui-bridge' ),
+		'entryId' => $post_id,
+	], 200 );
 }
 
 function xpressui_validate_submission_request( WP_REST_Request $request, $project_slug, $submission_id, $payload ) {
