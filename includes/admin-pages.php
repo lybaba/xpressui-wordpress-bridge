@@ -91,6 +91,7 @@ function xpressui_get_project_inbox_rows() {
 				'total'              => 0,
 				'new'                => 0,
 				'in-review'          => 0,
+				'pending_info'       => 0,
 				'done'               => 0,
 				'rejected'           => 0,
 				'latestSubmissionId' => '',
@@ -119,12 +120,14 @@ function xpressui_render_project_inbox_page() {
 	$total_submissions = 0;
 	$total_new = 0;
 	$total_in_review = 0;
+	$total_pending_info = 0;
 	$total_done = 0;
 	$total_rejected = 0;
 	foreach ( $rows as $row ) {
 		$total_submissions += (int) ( $row['total'] ?? 0 );
 		$total_new += (int) ( $row['new'] ?? 0 );
 		$total_in_review += (int) ( $row['in-review'] ?? 0 );
+		$total_pending_info += (int) ( $row['pending_info'] ?? 0 );
 		$total_done += (int) ( $row['done'] ?? 0 );
 		$total_rejected += (int) ( $row['rejected'] ?? 0 );
 	}
@@ -147,6 +150,7 @@ function xpressui_render_project_inbox_page() {
 	echo '<div class="xpressui-inbox-stat"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_submissions ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</span></div>';
 	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--new"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_new ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'New', 'xpressui-bridge' ) . '</span></div>';
 	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--review"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_in_review ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'In review', 'xpressui-bridge' ) . '</span></div>';
+	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--pending-info"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_pending_info ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Pending info', 'xpressui-bridge' ) . '</span></div>';
 	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--done"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_done ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Done', 'xpressui-bridge' ) . '</span></div>';
 	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--rejected"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_rejected ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Rejected', 'xpressui-bridge' ) . '</span></div>';
 	echo '</div>';
@@ -158,6 +162,7 @@ function xpressui_render_project_inbox_page() {
 	echo '<col class="xpressui-col-total" />';
 	echo '<col class="xpressui-col-new" />';
 	echo '<col class="xpressui-col-review" />';
+	echo '<col class="xpressui-col-pending-info" />';
 	echo '<col class="xpressui-col-done" />';
 	echo '<col class="xpressui-col-rejected" />';
 	echo '<col class="xpressui-col-latest" />';
@@ -168,6 +173,7 @@ function xpressui_render_project_inbox_page() {
 	echo '<th>' . esc_html__( 'Total', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'New', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'In review', 'xpressui-bridge' ) . '</th>';
+	echo '<th>' . esc_html__( 'Pending info', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'Done', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'Rejected', 'xpressui-bridge' ) . '</th>';
 	echo '<th>' . esc_html__( 'Latest submission', 'xpressui-bridge' ) . '</th>';
@@ -189,6 +195,7 @@ function xpressui_render_project_inbox_page() {
 		echo '<td><span class="xpressui-badge xpressui-badge--count">' . esc_html( (string) $row['total'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-new">' . esc_html( (string) $row['new'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html( (string) $row['in-review'] ) . '</span></td>';
+		echo '<td><span class="xpressui-badge xpressui-badge--status-pending-info">' . esc_html( (string) $row['pending_info'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-done">' . esc_html( (string) $row['done'] ) . '</span></td>';
 		echo '<td><span class="xpressui-badge xpressui-badge--status-rejected">' . esc_html( (string) $row['rejected'] ) . '</span></td>';
 		echo '<td class="xpressui-cell-latest-submission">';

@@ -53,6 +53,11 @@
 	color: #276749;
 }
 
+.xpressui-badge--status-pending-info {
+	background: #feebc8;
+	color: #7b341e;
+}
+
 .xpressui-badge--status-rejected {
 	background: #fed7d7;
 	color: #9b2c2c;
@@ -128,6 +133,11 @@
 .xpressui-inbox-stat--done {
 	background: linear-gradient(180deg, #f3fff7 0%, #e8fbef 100%);
 	border-color: #cfeccc;
+}
+
+.xpressui-inbox-stat--pending-info {
+	background: linear-gradient(180deg, #fffaf0 0%, #fef3dc 100%);
+	border-color: #f6cc87;
 }
 
 .xpressui-inbox-stat--rejected {

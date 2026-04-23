@@ -856,10 +856,11 @@ function xpressui_maybe_install_bundled_workflows() {
 
 function xpressui_get_status_options() {
 	return [
-		'new'       => __( 'New', 'xpressui-bridge' ),
-		'in-review' => __( 'In review', 'xpressui-bridge' ),
-		'done'      => __( 'Done', 'xpressui-bridge' ),
-		'rejected'  => __( 'Rejected', 'xpressui-bridge' ),
+		'new'          => __( 'New', 'xpressui-bridge' ),
+		'in-review'    => __( 'In review', 'xpressui-bridge' ),
+		'pending_info' => __( 'Pending info', 'xpressui-bridge' ),
+		'done'         => __( 'Done', 'xpressui-bridge' ),
+		'rejected'     => __( 'Rejected', 'xpressui-bridge' ),
 	];
 }
 
@@ -1422,6 +1423,11 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 		update_post_meta( $post_id, '_xpressui_done_at', current_time( 'mysql' ) );
 	} elseif ( $current_status === 'done' && $status !== 'done' ) {
 		delete_post_meta( $post_id, '_xpressui_done_at' );
+	}
+	if ( $status === 'pending_info' ) {
+		update_post_meta( $post_id, '_xpressui_pending_info_at', current_time( 'mysql' ) );
+	} elseif ( $current_status === 'pending_info' && $status !== 'pending_info' ) {
+		delete_post_meta( $post_id, '_xpressui_pending_info_at' );
 	}
 	if ( $status === 'rejected' ) {
 		if ( get_post_meta( $post_id, '_xpressui_reviewed_at', true ) === '' ) {
