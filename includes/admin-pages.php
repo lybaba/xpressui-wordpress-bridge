@@ -286,6 +286,7 @@ function xpressui_render_workflows_page() {
 		$booking_url      = esc_url_raw( $raw_booking_url );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
+		$notify_submitter    = ! empty( $_POST['xpressui_notify_submitter'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
 		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 			$section_label_visibility = 'auto';
@@ -303,6 +304,7 @@ function xpressui_render_workflows_page() {
 				'bookingUrl'             => $booking_url,
 				'showProjectTitle'       => $show_project_title,
 				'showRequiredFieldsNote' => $show_required_note,
+				'notifySubmitter'        => $notify_submitter,
 				'sectionLabelVisibility' => $section_label_visibility,
 			];
 			update_option( 'xpressui_project_settings', $all_settings );
@@ -572,6 +574,7 @@ function xpressui_render_workflows_page() {
 				'bookingUrl'             => (string) ( $ps['bookingUrl'] ?? '' ),
 				'showProjectTitle'       => (string) ( $ps['showProjectTitle'] ?? '0' ),
 				'showRequiredFieldsNote' => (string) ( $ps['showRequiredFieldsNote'] ?? '0' ),
+				'notifySubmitter'        => (string) ( $ps['notifySubmitter'] ?? '0' ),
 				'sectionLabelVisibility' => (string) ( $ps['sectionLabelVisibility'] ?? 'auto' ),
 			];
 		}
@@ -621,6 +624,12 @@ function xpressui_render_workflows_page() {
 		echo '<input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1"' . checked( '1', $init['showRequiredFieldsNote'], false ) . '>';
 		echo ' ' . esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
 		echo '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th>' . esc_html__( 'Submitter notifications', 'xpressui-bridge' ) . '</th>';
+		echo '<td><label for="xpressui_notify_submitter">';
+		echo '<input type="checkbox" id="xpressui_notify_submitter" name="xpressui_notify_submitter" value="1"' . checked( '1', $init['notifySubmitter'], false ) . '>';
+		echo ' ' . esc_html__( 'Send status update emails to the submitter (pending info, done, rejected).', 'xpressui-bridge' ) . '</label>';
+		echo '<p class="description">' . esc_html__( 'Requires the submission to include an email field. The operator review note is included in the email.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th><label for="xpressui_section_label_visibility">' . esc_html__( 'Section labels', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><select id="xpressui_section_label_visibility" name="xpressui_section_label_visibility" class="regular-text">';
@@ -1102,6 +1111,7 @@ function xpressui_ajax_save_project_settings() {
 	$booking_url      = esc_url_raw( $raw_booking_url );
 	$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 	$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
+	$notify_submitter         = ! empty( $_POST['xpressui_notify_submitter'] ) ? '1' : '0';
 	$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
 	if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 		$section_label_visibility = 'auto';
@@ -1120,6 +1130,7 @@ function xpressui_ajax_save_project_settings() {
 		'bookingUrl'             => $booking_url,
 		'showProjectTitle'       => $show_project_title,
 		'showRequiredFieldsNote' => $show_required_note,
+		'notifySubmitter'        => $notify_submitter,
 		'sectionLabelVisibility' => $section_label_visibility,
 	];
 	update_option( 'xpressui_project_settings', $all_settings );

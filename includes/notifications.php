@@ -312,25 +312,97 @@ function xpressui_build_notification_headers() {
 // ---------------------------------------------------------------------------
 
 /**
+ * Retrieve the submitter's email address from the stored payload.
+ * Returns an empty string if not found or not a valid email.
+ *
+ * @param int $post_id Submission post ID.
+ * @return string
+ */
+function xpressui_get_submitter_email( $post_id ) {
+	$payload  = xpressui_get_submission_payload( $post_id );
+	$to_email = trim( (string) ( is_array( $payload ) ? ( $payload['email'] ?? '' ) : '' ) );
+	return is_email( $to_email ) ? $to_email : '';
+}
+
+/**
+ * Returns true when the project has submitter notifications enabled.
+ *
+ * @param string $project_slug
+ * @return bool
+ */
+function xpressui_project_notifies_submitter( $project_slug ) {
+	return xpressui_get_project_setting_flag( $project_slug, 'notifySubmitter', false );
+}
+
+/**
  * Send a "we need more information" email to the submitter when an operator
  * marks a submission as pending_info. Silently skips if no submitter email
- * is found in the stored payload.
+ * is found in the stored payload or if submitter notifications are disabled.
  *
  * @param int    $post_id Submission post ID.
  * @param string $note    Operator review note explaining what is needed.
  */
 function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
-	$payload      = xpressui_get_submission_payload( $post_id );
-	$to_email     = trim( (string) ( is_array( $payload ) ? ( $payload['email'] ?? '' ) : '' ) );
-
-	if ( $to_email === '' || ! is_email( $to_email ) ) {
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	if ( ! xpressui_project_notifies_submitter( $project_slug ) ) {
+		return;
+	}
+	$to_email = xpressui_get_submitter_email( $post_id );
+	if ( $to_email === '' ) {
 		return;
 	}
 
+	$subject = xpressui_build_pending_info_subject( $project_slug );
+	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note );
+	$headers = xpressui_build_notification_headers();
+
+	wp_mail( $to_email, $subject, $body, $headers );
+}
+
+/**
+ * Send a confirmation email to the submitter when an operator marks a
+ * submission as done.
+ *
+ * @param int    $post_id Submission post ID.
+ * @param string $note    Operator review note (optional closing message).
+ */
+function xpressui_maybe_send_done_notification( $post_id, $note ) {
 	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
-	$subject      = xpressui_build_pending_info_subject( $project_slug );
-	$body         = xpressui_build_pending_info_body( $post_id, $project_slug, $note );
-	$headers      = xpressui_build_notification_headers();
+	if ( ! xpressui_project_notifies_submitter( $project_slug ) ) {
+		return;
+	}
+	$to_email = xpressui_get_submitter_email( $post_id );
+	if ( $to_email === '' ) {
+		return;
+	}
+
+	$subject = xpressui_build_done_subject( $project_slug );
+	$body    = xpressui_build_done_body( $post_id, $project_slug, $note );
+	$headers = xpressui_build_notification_headers();
+
+	wp_mail( $to_email, $subject, $body, $headers );
+}
+
+/**
+ * Send a rejection email to the submitter when an operator marks a
+ * submission as rejected.
+ *
+ * @param int    $post_id Submission post ID.
+ * @param string $note    Operator review note explaining the rejection.
+ */
+function xpressui_maybe_send_rejected_notification( $post_id, $note ) {
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	if ( ! xpressui_project_notifies_submitter( $project_slug ) ) {
+		return;
+	}
+	$to_email = xpressui_get_submitter_email( $post_id );
+	if ( $to_email === '' ) {
+		return;
+	}
+
+	$subject = xpressui_build_rejected_subject( $project_slug );
+	$body    = xpressui_build_rejected_body( $post_id, $project_slug, $note );
+	$headers = xpressui_build_notification_headers();
 
 	wp_mail( $to_email, $subject, $body, $headers );
 }
@@ -346,58 +418,145 @@ function xpressui_build_pending_info_subject( $project_slug ) {
 }
 
 /**
+ * @param string $project_slug
+ * @return string
+ */
+function xpressui_build_done_subject( $project_slug ) {
+	$site_name = get_bloginfo( 'name' );
+	/* translators: 1: site name, 2: project slug */
+	return sprintf( __( '[%1$s] Your submission for %2$s has been processed', 'xpressui-bridge' ), $site_name, $project_slug );
+}
+
+/**
+ * @param string $project_slug
+ * @return string
+ */
+function xpressui_build_rejected_subject( $project_slug ) {
+	$site_name = get_bloginfo( 'name' );
+	/* translators: 1: site name, 2: project slug */
+	return sprintf( __( '[%1$s] Update on your submission for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
+}
+
+/**
+ * Shared HTML email shell. $accent_color and $header_label set the visual tone.
+ * $intro_text and $note_html are injected into the body.
+ */
+function xpressui_build_submitter_email_html( $site_name, $header_label, $accent_color, $intro_text, $note_html, $footer_note ) {
+	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
+		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
+		. '<tr><td align="center">'
+		. '<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:600px;">'
+		. '<tr><td style="background:#1d2327;padding:22px 28px;">'
+		. '<p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">' . esc_html( $site_name ) . '</p>'
+		. '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">' . esc_html( $header_label ) . '</p>'
+		. '</td></tr>'
+		. '<tr><td style="padding:28px 28px 24px;">'
+		. '<p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">' . $intro_text . '</p>'
+		. $note_html
+		. '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
+		. esc_html__( 'If you have any questions, please reply to this email.', 'xpressui-bridge' )
+		. '</p>'
+		. '</td></tr>'
+		. '<tr><td style="padding:16px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
+		. '<p style="margin:0;font-size:11px;color:#d1d5db;">' . esc_html( $footer_note ) . '</p>'
+		. '</td></tr>'
+		. '</table>'
+		. '</td></tr></table>'
+		. '</body></html>';
+}
+
+/**
+ * @param int    $post_id
+ * @param string $project_slug
+ * @param string $note
+ * @return string HTML email body.
+ */
+function xpressui_build_done_body( $post_id, $project_slug, $note ) {
+	$site_name   = get_bloginfo( 'name' );
+	$footer_note = sprintf(
+		/* translators: %s: site name */
+		__( 'Sent by %s.', 'xpressui-bridge' ),
+		$site_name,
+	);
+	$intro = esc_html( sprintf(
+		/* translators: %s: project slug */
+		__( 'Good news — your submission for %s has been reviewed and processed. Thank you for your time.', 'xpressui-bridge' ),
+		$project_slug,
+	) );
+	$note_html = $note !== ''
+		? '<p style="margin:16px 0 0;padding:14px 16px;background:#f0fdf4;border-left:3px solid #86efac;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
+		: '';
+
+	return xpressui_build_submitter_email_html(
+		$site_name,
+		__( 'Submission processed', 'xpressui-bridge' ),
+		'#22c55e',
+		$intro,
+		$note_html,
+		$footer_note,
+	);
+}
+
+/**
+ * @param int    $post_id
+ * @param string $project_slug
+ * @param string $note
+ * @return string HTML email body.
+ */
+function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
+	$site_name   = get_bloginfo( 'name' );
+	$footer_note = sprintf(
+		/* translators: %s: site name */
+		__( 'Sent by %s.', 'xpressui-bridge' ),
+		$site_name,
+	);
+	$intro = esc_html( sprintf(
+		/* translators: %s: project slug */
+		__( 'After careful review, we are unable to process your submission for %s. Please see the note below for details.', 'xpressui-bridge' ),
+		$project_slug,
+	) );
+	$note_html = $note !== ''
+		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fff5f5;border-left:3px solid #fca5a5;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
+		: '';
+
+	return xpressui_build_submitter_email_html(
+		$site_name,
+		__( 'Submission update', 'xpressui-bridge' ),
+		'#ef4444',
+		$intro,
+		$note_html,
+		$footer_note,
+	);
+}
+
+/**
  * @param int    $post_id
  * @param string $project_slug
  * @param string $note
  * @return string HTML email body.
  */
 function xpressui_build_pending_info_body( $post_id, $project_slug, $note ) {
-	$site_name  = esc_html( get_bloginfo( 'name' ) );
-	$note_html  = $note !== ''
-		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">'
-		  . nl2br( esc_html( $note ) )
-		  . '</p>'
-		: '';
-
+	$site_name   = get_bloginfo( 'name' );
+	$footer_note = sprintf(
+		/* translators: %s: site name */
+		__( 'Sent by %s.', 'xpressui-bridge' ),
+		$site_name,
+	);
 	$intro = esc_html( sprintf(
 		/* translators: %s: project slug */
 		__( 'Thank you for your submission for %s. After review, our team needs some additional information before we can proceed.', 'xpressui-bridge' ),
 		$project_slug,
 	) );
+	$note_html = $note !== ''
+		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
+		: '';
 
-	$footer_note = esc_html( sprintf(
-		/* translators: %s: site name */
-		__( 'Sent by %s.', 'xpressui-bridge' ),
-		get_bloginfo( 'name' )
-	) );
-
-	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
-		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
-		. '<tr><td align="center">'
-		. '<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:600px;">'
-
-		// Header
-		. '<tr><td style="background:#1d2327;padding:22px 28px;">'
-		. '<p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">' . $site_name . '</p>'
-		. '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">'
-		. esc_html__( 'Additional information required', 'xpressui-bridge' )
-		. '</p></td></tr>'
-
-		// Body
-		. '<tr><td style="padding:28px 28px 24px;">'
-		. '<p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">' . $intro . '</p>'
-		. $note_html
-		. '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
-		. esc_html__( 'Please reply to this email or contact us directly to provide the required information.', 'xpressui-bridge' )
-		. '</p>'
-		. '</td></tr>'
-
-		// Footer
-		. '<tr><td style="padding:16px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
-		. '<p style="margin:0;font-size:11px;color:#d1d5db;">' . $footer_note . '</p>'
-		. '</td></tr>'
-
-		. '</table>'
-		. '</td></tr></table>'
-		. '</body></html>';
+	return xpressui_build_submitter_email_html(
+		$site_name,
+		__( 'Additional information required', 'xpressui-bridge' ),
+		'#f59e0b',
+		$intro,
+		$note_html,
+		$footer_note,
+	);
 }

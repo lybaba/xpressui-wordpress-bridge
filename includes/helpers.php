@@ -1421,6 +1421,9 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 			update_post_meta( $post_id, '_xpressui_reviewed_at', current_time( 'mysql' ) );
 		}
 		update_post_meta( $post_id, '_xpressui_done_at', current_time( 'mysql' ) );
+		if ( $current_status !== 'done' ) {
+			xpressui_maybe_send_done_notification( $post_id, $normalized_note );
+		}
 	} elseif ( $current_status === 'done' && $status !== 'done' ) {
 		delete_post_meta( $post_id, '_xpressui_done_at' );
 	}
@@ -1437,6 +1440,9 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 			update_post_meta( $post_id, '_xpressui_reviewed_at', current_time( 'mysql' ) );
 		}
 		update_post_meta( $post_id, '_xpressui_rejected_at', current_time( 'mysql' ) );
+		if ( $current_status !== 'rejected' ) {
+			xpressui_maybe_send_rejected_notification( $post_id, $normalized_note );
+		}
 	} elseif ( $current_status === 'rejected' && $status !== 'rejected' ) {
 		delete_post_meta( $post_id, '_xpressui_rejected_at' );
 	}
