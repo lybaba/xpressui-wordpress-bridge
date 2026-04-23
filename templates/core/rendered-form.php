@@ -17,12 +17,8 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
   <input type="hidden" name="projectId" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'id'))); ?>" />
   <input type="hidden" name="projectSlug" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'slug'))); ?>" />
   <header class="template-form-header" data-template-zone="form_header">
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_title'))): ?>
-    <h1 class="template-form-title"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'title'))); ?></h1>
-<?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))): ?>
-      <p class="template-form-subtitle"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
-<?php endif; ?>
+    <h1 class="template-form-title"<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_title'))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'title'))); ?></h1>
+    <p class="template-form-subtitle"<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'))), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
   </header>
 
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
