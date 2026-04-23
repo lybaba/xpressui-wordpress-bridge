@@ -188,6 +188,7 @@ function xpressui_render_shortcode( $atts ) {
 		'slug'          => $slug,
 		'runtimeSource' => 'plugin-bundled',
 		'runtimeUrl'    => $runtime_url,
+		'bookingUrl'    => xpressui_get_project_setting( $slug, 'bookingUrl' ),
 	];
 
 	$inline_before  = 'window.XPRESSUI_WORDPRESS_REST_URL = ' . wp_json_encode( rest_url( 'xpressui/v1/submit' ) ) . ';';

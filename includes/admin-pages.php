@@ -268,6 +268,8 @@ function xpressui_render_workflows_page() {
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
 		$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$webhook_url      = esc_url_raw( $raw_webhook_url );
+		$raw_booking_url  = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$booking_url      = esc_url_raw( $raw_booking_url );
 		$show_project_title  = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note  = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
@@ -284,6 +286,7 @@ function xpressui_render_workflows_page() {
 				'notifyEmail'            => $notify_email,
 				'redirectUrl'            => $redirect_url,
 				'webhookUrl'             => $webhook_url,
+				'bookingUrl'             => $booking_url,
 				'showProjectTitle'       => $show_project_title,
 				'showRequiredFieldsNote' => $show_required_note,
 				'sectionLabelVisibility' => $section_label_visibility,
@@ -298,6 +301,9 @@ function xpressui_render_workflows_page() {
 			}
 			if ( $raw_webhook_url !== '' && $webhook_url === '' ) {
 				$save_warnings[] = __( 'The webhook URL was not saved because it is not a valid URL.', 'xpressui-bridge' );
+			}
+			if ( $raw_booking_url !== '' && $booking_url === '' ) {
+				$save_warnings[] = __( 'The booking URL was not saved because it is not a valid URL.', 'xpressui-bridge' );
 			}
 			if ( empty( $save_warnings ) ) {
 				$notice_class   = 'notice-success';
@@ -549,6 +555,7 @@ function xpressui_render_workflows_page() {
 				'notifyEmail'            => (string) ( $ps['notifyEmail'] ?? '' ),
 				'redirectUrl'            => (string) ( $ps['redirectUrl'] ?? '' ),
 				'webhookUrl'             => (string) ( $ps['webhookUrl'] ?? '' ),
+				'bookingUrl'             => (string) ( $ps['bookingUrl'] ?? '' ),
 				'showProjectTitle'       => (string) ( $ps['showProjectTitle'] ?? '0' ),
 				'showRequiredFieldsNote' => (string) ( $ps['showRequiredFieldsNote'] ?? '0' ),
 				'sectionLabelVisibility' => (string) ( $ps['sectionLabelVisibility'] ?? 'auto' ),
@@ -584,6 +591,10 @@ function xpressui_render_workflows_page() {
 		echo '<tr><th><label for="xpressui_webhook_url">' . esc_html__( 'Webhook destination', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( $init['webhookUrl'] ) . '">';
 		echo '<p class="description">' . esc_html__( 'Receive a POST JSON payload at this URL after each successful submission. Leave empty to disable. Webhook failure does not affect submission storage.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '<tr><th><label for="xpressui_booking_url">' . esc_html__( 'Booking link', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( $init['bookingUrl'] ) . '">';
+		echo '<p class="description">' . esc_html__( 'Show a "Book an appointment" button on the success screen after submission. Accepts any booking URL (Calendly, Cal.com, Acuity…). Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th>' . esc_html__( 'Form title', 'xpressui-bridge' ) . '</th>';
 		echo '<td><label for="xpressui_show_project_title">';
@@ -1073,6 +1084,8 @@ function xpressui_ajax_save_project_settings() {
 	$redirect_url     = esc_url_raw( $raw_redirect_url );
 	$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$webhook_url      = esc_url_raw( $raw_webhook_url );
+	$raw_booking_url  = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$booking_url      = esc_url_raw( $raw_booking_url );
 	$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 	$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
 	$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
@@ -1090,6 +1103,7 @@ function xpressui_ajax_save_project_settings() {
 		'notifyEmail'            => $notify_email,
 		'redirectUrl'            => $redirect_url,
 		'webhookUrl'             => $webhook_url,
+		'bookingUrl'             => $booking_url,
 		'showProjectTitle'       => $show_project_title,
 		'showRequiredFieldsNote' => $show_required_note,
 		'sectionLabelVisibility' => $section_label_visibility,
@@ -1104,6 +1118,9 @@ function xpressui_ajax_save_project_settings() {
 	}
 	if ( $raw_webhook_url !== '' && $webhook_url === '' ) {
 		$warnings[] = __( 'The webhook URL was not saved because it is not a valid URL.', 'xpressui-bridge' );
+	}
+	if ( $raw_booking_url !== '' && $booking_url === '' ) {
+		$warnings[] = __( 'The booking URL was not saved because it is not a valid URL.', 'xpressui-bridge' );
 	}
 	if ( ! empty( $warnings ) ) {
 		wp_send_json_error( [ 'message' => implode( ' ', $warnings ) ] );
