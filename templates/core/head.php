@@ -294,6 +294,8 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-submit-feedback[data-submit-feedback-state='loading'] { background: color-mix(in srgb, #3b82f6 8%, var(--template-surface)); border-color: color-mix(in srgb, #3b82f6 20%, transparent); }
     .template-submit-feedback-title { font-size: 13px; font-weight: 800; color: var(--template-text); }
     .template-submit-feedback-message { font-size: 13px; color: var(--template-muted-text); line-height: 1.45; }
+    .xpressui-booking-btn { display: none; margin-top: 6px; padding: 10px 20px; background: var(--template-primary); color: #fff; text-decoration: none; border-radius: var(--template-button-radius); font-size: 13px; font-weight: 700; }
+    [data-submit-feedback][data-submit-feedback-state="success"] .xpressui-booking-btn { display: inline-block; }
     button.template-field-pill { appearance: none; font: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
     button.template-field-pill[data-document-scan-active="true"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
     .template-submit-row { display: flex; justify-content: flex-end; padding-top: 18px; margin-top: 2px; border-top: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }

@@ -15,6 +15,9 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 >
   <div class="template-submit-feedback-title"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'submit_feedback'), 'title'))); ?></div>
   <div class="template-submit-feedback-message" data-submit-feedback-message><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'submit_feedback'), 'idle_message'))); ?></div>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'booking_url'))): ?>
+  <a class="xpressui-booking-btn" href="<?php echo esc_attr(xpressui_bridge_template_stringify(esc_url(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'booking_url')))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Book an appointment", 'xpressui-bridge'))); ?> →</a>
+<?php endif; ?>
 </div>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
   <div class="template-step-actions" data-form-step-actions="true">

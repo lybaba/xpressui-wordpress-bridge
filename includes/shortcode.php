@@ -145,6 +145,7 @@ function xpressui_render_shortcode( $atts ) {
 	$template_context['_mount_node_id'] = $mount_node_id;
 	if ( is_array( $template_context['runtime'] ?? null ) ) {
 		$template_context['runtime']['mount_node_id'] = 'xpressui-mount-' . $slug;
+		$template_context['runtime']['booking_url']   = xpressui_get_project_setting( $slug, 'bookingUrl' );
 	}
 
 	// Render the form fragment (CSS + HTML only; scripts are enqueued below).
