@@ -9,14 +9,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-function xpressui_register_metaboxes() {
-	add_meta_box( 'xpressui_submission_status',  __( 'Submission Workflow', 'xpressui-bridge' ),  'xpressui_render_status_metabox',  'xpressui_submission', 'side',   'high' );
-	add_meta_box( 'xpressui_submission_summary', __( 'Submission Summary', 'xpressui-bridge' ),   'xpressui_render_summary_metabox', 'xpressui_submission', 'side',   'high' );
-	add_meta_box( 'xpressui_submission_review',  __( 'Review Notes', 'xpressui-bridge' ),         'xpressui_render_review_metabox',  'xpressui_submission', 'normal', 'default' );
-	add_meta_box( 'xpressui_submission_history', __( 'Status History', 'xpressui-bridge' ),       'xpressui_render_history_metabox', 'xpressui_submission', 'side',   'default' );
-	add_meta_box( 'xpressui_submission_preview', __( 'Submission Preview', 'xpressui-bridge' ),   'xpressui_render_preview_metabox', 'xpressui_submission', 'normal', 'high' );
-	add_meta_box( 'xpressui_submission_payload', __( 'Submission Payload', 'xpressui-bridge' ),   'xpressui_render_payload_metabox', 'xpressui_submission', 'normal', 'default' );
-	add_meta_box( 'xpressui_submission_files',   __( 'Uploaded Files', 'xpressui-bridge' ),       'xpressui_render_files_metabox',   'xpressui_submission', 'side',   'default' );
+add_action( 'admin_footer', function () {
+	$screen = get_current_screen();
+	if ( ! $screen || $screen->post_type !== 'xpressui_submission' ) {
+		return;
+	}
+	?>
+	<script>
+	(function () {
+		var reviewBox  = document.getElementById( 'xpressui_submission_review' );
+		var publishBox = document.getElementById( 'submitdiv' );
+		if ( reviewBox && publishBox && publishBox.parentNode ) {
+			publishBox.parentNode.insertBefore( reviewBox, publishBox );
+		}
+	})();
+	</script>
+	<?php
+} );
+
+function xpressui_register_metaboxes( $post_type, $post = null ) {
+	add_meta_box( 'xpressui_submission_status',  __( 'Submission Workflow', 'xpressui-bridge' ),        'xpressui_render_status_metabox',  'xpressui_submission', 'side',   'high' );
+	add_meta_box( 'xpressui_submission_summary', __( 'Submission Summary', 'xpressui-bridge' ),         'xpressui_render_summary_metabox', 'xpressui_submission', 'side',   'high' );
+	add_meta_box( 'xpressui_submission_review',  __( 'Review Notes', 'xpressui-bridge' ),               'xpressui_render_review_metabox',  'xpressui_submission', 'side',   'high' );
+	if ( $post instanceof WP_Post && xpressui_get_additional_file_request( $post->ID )['active'] ) {
+		add_meta_box( 'xpressui_submission_afile', __( 'Request Additional Document', 'xpressui-bridge' ), 'xpressui_render_afile_metabox', 'xpressui_submission', 'normal', 'default' );
+	}
+	add_meta_box( 'xpressui_submission_history', __( 'Status History', 'xpressui-bridge' ),             'xpressui_render_history_metabox', 'xpressui_submission', 'side',   'default' );
+	add_meta_box( 'xpressui_submission_preview', __( 'Submission Preview', 'xpressui-bridge' ),         'xpressui_render_preview_metabox', 'xpressui_submission', 'normal', 'high' );
+	add_meta_box( 'xpressui_submission_payload', __( 'Submission Payload', 'xpressui-bridge' ),         'xpressui_render_payload_metabox', 'xpressui_submission', 'normal', 'default' );
+	add_meta_box( 'xpressui_submission_files',   __( 'Uploaded Files', 'xpressui-bridge' ),             'xpressui_render_files_metabox',   'xpressui_submission', 'side',   'default' );
 }
 
 // ---------------------------------------------------------------------------
@@ -118,6 +139,14 @@ function xpressui_render_status_metabox( $post ) {
 	}
 	echo '</select>';
 	echo '<p class="xpressui-hint">' . esc_html__( 'Use Update to save the new status.', 'xpressui-bridge' ) . '</p>';
+
+	$project_slug   = (string) get_post_meta( $post->ID, '_xpressui_project_slug', true );
+	$notifies       = $project_slug !== '' && xpressui_project_notifies_submitter( $project_slug );
+	if ( $notifies ) {
+		echo '<p class="xpressui-hint" style="color:#3a7;margin-top:10px;">&#10003; ' . esc_html__( 'Submitter notifications enabled — pending info / done / rejected emails will be sent.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		echo '<p class="xpressui-hint" style="color:#b45309;margin-top:10px;">&#9888; ' . esc_html__( 'Submitter notifications off — no email will be sent to the submitter.', 'xpressui-bridge' ) . '</p>';
+	}
 }
 
 function xpressui_save_submission_status( $post_id ) {
@@ -167,6 +196,36 @@ function xpressui_save_submission_status( $post_id ) {
 	$flagged_fields = array_values( array_unique( $flagged_fields ) );
 	update_post_meta( $post_id, '_xpressui_flagged_fields', wp_json_encode( $flagged_fields ) );
 
+	// Save reference files (field name → attachment ID).
+	$ref_files_raw = isset( $_POST['xpressui_ref_files'] ) && is_array( $_POST['xpressui_ref_files'] )
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		? wp_unslash( $_POST['xpressui_ref_files'] )
+		: [];
+	$ref_files = [];
+	foreach ( $ref_files_raw as $field_name => $attachment_id ) {
+		$field_name    = sanitize_key( (string) $field_name );
+		$attachment_id = absint( $attachment_id );
+		if ( $field_name !== '' && $attachment_id > 0 ) {
+			$ref_files[ $field_name ] = $attachment_id;
+		}
+	}
+	update_post_meta( $post_id, '_xpressui_field_reference_files', wp_json_encode( $ref_files ) );
+
+	// Save additional file reference (per-submission). Active/label/mode are workflow-level (Workflow Settings page).
+	$afile_ref_id = isset( $_POST['xpressui_afile_ref_file_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_afile_ref_file_id'] ) ) : 0;
+	if ( $afile_ref_id > 0 ) {
+		update_post_meta( $post_id, '_xpressui_afile_ref_file_id', $afile_ref_id );
+	} else {
+		delete_post_meta( $post_id, '_xpressui_afile_ref_file_id' );
+	}
+
+	$done_info_file_id = isset( $_POST['xpressui_done_info_file_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_done_info_file_id'] ) ) : 0;
+	if ( $done_info_file_id > 0 ) {
+		update_post_meta( $post_id, '_xpressui_done_info_file_id', $done_info_file_id );
+	} else {
+		delete_post_meta( $post_id, '_xpressui_done_info_file_id' );
+	}
+
 	if ( ! isset( $options[ $status ] ) ) {
 		$status = 'new';
 	}
@@ -174,16 +233,73 @@ function xpressui_save_submission_status( $post_id ) {
 	xpressui_set_assignee( $post_id, $assignee_id );
 
 	$normalized_note = trim( (string) $note );
-	$pending_info_changed = 'pending_info' === $status
-		&& 'pending_info' === $previous_status
-		&& (
-			$previous_note !== $normalized_note
-			|| $previous_flagged_fields !== $flagged_fields
-		);
-	if ( $pending_info_changed ) {
+	// Notify on first transition into pending_info, or if note/fields changed while already pending_info.
+	$should_notify_pending_info = 'pending_info' === $status && (
+		'pending_info' !== $previous_status
+		|| $previous_note !== $normalized_note
+		|| $previous_flagged_fields !== $flagged_fields
+	);
+	if ( $should_notify_pending_info ) {
 		xpressui_generate_resume_token( $post_id );
 		xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Additional file request metabox
+// ---------------------------------------------------------------------------
+
+function xpressui_render_afile_metabox( $post ) {
+	$req               = xpressui_get_additional_file_request( $post->ID );
+	$pending_ref_id    = $req['ref_file_id'];
+	$pending_has_ref   = $pending_ref_id > 0;
+	$pending_ref_url   = $pending_has_ref ? (string) wp_get_attachment_url( $pending_ref_id ) : '';
+	$pending_ref_path  = $pending_has_ref ? (string) get_attached_file( $pending_ref_id ) : '';
+	$pending_ref_name  = $pending_has_ref ? ( $pending_ref_path !== '' ? basename( $pending_ref_path ) : (string) get_the_title( $pending_ref_id ) ) : '';
+	$done_info_file_id = xpressui_get_done_info_file_id( $post->ID );
+	$done_has_file     = $done_info_file_id > 0;
+	$done_file_url     = $done_has_file ? (string) wp_get_attachment_url( $done_info_file_id ) : '';
+	$done_file_path    = $done_has_file ? (string) get_attached_file( $done_info_file_id ) : '';
+	$done_file_name    = $done_has_file ? ( $done_file_path !== '' ? basename( $done_file_path ) : (string) get_the_title( $done_info_file_id ) ) : '';
+
+	echo '<p class="xpressui-hint" style="margin-top:0;">'
+		. esc_html__( 'These files are always chosen manually by the operator. They are never inferred from the submitter uploads stored on the submission.', 'xpressui-bridge' )
+		. '</p>';
+
+	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Pending info: reference file to download (optional)', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Used only when the operator requests corrections. The submitter downloads it, then must re-upload the requested file.', 'xpressui-bridge' ) . '</p>';
+	echo '<input type="hidden" name="xpressui_afile_ref_file_id" value="' . esc_attr( (string) ( $pending_ref_id ?: '' ) ) . '">';
+	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_pending__">'
+		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
+		. esc_html__( 'Attach reference file', 'xpressui-bridge' )
+		. '</button>';
+	$preview_style = $pending_has_ref ? '' : ' style="display:none;"';
+	echo '<span class="xpressui-ref-file-preview" data-field="__afile_pending__"' . $preview_style . '>';
+	if ( $pending_ref_url !== '' ) {
+		echo '<a href="' . esc_url( $pending_ref_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $pending_ref_name ) . '</a>';
+	}
+	echo ' <button type="button" class="xpressui-ref-file-remove" data-field="__afile_pending__" title="' . esc_attr__( 'Remove', 'xpressui-bridge' ) . '">✕</button>';
+	echo '</span>';
+	echo '</div>';
+
+	echo '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">';
+	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Done: informational document to send (optional)', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Used only in the Done notification. It is sent as a download for the submitter records, without any re-upload request.', 'xpressui-bridge' ) . '</p>';
+	echo '<input type="hidden" name="xpressui_done_info_file_id" value="' . esc_attr( (string) ( $done_info_file_id ?: '' ) ) . '">';
+	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_done__">'
+		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
+		. esc_html__( 'Attach done document', 'xpressui-bridge' )
+		. '</button>';
+	$done_preview_style = $done_has_file ? '' : ' style="display:none;"';
+	echo '<span class="xpressui-ref-file-preview" data-field="__afile_done__"' . $done_preview_style . '>';
+	if ( $done_file_url !== '' ) {
+		echo '<a href="' . esc_url( $done_file_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $done_file_name ) . '</a>';
+	}
+	echo ' <button type="button" class="xpressui-ref-file-remove" data-field="__afile_done__" title="' . esc_attr__( 'Remove', 'xpressui-bridge' ) . '">✕</button>';
+	echo '</span>';
+	echo '</div>';
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +360,43 @@ function xpressui_get_review_field_value_preview( $value, $field_meta = [] ) {
 	return strlen( $formatted ) > 96 ? substr( $formatted, 0, 93 ) . '...' : $formatted;
 }
 
+function xpressui_is_file_field( $field_meta, $value ) {
+	if ( ( $field_meta['type'] ?? '' ) === 'file' ) {
+		return true;
+	}
+	return is_array( $value ) && ( $value['kind'] ?? '' ) === 'uploaded-file';
+}
+
+function xpressui_render_ref_file_picker_row( $field_name, $ref_files ) {
+	$attachment_id = (int) ( $ref_files[ $field_name ] ?? 0 );
+	$has_file      = $attachment_id > 0;
+	$file_url      = $has_file ? (string) wp_get_attachment_url( $attachment_id ) : '';
+	$file_name     = '';
+	if ( $has_file ) {
+		$path      = (string) get_attached_file( $attachment_id );
+		$file_name = $path !== '' ? basename( $path ) : (string) get_the_title( $attachment_id );
+	}
+	$clear_style = $has_file ? '' : ' style="display:none;"';
+
+	echo '<tr class="xpressui-ref-file-row">';
+	echo '<td colspan="3" class="xpressui-ref-file-cell">';
+	echo '<div class="xpressui-ref-file-picker">';
+	echo '<input type="hidden" name="xpressui_ref_files[' . esc_attr( $field_name ) . ']" value="' . esc_attr( (string) ( $attachment_id ?: '' ) ) . '">';
+	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="' . esc_attr( $field_name ) . '">';
+	echo '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>';
+	echo esc_html__( 'Attach reference file', 'xpressui-bridge' );
+	echo '</button>';
+	echo '<span class="xpressui-ref-file-preview"' . $clear_style . ' data-field="' . esc_attr( $field_name ) . '">';
+	if ( $file_url !== '' ) {
+		echo ' <a href="' . esc_url( $file_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $file_name ) . '</a>';
+	}
+	echo ' <button type="button" class="xpressui-ref-file-remove" data-field="' . esc_attr( $field_name ) . '" title="' . esc_attr__( 'Remove', 'xpressui-bridge' ) . '">✕</button>';
+	echo '</span>';
+	echo '</div>';
+	echo '</td>';
+	echo '</tr>';
+}
+
 function xpressui_render_flagged_field_toggle( $field_name, $is_checked ) {
 	return '<label class="xpressui-inline-flagged-switch" aria-label="' . esc_attr__( 'Needs correction', 'xpressui-bridge' ) . '">'
 		. '<span class="xpressui-inline-flagged-switch__text"' . ( $is_checked ? '' : ' style="display:none;"' ) . '>' . esc_html__( 'Needs modification', 'xpressui-bridge' ) . '</span>'
@@ -260,10 +413,6 @@ function xpressui_render_review_metabox( $post ) {
 	echo '<label for="xpressui_review_note"><strong>' . esc_html__( 'Operator notes', 'xpressui-bridge' ) . '</strong></label>';
 	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width">' . esc_textarea( $note ) . '</textarea>';
 	echo '<p class="xpressui-hint">' . esc_html__( 'Saved with the current status and added to the review history when changed.', 'xpressui-bridge' ) . '</p>';
-	echo '<div class="xpressui-review-flagged">';
-	echo '<strong>' . esc_html__( 'Fields to correct', 'xpressui-bridge' ) . '</strong>';
-	echo '<p class="xpressui-hint">' . esc_html__( 'Use the switches directly in Submission Preview to mark the fields the submitter must correct.', 'xpressui-bridge' ) . '</p>';
-	echo '</div>';
 }
 
 // ---------------------------------------------------------------------------
@@ -298,8 +447,9 @@ function xpressui_render_history_metabox( $post ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_render_preview_metabox( $post ) {
-	$payload     = xpressui_get_submission_payload( $post->ID );
+	$payload        = xpressui_get_submission_payload( $post->ID );
 	$flagged_fields = xpressui_get_flagged_fields( $post->ID );
+	$ref_files      = xpressui_get_field_reference_files( $post->ID );
 	if ( empty( $payload ) ) {
 		echo '<p>' . esc_html__( 'No structured submission data recorded.', 'xpressui-bridge' ) . '</p>';
 		return;
@@ -342,6 +492,9 @@ function xpressui_render_preview_metabox( $post ) {
 				echo '<td>' . wp_kses_post( xpressui_format_submission_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
 				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
+				if ( xpressui_is_file_field( $field_meta, $payload[ $field_name ] ?? null ) ) {
+					xpressui_render_ref_file_picker_row( $field_name, $ref_files );
+				}
 			}
 			echo '</tbody></table>';
 		}
@@ -365,6 +518,9 @@ function xpressui_render_preview_metabox( $post ) {
 			echo '<td>' . wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) ) . '</td>';
 			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
+			if ( xpressui_is_file_field( $field_meta, $value ) ) {
+				xpressui_render_ref_file_picker_row( $key, $ref_files );
+			}
 		}
 		echo '</tbody></table>';
 	}

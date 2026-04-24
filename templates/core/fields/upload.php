@@ -13,6 +13,10 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       <span class="template-required"<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'required'))))): ?> style="display:none"<?php endif; ?>>*</span>
     </div>
   </div>
+  <div class="xpressui-ref-file-block" data-ref-file-block style="display:none;">
+    <a class="xpressui-ref-file-link" data-ref-file-link href="" target="_blank" rel="noopener noreferrer"></a>
+    <p class="xpressui-ref-file-hint" data-ref-file-hint></p>
+  </div>
   <div class="template-upload-box" data-file-drop-zone="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>" data-file-drag-active="false">
     <span class="template-upload-icon">↑</span>
     <div class="template-field-label">

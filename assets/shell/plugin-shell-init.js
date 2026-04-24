@@ -102,9 +102,9 @@ async function fetchResumeData(token) {
     const response = await fetch(resolveResumeEndpoint(token), {
       headers: { Accept: 'application/json' },
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { expired: true };
     const data = await response.json();
-    return data?.success ? data : null;
+    return data?.success ? data : { expired: true };
   } catch {
     return null;
   }
@@ -115,81 +115,173 @@ function applyResumeMode(mountNode, form, resumeData, token) {
   if (!payload || !form) return;
 
   const flaggedSet = new Set(Array.isArray(flaggedFields) ? flaggedFields : []);
-  const allFlagged = flaggedSet.size === 0;
+  const additionalFile = resumeData.additionalFile;
+  // Show all fields only for a general note with no specific instruction (no flags and no additional file request).
+  // When specific fields are flagged OR an additional file is requested, hide everything not explicitly requested.
+  const showAllFields = flaggedSet.size === 0 && !additionalFile?.active;
 
-  // Banner explaining the situation
+  // Banner — show pre-rendered element and fill in the operator note
   if (note && note.trim()) {
-    const banner = document.createElement('div');
-    banner.style.cssText = 'background:#fffaf0;border:1px solid #f6cc87;border-radius:4px;padding:12px 16px;font-size:13px;color:#374151;margin-bottom:16px;line-height:1.5;';
-    const title = document.createElement('strong');
-    title.textContent = 'Correction requested: ';
-    banner.appendChild(title);
-    banner.appendChild(document.createTextNode(note));
-    form.parentNode?.insertBefore(banner, form);
+    const banner = form.querySelector('[data-resume-banner]');
+    const noteEl = banner?.querySelector('[data-resume-banner-note]');
+    if (banner && noteEl) {
+      noteEl.textContent = note;
+      banner.style.display = '';
+    }
   }
 
-  // Prefill and lock non-flagged text/select/checkbox fields
+  // Resume token — enable pre-rendered hidden input and fill its value
+  const tokenInput = form.querySelector('[data-resume-token]');
+  if (tokenInput instanceof HTMLInputElement) {
+    tokenInput.disabled = false;
+    tokenInput.value = token;
+  }
+
+  // Prefill all text/select/checkbox fields; hide containers of non-flagged ones.
+  const hiddenFieldContainers = new Set();
   form.querySelectorAll('input:not([type="file"]):not([type="submit"]):not([type="button"]):not([type="hidden"]), textarea, select').forEach((input) => {
     const name = input.name;
     if (!name || name === 'xpressui_confirm_email') return;
 
     const value = payload[name];
-    const isFlagged = allFlagged || flaggedSet.has(name);
+    const isFlagged = showAllFields || flaggedSet.has(name);
 
     if (value !== undefined && value !== null) {
       if (input instanceof HTMLSelectElement) {
         input.value = String(value);
+        input.dispatchEvent(new Event('change', { bubbles: true }));
       } else if (input instanceof HTMLInputElement && (input.type === 'checkbox' || input.type === 'radio')) {
         input.checked = input.value === String(value) || value === true || value === 'true';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
       } else {
         input.value = typeof value === 'object' ? '' : String(value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
 
     if (!isFlagged) {
-      if (input instanceof HTMLSelectElement || (input instanceof HTMLInputElement && (input.type === 'checkbox' || input.type === 'radio'))) {
-        input.disabled = true;
-      } else {
-        input.readOnly = true;
+      const fieldNode = input.closest('[data-field-name]');
+      if (fieldNode && !hiddenFieldContainers.has(fieldNode)) {
+        hiddenFieldContainers.add(fieldNode);
+        fieldNode.style.display = 'none';
       }
-      input.style.opacity = '0.55';
-      input.style.cursor = 'not-allowed';
+      input.disabled = true;
     }
   });
 
   // Handle file fields
+  const referenceFiles = resumeData.referenceFiles || {};
   form.querySelectorAll('input[type="file"]').forEach((fileInput) => {
     const name = fileInput.name;
     if (!name) return;
-    const existingValue = payload[name];
-    const isFlagged = allFlagged || flaggedSet.has(name);
+    const isAdditionalFileSlot = name === 'xpressui_afile';
+    const isFlagged = showAllFields || flaggedSet.has(name) || (isAdditionalFileSlot && additionalFile?.active);
+    const refFile = referenceFiles[name];
 
-    if (existingValue && !isFlagged) {
-      const fileName = typeof existingValue === 'object'
-        ? (existingValue.originalName || 'file')
-        : String(existingValue);
-      const msg = document.createElement('p');
-      msg.style.cssText = 'font-size:12px;color:#6b7280;margin:4px 0;';
-      msg.textContent = `Already provided: ${fileName}`;
-      fileInput.style.display = 'none';
-      fileInput.removeAttribute('required');
-      fileInput.removeAttribute('aria-required');
+    // Reference file — show pre-rendered block above the upload input when the field is flagged
+    if (refFile && refFile.url && isFlagged) {
       const fieldNode = fileInput.closest('[data-field-name]');
-      if (fieldNode) {
-        fieldNode.appendChild(msg);
-      } else {
-        fileInput.parentNode?.insertBefore(msg, fileInput.nextSibling);
+      const refBlock = fieldNode?.querySelector('[data-ref-file-block]');
+      const refLink  = refBlock?.querySelector('[data-ref-file-link]');
+      const refHint  = refBlock?.querySelector('[data-ref-file-hint]');
+      if (refBlock && refLink && refHint) {
+        refLink.href        = refFile.url;
+        refLink.textContent = '⬇ ' + (refFile.name || t('resume.downloadFile', 'Download file'));
+        refHint.textContent = t('resume.refFileHint', 'Download this file, complete or sign it, then re-upload it below.');
+        refBlock.style.display = '';
       }
+    }
+
+    // Non-flagged file field — hide the whole container (server keeps original value)
+    if (!isFlagged) {
+      const fieldNode = fileInput.closest('[data-field-name]');
+      if (fieldNode && !hiddenFieldContainers.has(fieldNode)) {
+        hiddenFieldContainers.add(fieldNode);
+        fieldNode.style.display = 'none';
+      }
+      fileInput.disabled = true;
+    } else {
+      fileInput.disabled = false;
     }
   });
 
-  // Inject resume token into form submission
-  if (!form.querySelector('[name="xpressui_resume_token"]')) {
-    const tokenInput = document.createElement('input');
-    tokenInput.type = 'hidden';
-    tokenInput.name = 'xpressui_resume_token';
-    tokenInput.value = token;
-    form.appendChild(tokenInput);
+  // Section visibility — hide sections that contain no flagged fields.
+  // (In resume mode the runtime is single-step so all sections are initially visible.)
+  if (!showAllFields) {
+    form.querySelectorAll('[data-template-zone="section"]:not([data-afile-slot])').forEach((section) => {
+      const hasFlagged = Array.from(section.querySelectorAll('[data-field-name]')).some((field) => {
+        const name = field.getAttribute('data-field-name');
+        return name !== null && flaggedSet.has(name);
+      });
+      if (!hasFlagged) {
+        section.style.display = 'none';
+      }
+    });
+  }
+
+  // Additional file slot — show and configure if active
+  if (additionalFile?.active) {
+    const slot = form.querySelector('[data-afile-slot]');
+    if (slot) {
+      slot.style.display = '';
+      const fieldNode = slot.querySelector('[data-field-name="xpressui_afile"]');
+      if (fieldNode) {
+        fieldNode.style.display = '';
+      }
+      const fileInput = slot.querySelector('input[type="file"][name="xpressui_afile"]');
+      if (fileInput instanceof HTMLInputElement) {
+        fileInput.required = true;
+        fileInput.setAttribute('aria-required', 'true');
+      }
+      const labelEl = slot.querySelector('[data-afile-label]');
+      if (labelEl && additionalFile.label) {
+        labelEl.textContent = additionalFile.label;
+      }
+      const requiredMarker = slot.querySelector('.template-required');
+      if (requiredMarker instanceof HTMLElement) {
+        requiredMarker.style.display = '';
+        requiredMarker.setAttribute('aria-hidden', 'true');
+      }
+      const refBlock = slot.querySelector('[data-afile-ref-block]');
+      const refLink  = slot.querySelector('[data-afile-ref-link]');
+      const refHint  = slot.querySelector('[data-afile-ref-hint]');
+      if (refBlock && refLink && refHint && additionalFile.refFile?.url) {
+        refLink.href        = additionalFile.refFile.url;
+        refLink.textContent = '⬇ ' + (additionalFile.refFile.name || t('resume.downloadFile', 'Download file'));
+        refHint.textContent = t('resume.refFileHint', 'Download this file, complete or sign it, then re-upload it below.');
+        refBlock.style.display = '';
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+function finalizeResumeSession(form) {
+  if (!(form instanceof HTMLFormElement)) return;
+
+  const tokenInput = form.querySelector('[data-resume-token]');
+  if (tokenInput instanceof HTMLInputElement) {
+    tokenInput.value = '';
+    tokenInput.disabled = true;
+  }
+
+  form.querySelectorAll('input, textarea, select, button').forEach((el) => {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || el instanceof HTMLButtonElement) {
+      el.disabled = true;
+      el.setAttribute('aria-disabled', 'true');
+    }
+  });
+
+  if (typeof window !== 'undefined' && window.history?.replaceState) {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('xpressui_resume')) {
+      url.searchParams.delete('xpressui_resume');
+      const nextSearch = url.searchParams.toString();
+      const nextUrl = `${url.pathname}${nextSearch ? `?${nextSearch}` : ''}${url.hash || ''}`;
+      window.history.replaceState({}, document.title, nextUrl);
+    }
   }
 }
 
@@ -310,7 +402,14 @@ const attachFallbackSubmitHandler = (form, mountNode, formConfig) => {
       try { result = responseText ? JSON.parse(responseText) : null; } catch { result = null; }
 
       if (!response.ok) {
+        if (response.status === 404 || response.status === 410) {
+          finalizeResumeSession(form);
+        }
         throw new Error(resolveErrorMessage(result, null, configuredErrorMessage, defaultErrorMessage) || `Submit failed with status ${response.status}.`);
+      }
+
+      if (formData.get('xpressui_resume_token')) {
+        finalizeResumeSession(form);
       }
 
       setFeedback(
@@ -346,11 +445,27 @@ async function initXPressUI() {
     return;
   }
 
-  // Detect resume token before anything else
+  // Detect resume token before anything else.
+  // The inline script in form-fragment.php already set data-resume-loading on mountNode
+  // so CSS hides the form and shows the loader while we fetch resume data.
   const resumeToken = new URLSearchParams(window.location.search).get('xpressui_resume') || '';
   let resumeData = null;
   if (resumeToken) {
     resumeData = await fetchResumeData(resumeToken);
+    if (resumeData?.expired) {
+      mountNode.removeAttribute('data-resume-loading');
+      _localSetFeedbackState(
+        mountNode,
+        'error',
+        t('resume.expired', 'This resubmission link has already been used or has expired. Please contact us if you need to make further corrections.'),
+        t('resume.expiredTitle', 'Link expired'),
+      );
+      const form = mountNode.querySelector('form');
+      if (form) {
+        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach((el) => { el.disabled = true; });
+      }
+      return;
+    }
   }
 
   let formConfig;
@@ -375,18 +490,7 @@ async function initXPressUI() {
     window.XPressUI.syncShellDomWithConfig(mountNode, formConfig, t);
   }
 
-  // Inject honeypot — bots that auto-fill all fields will populate it; server rejects such submissions.
-  const formElement0 = mountNode.querySelector('form');
-  if (formElement0 instanceof HTMLFormElement && !formElement0.querySelector('[name="xpressui_confirm_email"]')) {
-    const hp = document.createElement('input');
-    hp.type = 'text';
-    hp.name = 'xpressui_confirm_email';
-    hp.tabIndex = -1;
-    hp.autocomplete = 'off';
-    hp.setAttribute('aria-hidden', 'true');
-    hp.style.cssText = 'opacity:0;position:absolute;top:0;left:0;height:0;width:0;z-index:-1;pointer-events:none;';
-    formElement0.appendChild(hp);
-  }
+  // Honeypot is pre-rendered in the form template (xpressui_confirm_email).
 
   const formElement = mountNode.querySelector('form');
 
@@ -399,6 +503,12 @@ async function initXPressUI() {
         formConfig.submit.endpoint = resolvedEndpoint;
       }
     }
+    // Resume mode: collapse multi-step to single-step so the runtime hides nav/progress
+    // and shows the submit button immediately. Section visibility is handled by applyResumeMode.
+    if (resumeData && formConfig.mode === 'form-multi-step') {
+      formConfig = { ...formConfig, mode: 'form' };
+    }
+
     const hydrateForm = window.hydrateForm
       || window.XPressUI?.hydrateForm
       || window.xpressui?.hydrateForm;
@@ -409,18 +519,31 @@ async function initXPressUI() {
     }
     const hydrated = hydrateForm(mountNode, formConfig);
     if (!hydrated) {
+      mountNode.removeAttribute('data-resume-loading');
       throw new Error('XPressUI runtime could not hydrate the exported form shell.');
     }
     if (hydrated.formConfig) {
       hydrated.formConfig.submit = hydrated.formConfig.submit || {};
       hydrated.formConfig.submit.lifecycle = hydrated.formConfig.submit.lifecycle || {};
       hydrated.formConfig.submit.lifecycle.preSubmit = ({ values }) => ensureSubmitMetadata(values, formConfig);
+      const existingPostSuccess = hydrated.formConfig.submit.lifecycle.postSuccess;
+      const finalizeResumePostSuccess = (detail) => {
+        if (detail?.values?.xpressui_resume_token) {
+          finalizeResumeSession(mountNode.querySelector('form'));
+        }
+      };
+      hydrated.formConfig.submit.lifecycle.postSuccess = existingPostSuccess
+        ? Array.isArray(existingPostSuccess)
+          ? [...existingPostSuccess, finalizeResumePostSuccess]
+          : [existingPostSuccess, finalizeResumePostSuccess]
+        : finalizeResumePostSuccess;
     }
 
-    // Apply resume mode after hydration so the runtime doesn't reset our values
+    // Apply resume mode after hydration (re-query form in case runtime replaced it).
     if (resumeData) {
-      applyResumeMode(mountNode, formElement, resumeData, resumeToken);
+      applyResumeMode(mountNode, mountNode.querySelector('form'), resumeData, resumeToken);
     }
+    mountNode.removeAttribute('data-resume-loading');
 
     // Attach runtime event listeners → update feedback UI
     if (window.XPressUI?.attachShellFeedbackHandlers) {
@@ -456,11 +579,12 @@ async function initXPressUI() {
     }
   } catch (error) {
     console.error(error);
-    const formElement = mountNode.querySelector('form');
+    mountNode.removeAttribute('data-resume-loading');
+    const currentForm = mountNode.querySelector('form');
     if (resumeData) {
-      applyResumeMode(mountNode, formElement, resumeData, resumeToken);
+      applyResumeMode(mountNode, currentForm, resumeData, resumeToken);
     }
-    attachFallbackSubmitHandler(formElement, mountNode, formConfig);
+    attachFallbackSubmitHandler(currentForm, mountNode, formConfig);
     _localSetFeedbackState(
       mountNode,
       'warning',

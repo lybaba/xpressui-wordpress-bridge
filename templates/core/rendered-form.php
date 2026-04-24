@@ -16,6 +16,9 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
 >
   <input type="hidden" name="projectId" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'id'))); ?>" />
   <input type="hidden" name="projectSlug" value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'slug'))); ?>" />
+  <input type="text" name="xpressui_confirm_email" tabindex="-1" autocomplete="off" aria-hidden="true" style="opacity:0;position:absolute;top:0;left:0;height:0;width:0;z-index:-1;pointer-events:none;">
+  <input type="hidden" name="xpressui_resume_token" data-resume-token disabled>
+  <div class="xpressui-resume-banner" data-resume-banner style="display:none;"><span data-resume-banner-note></span></div>
   <header class="template-form-header" data-template-zone="form_header">
     <h1 class="template-form-title"<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_title'))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'title'))); ?></h1>
     <p class="template-form-subtitle"<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'))), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
@@ -64,5 +67,6 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
 <?php endif; ?>
     </section>
 <?php endif; ?>
+<?php xpressui_bridge_template_include_template('additional-file.php', $xpressui_ctx); ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>

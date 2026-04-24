@@ -15,18 +15,20 @@
 	if (sel) {
 		function applySettings(slug) {
 			var s = settingsMap[slug] || {};
-			var email   = document.getElementById('xpressui_notify_email');
-			var url     = document.getElementById('xpressui_redirect_url');
-			var webhook = document.getElementById('xpressui_webhook_url');
-			var title   = document.getElementById('xpressui_show_project_title');
-			var req     = document.getElementById('xpressui_show_required_fields_note');
-			var vis     = document.getElementById('xpressui_section_label_visibility');
-			if (email)   { email.value   = s.notifyEmail  || ''; }
-			if (url)     { url.value     = s.redirectUrl   || ''; }
-			if (webhook) { webhook.value = s.webhookUrl    || ''; }
-			if (title)   { title.checked = s.showProjectTitle === '1'; }
-			if (req)     { req.checked   = s.showRequiredFieldsNote === '1'; }
-			if (vis)     { vis.value     = s.sectionLabelVisibility || 'auto'; }
+			var email    = document.getElementById('xpressui_notify_email');
+			var url      = document.getElementById('xpressui_redirect_url');
+			var webhook  = document.getElementById('xpressui_webhook_url');
+			var title    = document.getElementById('xpressui_show_project_title');
+			var req      = document.getElementById('xpressui_show_required_fields_note');
+			var vis      = document.getElementById('xpressui_section_label_visibility');
+			var notifSub = document.getElementById('xpressui_notify_submitter');
+			if (email)    { email.value    = s.notifyEmail  || ''; }
+			if (url)      { url.value      = s.redirectUrl   || ''; }
+			if (webhook)  { webhook.value  = s.webhookUrl    || ''; }
+			if (title)    { title.checked  = s.showProjectTitle === '1'; }
+			if (req)      { req.checked    = s.showRequiredFieldsNote === '1'; }
+			if (vis)      { vis.value      = s.sectionLabelVisibility || 'auto'; }
+			if (notifSub) { notifSub.checked = s.notifySubmitter === '1'; }
 		}
 		sel.addEventListener('change', function () { applySettings(this.value); });
 	}

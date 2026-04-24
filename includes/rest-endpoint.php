@@ -231,17 +231,34 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 		);
 	}
 
-	$payload        = xpressui_get_submission_payload( $post_id );
-	$flagged_fields = xpressui_get_flagged_fields( $post_id );
-	$project_slug   = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
-	$note           = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
+	$payload         = xpressui_get_submission_payload( $post_id );
+	$flagged_fields  = xpressui_get_flagged_fields( $post_id );
+	$project_slug    = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$note            = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
+	$reference_files = xpressui_resolve_field_reference_files( $post_id );
+
+	$afile_req  = xpressui_get_additional_file_request( $post_id );
+	$afile_out  = null;
+	if ( $afile_req['active'] ) {
+		$ref_id  = $afile_req['ref_file_id'];
+		$ref_url = $ref_id > 0 ? (string) wp_get_attachment_url( $ref_id ) : '';
+		$ref_path = $ref_id > 0 ? (string) get_attached_file( $ref_id ) : '';
+		$ref_name = $ref_path !== '' ? basename( $ref_path ) : ( $ref_id > 0 ? (string) get_the_title( $ref_id ) : '' );
+		$afile_out = [
+			'active'  => true,
+			'label'   => $afile_req['label'],
+			'refFile' => $ref_url !== '' ? [ 'url' => $ref_url, 'name' => $ref_name ] : null,
+		];
+	}
 
 	return new WP_REST_Response( [
-		'success'       => true,
-		'projectSlug'   => $project_slug,
+		'success'        => true,
+		'projectSlug'    => $project_slug,
 		'payload'        => is_array( $payload ) ? $payload : [],
-		'flaggedFields' => $flagged_fields,
-		'note'          => $note,
+		'flaggedFields'  => $flagged_fields,
+		'note'           => $note,
+		'referenceFiles' => $reference_files,
+		'additionalFile' => $afile_out,
 	], 200 );
 }
 
@@ -308,6 +325,9 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
 
+	// Send confirmation email to the submitter on first submit.
+	xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payload_with_files );
+
 	// Send outbound webhook (best-effort — failure does not affect submission response).
 	xpressui_maybe_send_webhook( $post_id, $project_slug, $payload_with_files );
 
@@ -359,6 +379,21 @@ function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $toke
 	$flagged_fields   = xpressui_get_flagged_fields( $post_id );
 	$existing_payload = xpressui_get_submission_payload( $post_id );
 	$merged           = is_array( $existing_payload ) ? $existing_payload : [];
+	$file_params      = xpressui_get_request_file_params( $request );
+
+	$file_validation = xpressui_validate_uploaded_files( $file_params );
+	if ( is_wp_error( $file_validation ) ) {
+		return $file_validation;
+	}
+
+	$additional_file_request = xpressui_get_additional_file_request( $post_id );
+	if ( ! empty( $additional_file_request['active'] ) && ! xpressui_request_has_uploaded_file( $file_params, 'xpressui_afile' ) ) {
+		return new WP_Error(
+			'xpressui_missing_additional_file',
+			__( 'Please upload the requested additional document before resubmitting.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
 
 	$skip_keys = [
 		'xpressui_resume_token', 'xpressui_confirm_email',
@@ -563,6 +598,22 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 		];
 	}
 	return $normalized;
+}
+
+function xpressui_request_has_uploaded_file( array $file_params, $field_name ) {
+	$field_name = (string) $field_name;
+	if ( $field_name === '' ) {
+		return false;
+	}
+	foreach ( xpressui_normalize_uploaded_files( $file_params ) as $file ) {
+		if ( (string) ( $file['field'] ?? '' ) !== $field_name ) {
+			continue;
+		}
+		if ( ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) === UPLOAD_ERR_OK && ! empty( $file['tmp_name'] ) ) {
+			return true;
+		}
+	}
+	return false;
 }
 
 function xpressui_validate_uploaded_files( array $file_params ) {

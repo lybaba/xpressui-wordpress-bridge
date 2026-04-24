@@ -888,12 +888,34 @@ function xpressui_invalidate_resume_token( $post_id ) {
 	delete_post_meta( $post_id, '_xpressui_resume_token_expires' );
 }
 
+function xpressui_get_project_form_url( $project_slug ) {
+	$explicit = xpressui_get_project_setting( $project_slug, 'resumeUrl' );
+	if ( $explicit !== '' ) {
+		return $explicit;
+	}
+	// Auto-detect the published page/post that embeds this project's shortcode.
+	global $wpdb;
+	$slug_escaped = $wpdb->esc_like( $project_slug );
+	$page_id = (int) $wpdb->get_var( $wpdb->prepare(
+		"SELECT ID FROM {$wpdb->posts}
+		WHERE post_status = 'publish'
+		AND ( post_content LIKE %s OR post_content LIKE %s )
+		LIMIT 1",
+		'%[xpressui id="' . $slug_escaped . '"%]%',
+		"%[xpressui id='" . $slug_escaped . "'%]%"
+	) );
+	if ( $page_id > 0 ) {
+		return (string) get_permalink( $page_id );
+	}
+	return '';
+}
+
 function xpressui_build_resume_url( $post_id, $token ) {
 	if ( $token === '' ) {
 		return '';
 	}
 	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
-	$base_url     = xpressui_get_project_setting( $project_slug, 'resumeUrl' );
+	$base_url     = xpressui_get_project_form_url( $project_slug );
 	if ( $base_url === '' ) {
 		return '';
 	}
@@ -904,6 +926,89 @@ function xpressui_get_flagged_fields( $post_id ) {
 	$raw     = (string) get_post_meta( $post_id, '_xpressui_flagged_fields', true );
 	$decoded = $raw !== '' ? json_decode( $raw, true ) : null;
 	return is_array( $decoded ) ? array_values( array_filter( $decoded, 'is_string' ) ) : [];
+}
+
+/**
+ * Returns the additional file request for this submission.
+ * active/label/mode come from workflow-level settings; ref_file_id is per-submission.
+ *
+ * @param int $post_id
+ * @return array{active:bool,label:string,ref_file_id:int}
+ */
+function xpressui_get_additional_file_request( $post_id ) {
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	$s            = is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [];
+
+	// ref_file_id: new per-submission meta, with fallback to legacy JSON.
+	$ref_file_id = (int) get_post_meta( $post_id, '_xpressui_afile_ref_file_id', true );
+	if ( $ref_file_id === 0 ) {
+		$raw     = (string) get_post_meta( $post_id, '_xpressui_additional_file_request', true );
+		$decoded = $raw !== '' ? json_decode( $raw, true ) : null;
+		if ( is_array( $decoded ) ) {
+			$ref_file_id = (int) ( $decoded['ref_file_id'] ?? 0 );
+		}
+	}
+
+	return [
+		'active'      => ! empty( $s['additionalFileActive'] ),
+		'label'       => (string) ( $s['additionalFileLabel'] ?? '' ),
+		'ref_file_id' => $ref_file_id,
+	];
+}
+
+/**
+ * Returns the operator-selected informational file for done notifications.
+ * This is distinct from submitter uploads and from the pending_info reference file.
+ *
+ * @param int $post_id
+ * @return int
+ */
+function xpressui_get_done_info_file_id( $post_id ) {
+	return (int) get_post_meta( $post_id, '_xpressui_done_info_file_id', true );
+}
+
+/**
+ * Returns stored reference file attachment IDs keyed by field name.
+ * Format: [ 'fieldName' => attachmentId (int) ]
+ *
+ * @param int $post_id Submission post ID.
+ * @return array<string,int>
+ */
+function xpressui_get_field_reference_files( $post_id ) {
+	$raw     = (string) get_post_meta( $post_id, '_xpressui_field_reference_files', true );
+	$decoded = $raw !== '' ? json_decode( $raw, true ) : null;
+	if ( ! is_array( $decoded ) ) {
+		return [];
+	}
+	$result = [];
+	foreach ( $decoded as $field_name => $attachment_id ) {
+		$id = (int) $attachment_id;
+		if ( is_string( $field_name ) && $field_name !== '' && $id > 0 ) {
+			$result[ $field_name ] = $id;
+		}
+	}
+	return $result;
+}
+
+/**
+ * Resolves reference file attachment IDs to [ 'url' => ..., 'name' => ... ] for API output.
+ *
+ * @param int $post_id
+ * @return array<string,array{url:string,name:string}>
+ */
+function xpressui_resolve_field_reference_files( $post_id ) {
+	$raw = xpressui_get_field_reference_files( $post_id );
+	$out = [];
+	foreach ( $raw as $field_name => $attachment_id ) {
+		$url  = (string) wp_get_attachment_url( $attachment_id );
+		$path = (string) get_attached_file( $attachment_id );
+		$name = $path !== '' ? basename( $path ) : (string) get_the_title( $attachment_id );
+		if ( $url !== '' ) {
+			$out[ $field_name ] = [ 'url' => $url, 'name' => $name ];
+		}
+	}
+	return $out;
 }
 
 // ---------------------------------------------------------------------------

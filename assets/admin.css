@@ -302,6 +302,44 @@
 	color: #c0c4cc;
 }
 
+.xpressui-row-actions a:not(.xpressui-primary-action-link) {
+	font-size: 12px;
+	color: #3858a6;
+	text-decoration: none;
+}
+.xpressui-row-actions a:not(.xpressui-primary-action-link):hover,
+.xpressui-row-actions a:not(.xpressui-primary-action-link):focus {
+	color: #243b7a;
+	text-decoration: underline;
+}
+
+.xpressui-primary-action-link {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	border: 1px solid #b3cde8;
+	background: #f0f6fc;
+	color: #135e96 !important;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.4;
+	text-decoration: none !important;
+	white-space: nowrap;
+	vertical-align: middle;
+	transition: background-color .15s ease, border-color .15s ease;
+}
+.xpressui-primary-action-link:hover,
+.xpressui-primary-action-link:focus {
+	color: #0a4b78 !important;
+	background: #deedf7;
+	border-color: #72aee6;
+}
+.xpressui-primary-action-link:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(255,255,255,.92), 0 0 0 4px rgba(19,94,150,.18);
+}
+
 /* ---------------------------------------------------------------------------
  * Tables and forms
  * ------------------------------------------------------------------------- */
@@ -412,6 +450,15 @@
 .xpressui-table--workflows .xpressui-cell-url a,
 .xpressui-table--workflows .xpressui-cell-email a {
 	overflow-wrap: anywhere;
+}
+
+.xpressui-table--workflows .xpressui-row-actions {
+	flex-direction: column;
+	gap: 3px 0;
+	align-items: flex-start;
+}
+.xpressui-table--workflows .xpressui-row-actions__sep {
+	display: none;
 }
 
 .xpressui-table--project-inbox .xpressui-cell-project {
@@ -775,6 +822,54 @@
 	text-align: right;
 	vertical-align: middle;
 	white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reference file picker (pending_info)
+ * ------------------------------------------------------------------------- */
+
+.xpressui-ref-file-cell {
+	padding: 6px 10px 10px !important;
+	background: #f8faff;
+	border-top: none !important;
+}
+
+.xpressui-ref-file-picker {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.xpressui-ref-file-preview {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: #374151;
+}
+
+.xpressui-ref-file-preview a {
+	color: #2271b1;
+	text-decoration: underline;
+	max-width: 260px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.xpressui-ref-file-remove {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #9ca3af;
+	font-size: 13px;
+	padding: 0 2px;
+	line-height: 1;
+}
+
+.xpressui-ref-file-remove:hover {
+	color: #ef4444;
 }
 
 /* ---------------------------------------------------------------------------

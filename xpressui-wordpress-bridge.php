@@ -30,6 +30,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/post-type.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/filters.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/metaboxes.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-pages.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/workflow-settings-page.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/rest-endpoint.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shortcode.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/notifications.php';
@@ -45,7 +46,7 @@ add_action( 'manage_xpressui_submission_posts_custom_column', 'xpressui_submissi
 add_action( 'before_delete_post', 'xpressui_delete_submission_media_on_post_delete', 10, 2 );
 
 // --- Metaboxes ---
-add_action( 'add_meta_boxes', 'xpressui_register_metaboxes' );
+add_action( 'add_meta_boxes', 'xpressui_register_metaboxes', 10, 2 );
 add_action( 'save_post_xpressui_submission', 'xpressui_save_submission_status' );
 
 // --- List filters & row actions ---
@@ -96,6 +97,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 		XPRESSUI_BRIDGE_VERSION
 	);
 	if ( $screen->post_type === 'xpressui_submission' ) {
+		wp_enqueue_media();
 		wp_enqueue_script(
 			'xpressui-bridge-admin-submissions',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-submissions.js',

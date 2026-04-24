@@ -108,7 +108,7 @@ function xpressui_build_notification_subject( $project_slug, $payload ) {
 
 	if ( $contact !== '' ) {
 		/* translators: 1: site name, 2: project slug, 3: contact name/email */
-		return sprintf( __( '[%1$s] New submission for %2$s — %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+		return sprintf( __( '[%1$s] New submission for %2$s: %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
 	}
 	/* translators: 1: site name, 2: project slug */
 	return sprintf( __( '[%1$s] New submission for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
@@ -266,7 +266,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		. '<p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">' . $site_name . '</p>'
 		. '<p style="margin:4px 0 0;font-size:13px;color:#9ca3af;">'
 		/* translators: %s: workflow project slug. */
-		. esc_html( sprintf( __( 'New submission — %s', 'xpressui-bridge' ), $project_slug ) )
+		. esc_html( sprintf( __( 'New submission: %s', 'xpressui-bridge' ), $project_slug ) )
 		. '</p></td></tr>'
 
 		// Meta
@@ -283,7 +283,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		// CTA footer
 		. '<tr><td style="padding:24px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
 		. '<a href="' . $admin_url . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
-		. esc_html__( 'Review submission →', 'xpressui-bridge' )
+		. esc_html__( 'Review submission', 'xpressui-bridge' )
 		. '</a>'
 		. '<p style="margin:14px 0 0;font-size:11px;color:#d1d5db;">'
 		. esc_html( sprintf(
@@ -351,11 +351,28 @@ function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
 	if ( $to_email === '' ) {
 		return;
 	}
-	$token      = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
+
+	$all_settings   = get_option( 'xpressui_project_settings', [] );
+	$resubmit_label = (string) ( ( is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [] )['resubmitButtonLabel'] ?? '' );
+
+	$afile_req = xpressui_get_additional_file_request( $post_id );
+	$token     = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
 	$resume_url = xpressui_build_resume_url( $post_id, $token );
 
+	// Per-field reference files (legacy / flagged-field attachments).
+	$reference_files = xpressui_resolve_field_reference_files( $post_id );
+
+	// Add additional file slot's reference file to the email when configured.
+	if ( $afile_req['active'] && $afile_req['ref_file_id'] > 0 ) {
+		$ref_url  = (string) wp_get_attachment_url( $afile_req['ref_file_id'] );
+		$ref_name = (string) get_the_title( $afile_req['ref_file_id'] );
+		if ( $ref_url !== '' ) {
+			$reference_files[] = [ 'url' => $ref_url, 'name' => $ref_name ];
+		}
+	}
+
 	$subject = xpressui_build_pending_info_subject( $project_slug );
-	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url );
+	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url, $reference_files, $resubmit_label );
 	$headers = xpressui_build_notification_headers();
 
 	wp_mail( $to_email, $subject, $body, $headers );
@@ -414,9 +431,10 @@ function xpressui_maybe_send_rejected_notification( $post_id, $note ) {
  * @return string
  */
 function xpressui_build_pending_info_subject( $project_slug ) {
-	$site_name = get_bloginfo( 'name' );
-	/* translators: 1: site name, 2: project slug */
-	return sprintf( __( '[%1$s] Your submission for %2$s needs additional information', 'xpressui-bridge' ), $site_name, $project_slug );
+	$site_name      = get_bloginfo( 'name' );
+	$workflow_label = xpressui_get_submitter_workflow_label( $project_slug );
+	/* translators: 1: site name, 2: workflow label */
+	return sprintf( __( '[%1$s / %2$s] Your submission needs additional information', 'xpressui-bridge' ), $site_name, $workflow_label );
 }
 
 /**
@@ -424,9 +442,10 @@ function xpressui_build_pending_info_subject( $project_slug ) {
  * @return string
  */
 function xpressui_build_done_subject( $project_slug ) {
-	$site_name = get_bloginfo( 'name' );
-	/* translators: 1: site name, 2: project slug */
-	return sprintf( __( '[%1$s] Your submission for %2$s has been processed', 'xpressui-bridge' ), $site_name, $project_slug );
+	$site_name      = get_bloginfo( 'name' );
+	$workflow_label = xpressui_get_submitter_workflow_label( $project_slug );
+	/* translators: 1: site name, 2: workflow label */
+	return sprintf( __( '[%1$s / %2$s] Your submission has been processed', 'xpressui-bridge' ), $site_name, $workflow_label );
 }
 
 /**
@@ -434,9 +453,46 @@ function xpressui_build_done_subject( $project_slug ) {
  * @return string
  */
 function xpressui_build_rejected_subject( $project_slug ) {
-	$site_name = get_bloginfo( 'name' );
-	/* translators: 1: site name, 2: project slug */
-	return sprintf( __( '[%1$s] Update on your submission for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
+	$site_name      = get_bloginfo( 'name' );
+	$workflow_label = xpressui_get_submitter_workflow_label( $project_slug );
+	/* translators: 1: site name, 2: workflow label */
+	return sprintf( __( '[%1$s / %2$s] Update on your submission', 'xpressui-bridge' ), $site_name, $workflow_label );
+}
+
+/**
+ * Resolve the submitter-facing workflow label.
+ *
+ * @param string $project_slug Project slug.
+ * @return string
+ */
+function xpressui_get_submitter_workflow_label( $project_slug ) {
+	$slug = sanitize_title( (string) $project_slug );
+	if ( $slug === '' ) {
+		return '';
+	}
+
+	$project_name = '';
+	if ( function_exists( 'xpressui_get_workflow_manifest_meta' ) ) {
+		$manifest = xpressui_get_workflow_manifest_meta( $slug );
+		if ( is_array( $manifest ) ) {
+			$project_name = sanitize_text_field( (string) ( $manifest['projectName'] ?? '' ) );
+		}
+	}
+
+	return $project_name !== '' ? $project_name : $slug;
+}
+
+/**
+ * Resolve the submitter email brand line shown in the header.
+ *
+ * @param string $project_slug Project slug.
+ * @return string
+ */
+function xpressui_get_submitter_email_header_name( $project_slug ) {
+	$site_name      = get_bloginfo( 'name' );
+	$workflow_label = xpressui_get_submitter_workflow_label( $project_slug );
+
+	return $site_name . ' / ' . $workflow_label;
 }
 
 /**
@@ -444,11 +500,7 @@ function xpressui_build_rejected_subject( $project_slug ) {
  * $intro_text and $note_html are injected into the body.
  */
 function xpressui_build_submitter_email_html( $site_name, $header_label, $accent_color, $intro_text, $note_html, $footer_note, $cta_html = '' ) {
-	$action_html = $cta_html !== ''
-		? $cta_html
-		: '<p style="margin:20px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">'
-		  . esc_html__( 'If you have any questions, please reply to this email.', 'xpressui-bridge' )
-		  . '</p>';
+	$action_html = $cta_html !== '' ? $cta_html : '';
 
 	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
 		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
@@ -472,6 +524,43 @@ function xpressui_build_submitter_email_html( $site_name, $header_label, $accent
 }
 
 /**
+ * Render a submitter-facing "documents to download" block.
+ *
+ * @param array<int,array{url:string,name:string}> $reference_files
+ * @param string                                   $hint_text
+ * @return string
+ */
+function xpressui_build_reference_files_html( $reference_files, $hint_text = '' ) {
+	if ( empty( $reference_files ) ) {
+		return '';
+	}
+
+	$html = '<div style="margin:20px 0 0;padding:14px 16px;background:#f0f7ff;border-left:3px solid #93c5fd;border-radius:0 4px 4px 0;">';
+	$html .= '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1e40af;">'
+		. esc_html__( 'Documents to download', 'xpressui-bridge' )
+		. '</p>';
+	foreach ( $reference_files as $file ) {
+		$url  = (string) ( $file['url'] ?? '' );
+		$name = (string) ( $file['name'] ?? '' );
+		if ( $url === '' ) {
+			continue;
+		}
+		$label = $name !== '' ? $name : $url;
+		$html .= '<p style="margin:4px 0;font-size:13px;">'
+			. '⬇ <a href="' . esc_url( $url ) . '" style="color:#1d4ed8;">' . esc_html( $label ) . '</a>'
+			. '</p>';
+	}
+	if ( $hint_text !== '' ) {
+		$html .= '<p style="margin:10px 0 0;font-size:12px;color:#374151;">'
+			. esc_html( $hint_text )
+			. '</p>';
+	}
+	$html .= '</div>';
+
+	return $html;
+}
+
+/**
  * @param int    $post_id
  * @param string $project_slug
  * @param string $note
@@ -479,6 +568,7 @@ function xpressui_build_submitter_email_html( $site_name, $header_label, $accent
  */
 function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 	$site_name   = get_bloginfo( 'name' );
+	$header_name = xpressui_get_submitter_email_header_name( $project_slug );
 	$footer_note = sprintf(
 		/* translators: %s: site name */
 		__( 'Sent by %s.', 'xpressui-bridge' ),
@@ -486,20 +576,39 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 	);
 	$intro = esc_html( sprintf(
 		/* translators: %s: project slug */
-		__( 'Good news — your submission for %s has been reviewed and processed. Thank you for your time.', 'xpressui-bridge' ),
+		__( 'Your submission for %s has been reviewed and processed. Thank you for your time.', 'xpressui-bridge' ),
 		$project_slug,
 	) );
+	$reference_files         = [];
+	$done_info_file_id       = xpressui_get_done_info_file_id( $post_id );
+	if ( $done_info_file_id > 0 ) {
+		$ref_id   = $done_info_file_id;
+		$ref_url  = (string) wp_get_attachment_url( $ref_id );
+		$ref_path = (string) get_attached_file( $ref_id );
+		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_id );
+		if ( $ref_url !== '' ) {
+			$reference_files[] = [
+				'url'  => $ref_url,
+				'name' => $ref_name,
+			];
+		}
+	}
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#f0fdf4;border-left:3px solid #86efac;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
+	$docs_html = xpressui_build_reference_files_html(
+		$reference_files,
+		__( 'This document is provided for your records. No further upload is required.', 'xpressui-bridge' )
+	);
 
 	return xpressui_build_submitter_email_html(
-		$site_name,
+		$header_name,
 		__( 'Submission processed', 'xpressui-bridge' ),
 		'#22c55e',
 		$intro,
 		$note_html,
 		$footer_note,
+		$docs_html,
 	);
 }
 
@@ -511,6 +620,7 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
  */
 function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
 	$site_name   = get_bloginfo( 'name' );
+	$header_name = xpressui_get_submitter_email_header_name( $project_slug );
 	$footer_note = sprintf(
 		/* translators: %s: site name */
 		__( 'Sent by %s.', 'xpressui-bridge' ),
@@ -526,7 +636,7 @@ function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
 		: '';
 
 	return xpressui_build_submitter_email_html(
-		$site_name,
+		$header_name,
 		__( 'Submission update', 'xpressui-bridge' ),
 		'#ef4444',
 		$intro,
@@ -541,9 +651,11 @@ function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
  * @param string $note
  * @return string HTML email body.
  */
-function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url = '' ) {
-	$site_name   = get_bloginfo( 'name' );
-	$footer_note = sprintf(
+function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url = '', $reference_files = [], $resubmit_label = '' ) {
+	$site_name    = get_bloginfo( 'name' );
+	$header_name  = xpressui_get_submitter_email_header_name( $project_slug );
+	$has_resubmit = $resume_url !== '';
+	$footer_note  = sprintf(
 		/* translators: %s: site name */
 		__( 'Sent by %s.', 'xpressui-bridge' ),
 		$site_name,
@@ -556,18 +668,25 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resu
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
-	$cta_html = $resume_url !== ''
-		? '<p style="margin:20px 0 0;">'
-		  . '<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
-		  . esc_html__( 'Correct and resubmit →', 'xpressui-bridge' )
-		  . '</a></p>'
-		  . '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">'
-		  . esc_html__( 'This link expires in 7 days and can only be used once.', 'xpressui-bridge' )
-		  . '</p>'
-		: '';
+	$ref_files_html = xpressui_build_reference_files_html(
+		$reference_files,
+		__( 'Download the file(s), complete or sign them, then re-upload using the link below.', 'xpressui-bridge' )
+	);
+
+	$cta_html = $ref_files_html;
+	if ( $has_resubmit ) {
+		$btn_label = $resubmit_label !== '' ? $resubmit_label : __( 'Resume', 'xpressui-bridge' );
+		$cta_html .= '<p style="margin:20px 0 0;">'
+			. '<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
+			. esc_html( $btn_label )
+			. '</a></p>'
+			. '<p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">'
+			. esc_html__( 'This link expires in 7 days and can only be used once.', 'xpressui-bridge' )
+			. '</p>';
+	}
 
 	return xpressui_build_submitter_email_html(
-		$site_name,
+		$header_name,
 		__( 'Additional information required', 'xpressui-bridge' ),
 		'#f59e0b',
 		$intro,
@@ -575,4 +694,80 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resu
 		$footer_note,
 		$cta_html,
 	);
+}
+
+/**
+ * Send a confirmation email to the submitter on their first (non-resume) submission.
+ * Silently skips if confirmations are disabled, no email field is present, or the
+ * payload contains a resume token (resubmission).
+ *
+ * @param int          $post_id      Submission post ID.
+ * @param string       $project_slug
+ * @param array|string $payload      Submitted payload (already stored).
+ */
+function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payload ) {
+	if ( ! xpressui_get_project_setting_flag( $project_slug, 'notifySubmitterOnSubmit', false ) ) {
+		return;
+	}
+	$to_email = xpressui_get_submitter_email( $post_id );
+	if ( $to_email === '' ) {
+		return;
+	}
+
+	$site_name     = get_bloginfo( 'name' );
+	$header_name   = xpressui_get_submitter_email_header_name( $project_slug );
+	$workflow_label = xpressui_get_submitter_workflow_label( $project_slug );
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	$s            = is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [];
+
+	$custom_message = (string) ( $s['submitConfirmationMessage'] ?? '' );
+	$ref_file_id    = (int) ( $s['submitConfirmationFileId'] ?? 0 );
+
+	$intro = $custom_message !== ''
+		? esc_html( $custom_message )
+		: esc_html( sprintf(
+			/* translators: %s: project name / slug */
+			__( 'Thank you for your submission for %s. We have received it and will review it shortly.', 'xpressui-bridge' ),
+			$project_slug,
+		) );
+
+	$ref_files_html = '';
+	if ( $ref_file_id > 0 ) {
+		$ref_url  = (string) wp_get_attachment_url( $ref_file_id );
+		$ref_path = (string) get_attached_file( $ref_file_id );
+		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_file_id );
+		if ( $ref_url !== '' ) {
+			$ref_files_html = xpressui_build_reference_files_html( [
+				[
+					'url'  => $ref_url,
+					'name' => $ref_name,
+				],
+			] );
+		}
+	}
+
+	$footer_note = sprintf(
+		/* translators: %s: site name */
+		__( 'Sent by %s.', 'xpressui-bridge' ),
+		$site_name,
+	);
+
+	$subject = sprintf(
+		/* translators: 1: site name, 2: workflow label */
+		__( '[%1$s / %2$s] We received your submission', 'xpressui-bridge' ),
+		$site_name,
+		$workflow_label,
+	);
+	$body    = xpressui_build_submitter_email_html(
+		$header_name,
+		__( 'Submission received', 'xpressui-bridge' ),
+		'#2271b1',
+		$intro,
+		'',
+		$footer_note,
+		$ref_files_html,
+	);
+	$headers = xpressui_build_notification_headers();
+
+	wp_mail( $to_email, $subject, $body, $headers );
 }
