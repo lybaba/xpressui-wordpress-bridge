@@ -1054,6 +1054,24 @@ function xpressui_get_done_info_file_id( $post_id ) {
 }
 
 /**
+ * Return a human-readable display name for a WP attachment, truncated to 48 chars.
+ * Prefers the attachment post title over the raw filename.
+ */
+function xpressui_get_attachment_display_name( int $attachment_id ): string {
+	$title = trim( (string) get_the_title( $attachment_id ) );
+	if ( $title === '' ) {
+		$path  = (string) get_attached_file( $attachment_id );
+		$title = $path !== '' ? basename( $path ) : '';
+	}
+	if ( $title === '' ) {
+		return '';
+	}
+	return function_exists( 'mb_strimwidth' )
+		? mb_strimwidth( $title, 0, 48, '…' )
+		: ( strlen( $title ) > 48 ? substr( $title, 0, 47 ) . '…' : $title );
+}
+
+/**
  * Resolve the post meta suffix for an additional slot.
  *
  * @param string $slot_id

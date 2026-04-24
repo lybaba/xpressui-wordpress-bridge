@@ -80,7 +80,7 @@
 		});
 		mediaFrame.on('select', function () {
 			var attachment = mediaFrame.state().get('selection').first().toJSON();
-			setRefFile(fieldName, attachment.id, attachment.filename || attachment.title || '');
+			setRefFile(fieldName, attachment.id, attachment.title || attachment.filename || '');
 		});
 		mediaFrame.open();
 	}
@@ -103,19 +103,25 @@
 		return document.querySelector('input[name="xpressui_ref_files[' + fieldName + ']"]');
 	}
 
+	function truncateLabel(str) {
+		if (!str) { return ''; }
+		return str.length > 48 ? str.slice(0, 47) + '…' : str;
+	}
+
 	function setRefFile(fieldName, attachmentId, fileName) {
 		var hidden = getHiddenInput(fieldName);
 		var preview = document.querySelector('.xpressui-ref-file-preview[data-field="' + fieldName + '"]');
 		if (hidden) { hidden.value = attachmentId; }
 		if (preview) {
+			var displayName = truncateLabel(fileName);
 			var link = preview.querySelector('a');
 			if (link) {
-				link.textContent = fileName;
+				link.textContent = displayName;
 			} else {
 				var a = document.createElement('a');
 				a.target = '_blank';
 				a.rel = 'noreferrer';
-				a.textContent = fileName;
+				a.textContent = displayName;
 				preview.insertBefore(a, preview.firstChild);
 			}
 			preview.style.display = '';

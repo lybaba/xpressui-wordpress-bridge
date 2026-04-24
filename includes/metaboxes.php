@@ -285,12 +285,11 @@ function xpressui_render_afile_metabox( $post ) {
 	$pending_has_ref   = $pending_ref_id > 0;
 	$pending_ref_url   = $pending_has_ref ? (string) wp_get_attachment_url( $pending_ref_id ) : '';
 	$pending_ref_path  = $pending_has_ref ? (string) get_attached_file( $pending_ref_id ) : '';
-	$pending_ref_name  = $pending_has_ref ? ( $pending_ref_path !== '' ? basename( $pending_ref_path ) : (string) get_the_title( $pending_ref_id ) ) : '';
+	$pending_ref_name  = $pending_has_ref ? xpressui_get_attachment_display_name( $pending_ref_id ) : '';
 	$done_info_file_id = xpressui_get_done_info_file_id( $post->ID );
 	$done_has_file     = $done_info_file_id > 0;
 	$done_file_url     = $done_has_file ? (string) wp_get_attachment_url( $done_info_file_id ) : '';
-	$done_file_path    = $done_has_file ? (string) get_attached_file( $done_info_file_id ) : '';
-	$done_file_name    = $done_has_file ? ( $done_file_path !== '' ? basename( $done_file_path ) : (string) get_the_title( $done_info_file_id ) ) : '';
+	$done_file_name    = $done_has_file ? xpressui_get_attachment_display_name( $done_info_file_id ) : '';
 
 	// Both hidden inputs are always present to preserve values across status changes.
 	echo '<input type="hidden" name="xpressui_afile_ref_file_id" value="' . esc_attr( (string) ( $pending_ref_id ?: '' ) ) . '">';
