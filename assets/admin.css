@@ -1089,3 +1089,25 @@
 #xpressui_submission_afile_mb.xpressui-afile-hidden {
 	display: none !important;
 }
+
+/* Review note hint — contextual email warning */
+#xpressui-review-note-hint {
+	display: block;
+	margin: 8px 0 0;
+	padding: 6px 10px;
+	font-size: 12px;
+	border-radius: 3px;
+	border-left: 3px solid transparent;
+}
+
+#xpressui-review-note-hint.xpressui-hint--email {
+	background: #fefce8;
+	border-left-color: #eab308;
+	color: #713f12;
+}
+
+#xpressui-review-note-hint.xpressui-hint--internal {
+	background: #f3f4f6;
+	border-left-color: #9ca3af;
+	color: #6b7280;
+}

@@ -268,6 +268,10 @@ function xpressui_save_submission_status( $post_id ) {
 		xpressui_generate_resume_token( $post_id );
 		xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
 	}
+
+	// Clear the note after every save so the textarea is empty on the next page load.
+	// The note is already persisted in status history and sent in any notification.
+	delete_post_meta( $post_id, '_xpressui_review_note' );
 }
 
 // ---------------------------------------------------------------------------
@@ -473,11 +477,27 @@ function xpressui_render_flagged_field_toggle( $field_name, $is_checked ) {
 }
 
 function xpressui_render_review_metabox( $post ) {
-	$note              = (string) get_post_meta( $post->ID, '_xpressui_review_note', true );
+	$saved_status = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
+	if ( $saved_status === '' ) {
+		$saved_status = 'new';
+	}
+
+	$hints = [
+		'pending_info' => __( 'This note will be included in the Pending info email sent to the submitter.', 'xpressui-bridge' ),
+		'done'         => __( 'This note will be included in the Done email sent to the submitter.', 'xpressui-bridge' ),
+		'rejected'     => __( 'This note will be included in the Rejected email sent to the submitter.', 'xpressui-bridge' ),
+		'_default'     => __( 'Internal note — no email will be sent for this status.', 'xpressui-bridge' ),
+	];
+
+	$email_statuses = [ 'pending_info', 'done', 'rejected' ];
+	$initial_hint   = $hints[ $saved_status ] ?? $hints['_default'];
+	$initial_class  = in_array( $saved_status, $email_statuses, true ) ? 'xpressui-hint--email' : 'xpressui-hint--internal';
 
 	echo '<label for="xpressui_review_note"><strong>' . esc_html__( 'Operator notes', 'xpressui-bridge' ) . '</strong></label>';
-	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width">' . esc_textarea( $note ) . '</textarea>';
-	echo '<p class="xpressui-hint">' . esc_html__( 'Saved with the current status and added to the review history when changed.', 'xpressui-bridge' ) . '</p>';
+	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width"></textarea>';
+	echo '<p id="xpressui-review-note-hint" class="' . esc_attr( $initial_class ) . '" data-hints="' . esc_attr( wp_json_encode( $hints ) ) . '" data-email-statuses="pending_info,done,rejected">'
+		. esc_html( $initial_hint )
+		. '</p>';
 }
 
 // ---------------------------------------------------------------------------
