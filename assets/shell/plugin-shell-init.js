@@ -124,6 +124,25 @@ function buildResumeFieldAllowList(resumeData) {
   return new Set([...flaggedFields, ...activeAdditionalFields]);
 }
 
+function buildResumeAdditionalFileFields(resumeData) {
+  const additionalFiles = Array.isArray(resumeData?.additionalFiles) && resumeData.additionalFiles.length
+    ? resumeData.additionalFiles
+    : (resumeData?.additionalFile
+        ? [{ id: 'xpressui_afile', ...resumeData.additionalFile }]
+        : []);
+
+  return additionalFiles
+    .filter((slot) => slot && slot.active && typeof slot.id === 'string' && slot.id.trim() !== '')
+    .map((slot) => ({
+      type: 'file',
+      name: slot.id,
+      label: typeof slot.label === 'string' && slot.label.trim() !== ''
+        ? slot.label.trim()
+        : t('resume.additionalDocument', 'Additional document'),
+      required: true,
+    }));
+}
+
 function pruneResumeFormConfig(formConfig, resumeData) {
   if (!resumeData || !formConfig || typeof formConfig !== 'object') {
     return formConfig;
@@ -158,8 +177,211 @@ function pruneResumeFormConfig(formConfig, resumeData) {
     }
   });
 
+  const additionalFileFields = buildResumeAdditionalFileFields(resumeData);
+  if (additionalFileFields.length > 0) {
+    const existingFieldNames = new Set();
+
+    Object.values(sections).forEach((sectionFields) => {
+      if (!Array.isArray(sectionFields)) {
+        return;
+      }
+      sectionFields.forEach((field) => {
+        const fieldName = typeof field?.name === 'string' ? field.name : '';
+        if (fieldName) {
+          existingFieldNames.add(fieldName);
+        }
+      });
+    });
+
+    const missingAdditionalFileFields = additionalFileFields.filter((field) => !existingFieldNames.has(field.name));
+    if (missingAdditionalFileFields.length > 0) {
+      const resumeAdditionalSectionName = 'xpressui_resume_additional_documents';
+      const existingResumeAdditionalSection = keptCustomSections.find(
+        (section) => typeof section?.name === 'string' && section.name === resumeAdditionalSectionName,
+      );
+
+      if (!existingResumeAdditionalSection) {
+        keptCustomSections.push({
+          type: 'section',
+          subType: 'section',
+          name: resumeAdditionalSectionName,
+          label: t('resume.additionalDocumentRequest', 'Additional Document Request'),
+          adminLabel: t('resume.additionalDocumentRequest', 'Additional Document Request'),
+        });
+      }
+
+      sections[resumeAdditionalSectionName] = [
+        ...(Array.isArray(sections[resumeAdditionalSectionName]) ? sections[resumeAdditionalSectionName] : []),
+        ...missingAdditionalFileFields,
+      ];
+    }
+  }
+
   sections.custom = keptCustomSections;
   return nextConfig;
+}
+
+function formatResumeFileSize(file) {
+  if (!(file instanceof File) || !Number.isFinite(file.size)) {
+    return '';
+  }
+  return `${Math.max(1, Math.round(file.size / 1024))} KB`;
+}
+
+function renderResumeAdditionalFileSelection(slotId, fileInput, form) {
+  const selection = form?.querySelector(`#${slotId}_selection`);
+  const title = selection?.querySelector(`[data-upload-selection-title="${slotId}"]`);
+  const message = selection?.querySelector(`[data-upload-selection-message="${slotId}"]`);
+  const body = selection?.querySelector(`[data-upload-selection-body="${slotId}"]`);
+  const dropZone = form?.querySelector(`[data-file-drop-zone="${slotId}"]`);
+  const file = fileInput instanceof HTMLInputElement ? fileInput.files?.[0] : null;
+
+  if (dropZone instanceof HTMLElement) {
+    dropZone.dataset.fileDropState = file ? 'selected' : 'idle';
+    dropZone.dataset.fileDragActive = 'false';
+  }
+
+  if (!(selection instanceof HTMLElement) || !(title instanceof HTMLElement) || !(message instanceof HTMLElement) || !(body instanceof HTMLElement)) {
+    return;
+  }
+
+  if (!file) {
+    selection.style.display = 'none';
+    selection.setAttribute('aria-hidden', 'true');
+    selection.dataset.uploadSelectionState = 'idle';
+    title.textContent = '';
+    message.textContent = '';
+    message.style.display = 'none';
+    body.innerHTML = '';
+    return;
+  }
+
+  selection.style.display = '';
+  selection.setAttribute('aria-hidden', 'false');
+  selection.dataset.uploadSelectionState = 'selected';
+  title.textContent = 'Selected file';
+  message.textContent = '';
+  message.style.display = 'none';
+  body.innerHTML = '';
+
+  const row = document.createElement('div');
+  row.className = 'flex items-start justify-between gap-3 rounded border border-base-300 px-3 py-2';
+  row.setAttribute('data-upload-file-row', `${slotId}:0`);
+
+  const details = document.createElement('div');
+  details.className = 'min-w-0 flex-1';
+  details.setAttribute('data-upload-file-details', `${slotId}:0`);
+
+  const name = document.createElement('div');
+  name.className = 'text-sm';
+  name.setAttribute('data-upload-file-name', `${slotId}:0`);
+  name.textContent = file.name || '';
+  details.appendChild(name);
+
+  const size = formatResumeFileSize(file);
+  if (size) {
+    const meta = document.createElement('div');
+    meta.className = 'text-xs opacity-70';
+    meta.setAttribute('data-upload-file-size', `${slotId}:0`);
+    meta.textContent = size;
+    details.appendChild(meta);
+  }
+
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'template-remove-file-button';
+  removeButton.setAttribute('aria-label', `Remove ${file.name || 'file'}`);
+  removeButton.textContent = '×';
+  removeButton.addEventListener('click', () => {
+    fileInput.value = '';
+    renderResumeAdditionalFileSelection(slotId, fileInput, form);
+  });
+
+  row.appendChild(details);
+  row.appendChild(removeButton);
+  body.appendChild(row);
+}
+
+function assignResumeDroppedFiles(fileInput, files) {
+  if (!(fileInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  try {
+    if (typeof DataTransfer !== 'undefined') {
+      const transfer = new DataTransfer();
+      (files || []).slice(0, 1).forEach((file) => {
+        if (file instanceof File) {
+          transfer.items.add(file);
+        }
+      });
+      fileInput.files = transfer.files;
+    }
+  } catch {
+    // Browser may block programmatic FileList assignment; ignore and leave native picker path.
+  }
+}
+
+function attachResumeAdditionalFileFallback(slot, slotId, fileInput, form) {
+  if (!(slot instanceof HTMLElement) || !(fileInput instanceof HTMLInputElement) || !(form instanceof HTMLFormElement)) {
+    return;
+  }
+  if (fileInput.dataset.resumeAdditionalFallbackBound === 'true') {
+    return;
+  }
+  fileInput.dataset.resumeAdditionalFallbackBound = 'true';
+
+  const dropZone = slot.querySelector(`[data-file-drop-zone="${slotId}"]`);
+
+  const syncSelection = () => {
+    queueMicrotask(() => {
+      const selection = form.querySelector(`#${slotId}_selection`);
+      const hasRuntimeSelection =
+        selection instanceof HTMLElement
+        && selection.style.display !== 'none'
+        && selection.querySelector(`[data-upload-file-list="${slotId}"]`);
+
+      if (!hasRuntimeSelection) {
+        renderResumeAdditionalFileSelection(slotId, fileInput, form);
+      }
+    });
+  };
+
+  fileInput.addEventListener('change', syncSelection);
+
+  if (dropZone instanceof HTMLElement) {
+    const setDragState = (active) => {
+      dropZone.dataset.fileDragActive = active ? 'true' : 'false';
+      dropZone.dataset.fileDropState = active ? 'drag' : (fileInput.files?.length ? 'selected' : 'idle');
+    };
+
+    dropZone.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      setDragState(true);
+    });
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      setDragState(true);
+    });
+    dropZone.addEventListener('dragleave', (event) => {
+      const relatedTarget = event.relatedTarget;
+      if (relatedTarget instanceof Node && dropZone.contains(relatedTarget)) {
+        return;
+      }
+      setDragState(false);
+    });
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      setDragState(false);
+      const droppedFiles = Array.from(event.dataTransfer?.files || []).filter((file) => file instanceof File);
+      if (!droppedFiles.length) {
+        return;
+      }
+      assignResumeDroppedFiles(fileInput, droppedFiles);
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      syncSelection();
+    });
+  }
 }
 
 function applyResumeMode(mountNode, form, resumeData, token) {
@@ -186,6 +408,17 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     node.hidden = !visible;
     node.style.display = visible ? '' : 'none';
     node.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  };
+  const hideResumeStepUi = () => {
+    form
+      .querySelectorAll('[data-form-step-progress-container], [data-form-step-actions], button[data-step-action="back"], button[data-step-action="next"]')
+      .forEach((node) => {
+        if (node instanceof HTMLElement) {
+          node.hidden = true;
+          node.style.display = 'none';
+          node.setAttribute('aria-hidden', 'true');
+        }
+      });
   };
   const setFieldInteractivity = (input, enabled) => {
     if (!(input instanceof HTMLElement)) return;
@@ -227,6 +460,9 @@ function applyResumeMode(mountNode, form, resumeData, token) {
       setResumeNodeVisibility(section, true);
     }
   };
+
+  // Resume mode is always presented as a single-step correction form.
+  hideResumeStepUi();
 
   if (!showAllFields) {
     form.querySelectorAll('[data-template-zone="section"]').forEach((section) => {
@@ -354,7 +590,10 @@ function applyResumeMode(mountNode, form, resumeData, token) {
       if (fileInput instanceof HTMLInputElement) {
         fileInput.required = true;
         fileInput.setAttribute('aria-required', 'true');
+        fileInput.dataset.label = additionalFile.label || t('resume.additionalDocument', 'Additional document');
+        fileInput.dataset.sectionName = 'xpressui_resume_additional_documents';
         setFieldInteractivity(fileInput, true);
+        attachResumeAdditionalFileFallback(slot, additionalFile.id, fileInput, form);
       }
       const labelEl = slot.querySelector('[data-afile-label]');
       if (labelEl && additionalFile.label) {
@@ -499,9 +738,31 @@ const resolveResumeEntryIdValue = (values, form) => {
   return 0;
 };
 
+const mergeDomFileInputsIntoValues = (values, form) => {
+  if (!(form instanceof HTMLFormElement)) {
+    return values || {};
+  }
+
+  const nextValues = { ...(values || {}) };
+  form.querySelectorAll('input[type="file"][name]').forEach((input) => {
+    if (!(input instanceof HTMLInputElement) || !input.name) {
+      return;
+    }
+
+    const files = Array.from(input.files || []).filter((file) => file instanceof File);
+    if (!files.length) {
+      return;
+    }
+
+    nextValues[input.name] = input.multiple ? files : files[0];
+  });
+
+  return nextValues;
+};
+
 const ensureSubmitMetadata = (values, formConfig, form) => {
   const nextValues = {
-    ...(values || {}),
+    ...mergeDomFileInputsIntoValues(values, form),
     projectId: formConfig.submit?.metadata?.projectId || '',
     projectSlug: formConfig.submit?.metadata?.projectSlug || '',
     projectConfigVersion: formConfig.submit?.metadata?.projectConfigVersion || '',
@@ -692,13 +953,6 @@ async function initXPressUI() {
     // and shows the submit button immediately. Section visibility is handled by applyResumeMode.
     if (resumeData && formConfig.mode === 'form-multi-step') {
       formConfig = { ...formConfig, mode: 'form' };
-    }
-
-    if (resumeData) {
-      applyResumeMode(mountNode, formElement, resumeData, resumeToken);
-      mountNode.removeAttribute('data-resume-loading');
-      attachFallbackSubmitHandler(formElement, mountNode, formConfig);
-      return;
     }
 
     const hydrateForm = window.hydrateForm

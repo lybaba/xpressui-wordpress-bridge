@@ -183,6 +183,28 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 	$config      = xpressui_get_config_snapshot( $post_id );
 	$field_index = ! empty( $config ) ? xpressui_build_config_field_index( $config ) : [];
 
+	// Inject active additional-file slots so admin emails render their configured
+	// labels instead of the raw technical payload keys (for example xpressui_afile).
+	foreach ( xpressui_get_resume_additional_files( $post_id ) as $additional_file ) {
+		$slot_id = sanitize_key( (string) ( $additional_file['id'] ?? '' ) );
+		if ( '' === $slot_id || ! is_array( $payload ) || ! array_key_exists( $slot_id, $payload ) ) {
+			continue;
+		}
+
+		$slot_label = sanitize_text_field( (string) ( $additional_file['label'] ?? '' ) );
+		if ( '' === $slot_label ) {
+			$slot_label = __( 'Additional document', 'xpressui-bridge' );
+		}
+
+		$field_index[ $slot_id ] = [
+			'label'         => $slot_label,
+			'sectionLabel'  => __( 'Additional Document Request', 'xpressui-bridge' ),
+			'type'          => 'file',
+			'choices'       => [],
+			'choiceCatalog' => [],
+		];
+	}
+
 	// ── Group payload keys by section ───────────────────────────────────────
 	// Keys not found in the field index land in a catch-all bucket.
 	$sections_ordered = [];

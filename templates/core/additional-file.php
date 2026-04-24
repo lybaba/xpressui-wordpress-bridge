@@ -61,7 +61,9 @@ foreach ( $additional_slots as $slot ) :
           type="file"
           name="<?php echo esc_attr( $slot_id ); ?>"
           data-name="<?php echo esc_attr( $slot_id ); ?>"
+          data-label="<?php echo esc_attr( xpressui_bridge_template_stringify( $slot_label !== '' ? $slot_label : xpressui_bridge_template_wp_text( 'Additional document', 'xpressui-bridge' ) ) ); ?>"
           data-type="file"
+          data-section-name="xpressui_resume_additional_documents"
         />
       </div>
 
@@ -69,9 +71,10 @@ foreach ( $additional_slots as $slot ) :
         id="<?php echo esc_attr( $slot_id . '_selection' ); ?>"
         class="template-upload-selection"
         data-upload-selection-zone="<?php echo esc_attr( $slot_id ); ?>"
+        style="display:none;"
       >
         <div class="template-upload-selection-row">
-          <span class="template-upload-selection-title" data-upload-selection-title="<?php echo esc_attr( $slot_id ); ?>"><?php echo esc_attr( xpressui_bridge_template_stringify( xpressui_bridge_template_wp_text( 'Awaiting file', 'xpressui-bridge' ) ) ); ?></span>
+          <span class="template-upload-selection-title" data-upload-selection-title="<?php echo esc_attr( $slot_id ); ?>"></span>
         </div>
         <div class="template-field-help" data-upload-selection-message="<?php echo esc_attr( $slot_id ); ?>"></div>
         <div data-upload-selection-body="<?php echo esc_attr( $slot_id ); ?>"></div>
