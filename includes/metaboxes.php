@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 // resets to unchecked on every page load.
 add_filter( 'default_hidden_meta_boxes', function ( $hidden, $screen ) {
 	if ( $screen instanceof WP_Screen && $screen->id === 'xpressui_submission' ) {
-		$hidden = array_values( array_diff( (array) $hidden, [ 'xpressui_submission_afile' ] ) );
+		$hidden = array_values( array_diff( (array) $hidden, [ 'xpressui_submission_afile_mb' ] ) );
 	}
 	return $hidden;
 }, 10, 2 );
@@ -25,18 +25,18 @@ add_action( 'current_screen', function ( $screen ) {
 	}
 	$user_id = get_current_user_id();
 	$hidden  = get_user_option( 'metaboxhidden_xpressui_submission', $user_id );
-	if ( is_array( $hidden ) && in_array( 'xpressui_submission_afile', $hidden, true ) ) {
+	if ( is_array( $hidden ) && in_array( 'xpressui_submission_afile_mb', $hidden, true ) ) {
 		update_user_option(
 			$user_id,
 			'metaboxhidden_xpressui_submission',
-			array_values( array_diff( $hidden, [ 'xpressui_submission_afile' ] ) )
+			array_values( array_diff( $hidden, [ 'xpressui_submission_afile_mb' ] ) )
 		);
 	}
 } );
 
 // Hide the "Request Additional Document" metabox via CSS class when it is not relevant.
 // Using postbox_classes is the correct WP approach — no JS timing issues.
-add_filter( 'postbox_classes_xpressui_submission_xpressui_submission_afile', function ( $classes ) {
+add_filter( 'postbox_classes_xpressui_submission_xpressui_submission_afile_mb', function ( $classes ) {
 	global $post;
 	if ( ! $post instanceof WP_Post ) {
 		$classes[] = 'xpressui-afile-hidden';
@@ -297,13 +297,11 @@ function xpressui_render_afile_metabox( $post ) {
 	echo '<input type="hidden" name="xpressui_done_info_file_id" value="' . esc_attr( (string) ( $done_info_file_id ?: '' ) ) . '">';
 
 	echo '<div id="xpressui-afile-body">';
-	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'These files are always chosen manually by the operator. They are never inferred from the submitter uploads stored on the submission.', 'xpressui-bridge' ) . '</p>';
 
 	// Pending info section — shown when status dropdown = pending_info.
 	$pending_display = $saved_status === 'pending_info' ? '' : ' style="display:none;"';
 	echo '<div data-afile-section="pending_info"' . $pending_display . '>';
-	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Pending info: reference file to download (optional)', 'xpressui-bridge' ) . '</p>';
-	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'The submitter downloads it, then must re-upload the requested file.', 'xpressui-bridge' ) . '</p>';
+	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html__( 'Reference file to download (optional)', 'xpressui-bridge' ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_pending__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
@@ -323,8 +321,7 @@ function xpressui_render_afile_metabox( $post ) {
 	$done_statuses    = [ 'done' ];
 	$done_display     = in_array( $saved_status, $done_statuses, true ) ? '' : ' style="display:none;"';
 	echo '<div data-afile-section="done_like"' . $done_display . '>';
-	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Done: informational document to send (optional)', 'xpressui-bridge' ) . '</p>';
-	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Sent as a download in the Done notification, for the submitter records. No re-upload requested.', 'xpressui-bridge' ) . '</p>';
+	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html__( 'Informational document to send (optional)', 'xpressui-bridge' ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_done__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
