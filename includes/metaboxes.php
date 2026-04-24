@@ -571,7 +571,7 @@ function xpressui_render_preview_metabox( $post ) {
 				echo '<td>' . wp_kses_post( xpressui_format_submission_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
 				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
-				if ( xpressui_is_file_field( $field_meta, $payload[ $field_name ] ?? null ) && ! xpressui_is_additional_file_field_name( $field_name ) ) {
+				if ( $is_checked && xpressui_is_file_field( $field_meta, $payload[ $field_name ] ?? null ) && ! xpressui_is_additional_file_field_name( $field_name ) ) {
 					xpressui_render_ref_file_picker_row( $field_name, $ref_files );
 				}
 			}
@@ -597,7 +597,7 @@ function xpressui_render_preview_metabox( $post ) {
 			echo '<td>' . wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) ) . '</td>';
 			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
-			if ( xpressui_is_file_field( $field_meta, $value ) && ! xpressui_is_additional_file_field_name( $key ) ) {
+			if ( $is_checked && xpressui_is_file_field( $field_meta, $value ) && ! xpressui_is_additional_file_field_name( $key ) ) {
 				xpressui_render_ref_file_picker_row( $key, $ref_files );
 			}
 		}
