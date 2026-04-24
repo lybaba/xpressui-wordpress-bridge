@@ -50,23 +50,14 @@
 
 (function () {
 
-	// --- "Needs modification" label + ref file picker row sync -----------------
+	// --- "Needs modification" label sync ----------------------------------------
 	document.querySelectorAll('.xpressui-inline-flagged-switch').forEach(function (toggleWrap) {
 		var checkbox = toggleWrap.querySelector('input[type="checkbox"]');
 		var label = toggleWrap.querySelector('.xpressui-inline-flagged-switch__text');
 		if (!checkbox || !label) { return; }
 
-		// The ref file picker row is the next <tr> sibling of the field row, if it carries the marker class.
-		var fieldRow = toggleWrap.closest('tr');
-		var refFileRow = fieldRow && fieldRow.nextElementSibling && fieldRow.nextElementSibling.classList.contains('xpressui-ref-file-row')
-			? fieldRow.nextElementSibling
-			: null;
-
 		function syncFlaggedLabel() {
 			label.style.display = checkbox.checked ? '' : 'none';
-			if (refFileRow) {
-				refFileRow.style.display = checkbox.checked ? '' : 'none';
-			}
 		}
 
 		checkbox.addEventListener('change', syncFlaggedLabel);
