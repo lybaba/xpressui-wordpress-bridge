@@ -350,7 +350,7 @@ function xpressui_render_afile_metabox( $post ) {
 			break;
 		}
 	}
-	if ( $_afile_uploaded !== null ) {
+	if ( $_afile_uploaded !== null && 'pending_info' === $saved_status ) {
 		$_afile_url  = (string) ( $_afile_uploaded['url'] ?? '' );
 		$_afile_name = (string) ( $_afile_uploaded['originalName'] ?? $_afile_uploaded['field'] ?? 'file' );
 		echo '<hr style="margin:12px 0;">';
@@ -428,6 +428,11 @@ function xpressui_is_file_field( $field_meta, $value ) {
 		return true;
 	}
 	return is_array( $value ) && ( $value['kind'] ?? '' ) === 'uploaded-file';
+}
+
+function xpressui_is_additional_file_field_name( $field_name ) {
+	$field_name = sanitize_key( (string) $field_name );
+	return '' !== $field_name && 0 === strpos( $field_name, 'xpressui_afile' );
 }
 
 function xpressui_render_ref_file_picker_row( $field_name, $ref_files ) {
@@ -569,7 +574,7 @@ function xpressui_render_preview_metabox( $post ) {
 				echo '<td>' . wp_kses_post( xpressui_format_submission_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
 				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
-				if ( xpressui_is_file_field( $field_meta, $payload[ $field_name ] ?? null ) ) {
+				if ( xpressui_is_file_field( $field_meta, $payload[ $field_name ] ?? null ) && ! xpressui_is_additional_file_field_name( $field_name ) ) {
 					xpressui_render_ref_file_picker_row( $field_name, $ref_files );
 				}
 			}
@@ -595,7 +600,7 @@ function xpressui_render_preview_metabox( $post ) {
 			echo '<td>' . wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) ) . '</td>';
 			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
-			if ( xpressui_is_file_field( $field_meta, $value ) ) {
+			if ( xpressui_is_file_field( $field_meta, $value ) && ! xpressui_is_additional_file_field_name( $key ) ) {
 				xpressui_render_ref_file_picker_row( $key, $ref_files );
 			}
 		}

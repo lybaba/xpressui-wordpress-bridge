@@ -234,6 +234,7 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 	$payload         = xpressui_get_submission_payload( $post_id );
 	$flagged_fields  = xpressui_get_flagged_fields( $post_id );
 	$project_slug    = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$submission_id   = (string) get_post_meta( $post_id, '_xpressui_submission_id', true );
 	$note            = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
 	$reference_files = xpressui_resolve_field_reference_files( $post_id );
 	$additional_files = xpressui_get_resume_additional_files( $post_id );
@@ -251,7 +252,9 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 
 	return new WP_REST_Response( [
 		'success'        => true,
+		'entryId'        => $post_id,
 		'projectSlug'    => $project_slug,
+		'submissionId'   => $submission_id,
 		'payload'        => is_array( $payload ) ? $payload : [],
 		'flaggedFields'  => $flagged_fields,
 		'note'           => $note,
@@ -284,6 +287,16 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	$resume_token = is_array( $payload ) ? sanitize_text_field( (string) ( $payload['xpressui_resume_token'] ?? '' ) ) : '';
 	if ( $resume_token !== '' ) {
 		return xpressui_handle_resubmission( $request, $payload, $resume_token, $project_slug );
+	}
+
+	$resume_entry_id = is_array( $payload ) ? absint( $payload['xpressui_resume_entry_id'] ?? 0 ) : 0;
+	if ( $resume_entry_id > 0 ) {
+		return xpressui_handle_resubmission_by_post_id( $request, $payload, $resume_entry_id, $project_slug );
+	}
+
+	$resume_post_id = xpressui_find_resubmission_post_id( $project_slug, $submission_id );
+	if ( $resume_post_id > 0 ) {
+		return xpressui_handle_resubmission_by_post_id( $request, $payload, $resume_post_id, $project_slug );
 	}
 
 	$validation = xpressui_validate_submission_request( $request, $project_slug, $submission_id, $payload );
@@ -349,6 +362,41 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 
 function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $token, $project_slug ) {
 	$post_id = xpressui_get_resume_post_id_by_token( $token );
+	return xpressui_handle_resubmission_by_post_id( $request, $payload, $post_id, $project_slug );
+}
+
+function xpressui_find_resubmission_post_id( $project_slug, $submission_id ) {
+	$project_slug  = sanitize_title( (string) $project_slug );
+	$submission_id = xpressui_sanitize_request_identifier( $submission_id );
+	if ( '' === $project_slug || '' === $submission_id ) {
+		return 0;
+	}
+
+	$existing_ids = get_posts( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'fields'         => 'ids',
+		'posts_per_page' => 1,
+		'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- targeted resume fallback lookup by stored metadata
+			[
+				'key'   => '_xpressui_project_slug',
+				'value' => $project_slug,
+			],
+			[
+				'key'   => '_xpressui_submission_id',
+				'value' => $submission_id,
+			],
+			[
+				'key'   => '_xpressui_submission_status',
+				'value' => 'pending_info',
+			],
+		],
+	] );
+
+	return ! empty( $existing_ids ) ? (int) $existing_ids[0] : 0;
+}
+
+function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $payload, $post_id, $project_slug ) {
 	if ( $post_id <= 0 ) {
 		return new WP_Error(
 			'xpressui_invalid_token',
@@ -435,6 +483,7 @@ function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $toke
 	update_post_meta( $post_id, '_xpressui_resubmitted_at', current_time( 'mysql' ) );
 
 	xpressui_set_submission_status( $post_id, 'in-review', __( 'Resubmitted by submitter', 'xpressui-bridge' ) );
+	xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, $merged );
 
 	return new WP_REST_Response( [
 		'success' => true,

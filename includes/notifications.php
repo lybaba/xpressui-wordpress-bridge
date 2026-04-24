@@ -93,6 +93,27 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 	wp_mail( $notify_email, $subject, $body, $headers );
 }
 
+/**
+ * Sends an admin notification email when a submitter resubmits requested files
+ * or corrections for an existing pending_info submission.
+ *
+ * @param int          $post_id      Submission post ID.
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Updated payload.
+ */
+function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, $payload ) {
+	$notify_email = xpressui_get_project_setting( $project_slug, 'notifyEmail' );
+	if ( $notify_email === '' || ! is_email( $notify_email ) ) {
+		return;
+	}
+
+	$subject = xpressui_build_resubmitted_notification_subject( $project_slug, $payload );
+	$body    = xpressui_build_resubmitted_notification_body( $post_id, $project_slug, $payload );
+	$headers = xpressui_build_notification_headers();
+
+	wp_mail( $notify_email, $subject, $body, $headers );
+}
+
 // ---------------------------------------------------------------------------
 // Email builders
 // ---------------------------------------------------------------------------
@@ -112,6 +133,23 @@ function xpressui_build_notification_subject( $project_slug, $payload ) {
 	}
 	/* translators: 1: site name, 2: project slug */
 	return sprintf( __( '[%1$s] New submission for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
+}
+
+/**
+ * @param string       $project_slug
+ * @param array|string $payload
+ * @return string
+ */
+function xpressui_build_resubmitted_notification_subject( $project_slug, $payload ) {
+	$site_name = get_bloginfo( 'name' );
+	$contact   = is_array( $payload ) ? xpressui_get_contact_summary( $payload ) : '';
+
+	if ( $contact !== '' ) {
+		/* translators: 1: site name, 2: project slug, 3: contact name/email */
+		return sprintf( __( '[%1$s] Submission updated for %2$s: %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+	}
+	/* translators: 1: site name, 2: project slug */
+	return sprintf( __( '[%1$s] Submission updated for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
 }
 
 /**
@@ -296,6 +334,28 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 		. '</table>'
 		. '</td></tr></table>'
 		. '</body></html>';
+}
+
+/**
+ * @param int          $post_id
+ * @param string       $project_slug
+ * @param array|string $payload
+ * @return string
+ */
+function xpressui_build_resubmitted_notification_body( $post_id, $project_slug, $payload ) {
+	$body = xpressui_build_notification_body( $post_id, $project_slug, $payload );
+
+	$banner = '<tr><td style="padding:18px 28px;background:#eff6ff;border-bottom:1px solid #dbeafe;">'
+		. '<p style="margin:0;font-size:13px;font-weight:700;color:#1d4ed8;">'
+		. esc_html__( 'The submitter has provided the requested corrections or files.', 'xpressui-bridge' )
+		. '</p>'
+		. '</td></tr>';
+
+	return str_replace(
+		'<tr><td style="padding:20px 28px;border-bottom:1px solid #f0f0f0;">',
+		$banner . '<tr><td style="padding:20px 28px;border-bottom:1px solid #f0f0f0;">',
+		$body
+	);
 }
 
 /**

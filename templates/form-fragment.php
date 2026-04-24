@@ -40,7 +40,7 @@ $xpressui_has_bg = !empty($xpressui_ctx['project']['background_image_url'])
 <?php echo $xpressui_inline_css; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $xpressui_inline_css is CSS extracted from server-side compiled templates (head.php), scoped and processed within this request. No user input reaches this variable. ?>
 /* Resume mode — hide form while loading, show loader; reference file blocks; info-only block */
 #<?php echo esc_attr($xpressui_mount_id); ?>[data-resume-loading] .template-runtime-shell { display: none !important; }
-#<?php echo esc_attr($xpressui_mount_id); ?>[data-resume-loading] [data-resume-loader] { display: block !important; }
+#<?php echo esc_attr($xpressui_mount_id); ?>[data-resume-loading] [data-resume-loader] { display: grid !important; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-banner { background: #fffaf0; border: 1px solid #f6cc87; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.5; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-ref-file-block,
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-afile-ref-block { padding: 10px 14px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }
@@ -48,7 +48,11 @@ $xpressui_has_bg = !empty($xpressui_ctx['project']['background_image_url'])
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-afile-ref-link { font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 6px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-ref-file-hint,
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-afile-ref-hint { margin: 0; font-size: 12px; color: #374151; line-height: 1.5; }
-#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader { padding: 40px 0; text-align: center; font-size: 14px; color: #9ca3af; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader { min-height: 320px; display: none; place-items: center; padding: 28px 0; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader-card { width: min(100%, 420px); display: grid; justify-items: center; gap: 12px; padding: 28px 24px; border-radius: 24px; border: 1px solid rgba(37, 99, 235, 0.12); background: rgba(255, 255, 255, 0.94); box-shadow: 0 24px 60px -36px rgba(15, 23, 42, 0.28); text-align: center; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader-spinner { width: 42px; height: 42px; border-radius: 999px; border: 3px solid rgba(37, 99, 235, 0.16); border-top-color: #2563eb; animation: xpressui-spin 0.72s linear infinite; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #0f172a; }
+#<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-resume-loader-text { margin: 0; max-width: 32ch; font-size: 13px; line-height: 1.6; color: #64748b; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-info-only-block { padding: 16px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-info-only-link { font-size: 14px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 8px; }
 #<?php echo esc_attr($xpressui_mount_id); ?> .xpressui-info-only-hint { margin: 0; font-size: 13px; color: #374151; line-height: 1.5; }

@@ -1086,6 +1086,6 @@
 }
 
 /* Hide "Request Additional Document" when not relevant to current status */
-#xpressui_submission_afile.xpressui-afile-hidden {
+#xpressui_submission_afile_mb.xpressui-afile-hidden {
 	display: none !important;
 }
