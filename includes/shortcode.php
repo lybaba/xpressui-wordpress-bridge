@@ -73,6 +73,7 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.
 	$template_context = apply_filters( 'xpressui_template_context', $template_context, $slug );
+	$template_context = xpressui_apply_additional_file_slots_to_template_context( $template_context, $slug );
 
 	$show_project_title  = xpressui_get_project_setting_flag( $slug, 'showProjectTitle', false );
 	$show_required_note  = xpressui_get_project_setting_flag( $slug, 'showRequiredFieldsNote', false );
@@ -115,6 +116,7 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Apply show_* flags to rendered_form (works whether built above or loaded from template context).
 	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
+		$template_context = xpressui_apply_additional_file_slots_to_template_context( $template_context, $slug );
 		$template_context['rendered_form']['show_title']           = $show_project_title;
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;

@@ -1084,3 +1084,8 @@
 .column-xpressui_files {
 	width: 70px;
 }
+
+/* Hide "Request Additional Document" when not relevant to current status */
+#xpressui_submission_afile.xpressui-afile-hidden {
+	display: none !important;
+}

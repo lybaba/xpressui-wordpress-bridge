@@ -355,20 +355,24 @@ function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
 	$all_settings   = get_option( 'xpressui_project_settings', [] );
 	$resubmit_label = (string) ( ( is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [] )['resubmitButtonLabel'] ?? '' );
 
-	$afile_req = xpressui_get_additional_file_request( $post_id );
 	$token     = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
 	$resume_url = xpressui_build_resume_url( $post_id, $token );
 
 	// Per-field reference files (legacy / flagged-field attachments).
 	$reference_files = xpressui_resolve_field_reference_files( $post_id );
 
-	// Add additional file slot's reference file to the email when configured.
-	if ( $afile_req['active'] && $afile_req['ref_file_id'] > 0 ) {
-		$ref_url  = (string) wp_get_attachment_url( $afile_req['ref_file_id'] );
-		$ref_name = (string) get_the_title( $afile_req['ref_file_id'] );
-		if ( $ref_url !== '' ) {
-			$reference_files[] = [ 'url' => $ref_url, 'name' => $ref_name ];
+	foreach ( xpressui_get_resume_additional_files( $post_id ) as $additional_file ) {
+		if ( empty( $additional_file['active'] ) || ! is_array( $additional_file['refFile'] ?? null ) ) {
+			continue;
 		}
+		$ref_url = (string) ( $additional_file['refFile']['url'] ?? '' );
+		if ( '' === $ref_url ) {
+			continue;
+		}
+		$reference_files[] = [
+			'url'  => $ref_url,
+			'name' => (string) ( $additional_file['refFile']['name'] ?? '' ),
+		];
 	}
 
 	$subject = xpressui_build_pending_info_subject( $project_slug );
@@ -579,20 +583,7 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 		__( 'Your submission for %s has been reviewed and processed. Thank you for your time.', 'xpressui-bridge' ),
 		$project_slug,
 	) );
-	$reference_files         = [];
-	$done_info_file_id       = xpressui_get_done_info_file_id( $post_id );
-	if ( $done_info_file_id > 0 ) {
-		$ref_id   = $done_info_file_id;
-		$ref_url  = (string) wp_get_attachment_url( $ref_id );
-		$ref_path = (string) get_attached_file( $ref_id );
-		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_id );
-		if ( $ref_url !== '' ) {
-			$reference_files[] = [
-				'url'  => $ref_url,
-				'name' => $ref_name,
-			];
-		}
-	}
+	$reference_files = xpressui_get_done_reference_files( $post_id );
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#f0fdf4;border-left:3px solid #86efac;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';

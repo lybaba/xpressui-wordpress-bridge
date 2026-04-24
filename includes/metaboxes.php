@@ -9,35 +9,58 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-add_action( 'admin_footer', function () {
-	$screen = get_current_screen();
-	if ( ! $screen || $screen->post_type !== 'xpressui_submission' ) {
+// Ensure "Request Additional Document" is never hidden via WP Screen Options.
+// Without this, WP auto-hides it (user meta metaboxhidden_*) and the checkbox
+// resets to unchecked on every page load.
+add_filter( 'default_hidden_meta_boxes', function ( $hidden, $screen ) {
+	if ( $screen instanceof WP_Screen && $screen->id === 'xpressui_submission' ) {
+		$hidden = array_values( array_diff( (array) $hidden, [ 'xpressui_submission_afile' ] ) );
+	}
+	return $hidden;
+}, 10, 2 );
+
+add_action( 'current_screen', function ( $screen ) {
+	if ( $screen->id !== 'xpressui_submission' ) {
 		return;
 	}
-	?>
-	<script>
-	(function () {
-		var reviewBox  = document.getElementById( 'xpressui_submission_review' );
-		var publishBox = document.getElementById( 'submitdiv' );
-		if ( reviewBox && publishBox && publishBox.parentNode ) {
-			publishBox.parentNode.insertBefore( reviewBox, publishBox );
-		}
-	})();
-	</script>
-	<?php
+	$user_id = get_current_user_id();
+	$hidden  = get_user_option( 'metaboxhidden_xpressui_submission', $user_id );
+	if ( is_array( $hidden ) && in_array( 'xpressui_submission_afile', $hidden, true ) ) {
+		update_user_option(
+			$user_id,
+			'metaboxhidden_xpressui_submission',
+			array_values( array_diff( $hidden, [ 'xpressui_submission_afile' ] ) )
+		);
+	}
+} );
+
+// Hide the "Request Additional Document" metabox via CSS class when it is not relevant.
+// Using postbox_classes is the correct WP approach — no JS timing issues.
+add_filter( 'postbox_classes_xpressui_submission_xpressui_submission_afile', function ( $classes ) {
+	global $post;
+	if ( ! $post instanceof WP_Post ) {
+		$classes[] = 'xpressui-afile-hidden';
+		return $classes;
+	}
+	$status = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
+	if ( $status === '' ) {
+		$status = 'new';
+	}
+	if ( ! in_array( $status, [ 'pending_info', 'done' ], true ) ) {
+		$classes[] = 'xpressui-afile-hidden';
+	}
+	return $classes;
 } );
 
 function xpressui_register_metaboxes( $post_type, $post = null ) {
-	add_meta_box( 'xpressui_submission_status',  __( 'Submission Workflow', 'xpressui-bridge' ),        'xpressui_render_status_metabox',  'xpressui_submission', 'side',   'high' );
-	add_meta_box( 'xpressui_submission_summary', __( 'Submission Summary', 'xpressui-bridge' ),         'xpressui_render_summary_metabox', 'xpressui_submission', 'side',   'high' );
-	add_meta_box( 'xpressui_submission_review',  __( 'Review Notes', 'xpressui-bridge' ),               'xpressui_render_review_metabox',  'xpressui_submission', 'side',   'high' );
-	if ( $post instanceof WP_Post && xpressui_get_additional_file_request( $post->ID )['active'] ) {
-		add_meta_box( 'xpressui_submission_afile', __( 'Request Additional Document', 'xpressui-bridge' ), 'xpressui_render_afile_metabox', 'xpressui_submission', 'normal', 'default' );
-	}
-	add_meta_box( 'xpressui_submission_history', __( 'Status History', 'xpressui-bridge' ),             'xpressui_render_history_metabox', 'xpressui_submission', 'side',   'default' );
-	add_meta_box( 'xpressui_submission_preview', __( 'Submission Preview', 'xpressui-bridge' ),         'xpressui_render_preview_metabox', 'xpressui_submission', 'normal', 'high' );
-	add_meta_box( 'xpressui_submission_payload', __( 'Submission Payload', 'xpressui-bridge' ),         'xpressui_render_payload_metabox', 'xpressui_submission', 'normal', 'default' );
-	add_meta_box( 'xpressui_submission_files',   __( 'Uploaded Files', 'xpressui-bridge' ),             'xpressui_render_files_metabox',   'xpressui_submission', 'side',   'default' );
+	add_meta_box( 'xpressui_submission_status_mb',  __( 'Submission Workflow', 'xpressui-bridge' ),        'xpressui_render_status_metabox',  'xpressui_submission', 'side',   'high' );
+	add_meta_box( 'xpressui_submission_summary_mb', __( 'Submission Summary', 'xpressui-bridge' ),         'xpressui_render_summary_metabox', 'xpressui_submission', 'side',   'high' );
+	add_meta_box( 'xpressui_submission_review_mb',  __( 'Review Notes', 'xpressui-bridge' ),               'xpressui_render_review_metabox',  'xpressui_submission', 'side',   'high' );
+	add_meta_box( 'xpressui_submission_afile_mb',   __( 'Request Additional Document', 'xpressui-bridge' ), 'xpressui_render_afile_metabox',   'xpressui_submission', 'normal', 'default' );
+	add_meta_box( 'xpressui_submission_history_mb', __( 'Status History', 'xpressui-bridge' ),             'xpressui_render_history_metabox', 'xpressui_submission', 'side',   'default' );
+	add_meta_box( 'xpressui_submission_preview_mb', __( 'Submission Preview', 'xpressui-bridge' ),         'xpressui_render_preview_metabox', 'xpressui_submission', 'normal', 'high' );
+	add_meta_box( 'xpressui_submission_payload_mb', __( 'Submission Payload', 'xpressui-bridge' ),         'xpressui_render_payload_metabox', 'xpressui_submission', 'normal', 'default' );
+	add_meta_box( 'xpressui_submission_files_mb',   __( 'Uploaded Files', 'xpressui-bridge' ),             'xpressui_render_files_metabox',   'xpressui_submission', 'side',   'default' );
 }
 
 // ---------------------------------------------------------------------------
@@ -226,6 +249,8 @@ function xpressui_save_submission_status( $post_id ) {
 		delete_post_meta( $post_id, '_xpressui_done_info_file_id' );
 	}
 
+	do_action( 'xpressui_save_submission_afile_meta', $post_id, $status, $previous_status );
+
 	if ( ! isset( $options[ $status ] ) ) {
 		$status = 'new';
 	}
@@ -250,6 +275,11 @@ function xpressui_save_submission_status( $post_id ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_render_afile_metabox( $post ) {
+	$saved_status      = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
+	if ( $saved_status === '' ) {
+		$saved_status = 'new';
+	}
+
 	$req               = xpressui_get_additional_file_request( $post->ID );
 	$pending_ref_id    = $req['ref_file_id'];
 	$pending_has_ref   = $pending_ref_id > 0;
@@ -262,13 +292,18 @@ function xpressui_render_afile_metabox( $post ) {
 	$done_file_path    = $done_has_file ? (string) get_attached_file( $done_info_file_id ) : '';
 	$done_file_name    = $done_has_file ? ( $done_file_path !== '' ? basename( $done_file_path ) : (string) get_the_title( $done_info_file_id ) ) : '';
 
-	echo '<p class="xpressui-hint" style="margin-top:0;">'
-		. esc_html__( 'These files are always chosen manually by the operator. They are never inferred from the submitter uploads stored on the submission.', 'xpressui-bridge' )
-		. '</p>';
-
-	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Pending info: reference file to download (optional)', 'xpressui-bridge' ) . '</p>';
-	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Used only when the operator requests corrections. The submitter downloads it, then must re-upload the requested file.', 'xpressui-bridge' ) . '</p>';
+	// Both hidden inputs are always present to preserve values across status changes.
 	echo '<input type="hidden" name="xpressui_afile_ref_file_id" value="' . esc_attr( (string) ( $pending_ref_id ?: '' ) ) . '">';
+	echo '<input type="hidden" name="xpressui_done_info_file_id" value="' . esc_attr( (string) ( $done_info_file_id ?: '' ) ) . '">';
+
+	echo '<div id="xpressui-afile-body">';
+	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'These files are always chosen manually by the operator. They are never inferred from the submitter uploads stored on the submission.', 'xpressui-bridge' ) . '</p>';
+
+	// Pending info section — shown when status dropdown = pending_info.
+	$pending_display = $saved_status === 'pending_info' ? '' : ' style="display:none;"';
+	echo '<div data-afile-section="pending_info"' . $pending_display . '>';
+	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Pending info: reference file to download (optional)', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'The submitter downloads it, then must re-upload the requested file.', 'xpressui-bridge' ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_pending__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
@@ -282,11 +317,14 @@ function xpressui_render_afile_metabox( $post ) {
 	echo ' <button type="button" class="xpressui-ref-file-remove" data-field="__afile_pending__" title="' . esc_attr__( 'Remove', 'xpressui-bridge' ) . '">✕</button>';
 	echo '</span>';
 	echo '</div>';
+	echo '</div>';
 
-	echo '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">';
+	// Done-like section — shown when status dropdown = done.
+	$done_statuses    = [ 'done' ];
+	$done_display     = in_array( $saved_status, $done_statuses, true ) ? '' : ' style="display:none;"';
+	echo '<div data-afile-section="done_like"' . $done_display . '>';
 	echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;">' . esc_html__( 'Done: informational document to send (optional)', 'xpressui-bridge' ) . '</p>';
-	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Used only in the Done notification. It is sent as a download for the submitter records, without any re-upload request.', 'xpressui-bridge' ) . '</p>';
-	echo '<input type="hidden" name="xpressui_done_info_file_id" value="' . esc_attr( (string) ( $done_info_file_id ?: '' ) ) . '">';
+	echo '<p class="description" style="margin:0 0 8px;">' . esc_html__( 'Sent as a download in the Done notification, for the submitter records. No re-upload requested.', 'xpressui-bridge' ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_done__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
@@ -300,6 +338,31 @@ function xpressui_render_afile_metabox( $post ) {
 	echo ' <button type="button" class="xpressui-ref-file-remove" data-field="__afile_done__" title="' . esc_attr__( 'Remove', 'xpressui-bridge' ) . '">✕</button>';
 	echo '</span>';
 	echo '</div>';
+	echo '</div>'; // data-afile-section="done_like"
+	echo '</div>'; // #xpressui-afile-body
+
+	// Show file already uploaded by the submitter for this slot, if any.
+	$_uploaded_files = xpressui_get_uploaded_files( $post->ID );
+	$_afile_uploaded = null;
+	foreach ( $_uploaded_files as $_f ) {
+		if ( ( $_f['field'] ?? '' ) === 'xpressui_afile' ) {
+			$_afile_uploaded = $_f;
+			break;
+		}
+	}
+	if ( $_afile_uploaded !== null ) {
+		$_afile_url  = (string) ( $_afile_uploaded['url'] ?? '' );
+		$_afile_name = (string) ( $_afile_uploaded['originalName'] ?? $_afile_uploaded['field'] ?? 'file' );
+		echo '<hr style="margin:12px 0;">';
+		echo '<p style="margin:0 0 4px;font-size:12px;font-weight:600;">' . esc_html__( 'Submitted file', 'xpressui-bridge' ) . '</p>';
+		if ( $_afile_url !== '' ) {
+			echo '<a href="' . esc_url( $_afile_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $_afile_name ) . '</a>';
+		} else {
+			echo '<span class="xpressui-muted">' . esc_html( $_afile_name ) . '</span>';
+		}
+	}
+
+	do_action( 'xpressui_afile_metabox_after', $post );
 }
 
 // ---------------------------------------------------------------------------
@@ -459,6 +522,20 @@ function xpressui_render_preview_metabox( $post ) {
 	$hidden_keys = [ 'projectId', 'projectSlug', 'projectConfigVersion', 'submissionId', 'projectConfigSnapshotJson', 'rest_route' ];
 	$grouped     = [];
 	$rendered    = [];
+
+	// Inject xpressui_afile into the field index so it renders with its configured label
+	// instead of appearing as a raw key in "Additional fields".
+	if ( array_key_exists( 'xpressui_afile', $payload ) ) {
+		$_afile_req   = xpressui_get_additional_file_request( $post->ID );
+		$_afile_label = $_afile_req['label'] !== '' ? $_afile_req['label'] : __( 'Additional document', 'xpressui-bridge' );
+		$field_index['xpressui_afile'] = [
+			'label'         => $_afile_label,
+			'sectionLabel'  => __( 'Additional Document', 'xpressui-bridge' ),
+			'type'          => 'file',
+			'choices'       => [],
+			'choiceCatalog' => [],
+		];
+	}
 
 	if ( ! empty( $field_index ) ) {
 		foreach ( $field_index as $field_name => $field_meta ) {

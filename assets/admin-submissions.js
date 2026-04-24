@@ -2,6 +2,52 @@
  * XPressUI Bridge — submission detail admin scripts.
  */
 /* global wp */
+
+// Move "Review Notes" above "Publish" in the sidebar (immediate — no timing dependency).
+(function () {
+	var reviewBox  = document.getElementById( 'xpressui_submission_review' );
+	var publishBox = document.getElementById( 'submitdiv' );
+	if ( reviewBox && publishBox && publishBox.parentNode ) {
+		publishBox.parentNode.insertBefore( reviewBox, publishBox );
+	}
+}());
+
+// "Request Additional Document" dynamic toggle.
+// PHP (postbox_classes filter) sets initial state based on saved status.
+// JS syncs on page load (to clear any stale WP 'hidden' class) and on every dropdown change.
+(function () {
+	var statusEl = document.getElementById( 'xpressui_submission_status' );
+	if ( ! statusEl ) { return; }
+
+	function syncAfileMetabox() {
+		var status  = statusEl.value;
+		var showBox = status === 'pending_info' || status === 'done';
+		var postbox = document.getElementById( 'xpressui_submission_afile_mb' );
+		var body    = document.getElementById( 'xpressui-afile-body' );
+
+		if ( ! postbox ) { return; }
+
+		if ( showBox ) {
+			// Remove our class AND WP's own 'hidden' class (Screen Options / user meta).
+			postbox.classList.remove( 'xpressui-afile-hidden', 'hidden' );
+			postbox.style.display = '';
+		} else {
+			postbox.classList.add( 'xpressui-afile-hidden' );
+		}
+
+		if ( showBox && body ) {
+			body.style.display = 'block';
+			var pending = body.querySelector( '[data-afile-section="pending_info"]' );
+			var done    = body.querySelector( '[data-afile-section="done_like"]' );
+			if ( pending ) { pending.style.display = status === 'pending_info' ? 'block' : 'none'; }
+			if ( done )    { done.style.display    = status === 'done'         ? 'block' : 'none'; }
+		}
+	}
+
+	statusEl.addEventListener( 'change', syncAfileMetabox );
+	syncAfileMetabox(); // Sync on page load — removes stale WP 'hidden' class if needed.
+}());
+
 (function () {
 
 	// --- "Needs modification" label sync ----------------------------------------
@@ -45,6 +91,14 @@
 		}
 		if (fieldName === '__afile_done__') {
 			return document.querySelector('input[name="xpressui_done_info_file_id"]');
+		}
+		if (fieldName.indexOf('__afile_pending__') === 0) {
+			var pendingSlotId = fieldName.replace('__afile_pending__', '');
+			return document.querySelector('input[name="xpressui_afile_ref_file_id_' + pendingSlotId + '"]');
+		}
+		if (fieldName.indexOf('__afile_done__') === 0) {
+			var doneSlotId = fieldName.replace('__afile_done__', '');
+			return document.querySelector('input[name="xpressui_done_info_file_id_' + doneSlotId + '"]');
 		}
 		return document.querySelector('input[name="xpressui_ref_files[' + fieldName + ']"]');
 	}

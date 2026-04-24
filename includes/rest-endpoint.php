@@ -236,19 +236,17 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 	$project_slug    = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
 	$note            = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
 	$reference_files = xpressui_resolve_field_reference_files( $post_id );
-
-	$afile_req  = xpressui_get_additional_file_request( $post_id );
-	$afile_out  = null;
-	if ( $afile_req['active'] ) {
-		$ref_id  = $afile_req['ref_file_id'];
-		$ref_url = $ref_id > 0 ? (string) wp_get_attachment_url( $ref_id ) : '';
-		$ref_path = $ref_id > 0 ? (string) get_attached_file( $ref_id ) : '';
-		$ref_name = $ref_path !== '' ? basename( $ref_path ) : ( $ref_id > 0 ? (string) get_the_title( $ref_id ) : '' );
-		$afile_out = [
-			'active'  => true,
-			'label'   => $afile_req['label'],
-			'refFile' => $ref_url !== '' ? [ 'url' => $ref_url, 'name' => $ref_name ] : null,
-		];
+	$additional_files = xpressui_get_resume_additional_files( $post_id );
+	$afile_out        = null;
+	foreach ( $additional_files as $additional_file ) {
+		if ( (string) ( $additional_file['id'] ?? '' ) === 'xpressui_afile' ) {
+			$afile_out = $additional_file['active'] ? [
+				'active'  => true,
+				'label'   => (string) ( $additional_file['label'] ?? '' ),
+				'refFile' => $additional_file['refFile'] ?? null,
+			] : null;
+			break;
+		}
 	}
 
 	return new WP_REST_Response( [
@@ -258,6 +256,7 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 		'flaggedFields'  => $flagged_fields,
 		'note'           => $note,
 		'referenceFiles' => $reference_files,
+		'additionalFiles'=> $additional_files,
 		'additionalFile' => $afile_out,
 	], 200 );
 }
@@ -386,8 +385,15 @@ function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $toke
 		return $file_validation;
 	}
 
-	$additional_file_request = xpressui_get_additional_file_request( $post_id );
-	if ( ! empty( $additional_file_request['active'] ) && ! xpressui_request_has_uploaded_file( $file_params, 'xpressui_afile' ) ) {
+	$additional_files = xpressui_get_resume_additional_files( $post_id );
+	foreach ( $additional_files as $additional_file ) {
+		if ( empty( $additional_file['active'] ) ) {
+			continue;
+		}
+		$slot_id = sanitize_key( (string) ( $additional_file['id'] ?? '' ) );
+		if ( '' === $slot_id || xpressui_request_has_uploaded_file( $file_params, $slot_id ) ) {
+			continue;
+		}
 		return new WP_Error(
 			'xpressui_missing_additional_file',
 			__( 'Please upload the requested additional document before resubmitting.', 'xpressui-bridge' ),

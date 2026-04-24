@@ -374,6 +374,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.
 	$template_context = apply_filters( 'xpressui_template_context', $template_context, $slug );
+	$template_context = xpressui_apply_additional_file_slots_to_template_context( $template_context, $slug );
 
 	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
 	if ( ! file_exists( $runtime_file ) ) {
@@ -861,6 +862,88 @@ function xpressui_generate_resume_token( $post_id ) {
 	return $token;
 }
 
+/**
+ * Default additional file slot definitions for the base bridge.
+ *
+ * @return array<int,array{id:string,label:string}>
+ */
+function xpressui_get_default_additional_file_slots() {
+	return [
+		[
+			'id'    => 'xpressui_afile',
+			'label' => '',
+		],
+	];
+}
+
+/**
+ * Normalize additional file slot definitions.
+ *
+ * @param mixed $slots
+ * @return array<int,array{id:string,label:string}>
+ */
+function xpressui_sanitize_additional_file_slots( $slots ) {
+	$raw_slots   = is_array( $slots ) ? array_values( $slots ) : [];
+	$clean_slots = [];
+	$seen_ids    = [];
+
+	foreach ( $raw_slots as $index => $slot ) {
+		if ( ! is_array( $slot ) ) {
+			continue;
+		}
+
+		$slot_id = sanitize_key( (string) ( $slot['id'] ?? '' ) );
+		if ( '' === $slot_id ) {
+			$slot_id = 0 === (int) $index ? 'xpressui_afile' : 'xpressui_afile_' . (int) $index;
+		}
+		if ( isset( $seen_ids[ $slot_id ] ) ) {
+			continue;
+		}
+		$seen_ids[ $slot_id ] = true;
+
+		$clean_slots[] = [
+			'id'    => $slot_id,
+			'label' => sanitize_text_field( (string) ( $slot['label'] ?? '' ) ),
+		];
+	}
+
+	if ( empty( $clean_slots ) ) {
+		return xpressui_get_default_additional_file_slots();
+	}
+
+	return $clean_slots;
+}
+
+/**
+ * Resolve additional file slots for a workflow, allowing extensions to override them.
+ *
+ * @param string $project_slug
+ * @return array<int,array{id:string,label:string}>
+ */
+function xpressui_get_additional_file_slots( $project_slug ) {
+	$project_slug = sanitize_title( (string) $project_slug );
+	$slots        = apply_filters( 'xpressui_additional_file_slots', xpressui_get_default_additional_file_slots(), $project_slug );
+
+	return xpressui_sanitize_additional_file_slots( $slots );
+}
+
+/**
+ * Ensure rendered_form always carries the additional file slot definitions.
+ *
+ * @param array<string,mixed> $template_context
+ * @param string              $project_slug
+ * @return array<string,mixed>
+ */
+function xpressui_apply_additional_file_slots_to_template_context( array $template_context, string $project_slug ): array {
+	if ( ! isset( $template_context['rendered_form'] ) || ! is_array( $template_context['rendered_form'] ) ) {
+		return $template_context;
+	}
+
+	$template_context['rendered_form']['additional_file_slots'] = xpressui_get_additional_file_slots( $project_slug );
+
+	return $template_context;
+}
+
 function xpressui_get_resume_post_id_by_token( $token ) {
 	$token = (string) $token;
 	if ( strlen( $token ) !== 64 || ! ctype_xdigit( $token ) ) {
@@ -950,11 +1033,13 @@ function xpressui_get_additional_file_request( $post_id ) {
 		}
 	}
 
-	return [
+	$request = [
 		'active'      => ! empty( $s['additionalFileActive'] ),
 		'label'       => (string) ( $s['additionalFileLabel'] ?? '' ),
 		'ref_file_id' => $ref_file_id,
 	];
+
+	return apply_filters( 'xpressui_additional_file_request', $request, $post_id, $project_slug );
 }
 
 /**
@@ -966,6 +1051,171 @@ function xpressui_get_additional_file_request( $post_id ) {
  */
 function xpressui_get_done_info_file_id( $post_id ) {
 	return (int) get_post_meta( $post_id, '_xpressui_done_info_file_id', true );
+}
+
+/**
+ * Resolve the post meta suffix for an additional slot.
+ *
+ * @param string $slot_id
+ * @return string
+ */
+function xpressui_get_additional_file_slot_meta_suffix( string $slot_id ): string {
+	$slot_id = sanitize_key( $slot_id );
+
+	return 'xpressui_afile' === $slot_id ? '' : '_' . $slot_id;
+}
+
+/**
+ * Returns the operator-selected pending_info reference file ID for a slot.
+ *
+ * @param int    $post_id
+ * @param string $slot_id
+ * @return int
+ */
+function xpressui_get_additional_file_ref_file_id( $post_id, string $slot_id ): int {
+	$meta_key = '_xpressui_afile_ref_file_id' . xpressui_get_additional_file_slot_meta_suffix( $slot_id );
+
+	return (int) get_post_meta( $post_id, $meta_key, true );
+}
+
+/**
+ * Returns the operator-selected done informational file ID for a slot.
+ *
+ * @param int    $post_id
+ * @param string $slot_id
+ * @return int
+ */
+function xpressui_get_additional_file_done_info_file_id( $post_id, string $slot_id ): int {
+	$meta_key = '_xpressui_done_info_file_id' . xpressui_get_additional_file_slot_meta_suffix( $slot_id );
+
+	return (int) get_post_meta( $post_id, $meta_key, true );
+}
+
+/**
+ * Returns whether an additional slot is active for a pending_info resubmission.
+ *
+ * @param int    $post_id
+ * @param string $slot_id
+ * @return bool
+ */
+function xpressui_is_additional_file_slot_active( $post_id, string $slot_id ): bool {
+	$slot_id = sanitize_key( $slot_id );
+	if ( 'xpressui_afile' === $slot_id ) {
+		$request = xpressui_get_additional_file_request( $post_id );
+		return ! empty( $request['active'] );
+	}
+
+	$meta_key = '_xpressui_afile_active_' . $slot_id;
+	return ! empty( get_post_meta( $post_id, $meta_key, true ) );
+}
+
+/**
+ * Resolve all additional-file slot payloads exposed to resume mode.
+ *
+ * @param int $post_id
+ * @return array<int,array{id:string,label:string,active:bool,refFile:?array{url:string,name:string}}>
+ */
+function xpressui_get_resume_additional_files( $post_id ) {
+	$project_slug      = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$slot_definitions  = xpressui_get_additional_file_slots( $project_slug );
+	$base_request      = xpressui_get_additional_file_request( $post_id );
+	$additional_files  = [];
+
+	foreach ( $slot_definitions as $index => $slot ) {
+		$slot_id    = sanitize_key( (string) ( $slot['id'] ?? '' ) );
+		$slot_label = sanitize_text_field( (string) ( $slot['label'] ?? '' ) );
+		if ( '' === $slot_id ) {
+			continue;
+		}
+
+		$ref_id   = xpressui_get_additional_file_ref_file_id( $post_id, $slot_id );
+		$ref_url  = $ref_id > 0 ? (string) wp_get_attachment_url( $ref_id ) : '';
+		$ref_path = $ref_id > 0 ? (string) get_attached_file( $ref_id ) : '';
+		$ref_name = $ref_path !== '' ? basename( $ref_path ) : ( $ref_id > 0 ? (string) get_the_title( $ref_id ) : '' );
+
+		$additional_files[] = [
+			'id'      => $slot_id,
+			'label'   => 0 === (int) $index && ! empty( $base_request['label'] ) ? (string) $base_request['label'] : $slot_label,
+			'active'  => xpressui_is_additional_file_slot_active( $post_id, $slot_id ),
+			'refFile' => $ref_url !== '' ? [ 'url' => $ref_url, 'name' => $ref_name ] : null,
+		];
+	}
+
+	$additional_files = apply_filters( 'xpressui_resume_additional_files', $additional_files, $post_id, $project_slug );
+
+	return xpressui_sanitize_resume_additional_files( $additional_files );
+}
+
+/**
+ * Normalize resume additional-file payloads after extension filters.
+ *
+ * @param mixed $additional_files
+ * @return array<int,array{id:string,label:string,active:bool,refFile:?array{url:string,name:string}}>
+ */
+function xpressui_sanitize_resume_additional_files( $additional_files ) {
+	$items    = is_array( $additional_files ) ? array_values( $additional_files ) : [];
+	$cleaned  = [];
+	$seen_ids = [];
+
+	foreach ( $items as $item ) {
+		if ( ! is_array( $item ) ) {
+			continue;
+		}
+		$id = sanitize_key( (string) ( $item['id'] ?? '' ) );
+		if ( '' === $id || isset( $seen_ids[ $id ] ) ) {
+			continue;
+		}
+		$seen_ids[ $id ] = true;
+
+		$ref_file = null;
+		if ( is_array( $item['refFile'] ?? null ) ) {
+			$ref_url  = esc_url_raw( (string) ( $item['refFile']['url'] ?? '' ) );
+			$ref_name = sanitize_text_field( (string) ( $item['refFile']['name'] ?? '' ) );
+			if ( '' !== $ref_url ) {
+				$ref_file = [
+					'url'  => $ref_url,
+					'name' => $ref_name,
+				];
+			}
+		}
+
+		$cleaned[] = [
+			'id'      => $id,
+			'label'   => sanitize_text_field( (string) ( $item['label'] ?? '' ) ),
+			'active'  => ! empty( $item['active'] ),
+			'refFile' => $ref_file,
+		];
+	}
+
+	return $cleaned;
+}
+
+/**
+ * Resolve the operator-selected informational documents for a done notification.
+ *
+ * @param int $post_id
+ * @return array<int,array{url:string,name:string}>
+ */
+function xpressui_get_done_reference_files( $post_id ) {
+	$project_slug     = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$done_info_file_id = xpressui_get_done_info_file_id( $post_id );
+	$reference_files   = [];
+
+	if ( $done_info_file_id > 0 ) {
+		$ref_url  = (string) wp_get_attachment_url( $done_info_file_id );
+		$ref_path = (string) get_attached_file( $done_info_file_id );
+		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $done_info_file_id );
+		if ( '' !== $ref_url ) {
+			$reference_files[] = [
+				'url'  => $ref_url,
+				'name' => $ref_name,
+			];
+		}
+	}
+
+	$reference_files = apply_filters( 'xpressui_done_reference_files', $reference_files, $post_id, $project_slug );
+
+	return is_array( $reference_files ) ? array_values( $reference_files ) : [];
 }
 
 /**

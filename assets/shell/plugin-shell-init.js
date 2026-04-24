@@ -115,10 +115,19 @@ function applyResumeMode(mountNode, form, resumeData, token) {
   if (!payload || !form) return;
 
   const flaggedSet = new Set(Array.isArray(flaggedFields) ? flaggedFields : []);
-  const additionalFile = resumeData.additionalFile;
+  const additionalFiles = Array.isArray(resumeData.additionalFiles) && resumeData.additionalFiles.length
+    ? resumeData.additionalFiles
+    : (resumeData.additionalFile
+        ? [{ id: 'xpressui_afile', ...resumeData.additionalFile }]
+        : []);
+  const activeAdditionalFileIds = new Set(
+    additionalFiles
+      .filter((slot) => slot && slot.active && typeof slot.id === 'string' && slot.id.trim() !== '')
+      .map((slot) => slot.id),
+  );
   // Show all fields only for a general note with no specific instruction (no flags and no additional file request).
   // When specific fields are flagged OR an additional file is requested, hide everything not explicitly requested.
-  const showAllFields = flaggedSet.size === 0 && !additionalFile?.active;
+  const showAllFields = flaggedSet.size === 0 && activeAdditionalFileIds.size === 0;
 
   // Banner — show pre-rendered element and fill in the operator note
   if (note && note.trim()) {
@@ -175,8 +184,8 @@ function applyResumeMode(mountNode, form, resumeData, token) {
   form.querySelectorAll('input[type="file"]').forEach((fileInput) => {
     const name = fileInput.name;
     if (!name) return;
-    const isAdditionalFileSlot = name === 'xpressui_afile';
-    const isFlagged = showAllFields || flaggedSet.has(name) || (isAdditionalFileSlot && additionalFile?.active);
+    const isAdditionalFileSlot = activeAdditionalFileIds.has(name);
+    const isFlagged = showAllFields || flaggedSet.has(name) || isAdditionalFileSlot;
     const refFile = referenceFiles[name];
 
     // Reference file — show pre-rendered block above the upload input when the field is flagged
@@ -220,16 +229,19 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     });
   }
 
-  // Additional file slot — show and configure if active
-  if (additionalFile?.active) {
-    const slot = form.querySelector('[data-afile-slot]');
+  // Additional file slots — show and configure each active slot.
+  additionalFiles.forEach((additionalFile) => {
+    if (!additionalFile?.active || typeof additionalFile.id !== 'string' || !additionalFile.id) {
+      return;
+    }
+    const slot = form.querySelector(`[data-afile-slot="${additionalFile.id}"]`);
     if (slot) {
       slot.style.display = '';
-      const fieldNode = slot.querySelector('[data-field-name="xpressui_afile"]');
+      const fieldNode = slot.querySelector(`[data-field-name="${additionalFile.id}"]`);
       if (fieldNode) {
         fieldNode.style.display = '';
       }
-      const fileInput = slot.querySelector('input[type="file"][name="xpressui_afile"]');
+      const fileInput = slot.querySelector(`input[type="file"][name="${additionalFile.id}"]`);
       if (fileInput instanceof HTMLInputElement) {
         fileInput.required = true;
         fileInput.setAttribute('aria-required', 'true');
@@ -253,7 +265,7 @@ function applyResumeMode(mountNode, form, resumeData, token) {
         refBlock.style.display = '';
       }
     }
-  }
+  });
 }
 
 // ---------------------------------------------------------------------------
