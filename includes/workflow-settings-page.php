@@ -14,6 +14,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'admin_menu', 'xpressui_register_workflow_settings_page' );
 add_action( 'admin_enqueue_scripts', 'xpressui_workflow_settings_enqueue_scripts' );
 
+function xpressui_is_pro_workflow_settings_available(): bool {
+	return function_exists( 'xpressui_pro_load_workflow_overlay' )
+		&& function_exists( 'xpressui_pro_save_workflow_overlay' )
+		&& function_exists( 'xpressui_pro_normalize_additional_file_slots' );
+}
+
 function xpressui_workflow_settings_enqueue_scripts(): void {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( ( $_GET['page'] ?? '' ) !== 'xpressui-workflow-settings' ) {
@@ -87,6 +93,7 @@ function xpressui_render_workflow_settings_page(): void {
 
 	$notice_class   = '';
 	$notice_message = '';
+	$has_pro_settings = xpressui_is_pro_workflow_settings_available();
 
 	if ( isset( $_POST['xpressui_save_workflow_settings'] ) && check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' ) ) {
 		$raw_notify_email = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -110,12 +117,17 @@ function xpressui_render_workflow_settings_page(): void {
 
 		$resubmit_btn_label = isset( $_POST['xpressui_resubmit_btn_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_resubmit_btn_label'] ) ) : '';
 
-		$afile_active = ! empty( $_POST['xpressui_additional_file_active'] ) ? '1' : '0';
-		$afile_label  = isset( $_POST['xpressui_additional_file_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_additional_file_label'] ) ) : '';
+		$existing_settings = get_option( 'xpressui_project_settings', [] );
+		$existing_row      = is_array( $existing_settings[ $slug ] ?? null ) ? $existing_settings[ $slug ] : [];
+		$afile_label       = $has_pro_settings
+			? (string) ( $existing_row['additionalFileLabel'] ?? '' )
+			: ( isset( $_POST['xpressui_additional_file_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_additional_file_label'] ) ) : '' );
 
 		$notify_submitter_on_submit     = ! empty( $_POST['xpressui_notify_submitter_on_submit'] ) ? '1' : '0';
 		$submit_confirmation_message    = isset( $_POST['xpressui_submit_confirmation_message'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_message'] ) ) : '';
 		$submit_confirmation_file_id    = absint( $_POST['xpressui_confirmation_file_id'] ?? 0 );
+		$submit_success_message         = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
+		$submit_error_message           = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
 
 		$all_settings = get_option( 'xpressui_project_settings', [] );
 		if ( ! is_array( $all_settings ) ) {
@@ -132,13 +144,59 @@ function xpressui_render_workflow_settings_page(): void {
 			'showRequiredFieldsNote'       => $show_required_note,
 			'notifySubmitter'              => $notify_submitter,
 			'sectionLabelVisibility'       => $section_label_visibility,
-			'additionalFileActive'         => $afile_active,
 			'additionalFileLabel'          => $afile_label,
 			'notifySubmitterOnSubmit'      => $notify_submitter_on_submit,
 			'submitConfirmationMessage'    => $submit_confirmation_message,
 			'submitConfirmationFileId'     => $submit_confirmation_file_id > 0 ? $submit_confirmation_file_id : 0,
+			'submitSuccessMessage'         => $submit_success_message,
+			'submitErrorMessage'           => $submit_error_message,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
+
+		if ( $has_pro_settings ) {
+			$overlay = xpressui_pro_load_workflow_overlay( $slug );
+			if ( ! is_array( $overlay ) ) {
+				$overlay = [];
+			}
+
+			$success_msg = sanitize_text_field( wp_unslash( (string) ( $_POST['xpressui_overlay_success_message'] ?? '' ) ) );
+			$error_msg   = sanitize_text_field( wp_unslash( (string) ( $_POST['xpressui_overlay_error_message'] ?? '' ) ) );
+
+			if ( $success_msg !== '' ) {
+				$overlay['success_message'] = $success_msg;
+			} else {
+				unset( $overlay['success_message'] );
+			}
+			if ( $error_msg !== '' ) {
+				$overlay['error_message'] = $error_msg;
+			} else {
+				unset( $overlay['error_message'] );
+			}
+
+			$raw_slot_labels = isset( $_POST['xpressui_overlay_additional_file_slots'] ) && is_array( $_POST['xpressui_overlay_additional_file_slots'] )
+				? wp_unslash( $_POST['xpressui_overlay_additional_file_slots' ] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				: [];
+			$additional_slots = xpressui_pro_normalize_additional_file_slots(
+				array_map(
+					static function ( $slot_label ) {
+						return [ 'label' => sanitize_text_field( (string) $slot_label ) ];
+					},
+					array_values( $raw_slot_labels )
+				)
+			);
+
+			if ( ! empty( $additional_slots ) ) {
+				$overlay['additional_file_slots'] = $additional_slots;
+			} else {
+				unset( $overlay['additional_file_slots'] );
+			}
+
+			if ( empty( $overlay ) ) {
+				xpressui_pro_delete_workflow_overlay( $slug );
+			} else {
+				xpressui_pro_save_workflow_overlay( $slug, $overlay );
+			}
+		}
 
 		$warnings = [];
 		if ( $raw_notify_email !== '' && $notify_email === '' ) {
@@ -159,9 +217,24 @@ function xpressui_render_workflow_settings_page(): void {
 
 	$all_settings  = get_option( 'xpressui_project_settings', [] );
 	$s             = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
+	$overlay       = $has_pro_settings ? xpressui_pro_load_workflow_overlay( $slug ) : [];
+	$overlay       = is_array( $overlay ) ? $overlay : [];
 	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
 	$project_name  = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 	$display_name  = $project_name !== '' ? $project_name : $slug;
+	$ov_success_message = $has_pro_settings ? (string) ( $overlay['success_message'] ?? '' ) : '';
+	$ov_error_message   = $has_pro_settings ? (string) ( $overlay['error_message'] ?? '' ) : '';
+	$submit_success_message = (string) ( $s['submitSuccessMessage'] ?? '' );
+	$submit_error_message   = (string) ( $s['submitErrorMessage'] ?? '' );
+	if ( '' === $submit_success_message ) {
+		$submit_success_message = $ov_success_message;
+	}
+	if ( '' === $submit_error_message ) {
+		$submit_error_message = $ov_error_message;
+	}
+	$ov_additional_slots = $has_pro_settings
+		? xpressui_pro_normalize_additional_file_slots( $overlay['additional_file_slots'] ?? [] )
+		: [];
 
 	$back_url = add_query_arg(
 		[ 'post_type' => 'xpressui_submission', 'page' => 'xpressui-bridge' ],
@@ -289,21 +362,55 @@ function xpressui_render_workflow_settings_page(): void {
 	echo '</details>';
 	echo '</div>';
 
-	// -------------------------------------------------------------------------
-	// Additional Document Request
-	// -------------------------------------------------------------------------
+	if ( $has_pro_settings ) {
+		$max_slots = 5;
+		echo '<div class="card xpressui-admin-card">';
+		echo '<details open><summary><h2>' . esc_html__( 'Additional Document Slots', 'xpressui-wordpress-bridge-pro' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
+		echo '<p>' . esc_html__( 'Slot 1 maps to the base additional-file slot from the free plugin. Slots 2-5 are Pro-only extra uploads shown during pending-info resubmission when activated by the operator on a submission.', 'xpressui-wordpress-bridge-pro' ) . '</p>';
+		echo '<table class="form-table"><tbody>';
+		for ( $i = 0; $i < $max_slots; $i++ ) {
+			$slot_number = $i + 1;
+			$slot_value  = isset( $ov_additional_slots[ $i ]['label'] ) ? (string) $ov_additional_slots[ $i ]['label'] : '';
+			$placeholder = 1 === $slot_number
+				? __( 'e.g. Signed contract', 'xpressui-wordpress-bridge-pro' )
+				: sprintf( __( 'e.g. Supporting document %d', 'xpressui-wordpress-bridge-pro' ), $slot_number );
+
+			echo '<tr><th><label for="xpressui_overlay_additional_file_slots_' . esc_attr( (string) $slot_number ) . '">' . esc_html( sprintf( __( 'Slot %d label', 'xpressui-wordpress-bridge-pro' ), $slot_number ) ) . '</label></th>';
+			echo '<td><input type="text" id="xpressui_overlay_additional_file_slots_' . esc_attr( (string) $slot_number ) . '" name="xpressui_overlay_additional_file_slots[' . esc_attr( (string) $i ) . ']" class="regular-text" value="' . esc_attr( $slot_value ) . '" placeholder="' . esc_attr( $placeholder ) . '"></td></tr>';
+		}
+		echo '</tbody></table>';
+		echo '</details>';
+		echo '</div>';
+
+	} else {
+		// -------------------------------------------------------------------------
+		// Additional Document Request
+		// -------------------------------------------------------------------------
+		echo '<div class="card xpressui-admin-card">';
+		echo '<details open><summary><h2>' . esc_html__( 'Additional Document Request', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
+		echo '<p>' . esc_html__( 'When requesting corrections (Pending info), show an extra upload slot in the resubmission form so the submitter can provide a specific document (signed contract, ID, etc.). If the same submission is later marked Done, any attached reference file can also be sent as an informational document without requiring another upload.', 'xpressui-bridge' ) . '</p>';
+		echo '<table class="form-table"><tbody>';
+
+		echo '<tr><th><label for="xpressui_additional_file_label">' . esc_html__( 'Field label', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="text" id="xpressui_additional_file_label" name="xpressui_additional_file_label" class="regular-text" placeholder="' . esc_attr__( 'e.g. Signed contract, ID document…', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['additionalFileLabel'] ?? '' ) ) . '">';
+		echo '<p class="description">' . esc_html__( 'Leave empty to disable the slot. When filled, the label is shown above the upload field in the resubmission form.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+		echo '</tbody></table>';
+		echo '</details>';
+		echo '</div>';
+	}
+
 	echo '<div class="card xpressui-admin-card">';
-	echo '<details open><summary><h2>' . esc_html__( 'Additional Document Request', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
-	echo '<p>' . esc_html__( 'When requesting corrections (Pending info), show an extra upload slot in the resubmission form so the submitter can provide a specific document (signed contract, ID, etc.). If the same submission is later marked Done, any attached reference file can also be sent as an informational document without requiring another upload.', 'xpressui-bridge' ) . '</p>';
+	echo '<details open><summary><h2>' . esc_html__( 'Submit Feedback', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
 	echo '<table class="form-table"><tbody>';
 
-	echo '<tr><th>' . esc_html__( 'Enable slot', 'xpressui-bridge' ) . '</th>';
-	echo '<td><label><input type="checkbox" name="xpressui_additional_file_active" value="1"' . checked( '1', (string) ( $s['additionalFileActive'] ?? '0' ), false ) . '> ';
-	echo esc_html__( 'Show an additional file upload slot when requesting corrections.', 'xpressui-bridge' ) . '</label></td></tr>';
+	echo '<tr><th><label for="xpressui_submit_success_message">' . esc_html__( 'Success message', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_submit_success_message" name="xpressui_submit_success_message" class="large-text" value="' . esc_attr( $submit_success_message ) . '">';
+	echo '<p class="description">' . esc_html__( 'Optional custom success message shown after a valid submission.', 'xpressui-bridge' ) . '</p></td></tr>';
 
-	echo '<tr><th><label for="xpressui_additional_file_label">' . esc_html__( 'Field label', 'xpressui-bridge' ) . '</label></th>';
-	echo '<td><input type="text" id="xpressui_additional_file_label" name="xpressui_additional_file_label" class="regular-text" placeholder="' . esc_attr__( 'e.g. Signed contract, ID document…', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['additionalFileLabel'] ?? '' ) ) . '">';
-	echo '<p class="description">' . esc_html__( 'Label shown to the submitter above the upload field.', 'xpressui-bridge' ) . '</p></td></tr>';
+	echo '<tr><th><label for="xpressui_submit_error_message">' . esc_html__( 'Error message', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_submit_error_message" name="xpressui_submit_error_message" class="large-text" value="' . esc_attr( $submit_error_message ) . '">';
+	echo '<p class="description">' . esc_html__( 'Optional custom error message shown when the submission fails.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '</tbody></table>';
 	echo '</details>';

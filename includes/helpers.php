@@ -1034,7 +1034,7 @@ function xpressui_get_additional_file_request( $post_id ) {
 	}
 
 	$request = [
-		'active'      => ! empty( $s['additionalFileActive'] ),
+		'active'      => '' !== trim( (string) ( $s['additionalFileLabel'] ?? '' ) ),
 		'label'       => (string) ( $s['additionalFileLabel'] ?? '' ),
 		'ref_file_id' => $ref_file_id,
 	];
@@ -1122,9 +1122,16 @@ function xpressui_is_additional_file_slot_active( $post_id, string $slot_id ): b
 		$request = xpressui_get_additional_file_request( $post_id );
 		return ! empty( $request['active'] );
 	}
+	$project_slug = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	foreach ( xpressui_get_additional_file_slots( $project_slug ) as $slot ) {
+		$current_slot_id = sanitize_key( (string) ( $slot['id'] ?? '' ) );
+		if ( $current_slot_id !== $slot_id ) {
+			continue;
+		}
+		return '' !== trim( (string) ( $slot['label'] ?? '' ) );
+	}
 
-	$meta_key = '_xpressui_afile_active_' . $slot_id;
-	return ! empty( get_post_meta( $post_id, $meta_key, true ) );
+	return false;
 }
 
 /**
@@ -1660,6 +1667,10 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	$sections_map  = is_array( $form_config['sections'] ?? null ) ? $form_config['sections'] : [];
 	$step_count    = is_array( $sections_map['custom'] ?? null ) ? count( $sections_map['custom'] ) : 0;
 	$multi_step    = $step_count > 1;
+	$all_settings  = get_option( 'xpressui_project_settings', [] );
+	$project_settings = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
+	$custom_success_message = sanitize_text_field( (string) ( $project_settings['submitSuccessMessage'] ?? '' ) );
+	$custom_error_message   = sanitize_text_field( (string) ( $project_settings['submitErrorMessage'] ?? '' ) );
 
 	// mode
 	if ( empty( $form_config['mode'] ) ) {
@@ -1691,6 +1702,12 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	}
 	if ( empty( $wc['errorMessage'] ) ) {
 		$wc['errorMessage'] = __( 'Unable to submit. Please try again.', 'xpressui-bridge' );
+	}
+	if ( $custom_success_message !== '' ) {
+		$wc['successMessage'] = $custom_success_message;
+	}
+	if ( $custom_error_message !== '' ) {
+		$wc['errorMessage'] = $custom_error_message;
 	}
 	unset( $wc );
 

@@ -297,6 +297,7 @@ function xpressui_render_afile_metabox( $post ) {
 	$done_file_name    = $done_has_file ? xpressui_get_attachment_display_name( $done_info_file_id ) : '';
 
 	// Both hidden inputs are always present to preserve values across status changes.
+	// They are never inferred from the submitter uploads stored on the submission.
 	echo '<input type="hidden" name="xpressui_afile_ref_file_id" value="' . esc_attr( (string) ( $pending_ref_id ?: '' ) ) . '">';
 	echo '<input type="hidden" name="xpressui_done_info_file_id" value="' . esc_attr( (string) ( $done_info_file_id ?: '' ) ) . '">';
 
@@ -435,6 +436,10 @@ function xpressui_is_additional_file_field_name( $field_name ) {
 	$field_name = sanitize_key( (string) $field_name );
 	return '' !== $field_name && 0 === strpos( $field_name, 'xpressui_afile' );
 }
+
+// Review-field reference files must keep using the explicit guard
+// `! xpressui_is_additional_file_field_name( $field_name )` so operator-picked
+// pending/done document files remain separate from the regular field reference files.
 
 function xpressui_render_ref_file_picker_row( $field_name, $ref_files ) {
 	$attachment_id = (int) ( $ref_files[ $field_name ] ?? 0 );
