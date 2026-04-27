@@ -671,9 +671,13 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#f0fdf4;border-left:3px solid #86efac;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
+	$_done_s = get_option( 'xpressui_project_settings', [] );
+	$_done_s = is_array( $_done_s[ $project_slug ] ?? null ) ? $_done_s[ $project_slug ] : [];
+	$done_section_label = trim( (string) ( $_done_s['doneDocumentsSectionLabel'] ?? '' ) );
 	$docs_html = xpressui_build_reference_files_html(
 		$reference_files,
-		__( 'This document is provided for your records. No further upload is required.', 'xpressui-bridge' )
+		__( 'This document is provided for your records. No further upload is required.', 'xpressui-bridge' ),
+		$done_section_label
 	);
 
 	return xpressui_build_submitter_email_html(
@@ -743,9 +747,13 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resu
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
+	$_pi_s = get_option( 'xpressui_project_settings', [] );
+	$_pi_s = is_array( $_pi_s[ $project_slug ] ?? null ) ? $_pi_s[ $project_slug ] : [];
+	$pending_info_section_label = trim( (string) ( $_pi_s['pendingInfoDocumentsSectionLabel'] ?? '' ) );
 	$ref_files_html = xpressui_build_reference_files_html(
 		$reference_files,
-		__( 'Download the file(s), complete or sign them, then re-upload using the link below.', 'xpressui-bridge' )
+		__( 'Download the file(s), complete or sign them, then re-upload using the link below.', 'xpressui-bridge' ),
+		$pending_info_section_label
 	);
 
 	$cta_html = $ref_files_html;

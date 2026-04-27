@@ -156,7 +156,9 @@ function xpressui_render_workflow_settings_page(): void {
 		}
 		$submit_confirmation_slots      = xpressui_sanitize_submit_confirmation_slots( $raw_confirmation_slots, $max_confirmation_slots );
 		$submit_confirmation_file_id    = absint( $submit_confirmation_slots[0]['fileId'] ?? 0 );
-		$submit_confirmation_section_label = isset( $_POST['xpressui_submit_confirmation_section_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_section_label'] ) ) : '';
+		$submit_confirmation_section_label  = isset( $_POST['xpressui_submit_confirmation_section_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_section_label'] ) ) : '';
+		$pending_info_documents_section_label = isset( $_POST['xpressui_pending_info_documents_section_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_pending_info_documents_section_label'] ) ) : '';
+		$done_documents_section_label       = isset( $_POST['xpressui_done_documents_section_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_done_documents_section_label'] ) ) : '';
 		$submit_success_message         = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
 		$submit_error_message           = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
 
@@ -178,8 +180,10 @@ function xpressui_render_workflow_settings_page(): void {
 			'additionalFileLabel'          => $afile_label,
 			'doneAdditionalFileLabel'      => $done_afile_label,
 			'notifySubmitterOnSubmit'      => $notify_submitter_on_submit,
-			'submitConfirmationMessage'      => $submit_confirmation_message,
-			'submitConfirmationSectionLabel' => $submit_confirmation_section_label,
+			'submitConfirmationMessage'          => $submit_confirmation_message,
+			'submitConfirmationSectionLabel'     => $submit_confirmation_section_label,
+			'pendingInfoDocumentsSectionLabel'   => $pending_info_documents_section_label,
+			'doneDocumentsSectionLabel'          => $done_documents_section_label,
 			'submitConfirmationSlots'        => $submit_confirmation_slots,
 			'submitConfirmationFileId'       => $submit_confirmation_file_id > 0 ? $submit_confirmation_file_id : 0,
 			'submitSuccessMessage'           => $submit_success_message,
@@ -494,6 +498,9 @@ function xpressui_render_workflow_settings_page(): void {
 		echo '<details open><summary><h2>' . esc_html__( 'Pending Info Document Slots', 'xpressui-wordpress-bridge-pro' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
 		echo '<p>' . esc_html__( 'Used for Pending info requests.', 'xpressui-wordpress-bridge-pro' ) . '</p>';
 		echo '<table class="form-table"><tbody>';
+		echo '<tr><th><label for="xpressui_pending_info_documents_section_label">' . esc_html__( 'Documents section label', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="text" id="xpressui_pending_info_documents_section_label" name="xpressui_pending_info_documents_section_label" class="regular-text" placeholder="' . esc_attr__( 'Documents to download', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['pendingInfoDocumentsSectionLabel'] ?? '' ) ) . '">';
+		echo '<p class="description">' . esc_html__( 'Heading shown above the attached files in the pending info email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
 		for ( $i = 0; $i < $max_slots; $i++ ) {
 			$slot_number = $i + 1;
 			$slot_value  = isset( $ov_pending_info_slots[ $i ]['label'] ) ? (string) $ov_pending_info_slots[ $i ]['label'] : '';
@@ -512,6 +519,9 @@ function xpressui_render_workflow_settings_page(): void {
 		echo '<details open><summary><h2>' . esc_html__( 'Done Informational File Slots', 'xpressui-wordpress-bridge-pro' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
 		echo '<p>' . esc_html__( 'Used for Done informational files.', 'xpressui-wordpress-bridge-pro' ) . '</p>';
 		echo '<table class="form-table"><tbody>';
+		echo '<tr><th><label for="xpressui_done_documents_section_label">' . esc_html__( 'Documents section label', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="text" id="xpressui_done_documents_section_label" name="xpressui_done_documents_section_label" class="regular-text" placeholder="' . esc_attr__( 'Documents to download', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['doneDocumentsSectionLabel'] ?? '' ) ) . '">';
+		echo '<p class="description">' . esc_html__( 'Heading shown above the attached files in the done email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
 		for ( $i = 0; $i < $max_slots; $i++ ) {
 			$slot_number = $i + 1;
 			$slot_value  = isset( $ov_done_slots[ $i ]['label'] ) ? (string) $ov_done_slots[ $i ]['label'] : '';
@@ -535,6 +545,10 @@ function xpressui_render_workflow_settings_page(): void {
 		echo '<p>' . esc_html__( 'Used for Pending info requests.', 'xpressui-bridge' ) . '</p>';
 		echo '<table class="form-table"><tbody>';
 
+		echo '<tr><th><label for="xpressui_pending_info_documents_section_label">' . esc_html__( 'Documents section label', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="text" id="xpressui_pending_info_documents_section_label" name="xpressui_pending_info_documents_section_label" class="regular-text" placeholder="' . esc_attr__( 'Documents to download', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['pendingInfoDocumentsSectionLabel'] ?? '' ) ) . '">';
+		echo '<p class="description">' . esc_html__( 'Heading shown above the attached files in the pending info email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
+
 		echo '<tr><th><label for="xpressui_additional_file_label">' . esc_html__( 'Slot 1 label', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="text" id="xpressui_additional_file_label" name="xpressui_additional_file_label" class="regular-text" placeholder="' . esc_attr__( 'e.g. Signed contract, ID document…', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['additionalFileLabel'] ?? '' ) ) . '">';
 		echo '<p class="description">' . esc_html__( 'Leave empty to disable the slot. When filled, the label is shown above the upload field in the resubmission form.', 'xpressui-bridge' ) . '</p></td></tr>';
@@ -547,6 +561,10 @@ function xpressui_render_workflow_settings_page(): void {
 		echo '<details open><summary><h2>' . esc_html__( 'Done Informational File Slots', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
 		echo '<p>' . esc_html__( 'Used for Done informational files.', 'xpressui-bridge' ) . '</p>';
 		echo '<table class="form-table"><tbody>';
+
+		echo '<tr><th><label for="xpressui_done_documents_section_label">' . esc_html__( 'Documents section label', 'xpressui-bridge' ) . '</label></th>';
+		echo '<td><input type="text" id="xpressui_done_documents_section_label" name="xpressui_done_documents_section_label" class="regular-text" placeholder="' . esc_attr__( 'Documents to download', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['doneDocumentsSectionLabel'] ?? '' ) ) . '">';
+		echo '<p class="description">' . esc_html__( 'Heading shown above the attached files in the done email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 		echo '<tr><th><label for="xpressui_done_additional_file_label">' . esc_html__( 'Slot 1 label', 'xpressui-bridge' ) . '</label></th>';
 		echo '<td><input type="text" id="xpressui_done_additional_file_label" name="xpressui_done_additional_file_label" class="regular-text" placeholder="' . esc_attr__( 'e.g. Welcome pack', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['doneAdditionalFileLabel'] ?? '' ) ) . '">';
