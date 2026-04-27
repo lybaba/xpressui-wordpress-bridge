@@ -156,6 +156,7 @@ function xpressui_render_workflow_settings_page(): void {
 		}
 		$submit_confirmation_slots      = xpressui_sanitize_submit_confirmation_slots( $raw_confirmation_slots, $max_confirmation_slots );
 		$submit_confirmation_file_id    = absint( $submit_confirmation_slots[0]['fileId'] ?? 0 );
+		$submit_confirmation_section_label = isset( $_POST['xpressui_submit_confirmation_section_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_section_label'] ) ) : '';
 		$submit_success_message         = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
 		$submit_error_message           = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
 
@@ -177,10 +178,11 @@ function xpressui_render_workflow_settings_page(): void {
 			'additionalFileLabel'          => $afile_label,
 			'doneAdditionalFileLabel'      => $done_afile_label,
 			'notifySubmitterOnSubmit'      => $notify_submitter_on_submit,
-			'submitConfirmationMessage'    => $submit_confirmation_message,
-			'submitConfirmationSlots'      => $submit_confirmation_slots,
-			'submitConfirmationFileId'     => $submit_confirmation_file_id > 0 ? $submit_confirmation_file_id : 0,
-			'submitSuccessMessage'         => $submit_success_message,
+			'submitConfirmationMessage'      => $submit_confirmation_message,
+			'submitConfirmationSectionLabel' => $submit_confirmation_section_label,
+			'submitConfirmationSlots'        => $submit_confirmation_slots,
+			'submitConfirmationFileId'       => $submit_confirmation_file_id > 0 ? $submit_confirmation_file_id : 0,
+			'submitSuccessMessage'           => $submit_success_message,
 			'submitErrorMessage'           => $submit_error_message,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
@@ -460,6 +462,10 @@ function xpressui_render_workflow_settings_page(): void {
 	echo '<tr><th><label for="xpressui_submit_confirmation_message">' . esc_html__( 'Custom message', 'xpressui-bridge' ) . '</label></th>';
 	echo '<td><textarea id="xpressui_submit_confirmation_message" name="xpressui_submit_confirmation_message" class="regular-text" rows="3">' . esc_textarea( (string) ( $s['submitConfirmationMessage'] ?? '' ) ) . '</textarea>';
 	echo '<p class="description">' . esc_html__( 'Optional message shown at the top of the confirmation email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+	echo '<tr><th><label for="xpressui_submit_confirmation_section_label">' . esc_html__( 'Documents section label', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_submit_confirmation_section_label" name="xpressui_submit_confirmation_section_label" class="regular-text" placeholder="' . esc_attr__( 'Documents to download', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['submitConfirmationSectionLabel'] ?? '' ) ) . '">';
+	echo '<p class="description">' . esc_html__( 'Heading shown above the attached files in the confirmation email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	foreach ( $confirmation_slots as $slot_index => $confirmation_slot ) {
 		$slot_number = $slot_index + 1;

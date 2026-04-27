@@ -616,14 +616,16 @@ function xpressui_build_submitter_email_html( $site_name, $header_label, $accent
  * @param string                                   $hint_text
  * @return string
  */
-function xpressui_build_reference_files_html( $reference_files, $hint_text = '' ) {
+function xpressui_build_reference_files_html( $reference_files, $hint_text = '', $section_label = '' ) {
 	if ( empty( $reference_files ) ) {
 		return '';
 	}
 
+	$heading = $section_label !== '' ? $section_label : __( 'Documents to download', 'xpressui-bridge' );
+
 	$html = '<div style="margin:20px 0 0;padding:14px 16px;background:#f0f7ff;border-left:3px solid #93c5fd;border-radius:0 4px 4px 0;">';
 	$html .= '<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#1e40af;">'
-		. esc_html__( 'Documents to download', 'xpressui-bridge' )
+		. esc_html( $heading )
 		. '</p>';
 	foreach ( $reference_files as $file ) {
 		$url  = (string) ( $file['url'] ?? '' );
@@ -823,7 +825,8 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 			'name' => $ref_label,
 		];
 	}
-	$ref_files_html = xpressui_build_reference_files_html( $reference_files );
+	$confirmation_section_label = trim( (string) ( $s['submitConfirmationSectionLabel'] ?? '' ) );
+	$ref_files_html = xpressui_build_reference_files_html( $reference_files, '', $confirmation_section_label );
 
 	$footer_note = sprintf(
 		/* translators: %s: site name */
