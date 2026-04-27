@@ -794,7 +794,6 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 	$s            = is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [];
 
 	$custom_message = (string) ( $s['submitConfirmationMessage'] ?? '' );
-	$ref_file_id    = (int) ( $s['submitConfirmationFileId'] ?? 0 );
 
 	$intro = $custom_message !== ''
 		? esc_html( $custom_message )
@@ -804,20 +803,27 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 			$project_slug,
 		) );
 
-	$ref_files_html = '';
-	if ( $ref_file_id > 0 ) {
-		$ref_url  = (string) wp_get_attachment_url( $ref_file_id );
-		$ref_path = (string) get_attached_file( $ref_file_id );
-		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_file_id );
-		if ( $ref_url !== '' ) {
-			$ref_files_html = xpressui_build_reference_files_html( [
-				[
-					'url'  => $ref_url,
-					'name' => $ref_name,
-				],
-			] );
+	$reference_files = [];
+	foreach ( xpressui_get_submit_confirmation_slots( $project_slug ) as $slot ) {
+		$ref_file_id = absint( $slot['fileId'] ?? 0 );
+		if ( $ref_file_id <= 0 ) {
+			continue;
 		}
+		$ref_url = (string) wp_get_attachment_url( $ref_file_id );
+		if ( '' === $ref_url ) {
+			continue;
+		}
+		$ref_label = trim( (string) ( $slot['label'] ?? '' ) );
+		if ( '' === $ref_label ) {
+			$ref_path  = (string) get_attached_file( $ref_file_id );
+			$ref_label = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_file_id );
+		}
+		$reference_files[] = [
+			'url'  => $ref_url,
+			'name' => $ref_label,
+		];
 	}
+	$ref_files_html = xpressui_build_reference_files_html( $reference_files );
 
 	$footer_note = sprintf(
 		/* translators: %s: site name */

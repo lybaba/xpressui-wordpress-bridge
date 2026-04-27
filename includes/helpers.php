@@ -877,6 +877,110 @@ function xpressui_get_default_additional_file_slots() {
 }
 
 /**
+ * Default done informational file slot definitions for the base bridge.
+ *
+ * @return array<int,array{id:string,label:string}>
+ */
+function xpressui_get_default_done_additional_file_slots() {
+	return [
+		[
+			'id'    => 'xpressui_afile',
+			'label' => '',
+		],
+	];
+}
+
+/**
+ * Return the maximum number of submission confirmation file slots supported locally.
+ *
+ * @return int
+ */
+function xpressui_get_submit_confirmation_slot_limit() {
+	return function_exists( 'xpressui_pro_load_workflow_overlay' ) ? 5 : 1;
+}
+
+/**
+ * Default confirmation email file slot definitions.
+ *
+ * @return array<int,array{id:string,label:string,fileId:int}>
+ */
+function xpressui_get_default_submit_confirmation_slots() {
+	return [
+		[
+			'id'     => 'submit_confirmation_1',
+			'label'  => '',
+			'fileId' => 0,
+		],
+	];
+}
+
+/**
+ * Normalize submission confirmation file slots into a stable array shape.
+ *
+ * @param mixed $slots
+ * @param int   $max_slots
+ * @return array<int,array{id:string,label:string,fileId:int}>
+ */
+function xpressui_sanitize_submit_confirmation_slots( $slots, $max_slots = 1 ) {
+	$max_slots   = max( 1, (int) $max_slots );
+	$raw_slots   = is_array( $slots ) ? array_values( $slots ) : [];
+	$clean_slots = [];
+
+	for ( $index = 0; $index < $max_slots; $index++ ) {
+		$slot = is_array( $raw_slots[ $index ] ?? null ) ? $raw_slots[ $index ] : [];
+		$label = sanitize_text_field( (string) ( $slot['label'] ?? '' ) );
+		$file_id = absint( $slot['fileId'] ?? $slot['file_id'] ?? 0 );
+
+		if ( '' === $label && $file_id <= 0 ) {
+			continue;
+		}
+
+		$clean_slots[] = [
+			'id'     => 0 === $index ? 'submit_confirmation_1' : 'submit_confirmation_' . ( $index + 1 ),
+			'label'  => $label,
+			'fileId' => $file_id,
+		];
+	}
+
+	return $clean_slots;
+}
+
+/**
+ * Resolve submission confirmation file slots for a workflow.
+ *
+ * Falls back to the legacy single-file setting when slot data is not present yet.
+ *
+ * @param string $project_slug
+ * @return array<int,array{id:string,label:string,fileId:int}>
+ */
+function xpressui_get_submit_confirmation_slots( $project_slug ) {
+	$project_slug = sanitize_title( (string) $project_slug );
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	$settings     = is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [];
+	$slots        = xpressui_sanitize_submit_confirmation_slots(
+		$settings['submitConfirmationSlots'] ?? [],
+		xpressui_get_submit_confirmation_slot_limit()
+	);
+
+	if ( ! empty( $slots ) ) {
+		return $slots;
+	}
+
+	$legacy_file_id = absint( $settings['submitConfirmationFileId'] ?? 0 );
+	if ( $legacy_file_id > 0 ) {
+		return [
+			[
+				'id'     => 'submit_confirmation_1',
+				'label'  => '',
+				'fileId' => $legacy_file_id,
+			],
+		];
+	}
+
+	return [];
+}
+
+/**
  * Normalize additional file slot definitions.
  *
  * @param mixed $slots
@@ -925,6 +1029,35 @@ function xpressui_get_additional_file_slots( $project_slug ) {
 	$slots        = apply_filters( 'xpressui_additional_file_slots', xpressui_get_default_additional_file_slots(), $project_slug );
 
 	return xpressui_sanitize_additional_file_slots( $slots );
+}
+
+/**
+ * Resolve done informational file slots for a workflow.
+ *
+ * @param string $project_slug
+ * @return array<int,array{id:string,label:string}>
+ */
+function xpressui_get_done_additional_file_slots( $project_slug ) {
+	$project_slug = sanitize_title( (string) $project_slug );
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	$settings     = is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [];
+	$slots        = apply_filters( 'xpressui_done_additional_file_slots', xpressui_get_default_done_additional_file_slots(), $project_slug );
+	$slots        = xpressui_sanitize_additional_file_slots( $slots );
+
+	if ( ! empty( $settings['doneAdditionalFileLabel'] ) ) {
+		$slots[0]['label'] = sanitize_text_field( (string) $settings['doneAdditionalFileLabel'] );
+		return $slots;
+	}
+
+	if ( ! empty( $slots[0]['label'] ) ) {
+		return $slots;
+	}
+
+	if ( ! empty( $settings['additionalFileLabel'] ) ) {
+		$slots[0]['label'] = sanitize_text_field( (string) $settings['additionalFileLabel'] );
+	}
+
+	return $slots;
 }
 
 /**
@@ -1222,14 +1355,18 @@ function xpressui_sanitize_resume_additional_files( $additional_files ) {
  * @return array<int,array{url:string,name:string}>
  */
 function xpressui_get_done_reference_files( $post_id ) {
-	$project_slug     = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
+	$project_slug      = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
 	$done_info_file_id = xpressui_get_done_info_file_id( $post_id );
+	$done_slots        = xpressui_get_done_additional_file_slots( $project_slug );
 	$reference_files   = [];
 
 	if ( $done_info_file_id > 0 ) {
 		$ref_url  = (string) wp_get_attachment_url( $done_info_file_id );
 		$ref_path = (string) get_attached_file( $done_info_file_id );
-		$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $done_info_file_id );
+		$ref_name = sanitize_text_field( (string) ( $done_slots[0]['label'] ?? '' ) );
+		if ( '' === $ref_name ) {
+			$ref_name = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $done_info_file_id );
+		}
 		if ( '' !== $ref_url ) {
 			$reference_files[] = [
 				'url'  => $ref_url,

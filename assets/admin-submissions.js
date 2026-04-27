@@ -40,7 +40,7 @@
 			var pending = body.querySelector( '[data-afile-section="pending_info"]' );
 			var done    = body.querySelector( '[data-afile-section="done_like"]' );
 			if ( pending ) { pending.style.display = status === 'pending_info' ? 'block' : 'none'; }
-			if ( done )    { done.style.display    = status === 'done'         ? 'block' : 'none'; }
+			if ( done )    { done.style.display    = status === 'done' ? 'block' : 'none'; }
 		}
 	}
 

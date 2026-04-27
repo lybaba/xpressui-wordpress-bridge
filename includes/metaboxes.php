@@ -285,7 +285,12 @@ function xpressui_render_afile_metabox( $post ) {
 	}
 
 	$req               = xpressui_get_additional_file_request( $post->ID );
-	$slot_label        = ( $req['label'] !== '' ) ? $req['label'] : __( 'Additional document', 'xpressui-bridge' );
+	$pending_slot_label = ( $req['label'] !== '' ) ? $req['label'] : __( 'Additional document', 'xpressui-bridge' );
+	$done_slots         = xpressui_get_done_additional_file_slots( (string) get_post_meta( $post->ID, '_xpressui_project_slug', true ) );
+	$done_slot_label    = sanitize_text_field( (string) ( $done_slots[0]['label'] ?? '' ) );
+	if ( '' === $done_slot_label ) {
+		$done_slot_label = __( 'Informational document', 'xpressui-bridge' );
+	}
 	$pending_ref_id    = $req['ref_file_id'];
 	$pending_has_ref   = $pending_ref_id > 0;
 	$pending_ref_url   = $pending_has_ref ? (string) wp_get_attachment_url( $pending_ref_id ) : '';
@@ -306,7 +311,7 @@ function xpressui_render_afile_metabox( $post ) {
 	// Pending info section — shown when status dropdown = pending_info.
 	$pending_display = $saved_status === 'pending_info' ? '' : ' style="display:none;"';
 	echo '<div data-afile-section="pending_info"' . $pending_display . '>';
-	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html( $slot_label ) . '</p>';
+	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html( $pending_slot_label ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_pending__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
@@ -326,7 +331,7 @@ function xpressui_render_afile_metabox( $post ) {
 	$done_statuses    = [ 'done' ];
 	$done_display     = in_array( $saved_status, $done_statuses, true ) ? '' : ' style="display:none;"';
 	echo '<div data-afile-section="done_like"' . $done_display . '>';
-	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html( $slot_label ) . '</p>';
+	echo '<p style="margin:0 0 8px;font-size:12px;font-weight:600;">' . esc_html( $done_slot_label ) . '</p>';
 	echo '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
 	echo '<button type="button" class="button xpressui-ref-file-btn" data-field="__afile_done__">'
 		. '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>'
