@@ -27,7 +27,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       <div class="xpui-gallery-thumbs" data-product-gallery-thumbs></div>
     </div>
   </dialog>
-  <dialog class="xpui-capture-dialog" data-mobile-capture-modal>
+  <dialog class="xpui-capture-dialog" data-mobile-capture-modal style="display:none;">
     <div class="xpui-capture-panel">
       <div class="xpui-capture-title" data-mobile-capture-modal-title>Scan to capture on your phone</div>
       <img class="xpui-capture-qr" data-mobile-capture-modal-qr alt="QR code" />
