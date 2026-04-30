@@ -18,7 +18,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <div class="xpui-cart-overlay" data-product-cart-overlay data-state="closed" aria-hidden="true">
     <aside class="xpui-cart-panel" data-product-list-global-cart data-product-cart-panel aria-label="Mini cart"></aside>
   </div>
-  <dialog class="xpui-gallery-dialog" data-product-gallery-modal aria-label="Product gallery">
+  <dialog class="xpui-gallery-dialog" data-product-gallery-modal style="display:none;" aria-label="Product gallery">
     <div class="xpui-gallery-panel">
       <button type="button" class="btn xpui-gallery-close" data-product-gallery-close aria-label="Close gallery">×</button>
       <div class="xpui-gallery-title" data-product-gallery-title></div>
