@@ -343,5 +343,39 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .xpui-cart-overlay[data-state="open"] { opacity: 1; }
     .xpui-cart-panel { width: min(340px, 88vw); height: 100%; background: rgba(255,255,255,0.98); border-left: 1px solid rgba(15,23,42,0.08); padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; transform: translateX(100%); transition: transform 180ms ease; box-shadow: -24px 0 48px -36px rgba(15,23,42,0.28); }
     .xpui-cart-overlay[data-state="open"] .xpui-cart-panel { transform: translateX(0); }
+    .template-product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 14px; align-items: start; }
+    .template-product-card { display: grid; grid-template-rows: auto auto auto auto; padding: 16px; justify-items: center; border-radius: 16px; border: 1px solid rgba(148,163,184,0.3); background: rgba(248,250,252,0.84); cursor: default; }
+    .template-product-card[data-in-cart="true"] { border-color: rgb(59 130 246); box-shadow: 0 0 0 2px rgba(59,130,246,0.12); background: rgba(59,130,246,0.05); }
+    .template-product-media { position: relative; width: 100%; aspect-ratio: 4/3; max-height: 164px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,255,255,0.72); overflow: hidden; cursor: pointer; }
+    .template-product-media img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .xpui-product-overlay { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px; background: linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.74) 100%); }
+    .xpui-product-overlay[hidden] { display: none !important; }
+    .xpui-product-qty-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.16); color: #fff; font-size: 11px; font-weight: 700; }
+    .xpui-product-subtotal-pill { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; background: rgba(15,23,42,0.42); color: #fff; font-size: 11px; font-weight: 700; }
+    .template-product-title { margin-top: 8px; font-size: 14px; font-weight: 600; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; cursor: pointer; }
+    .template-product-meta { margin-top: 4px; font-size: 12px; width: 100%; display: flex; align-items: baseline; justify-content: center; gap: 4px; text-align: center; }
+    .template-product-price { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+    .xpui-product-controls { display: flex; align-items: center; justify-content: center; flex-shrink: 0; column-gap: 8px; margin: 0 auto; padding: 5px 8px; border-radius: 999px; background: #eef2f7; }
+    .xpui-product-action-btn { width: 30px; min-width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 13px; font-weight: 700; line-height: 1; box-shadow: none; border: 1px solid rgba(148,163,184,0.4); background: #f8fafc; color: #0f172a; }
+    .xpui-product-action-btn--add { background: #0f172a; color: #fff; border-color: transparent; }
+    .xpui-product-action-btn:disabled { opacity: 0.38; cursor: default; }
+    .xpui-product-qty-label { min-width: 18px; text-align: center; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .xpui-image-toggle-btn { width: 36px; min-width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 14px; font-weight: 700; box-shadow: none; border: 1px solid rgba(148,163,184,0.4); background: #0f172a; color: #fff; }
+    [data-image-card][data-selected="true"] .xpui-image-toggle-btn { background: transparent; color: #0f172a; border-color: transparent; }
+    .xpui-gallery-dialog { border: none; border-radius: 14px; padding: 0; width: min(960px, 100%); max-height: 90vh; box-shadow: 0 8px 48px rgba(15,23,42,0.28); }
+    .xpui-gallery-dialog::backdrop { background: rgba(15,23,42,0.8); }
+    .xpui-gallery-panel { overflow: auto; background: #fff; border-radius: 14px; padding: 14px; }
+    .xpui-gallery-close { float: right; width: 36px; min-width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid rgba(148,163,184,0.4); background: #fff; color: #0f172a; box-shadow: none; font-size: 18px; }
+    .xpui-gallery-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .xpui-gallery-meta { font-size: 12px; opacity: 0.7; margin-bottom: 12px; }
+    .xpui-gallery-main-image { width: 100%; max-height: 60vh; object-fit: contain; border-radius: 10px; display: block; }
+    .xpui-gallery-thumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; }
+    .xpui-gallery-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; cursor: pointer; outline: 1px solid rgba(148,163,184,0.35); outline-offset: 1px; opacity: 0.78; flex-shrink: 0; }
+    .xpui-gallery-thumb[data-active="true"] { outline: 2px solid rgb(59 130 246); opacity: 1; }
+    .xpui-qr-video { display: block; width: 100%; height: 160px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.3); background: #000; object-fit: cover; margin-top: 12px; }
+    .xpui-qr-video[hidden] { display: none !important; }
+    .xpui-doc-preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .xpui-doc-preview-img[hidden] { display: none !important; }
+    .xpui-doc-preview-placeholder { padding: 0 8px; text-align: center; font-size: 12px; opacity: 0.7; }
   </style>
 </head>
