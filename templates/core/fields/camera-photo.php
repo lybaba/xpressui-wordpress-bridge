@@ -63,4 +63,5 @@ required aria-required="true"<?php endif; ?>
     <div class="template-field-help"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'desc'))); ?></div>
 <?php endif; ?>
 <?php xpressui_bridge_template_include_template('field-meta.php', $xpressui_ctx); ?>
+  <button type="button" class="template-field-pill" data-mobile-capture-btn="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>" hidden>📱 Capture on mobile</button>
 </div>

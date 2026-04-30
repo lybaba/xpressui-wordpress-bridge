@@ -188,7 +188,7 @@ function xpressui_render_workflow_settings_page(): void {
 			'doneDocumentsSectionLabel'          => $done_documents_section_label,
 			'submitConfirmationSlots'        => $submit_confirmation_slots,
 			'submitConfirmationFileId'       => $submit_confirmation_file_id > 0 ? $submit_confirmation_file_id : 0,
-			'submitSuccessMessage'           => $submit_success_message,
+			'submitSuccessMessage'         => $submit_success_message,
 			'submitErrorMessage'           => $submit_error_message,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
@@ -557,10 +557,10 @@ function xpressui_render_workflow_settings_page(): void {
 
 	} else {
 		// -------------------------------------------------------------------------
-		// Pending Info Document Slots
+		// Additional Document Slots
 		// -------------------------------------------------------------------------
 		echo '<div class="card xpressui-admin-card">';
-		echo '<details open><summary><h2>' . esc_html__( 'Pending Info Document Slots', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
+		echo '<details open><summary><h2>' . esc_html__( 'Additional Document Slots', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
 		echo '<p>' . esc_html__( 'Used for Pending info requests.', 'xpressui-bridge' ) . '</p>';
 		echo '<table class="form-table"><tbody>';
 
