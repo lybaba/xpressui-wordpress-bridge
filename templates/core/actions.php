@@ -20,11 +20,6 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php endif; ?>
 </div>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
-  <div class="template-step-progress-container" data-form-step-progress-container>
-    <div data-form-step-progress></div>
-    <div class="template-step-progress-track"><div class="template-step-progress-bar" data-form-step-progress-bar style="width:0%"></div></div>
-    <div data-form-step-summary></div>
-  </div>
   <div class="template-step-actions" data-form-step-actions="true">
     <div class="template-step-actions-leading">
       <button type="button" data-step-action="back"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'navigation_labels'), 'previous'))); ?></button>
