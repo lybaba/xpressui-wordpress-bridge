@@ -114,8 +114,9 @@ function xpressui_render_workflow_settings_page(): void {
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
 		$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$webhook_url      = esc_url_raw( $raw_webhook_url );
-		$raw_booking_url  = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$booking_url      = esc_url_raw( $raw_booking_url );
+		$raw_booking_url      = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$booking_url          = esc_url_raw( $raw_booking_url );
+		$booking_button_label = isset( $_POST['xpressui_booking_button_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_booking_button_label'] ) ) : '';
 		$raw_resume_url   = trim( wp_unslash( $_POST['xpressui_resume_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$resume_url       = esc_url_raw( $raw_resume_url );
 
@@ -171,6 +172,7 @@ function xpressui_render_workflow_settings_page(): void {
 			'redirectUrl'                  => $redirect_url,
 			'webhookUrl'                   => $webhook_url,
 			'bookingUrl'                   => $booking_url,
+			'bookingButtonLabel'           => $booking_button_label,
 			'resumeUrl'                    => $resume_url,
 			'resubmitButtonLabel'          => $resubmit_btn_label,
 			'showProjectTitle'             => $show_project_title,
@@ -190,6 +192,8 @@ function xpressui_render_workflow_settings_page(): void {
 			'submitErrorMessage'           => $submit_error_message,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
+
+		do_action( 'xpressui_workflow_settings_extra_save', $slug );
 
 		if ( $has_pro_settings ) {
 			$overlay = xpressui_pro_load_workflow_overlay( $slug );
@@ -382,10 +386,6 @@ function xpressui_render_workflow_settings_page(): void {
 	echo '<td><input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( (string) ( $s['webhookUrl'] ?? '' ) ) . '">';
 	echo '<p class="description">' . esc_html__( 'Receive a POST JSON payload after each submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
 
-	echo '<tr><th><label for="xpressui_booking_url">' . esc_html__( 'Booking link', 'xpressui-bridge' ) . '</label></th>';
-	echo '<td><input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( (string) ( $s['bookingUrl'] ?? '' ) ) . '">';
-	echo '<p class="description">' . esc_html__( 'Show a "Book an appointment" button on the success screen. Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
-
 	echo '<tr><th><label for="xpressui_resume_url">' . esc_html__( 'Resubmission page URL', 'xpressui-bridge' ) . '</label></th>';
 	echo '<td><input type="url" id="xpressui_resume_url" name="xpressui_resume_url" class="regular-text" placeholder="https://example.com/apply/" value="' . esc_attr( (string) ( $s['resumeUrl'] ?? '' ) ) . '">';
 	echo '<p class="description">' . esc_html__( 'URL of the page where this form is embedded. Used to generate the resubmission link in pending info emails. Leave empty to auto-detect.', 'xpressui-bridge' ) . '</p></td></tr>';
@@ -432,6 +432,25 @@ function xpressui_render_workflow_settings_page(): void {
 	echo '<tr><th><label for="xpressui_submit_error_message">' . esc_html__( 'Error message', 'xpressui-bridge' ) . '</label></th>';
 	echo '<td><input type="text" id="xpressui_submit_error_message" name="xpressui_submit_error_message" class="large-text" value="' . esc_attr( $submit_error_message ) . '">';
 	echo '<p class="description">' . esc_html__( 'Optional custom error message shown when the submission fails.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+	echo '</tbody></table>';
+	echo '</details>';
+	echo '</div>';
+
+	// -------------------------------------------------------------------------
+	// Booking Link
+	// -------------------------------------------------------------------------
+	echo '<div class="card xpressui-admin-card">';
+	echo '<details open><summary><h2>' . esc_html__( 'Booking Link', 'xpressui-bridge' ) . '</h2><span class="xpressui-toggle-icon" aria-hidden="true">▾</span></summary>';
+	echo '<table class="form-table"><tbody>';
+
+	echo '<tr><th><label for="xpressui_booking_url">' . esc_html__( 'Booking URL', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( (string) ( $s['bookingUrl'] ?? '' ) ) . '">';
+	echo '<p class="description">' . esc_html__( 'Show a booking button on the success screen and in the confirmation email. Leave empty to disable.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+	echo '<tr><th><label for="xpressui_booking_button_label">' . esc_html__( 'Button label', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><input type="text" id="xpressui_booking_button_label" name="xpressui_booking_button_label" class="regular-text" placeholder="' . esc_attr__( 'Book an appointment', 'xpressui-bridge' ) . '" value="' . esc_attr( (string) ( $s['bookingButtonLabel'] ?? '' ) ) . '">';
+	echo '<p class="description">' . esc_html__( 'Label of the booking button. Leave empty to use the default.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '</tbody></table>';
 	echo '</details>';
@@ -574,6 +593,8 @@ function xpressui_render_workflow_settings_page(): void {
 		echo '</details>';
 		echo '</div>';
 	}
+
+	do_action( 'xpressui_workflow_settings_extra_sections', $slug, $s, $overlay );
 
 	echo '</form>';
 	echo '</div>';

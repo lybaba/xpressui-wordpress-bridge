@@ -146,8 +146,10 @@ function xpressui_render_shortcode( $atts ) {
 	$config_script_id                   = 'xpressui-config-' . $slug;
 	$template_context['_mount_node_id'] = $mount_node_id;
 	if ( is_array( $template_context['runtime'] ?? null ) ) {
-		$template_context['runtime']['mount_node_id'] = 'xpressui-mount-' . $slug;
-		$template_context['runtime']['booking_url']   = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		$template_context['runtime']['mount_node_id']        = 'xpressui-mount-' . $slug;
+		$template_context['runtime']['booking_url']          = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		$_booking_btn = xpressui_get_project_setting( $slug, 'bookingButtonLabel' );
+		$template_context['runtime']['booking_button_label'] = '' !== $_booking_btn ? $_booking_btn : __( 'Book an appointment', 'xpressui-bridge' );
 	}
 
 	// Render the form fragment (CSS + HTML only; scripts are enqueued below).

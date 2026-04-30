@@ -836,6 +836,18 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 	$confirmation_section_label = trim( (string) ( $s['submitConfirmationSectionLabel'] ?? '' ) );
 	$ref_files_html = xpressui_build_reference_files_html( $reference_files, '', $confirmation_section_label );
 
+	$booking_url = trim( (string) ( $s['bookingUrl'] ?? '' ) );
+	$booking_cta_html = '';
+	if ( $booking_url !== '' ) {
+		$_raw_btn_label    = trim( (string) ( $s['bookingButtonLabel'] ?? '' ) );
+		$booking_btn_label = '' !== $_raw_btn_label ? $_raw_btn_label : __( 'Book an appointment', 'xpressui-bridge' );
+		$booking_cta_html  = '<div style="margin:24px 0 0;text-align:center;">'
+			. '<a href="' . esc_url( $booking_url ) . '" style="display:inline-block;padding:12px 24px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">'
+			. esc_html( $booking_btn_label ) . ' &rarr;'
+			. '</a>'
+			. '</div>';
+	}
+
 	$footer_note = sprintf(
 		/* translators: %s: site name */
 		__( 'Sent by %s.', 'xpressui-bridge' ),
@@ -855,7 +867,7 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 		$intro,
 		'',
 		$footer_note,
-		$ref_files_html,
+		$ref_files_html . $booking_cta_html,
 	);
 	$headers = xpressui_build_notification_headers();
 
