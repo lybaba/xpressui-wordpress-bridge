@@ -843,7 +843,7 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 		$booking_btn_label = '' !== $_raw_btn_label ? $_raw_btn_label : __( 'Book an appointment', 'xpressui-bridge' );
 		$booking_cta_html  = '<div style="margin:24px 0 0;text-align:center;">'
 			. '<a href="' . esc_url( $booking_url ) . '" style="display:inline-block;padding:12px 24px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;">'
-			. esc_html( $booking_btn_label ) . ' &rarr;'
+			. esc_html( $booking_btn_label )
 			. '</a>'
 			. '</div>';
 	}
@@ -853,6 +853,9 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 		__( 'Sent by %s.', 'xpressui-bridge' ),
 		$site_name,
 	);
+
+	// Allow extensions (e.g. Pro) to append extra HTML to the confirmation email (e.g. status tracking link).
+	$extra_cta_html = (string) apply_filters( 'xpressui_submit_confirmation_extra_html', '', $post_id, $project_slug );
 
 	$subject = sprintf(
 		/* translators: 1: site name, 2: workflow label */
@@ -867,7 +870,7 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 		$intro,
 		'',
 		$footer_note,
-		$ref_files_html . $booking_cta_html,
+		$ref_files_html . $booking_cta_html . $extra_cta_html,
 	);
 	$headers = xpressui_build_notification_headers();
 

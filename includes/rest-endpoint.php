@@ -334,6 +334,9 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 			: wp_json_encode( $payload_with_files )
 	);
 
+	// Allow extensions to react immediately after a brand-new submission is persisted.
+	do_action( 'xpressui_submission_first_created', $post_id, $project_slug, $payload_with_files );
+
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
 
