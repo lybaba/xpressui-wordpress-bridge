@@ -32,6 +32,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php xpressui_bridge_template_include_template('fields/document-scan.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "signature"))): ?>
 <?php xpressui_bridge_template_include_template('fields/signature.php', $xpressui_ctx); ?>
+<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "payment-stripe"))): ?>
+<?php xpressui_bridge_template_include_template('fields/payment-stripe.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "setting"))): ?>
 <?php xpressui_bridge_template_include_template('fields/setting.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "approval-state"))): ?>

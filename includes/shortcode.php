@@ -202,6 +202,8 @@ function xpressui_render_shortcode( $atts ) {
 
 	wp_add_inline_script( 'xpressui-shell-init', $inline_before, 'before' );
 
+	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
+
 	// Embed the form config as an inline JSON script tag (not JavaScript).
 	$form_config_json = $template_context['runtime']['form_config_json'] ?? '{}';
 
