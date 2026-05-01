@@ -46,6 +46,9 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       width: 100%;
       padding: 48px 16px;
       box-sizing: border-box;
+      font-size: 14px;
+      font-family: var(--template-font-family);
+      color: var(--template-text);
     }
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "panel")))): ?>
     <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "#xpressui-root" : ".page-shell"))); ?>::before {
@@ -133,7 +136,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-field-message.is-error { background: transparent; color: color-mix(in srgb, #ef4444 80%, var(--template-text)); border: 0; font-weight: 600; }
     .template-field-message.is-success { background: color-mix(in srgb, #22c55e 10%, transparent); color: color-mix(in srgb, #22c55e 80%, var(--template-text)); border: 1px solid color-mix(in srgb, #22c55e 25%, transparent); padding: 8px 12px; border-radius: 8px; }
     .template-field-meta { display: flex; flex-wrap: wrap; gap: 8px; }
-    .template-field-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--template-border) 40%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); color: var(--template-text); font-size: 12px; font-weight: 700; line-height: 1; }
+    #xpressui-root .template-field-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--template-border) 40%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); color: var(--template-text); font-size: 12px; font-weight: 700; line-height: 1; }
     .template-input,
     .template-textarea { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 14px 16px; }
     .template-runtime-shell select { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border) !important; border-radius: var(--template-input-radius) !important; background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 16px center !important; background-size: 16px !important; color: var(--template-text) !important; font: inherit; padding: 14px 40px 14px 16px !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; accent-color: var(--template-primary) !important; }
@@ -188,8 +191,8 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-product-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--template-muted-text); font-size: 13px; }
     .template-product-price { font-weight: 700; color: var(--template-text); }
     .template-product-actions { display: flex; justify-content: center; align-items: center; gap: 10px; padding-top: 2px; min-height: 36px; }
-    .template-stepper-btn { width: 36px; height: 36px; border: 1px solid color-mix(in srgb, var(--template-border) 50%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--template-text) 96%, transparent); color: var(--template-surface); font-size: 18px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
-    .template-stepper-btn.is-muted { background: transparent; color: var(--template-muted-text); }
+    #xpressui-root .template-stepper-btn { width: 36px; height: 36px; border: 1px solid color-mix(in srgb, var(--template-border) 50%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--template-text) 96%, transparent); color: var(--template-surface); font-size: 18px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+    #xpressui-root .template-stepper-btn.is-muted { background: transparent; color: var(--template-muted-text); }
     .template-quiz-wrap { display: grid; gap: 12px; padding: 16px; border-radius: 18px; background: rgba(248,250,252,0.94); border: 1px solid rgba(15,23,42,0.08); }
     .template-choice-grid { display: grid; gap: 8px; }
     .template-choice-grid--vertical, .template-choice-grid[data-choice-layout="vertical"] { grid-template-columns: 1fr; }
@@ -296,19 +299,19 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-submit-feedback-message { font-size: 13px; color: var(--template-muted-text); line-height: 1.45; }
     .xpressui-booking-btn { display: none; margin-top: 6px; padding: 10px 20px; background: var(--template-primary); color: #fff !important; text-decoration: none !important; border-radius: var(--template-button-radius); font-size: 13px; font-weight: 700; width: auto !important; align-self: start; justify-self: start; box-sizing: border-box; }
     [data-submit-feedback][data-submit-feedback-state="success"] .xpressui-booking-btn { display: inline-block !important; }
-    button.template-field-pill { appearance: none; font: inherit; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
-    button.template-field-pill[data-document-scan-active="true"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
+    #xpressui-root button.template-field-pill { appearance: none; font-family: var(--template-font-family); font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    #xpressui-root button.template-field-pill[data-document-scan-active="true"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
     .template-submit-row { display: flex; justify-content: flex-end; padding-top: 18px; margin-top: 2px; border-top: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }
-    .template-submit-btn { border: none; border-radius: var(--template-button-radius); background: var(--template-primary); color: #f8fafc; font: inherit; font-weight: 700; padding: 14px 20px; min-width: 140px; }
+    #xpressui-root .template-submit-btn { border: none; border-radius: var(--template-button-radius); background: var(--template-primary); color: #f8fafc; font-family: var(--template-font-family); font-size: 14px; font-weight: 700; padding: 14px 20px; min-width: 140px; }
     .template-step-progress-track { background: color-mix(in srgb, var(--template-border) 40%, transparent); border-radius: 999px; height: 4px; overflow: hidden; margin-top: 4px; }
     .template-step-progress-bar { height: 100%; background: linear-gradient(90deg, var(--template-primary) 0%, color-mix(in srgb, var(--template-primary) 76%, var(--template-text)) 100%); border-radius: 999px; }
     .template-step-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 18px 0 0; }
     .template-step-actions-leading, .template-step-actions-trailing { display: flex; align-items: center; gap: 12px; }
-    .template-step-actions [data-step-action] { appearance: none; border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); border-radius: var(--template-button-radius); font: inherit; font-size: 14px; font-weight: 700; line-height: 1; min-width: 132px; padding: 14px 20px; box-shadow: none; cursor: pointer; transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease; }
-    .template-step-actions [data-step-action]:hover { transform: translateY(-1px); }
-    .template-step-actions [data-step-action="back"] { background: var(--template-surface); color: var(--template-text); }
-    .template-step-actions [data-step-action="next"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
-    .template-step-actions [data-step-action]:disabled { opacity: 0.54; cursor: not-allowed; transform: none; }
+    #xpressui-root .template-step-actions [data-step-action] { appearance: none; border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); border-radius: var(--template-button-radius); font-family: var(--template-font-family); font-size: 14px; font-weight: 700; line-height: 1; min-width: 132px; padding: 14px 20px; box-shadow: none; cursor: pointer; transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease; }
+    #xpressui-root .template-step-actions [data-step-action]:hover { transform: translateY(-1px); }
+    #xpressui-root .template-step-actions [data-step-action="back"] { background: var(--template-surface); color: var(--template-text); }
+    #xpressui-root .template-step-actions [data-step-action="next"] { background: var(--template-primary); border-color: var(--template-primary); color: #f8fafc; }
+    #xpressui-root .template-step-actions [data-step-action]:disabled { opacity: 0.54; cursor: not-allowed; transform: none; }
 
     @keyframes xpressui-step-in {
       0% { opacity: 0; transform: translateY(16px) scale(0.98); }
@@ -335,7 +338,8 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .xpui-capture-title { font-size: 15px; font-weight: 600; color: #0f172a; }
     .xpui-capture-qr { width: 200px; height: 200px; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
     .xpui-capture-status { font-size: 13px; color: #64748b; }
-    [data-mobile-capture-btn] { cursor: pointer; margin-top: 8px; }
+    #xpressui-root [data-mobile-capture-btn] { cursor: pointer; margin-top: 8px; align-self: flex-start; background: color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 30%, transparent); color: var(--template-primary); font-size: 12px; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
+    #xpressui-root [data-mobile-capture-btn]:hover { background: color-mix(in srgb, var(--template-primary) 16%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 50%, transparent); transform: translateY(-1px); }
     .xpui-cart-trigger { position: fixed; right: 20px; bottom: 20px; z-index: 10001; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 999px; border: none; background: var(--template-primary); color: #f8fafc; cursor: pointer; padding: 0; box-shadow: 0 4px 16px -4px rgba(15,23,42,0.28); }
     .xpui-cart-trigger[hidden] { display: none !important; }
     .xpui-cart-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.26); z-index: 10002; display: none; justify-content: flex-end; opacity: 0; visibility: hidden; transition: opacity 180ms ease; }
@@ -377,5 +381,18 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .xpui-doc-preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .xpui-doc-preview-img[hidden] { display: none !important; }
     .xpui-doc-preview-placeholder { padding: 0 8px; text-align: center; font-size: 12px; opacity: 0.7; }
+    .template-upload-box.xpui-capture-only .template-upload-icon,
+    .template-upload-box.xpui-capture-only .template-field-label,
+    .template-upload-box.xpui-capture-only .template-field-help,
+    .template-upload-box.xpui-capture-only .template-upload-pills,
+    .template-upload-box.xpui-capture-only input[type="file"] { display: none !important; }
+    .template-upload-box.xpui-capture-only { justify-items: center; }
+    #xpressui-root .xpressui-signature-wrap { display: flex; flex-direction: column; gap: 8px; }
+    #xpressui-root .xpressui-signature-canvas { border: 1px solid var(--template-border); border-radius: 6px; background: var(--template-surface); cursor: crosshair; touch-action: none; pointer-events: auto; width: 100%; max-width: 580px; display: block; }
+    #xpressui-root .xpressui-signature-actions { display: flex; align-items: center; gap: 12px; }
+    #xpressui-root .xpressui-payment-wrap { display: flex; flex-direction: column; gap: 10px; }
+    #xpressui-root [data-stripe-card-element] { border: 1px solid var(--template-border); border-radius: 6px; padding: 14px 16px; background: var(--template-surface); min-height: 44px; }
+    #xpressui-root [data-stripe-error] { color: #ef4444; min-height: 1em; }
+    #xpressui-root .xpressui-stripe-badge { font-size: 12px; color: var(--template-muted-text); display: flex; align-items: center; gap: 6px; }
   </style>
 </head>
