@@ -125,23 +125,33 @@ async function openCaptureModal(
   abort.signal.addEventListener('abort', () => clearInterval(interval));
 }
 
-async function applyCameraPhotoCaptureToField(fieldWrap: HTMLElement, fn: string, dataUrl: string): Promise<void> {
+async function applyCameraPhotoCaptureToField(fieldWrap: HTMLElement, fn: string, data: string): Promise<void> {
+  // data may be a JSON string {"attachmentId":X,"url":"..."} from the relay
+  let imageUrl = data;
+  if (data.charAt(0) === '{') {
+    try {
+      const parsed = JSON.parse(data) as { url?: string };
+      if (parsed.url) imageUrl = parsed.url;
+    } catch { /* keep data as-is */ }
+  }
+
   const preview = fieldWrap.querySelector(`[data-camera-capture-preview="${fn}"]`) as HTMLImageElement | null;
-  if (preview) {
-    preview.src = dataUrl;
+  if (preview && imageUrl) {
+    preview.src = imageUrl;
     preview.removeAttribute('hidden');
   }
+
   const fileInput = fieldWrap.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
   if (fileInput && typeof DataTransfer !== 'undefined') {
     try {
-      const blob = await fetch(dataUrl).then((r) => r.blob());
+      const blob = await fetch(imageUrl).then((r) => r.blob());
       const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
       const dt = new DataTransfer();
       dt.items.add(file);
       fileInput.files = dt.files;
       fileInput.dispatchEvent(new Event('change', { bubbles: true }));
     } catch {
-      // DataTransfer failed — preview only
+      // fetch or DataTransfer failed — preview only
     }
   }
 }
