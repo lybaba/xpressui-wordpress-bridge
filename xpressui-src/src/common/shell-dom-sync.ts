@@ -452,4 +452,15 @@ export function attachShellFeedbackHandlers(
       'Submission canceled',
     );
   });
+
+  mountNode.addEventListener('xpressui:payment-stripe-error', (event) => {
+    const result = (event as CustomEvent)?.detail?.result;
+    setShellActionButtonsDisabled(mountNode, false);
+    setShellFeedbackState(
+      mountNode,
+      'error',
+      result?.message ?? 'Payment could not be processed. Please try again.',
+      cfg.error_title ?? 'Payment failed',
+    );
+  });
 }

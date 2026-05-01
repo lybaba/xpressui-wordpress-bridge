@@ -1,4 +1,3 @@
-import type TFieldConfig from "../common/TFieldConfig";
 import type TFormConfig from "../common/TFormConfig";
 import type { TFormStepProgress } from "../common/form-steps";
 
@@ -357,18 +356,6 @@ export function syncStepControls(options: {
 }
 
 const SPINNER_ATTR = "data-xpressui-spinner";
-const SPINNER_KEYFRAMES_ID = "xpressui-spinner-keyframes";
-
-function ensureSpinnerKeyframes(): void {
-  if (document.getElementById(SPINNER_KEYFRAMES_ID)) {
-    return;
-  }
-  const style = document.createElement("style");
-  style.id = SPINNER_KEYFRAMES_ID;
-  style.textContent =
-    "@keyframes xpressui-spin{to{transform:rotate(360deg)}}";
-  document.head.appendChild(style);
-}
 
 function syncSubmitButtonLoadingState(
   button: HTMLButtonElement | HTMLInputElement,
@@ -377,27 +364,12 @@ function syncSubmitButtonLoadingState(
   if (!(button instanceof HTMLButtonElement)) {
     return;
   }
-
-  const existing = button.querySelector(`[${SPINNER_ATTR}]`);
-
+  const spinner = button.querySelector(`[${SPINNER_ATTR}]`) as HTMLElement | null;
   if (isLoading) {
     button.setAttribute("aria-busy", "true");
-    if (!existing) {
-      ensureSpinnerKeyframes();
-      const spinner = document.createElement("span");
-      spinner.setAttribute(SPINNER_ATTR, "true");
-      spinner.setAttribute("aria-hidden", "true");
-      spinner.style.cssText =
-        "display:inline-block;width:0.9em;height:0.9em;" +
-        "border:2px solid currentColor;border-top-color:transparent;" +
-        "border-radius:50%;animation:xpressui-spin 0.65s linear infinite;" +
-        "vertical-align:middle;margin-right:0.45em;flex-shrink:0;";
-      button.prepend(spinner);
-    }
+    if (spinner) spinner.removeAttribute("hidden");
   } else {
     button.removeAttribute("aria-busy");
-    if (existing) {
-      existing.remove();
-    }
+    if (spinner) spinner.toggleAttribute("hidden", true);
   }
 }

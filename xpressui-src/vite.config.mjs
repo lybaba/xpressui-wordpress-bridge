@@ -31,6 +31,18 @@ export default defineConfig(() => {
               fileURLToPath(new URL('.', import.meta.url)),
               'src/ui/form-ui.overlay-runtime.light.ts',
             ),
+            './ui/form-ui.signature-runtime': path.resolve(
+              fileURLToPath(new URL('.', import.meta.url)),
+              'src/ui/form-ui.signature-runtime.light.ts',
+            ),
+            './ui/form-ui.payment-runtime': path.resolve(
+              fileURLToPath(new URL('.', import.meta.url)),
+              'src/ui/form-ui.payment-runtime.light.ts',
+            ),
+            './ui/form-ui.mobile-capture-runtime': path.resolve(
+              fileURLToPath(new URL('.', import.meta.url)),
+              'src/ui/form-ui.mobile-capture-runtime.light.ts',
+            ),
           }
         : undefined,
     },

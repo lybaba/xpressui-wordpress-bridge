@@ -28,6 +28,8 @@ import {
   QR_SCAN_TYPE,
   SELECT_PRODUCT_TYPE,
   SETTING_TYPE,
+  SIGNATURE_TYPE,
+  PAYMENT_STRIPE_TYPE,
   UPLOAD_FILE_TYPE,
   UNKNOWN_TYPE,
 } from "./common/field";
@@ -145,6 +147,9 @@ import {
   shouldRenderUnsafeHtml as shouldConfiguredRenderUnsafeHtml,
 } from "./ui/form-ui.output";
 import { createDocumentQrRuntime } from "./ui/form-ui.document-qr-runtime";
+import { createSignatureRuntime } from "./ui/form-ui.signature-runtime";
+import { createPaymentRuntime } from "./ui/form-ui.payment-runtime";
+import { createMobileCaptureRuntime } from "./ui/form-ui.mobile-capture-runtime";
 export type {
   TFormApprovalState,
   THydratedFormSubmitDetail,
@@ -362,6 +367,9 @@ export class HydratedFormHost extends HTMLElement {
   quizRuntime: ReturnType<typeof createQuizRuntime>;
   commerceRuntime: ReturnType<typeof createCommerceRuntime>;
   overlayRuntime: ReturnType<typeof createOverlayRuntime>;
+  signatureRuntime: ReturnType<typeof createSignatureRuntime>;
+  paymentRuntime: ReturnType<typeof createPaymentRuntime>;
+  mobileCaptureRuntime: ReturnType<typeof createMobileCaptureRuntime>;
 
   constructor() {
     super();
@@ -415,6 +423,9 @@ export class HydratedFormHost extends HTMLElement {
     this.quizRuntime = createQuizRuntime(this);
     this.commerceRuntime = createCommerceRuntime(this);
     this.overlayRuntime = createOverlayRuntime(this);
+    this.signatureRuntime = createSignatureRuntime(this);
+    this.paymentRuntime = createPaymentRuntime(this);
+    this.mobileCaptureRuntime = createMobileCaptureRuntime(this);
     this.dynamic = new FormDynamicRuntime({
       getFieldConfigs: () => Object.values(this.engine.getFields()),
       getRules: () => this.formConfig?.rules || [],
@@ -1355,14 +1366,6 @@ export class HydratedFormHost extends HTMLElement {
     return getNormalizedProductCartTotal(cartItems);
   }
 
-  createCartGlyph = () => {
-    return this.overlayRuntime.createCartGlyph();
-  }
-
-  createCartCountBadge = (value: string) => {
-    return this.overlayRuntime.createCartCountBadge(value);
-  }
-
   updateProductListInlineTotal = (fieldConfig: TFieldConfig, value: any) => {
     return this.commerceRuntime.updateProductListInlineTotal(fieldConfig, value);
   }
@@ -2122,7 +2125,7 @@ export class HydratedFormHost extends HTMLElement {
       });
 
 
-      formElem.addEventListener("submit", (event) => {
+      formElem.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (this.workflowState === "submitting") {
           return;
@@ -2165,6 +2168,19 @@ export class HydratedFormHost extends HTMLElement {
             },
           });
           return;
+        }
+        if (this.querySelector("[data-stripe-payment-field]")) {
+          const paymentResult = await this.paymentRuntime.confirmPaymentsIfNeeded();
+          if (!paymentResult.ok) {
+            this.emitFormEvent("xpressui:payment-stripe-error", {
+              values: this.engine.normalizeValues(this.form?.getState().values || {}),
+              formConfig: this.formConfig,
+              submit: this.formConfig?.submit,
+              error: new Error(paymentResult.error),
+              result: { message: paymentResult.error },
+            });
+            return;
+          }
         }
         this.form?.submit();
       });
@@ -3839,6 +3855,13 @@ export class HydratedFormHost extends HTMLElement {
           }
           this.registered[name] = true;
           this.engine.setField(name, fieldConfig);
+          if (fieldConfig.type === SIGNATURE_TYPE) {
+            this.signatureRuntime.initField(fieldConfig);
+          }
+          if (fieldConfig.type === PAYMENT_STRIPE_TYPE) {
+            this.paymentRuntime.initField(fieldConfig);
+          }
+          this.mobileCaptureRuntime.initField(fieldConfig);
         }
 
         // update value

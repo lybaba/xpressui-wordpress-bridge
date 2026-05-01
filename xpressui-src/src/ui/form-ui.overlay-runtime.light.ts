@@ -2,16 +2,6 @@ type TOverlayRuntimeHost = any;
 
 export function createOverlayRuntime(_host: TOverlayRuntimeHost) {
   return {
-    createCartGlyph() {
-      const icon = document.createElement("span");
-      icon.setAttribute("aria-hidden", "true");
-      return icon;
-    },
-    createCartCountBadge(value: string) {
-      const badge = document.createElement("span");
-      badge.textContent = value;
-      return badge;
-    },
     ensureProductCartTrigger: () => null,
     ensureProductListGlobalCart: () => null,
     openProductCartModal: () => undefined,
