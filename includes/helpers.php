@@ -2418,6 +2418,15 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 	return esc_html( $map_choice( $value ) );
 }
 
+function xpressui_render_preview_field_value( $value, array $field_meta ): string {
+	$field_type = (string) ( $field_meta['type'] ?? '' );
+	if ( $field_type === 'signature' && is_string( $value ) && 0 === strpos( $value, 'data:image' ) ) {
+		$img = '<img src="' . esc_attr( $value ) . '" alt="' . esc_attr__( 'Signature', 'xpressui-bridge' ) . '" class="xpressui-signature-preview" />';
+		return wp_kses( $img, [ 'img' => [ 'src' => true, 'alt' => true, 'class' => true ] ], [ 'data', 'http', 'https' ] );
+	}
+	return wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) );
+}
+
 function xpressui_build_structured_item_summary( $item, $choice_map = [] ) {
 	if ( ! is_array( $item ) ) {
 		$normalized = (string) $item;

@@ -598,7 +598,7 @@ function xpressui_render_preview_metabox( $post ) {
 				$is_checked = in_array( $field_name, $flagged_fields, true );
 				echo '<tr>';
 				echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ) . '</th>';
-				echo '<td>' . wp_kses_post( xpressui_format_submission_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
+				echo '<td>' . xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) . '</td>';
 				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
 			}
@@ -621,7 +621,7 @@ function xpressui_render_preview_metabox( $post ) {
 			$is_checked = in_array( $key, $flagged_fields, true );
 			echo '<tr>';
 			echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ?? $key ) . '</th>';
-			echo '<td>' . wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) ) . '</td>';
+			echo '<td>' . xpressui_render_preview_field_value( $value, $field_meta ) . '</td>';
 			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
 		}

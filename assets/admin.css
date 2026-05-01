@@ -1111,3 +1111,12 @@
 	border-left-color: #9ca3af;
 	color: #6b7280;
 }
+
+.xpressui-signature-preview {
+	max-width: 280px;
+	max-height: 96px;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	background: #fff;
+	display: block;
+}
