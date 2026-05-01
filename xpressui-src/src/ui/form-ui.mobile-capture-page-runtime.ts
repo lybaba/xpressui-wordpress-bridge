@@ -94,11 +94,26 @@ function initPhotoCapture(relayUrl: string): void {
   const video = document.getElementById('video') as HTMLVideoElement | null;
   const canvas = document.getElementById('photo-canvas') as HTMLCanvasElement | null;
   const captureBtn = document.getElementById('capture-btn') as HTMLButtonElement | null;
+  const flipBtn = document.getElementById('flip-btn') as HTMLButtonElement | null;
   if (!video || !canvas || !captureBtn) return;
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then((stream) => { video.srcObject = stream; })
-    .catch(() => { setStatus('Camera access denied. Please allow camera and reload.', 'error'); captureBtn.disabled = true; });
+  let facingMode: 'environment' | 'user' = 'environment';
+
+  function startStream(): void {
+    if (video!.srcObject instanceof MediaStream) {
+      (video!.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
+      .then((stream) => { video!.srcObject = stream; })
+      .catch(() => { setStatus('Camera access denied. Please allow camera and reload.', 'error'); captureBtn!.disabled = true; });
+  }
+
+  startStream();
+
+  flipBtn?.addEventListener('click', () => {
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    startStream();
+  });
 
   captureBtn.addEventListener('click', () => {
     canvas.width = video.videoWidth || 640;

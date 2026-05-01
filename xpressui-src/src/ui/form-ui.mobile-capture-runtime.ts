@@ -125,6 +125,27 @@ async function openCaptureModal(
   abort.signal.addEventListener('abort', () => clearInterval(interval));
 }
 
+async function applyCameraPhotoCaptureToField(fieldWrap: HTMLElement, fn: string, dataUrl: string): Promise<void> {
+  const preview = fieldWrap.querySelector(`[data-camera-capture-preview="${fn}"]`) as HTMLImageElement | null;
+  if (preview) {
+    preview.src = dataUrl;
+    preview.removeAttribute('hidden');
+  }
+  const fileInput = fieldWrap.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
+  if (fileInput && typeof DataTransfer !== 'undefined') {
+    try {
+      const blob = await fetch(dataUrl).then((r) => r.blob());
+      const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      fileInput.files = dt.files;
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch {
+      // DataTransfer failed — preview only
+    }
+  }
+}
+
 function applySignatureCaptureToCanvas(fieldWrap: HTMLElement, fn: string, dataUrl: string): void {
   const canvas = fieldWrap.querySelector(`[data-signature-canvas="${fn}"]`) as HTMLCanvasElement | null;
   if (!canvas) return;
@@ -167,11 +188,19 @@ export function createMobileCaptureRuntime(host: TMobileCaptureHost) {
         openCaptureModal(host, fn, fieldConfig.type, projectSlug, (data) => {
           if (fieldConfig.type === 'signature') {
             applySignatureCaptureToCanvas(fieldWrap, fn, data);
-          }
-          const input = host.querySelector(`input[data-name="${fn}"]`) as HTMLInputElement | null;
-          if (input) {
-            input.value = data;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+            const input = fieldWrap.querySelector(`input[data-name="${fn}"]`) as HTMLInputElement | null;
+            if (input) {
+              input.value = data;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          } else if (fieldConfig.type === 'camera-photo') {
+            void applyCameraPhotoCaptureToField(fieldWrap, fn, data);
+          } else {
+            const input = fieldWrap.querySelector(`input[data-name="${fn}"]`) as HTMLInputElement | null;
+            if (input) {
+              input.value = data;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
           }
         });
       });
