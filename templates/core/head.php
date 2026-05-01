@@ -338,7 +338,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .xpui-capture-title { font-size: 15px; font-weight: 600; color: #0f172a; }
     .xpui-capture-qr { width: 200px; height: 200px; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
     .xpui-capture-status { font-size: 13px; color: #64748b; }
-    #xpressui-root [data-mobile-capture-btn] { cursor: pointer; margin-top: 8px; align-self: flex-start; background: color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 30%, transparent); color: var(--template-primary); font-size: 12px; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
+    #xpressui-root [data-mobile-capture-btn] { cursor: pointer; background: color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 30%, transparent); color: var(--template-primary); font-size: 12px; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
     #xpressui-root [data-mobile-capture-btn]:hover { background: color-mix(in srgb, var(--template-primary) 16%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 50%, transparent); transform: translateY(-1px); }
     .xpui-cart-trigger { position: fixed; right: 20px; bottom: 20px; z-index: 10001; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 999px; border: none; background: var(--template-primary); color: #f8fafc; cursor: pointer; padding: 0; box-shadow: 0 4px 16px -4px rgba(15,23,42,0.28); }
     .xpui-cart-trigger[hidden] { display: none !important; }
