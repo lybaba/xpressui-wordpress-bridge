@@ -416,9 +416,9 @@ export const getHtmlInputProps = (fieldConfig: TFieldConfig): Record<string, any
 
         case TIME_TYPE:
             {
-                const minProp = minString ? { min: minString } : {};
-                const maxProp = maxString ? { max: maxString } : {};
-                const stepProp = fieldConfig.step ? { step: fieldConfig.step } : {};
+                const minProp = { min: minString ?? "00:00" };
+                const maxProp = { max: maxString ?? "23:59" };
+                const stepProp = { step: fieldConfig.step ?? 60 };
 
                 return {
                     ...minProp,

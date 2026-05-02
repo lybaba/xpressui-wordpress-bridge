@@ -9,6 +9,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 ?><form
   class="template-runtime-shell"
   data-template-zone="rendered_form"
+  data-field-columns="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'field_columns'))); ?>"
+  data-label-position="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'label_position'))); ?>"
   method="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_method'))); ?>"
   action="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_endpoint'))); ?>"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_enctype'))): ?>

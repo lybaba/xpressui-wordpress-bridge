@@ -124,8 +124,16 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-section-header { display: grid; gap: 4px; }
     .template-section-label { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--template-text); }
     .template-section-desc { margin: 0 0 4px 0; color: var(--template-muted-text); font-size: 14px; line-height: 1.5; }
-    .template-fields { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    .template-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: 100%; }
+    .template-runtime-shell[data-field-columns='2'] .template-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .template-field { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
+    .template-runtime-shell[data-label-position='inline'] .template-field { display: grid; grid-template-columns: minmax(112px, 150px) minmax(0, 1fr); align-items: start; column-gap: 12px; }
+    .template-runtime-shell[data-label-position='inline'] .template-field-label-row { padding-top: 14px; }
+    .template-runtime-shell[data-label-position='inline'] .template-field-help,
+    .template-runtime-shell[data-label-position='inline'] .template-field-meta,
+    .template-runtime-shell[data-label-position='inline'] .template-field-messages { grid-column: 2; }
+    .template-runtime-shell[data-label-position='hidden'] .template-field-label-row { display: none; }
     .template-field-label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .template-field-label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--template-text); }
     .template-field-meta-inline { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
@@ -288,6 +296,10 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-image-gallery-list [data-image-gallery-name] { font-size: 13px; font-weight: 600; color: var(--template-text); }
     .template-image-gallery-list [data-image-gallery-action="remove"] { width: 30px; min-width: 30px; height: 30px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 96%, transparent); color: var(--template-text); }
     @media (max-width: 720px) {
+      .template-runtime-shell[data-field-columns='2'] .template-fields,
+      .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: 1fr; }
+      .template-runtime-shell[data-label-position='inline'] .template-field { display: flex; flex-direction: column; gap: 8px; }
+      .template-runtime-shell[data-label-position='inline'] .template-field-label-row { padding-top: 0; }
       .template-gallery-grid { grid-template-columns: 1fr; }
       .template-image-gallery-list { grid-template-columns: 1fr; }
     }
