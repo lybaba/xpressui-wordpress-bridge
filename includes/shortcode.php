@@ -163,17 +163,22 @@ function xpressui_render_shortcode( $atts ) {
 	// Enqueue the bundled XPressUI light runtime.
 	// Served from plugin/runtime/, never from uploads.
 	// -----------------------------------------------------------------
-	$runtime_handle = 'xpressui-light-runtime';
-	$runtime_url    = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
+	$runtime_handle    = 'xpressui-light-runtime';
+	$runtime_url       = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
+	$runtime_file_path = XPRESSUI_BRIDGE_DIR . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
 
-	// Allow extensions (e.g. the pro plugin) to override the runtime URL.
-	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
+	// Allow extensions (e.g. the pro plugin) to override the runtime URL and file path.
+	$runtime_url       = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
+	$runtime_file_path = (string) apply_filters( 'xpressui_runtime_file_path', $runtime_file_path, $slug );
+
+	// Use file mtime as cache-bust version so rebuilds invalidate the browser cache without a version bump.
+	$runtime_ver = file_exists( $runtime_file_path ) ? (string) filemtime( $runtime_file_path ) : XPRESSUI_BRIDGE_RUNTIME_VERSION;
 
 	wp_enqueue_script(
 		$runtime_handle,
 		$runtime_url,
 		[],
-		XPRESSUI_BRIDGE_RUNTIME_VERSION,
+		$runtime_ver,
 		false
 	);
 

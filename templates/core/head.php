@@ -350,6 +350,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .xpui-capture-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px 32px; text-align: center; max-width: 320px; }
     .xpui-capture-title { font-size: 15px; font-weight: 600; color: #0f172a; }
     .xpui-capture-qr { width: 200px; height: 200px; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
+    .xpui-capture-qr[hidden] { display: none !important; }
     .xpui-capture-status { font-size: 13px; color: #64748b; }
     #xpressui-root [data-mobile-capture-btn] { cursor: pointer; background: color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 30%, transparent); color: var(--template-primary); font-size: 12px; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
     #xpressui-root [data-mobile-capture-btn]:hover { background: color-mix(in srgb, var(--template-primary) 16%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 50%, transparent); transform: translateY(-1px); }
@@ -400,6 +401,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-upload-box.xpui-capture-only .template-upload-pills,
     .template-upload-box.xpui-capture-only input[type="file"] { display: none !important; }
     .template-upload-box.xpui-capture-only { justify-items: center; }
+    [data-field-type="camera-photo"] .template-upload-selection { width: fit-content; min-width: 0; padding: 8px; }
     #xpressui-root .xpressui-signature-wrap { display: flex; flex-direction: column; gap: 8px; }
     #xpressui-root .xpressui-signature-canvas { border: 1px solid var(--template-border); border-radius: 6px; background: var(--template-surface); cursor: crosshair; touch-action: none; pointer-events: auto; width: 100%; max-width: 580px; display: block; }
     #xpressui-root .xpressui-signature-actions { display: flex; align-items: center; gap: 12px; }

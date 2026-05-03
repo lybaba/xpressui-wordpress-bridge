@@ -30,7 +30,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <dialog class="xpui-capture-dialog" data-mobile-capture-modal>
     <div class="xpui-capture-panel">
       <div class="xpui-capture-title" data-mobile-capture-modal-title>Scan to capture on your phone</div>
-      <img class="xpui-capture-qr" data-mobile-capture-modal-qr alt="QR code" />
+      <img class="xpui-capture-qr" data-mobile-capture-modal-qr alt="QR code" hidden />
       <div class="xpui-capture-status" data-mobile-capture-modal-status>Waiting for capture…</div>
       <button type="button" class="template-field-pill" data-mobile-capture-modal-close>Cancel</button>
     </div>
