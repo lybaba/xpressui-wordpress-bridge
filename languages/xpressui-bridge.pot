@@ -39,6 +39,10 @@ msgstr ""
 msgid "A required submission identifier is missing."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1977
+msgid "Accepted: screenshot image"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:180
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:369
 msgid "Actions"
@@ -134,7 +138,7 @@ msgid "Auto hides section titles when the workflow only contains one section."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:843
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:152
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:184
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:452
 msgid "Book an appointment"
 msgstr ""
@@ -277,14 +281,14 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2221
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2252
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2286
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2290
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2308
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2328
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2349
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2413
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2246
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2277
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2311
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2315
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2333
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2353
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2374
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2438
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:425
 msgid "Empty"
 msgstr ""
@@ -301,7 +305,7 @@ msgstr ""
 msgid "Error."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2276
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2301
 msgid "Estimated total: %s"
 msgstr ""
 
@@ -377,7 +381,7 @@ msgstr ""
 msgid "Invalid workflow slug."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2259
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2284
 msgid "Item"
 msgstr ""
 
@@ -444,7 +448,7 @@ msgstr ""
 msgid "New submission: %s"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2410
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2435
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:262
 msgid "No"
 msgstr ""
@@ -624,7 +628,7 @@ msgstr ""
 msgid "Projects"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2260
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2285
 msgid "Qty"
 msgstr ""
 
@@ -788,7 +792,7 @@ msgstr ""
 msgid "Shows which runtime the plugin shell will try to load and whether the bundled files are present."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2424
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2449
 msgid "Signature"
 msgstr ""
 
@@ -1136,7 +1140,7 @@ msgid "Too many uploaded files."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:173
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2262
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2287
 msgid "Total"
 msgstr ""
 
@@ -1163,7 +1167,7 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2261
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2286
 msgid "Unit"
 msgstr ""
 
@@ -1313,7 +1317,7 @@ msgstr ""
 msgid "XPressUI submissions"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2410
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2435
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:262
 msgid "Yes"
 msgstr ""
@@ -1372,7 +1376,7 @@ msgstr ""
 msgid "[xpressui] error: could not resolve the uploads directory."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:138
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:170
 msgid "[xpressui] error: form fragment template not found."
 msgstr ""
 
@@ -1380,7 +1384,7 @@ msgstr ""
 msgid "[xpressui] error: no package found for id \"%s\". Please install the workflow package first."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:129
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:161
 msgid "[xpressui] error: template runtime not found."
 msgstr ""
 

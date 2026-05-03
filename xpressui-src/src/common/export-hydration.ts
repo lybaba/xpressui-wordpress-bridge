@@ -135,7 +135,7 @@ export function createExportHydrationRuntimeConfig(options: TCreateExportHydrati
   const sectionNames = customSections.map((section) => section.name);
   const fields = sectionNames.flatMap((sectionName) => options.config.sections[sectionName] ?? []);
   const workflowConfig = options.config.workflowConfig;
-  const hasUploadFields = fields.some((field) => ['file', 'upload-image', 'camera-photo', 'qr-scan', 'document-scan'].includes(field.type));
+  const hasUploadFields = fields.some((field) => ['file', 'upload-image', 'camera-photo', 'camera-photo-list', 'qr-scan', 'document-scan', 'payment-proof'].includes(field.type));
   const endpoint = resolveHydrationSubmissionEndpoint({
     providerMode: workflowConfig?.providerMode,
     submissionEndpoint: workflowConfig?.submissionEndpoint,

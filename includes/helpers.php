@@ -1939,6 +1939,7 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 		'upload-image'     => 'file',
 		'camera-photo'     => 'file',
 		'camera-photo-list' => 'file',
+		'payment-proof'    => 'file',
 	];
 
 	$sections = [];
@@ -1962,6 +1963,19 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 			$field['helpText']    = $field['helpText'] ?? '';
 			$field['accept']      = $field['accept'] ?? '';
 			$field['capture']     = $field['capture'] ?? '';
+			if ( $type === 'payment-proof' ) {
+				if ( empty( $field['accept'] ) ) {
+					$field['accept'] = 'image/*';
+				}
+				$field['payment_provider']       = (string) ( $field['paymentProvider'] ?? $field['payment_provider'] ?? 'manual' );
+				$field['payment_provider_label'] = ucwords( str_replace( [ '-', '_' ], ' ', $field['payment_provider'] ) );
+				$field['payment_merchant_name']  = $field['merchantName'] ?? $field['merchant_name'] ?? '';
+				$field['payment_merchant_phone'] = $field['merchantPhone'] ?? $field['merchant_phone'] ?? '';
+				$field['payment_amount']         = $field['paymentAmount'] ?? $field['payment_amount'] ?? '';
+				$field['payment_currency']       = $field['paymentCurrency'] ?? $field['payment_currency'] ?? 'XOF';
+				$field['payment_instructions']   = $field['paymentInstructions'] ?? $field['payment_instructions'] ?? '';
+				$field['upload_accept_label']    = $field['upload_accept_label'] ?? __( 'Accepted: screenshot image', 'xpressui-bridge' );
+			}
 			if ( $type === 'camera-photo-list' ) {
 				$min_files                        = (int) ( $field['minFiles'] ?? 2 );
 				$max_files                        = (int) ( $field['maxFiles'] ?? 5 );

@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 
 type TMobileCaptureHost = any;
 
-const CAPTURE_ELIGIBLE_TYPES = new Set(['signature', 'camera-photo', 'qr-scan', 'document-scan']);
+const CAPTURE_ELIGIBLE_TYPES = new Set(['signature', 'camera-photo', 'camera-photo-list', 'qr-scan', 'document-scan']);
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -75,8 +75,8 @@ async function openCaptureModal(
   if (!qrImg || !statusText) return;
 
   qrImg.removeAttribute('src');
-  qrImg.removeAttribute('hidden');
-  statusText.textContent = 'Waiting for capture…';
+  qrImg.toggleAttribute('hidden', true);
+  statusText.textContent = 'Generating QR code…';
   statusText.style.color = '';
 
   const abort = new AbortController();
@@ -96,6 +96,7 @@ async function openCaptureModal(
 
   try {
     qrImg.src = await QRCode.toDataURL(session.captureUrl, { width: 200, margin: 2 });
+    qrImg.removeAttribute('hidden');
   } catch {
     qrImg.toggleAttribute('hidden', true);
   }
@@ -125,8 +126,7 @@ async function openCaptureModal(
   abort.signal.addEventListener('abort', () => clearInterval(interval));
 }
 
-async function applyCameraPhotoCaptureToField(fieldWrap: HTMLElement, fn: string, data: string): Promise<void> {
-  // data may be a JSON string {"attachmentId":X,"url":"..."} from the relay
+function resolveImageUrl(data: string): string {
   let imageUrl = data;
   if (data.charAt(0) === '{') {
     try {
@@ -134,26 +134,187 @@ async function applyCameraPhotoCaptureToField(fieldWrap: HTMLElement, fn: string
       if (parsed.url) imageUrl = parsed.url;
     } catch { /* keep data as-is */ }
   }
+  if (window.location.protocol === 'https:' && imageUrl.startsWith('http://')) {
+    imageUrl = 'https://' + imageUrl.slice(7);
+  }
+  return imageUrl;
+}
 
-  const preview = fieldWrap.querySelector(`[data-camera-capture-preview="${fn}"]`) as HTMLImageElement | null;
-  if (preview && imageUrl) {
-    preview.src = imageUrl;
-    preview.removeAttribute('hidden');
+function updateFileInputFiles(fieldWrap: HTMLElement, fn: string, files: File[]): void {
+  const fileInput = fieldWrap.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
+  if (!fileInput || typeof DataTransfer === 'undefined') return;
+  const dt = new DataTransfer();
+  for (const f of files) dt.items.add(f);
+  fileInput.files = dt.files;
+  fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function openLightbox(fieldWrap: HTMLElement, imageUrl: string): void {
+  const galleryDialog = (
+    fieldWrap.closest('[data-template-zone="form_frame"]')?.querySelector('[data-product-gallery-modal]') ??
+    document.querySelector('[data-product-gallery-modal]')
+  ) as HTMLDialogElement | null;
+  if (!galleryDialog) { window.open(imageUrl, '_blank', 'noopener'); return; }
+  const mainImg = galleryDialog.querySelector('[data-product-gallery-main]') as HTMLImageElement | null;
+  const titleEl = galleryDialog.querySelector('[data-product-gallery-title]') as HTMLElement | null;
+  const thumbsEl = galleryDialog.querySelector('[data-product-gallery-thumbs]') as HTMLElement | null;
+  if (mainImg) mainImg.src = imageUrl;
+  if (titleEl) titleEl.textContent = '';
+  if (thumbsEl) thumbsEl.replaceChildren();
+  galleryDialog.showModal();
+  const abort = new AbortController();
+  const doClose = () => { galleryDialog.close(); abort.abort(); };
+  galleryDialog.querySelector('[data-product-gallery-close]')?.addEventListener('click', doClose, { once: true, signal: abort.signal as any });
+  galleryDialog.addEventListener('click', (ev) => { if (ev.target === galleryDialog) doClose(); }, { once: true, signal: abort.signal as any });
+}
+
+function createPhotoPlaceholder(fn: string, labelText: string): HTMLElement {
+  const el = document.createElement('label');
+  el.className = 'xpui-photo-thumb xpui-photo-thumb--placeholder';
+  el.setAttribute('for', fn);
+  el.setAttribute('data-photo-placeholder', fn);
+  el.innerHTML = `<span class="xpui-photo-thumb-icon">📷</span><span class="xpui-photo-thumb-text">${labelText}</span>`;
+  return el;
+}
+
+function initCameraPhotoField(
+  host: TMobileCaptureHost,
+  fieldWrap: HTMLElement,
+  fn: string,
+  type: string,
+  projectSlug: string,
+): void {
+  const isList = type === 'camera-photo-list';
+  const grid = fieldWrap.querySelector(`[data-photo-grid="${fn}"]`) as HTMLElement | null;
+  if (!grid) return;
+
+  const capturedFiles: File[] = [];
+  const placeholderText = isList ? 'Add photo' : 'Capture on mobile';
+
+  const getFileInput = (): HTMLElement | null =>
+    grid.querySelector(`input[type="file"][data-name="${fn}"]`);
+
+  // ── Mobile path: file input change → read blob → show thumbnail ──────────────
+  if (!isDesktopBrowser()) {
+    const fileInput = grid.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
+    if (!fileInput) return;
+    fileInput.addEventListener('change', (event) => {
+      if (!event.isTrusted) return;
+      Array.from(fileInput.files ?? []).forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          if (!dataUrl) return;
+          const placeholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
+          const thumb = document.createElement('div');
+          thumb.className = 'xpui-photo-thumb xpui-photo-thumb--captured';
+          const img = document.createElement('img');
+          img.alt = '';
+          img.src = dataUrl;
+          img.onclick = () => openLightbox(fieldWrap, dataUrl);
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'xpui-photo-thumb-remove';
+          removeBtn.setAttribute('aria-label', 'Remove photo');
+          removeBtn.textContent = '×';
+          thumb.appendChild(img);
+          thumb.appendChild(removeBtn);
+          if (placeholder) { grid.insertBefore(thumb, placeholder); placeholder.remove(); }
+          else { grid.insertBefore(thumb, getFileInput()); }
+          capturedFiles.push(file);
+          updateFileInputFiles(fieldWrap, fn, capturedFiles);
+          removeBtn.onclick = () => {
+            const idx = capturedFiles.indexOf(file);
+            if (idx !== -1) capturedFiles.splice(idx, 1);
+            updateFileInputFiles(fieldWrap, fn, capturedFiles);
+            // Restored placeholder naturally opens camera via label[for] — no JS needed.
+            grid.insertBefore(createPhotoPlaceholder(fn, placeholderText), thumb);
+            thumb.remove();
+          };
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    return;
   }
 
-  const fileInput = fieldWrap.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
-  if (fileInput && typeof DataTransfer !== 'undefined') {
+  // ── Desktop path: placeholder click → QR modal ───────────────────────────────
+  const handleCapture = async (data: string): Promise<void> => {
+    const imageUrl = resolveImageUrl(data);
+
+    // Find and remove the first empty placeholder.
+    const placeholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
+
+    // Build the captured thumbnail.
+    const thumb = document.createElement('div');
+    thumb.className = 'xpui-photo-thumb xpui-photo-thumb--captured';
+
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = imageUrl;
+    img.onclick = () => openLightbox(fieldWrap, imageUrl);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'xpui-photo-thumb-remove';
+    removeBtn.setAttribute('aria-label', 'Remove photo');
+    removeBtn.textContent = '×';
+
+    thumb.appendChild(img);
+    thumb.appendChild(removeBtn);
+
+    // Replace the placeholder with the thumb (or append before the input if no placeholder left).
+    if (placeholder) {
+      grid.insertBefore(thumb, placeholder);
+      placeholder.remove();
+    } else {
+      grid.insertBefore(thumb, getFileInput());
+    }
+
+    // Fetch blob and wire up the remove button.
     try {
       const blob = await fetch(imageUrl).then((r) => r.blob());
-      const file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' });
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      fileInput.files = dt.files;
-      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      const file = new File(
+        [blob],
+        isList ? `photo-${capturedFiles.length + 1}.jpg` : 'photo.jpg',
+        { type: blob.type || 'image/jpeg' },
+      );
+      capturedFiles.push(file);
+      updateFileInputFiles(fieldWrap, fn, capturedFiles);
+
+      removeBtn.onclick = () => {
+        const idx = capturedFiles.indexOf(file);
+        if (idx !== -1) capturedFiles.splice(idx, 1);
+        updateFileInputFiles(fieldWrap, fn, capturedFiles);
+        // Restore a placeholder at this position so the slot is reusable.
+        const restored = createPhotoPlaceholder(fn, placeholderText);
+        attachClick(restored);
+        grid.insertBefore(restored, thumb);
+        thumb.remove();
+      };
     } catch {
-      // fetch or DataTransfer failed — preview only
+      // Fetch failed — thumbnail is shown but file input won't be set.
+      removeBtn.onclick = () => {
+        const restored = createPhotoPlaceholder(fn, placeholderText);
+        attachClick(restored);
+        grid.insertBefore(restored, thumb);
+        thumb.remove();
+      };
     }
+  };
+
+  // Must be a function declaration so it can be referenced before definition inside handleCapture.
+  function attachClick(placeholder: HTMLElement): void {
+    placeholder.addEventListener('click', (e) => {
+      e.preventDefault(); // prevent the label from opening the file dialog on desktop
+      void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));
+    });
   }
+
+  // Wire up all server-rendered placeholders.
+  Array.from(grid.querySelectorAll(`[data-photo-placeholder="${fn}"]`)).forEach((p) =>
+    attachClick(p as HTMLElement),
+  );
 }
 
 function applySignatureCaptureToCanvas(fieldWrap: HTMLElement, fn: string, dataUrl: string): void {
@@ -175,24 +336,28 @@ export function createMobileCaptureRuntime(host: TMobileCaptureHost) {
   return {
     initField(fieldConfig: { name: string; type: string }) {
       if (!CAPTURE_ELIGIBLE_TYPES.has(fieldConfig.type)) return;
-      if (!isDesktopBrowser()) return;
 
       const fn = fieldConfig.name;
       const fieldWrap = host.querySelector(`[data-field-name="${fn}"]`) as HTMLElement | null;
       if (!fieldWrap) return;
 
+      const projectSlug = host.querySelector('[data-project-slug]')?.dataset?.projectSlug ?? '';
+
+      // Photo-grid path: handles both mobile (file input change) and desktop (QR modal).
+      if (fieldConfig.type === 'camera-photo' || fieldConfig.type === 'camera-photo-list') {
+        initCameraPhotoField(host, fieldWrap, fn, fieldConfig.type, projectSlug);
+        return;
+      }
+
+      // Button path for signature, qr-scan, document-scan: desktop only.
+      if (!isDesktopBrowser()) return;
       const btn = fieldWrap.querySelector(`[data-mobile-capture-btn="${fn}"]`) as HTMLButtonElement | null;
       if (!btn) return;
 
       btn.removeAttribute('hidden');
 
-      // For camera-photo: hide the file upload box on desktop — live capture via mobile is the only path.
-      if (fieldConfig.type === 'camera-photo') {
-        const uploadBox = fieldWrap.querySelector('.template-upload-box') as HTMLElement | null;
-        if (uploadBox) uploadBox.classList.add('xpui-capture-only');
-      }
-
-      const projectSlug = host.querySelector('[data-project-slug]')?.dataset?.projectSlug ?? '';
+      const uploadBox = fieldWrap.querySelector('.template-upload-box') as HTMLElement | null;
+      if (uploadBox) uploadBox.classList.add('xpui-capture-only');
 
       btn.addEventListener('click', () => {
         openCaptureModal(host, fn, fieldConfig.type, projectSlug, (data) => {
@@ -203,9 +368,8 @@ export function createMobileCaptureRuntime(host: TMobileCaptureHost) {
               input.value = data;
               input.dispatchEvent(new Event('input', { bubbles: true }));
             }
-          } else if (fieldConfig.type === 'camera-photo') {
-            void applyCameraPhotoCaptureToField(fieldWrap, fn, data);
           } else {
+            // qr-scan, document-scan
             const input = fieldWrap.querySelector(`input[data-name="${fn}"]`) as HTMLInputElement | null;
             if (input) {
               input.value = data;

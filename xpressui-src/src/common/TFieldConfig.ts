@@ -41,6 +41,12 @@ type TFieldConfig = {
     accept?: string;
     capture?: 'user' | 'environment';
     multiple?: boolean;
+    paymentProvider?: string;
+    merchantName?: string;
+    merchantPhone?: string;
+    paymentAmount?: number | string;
+    paymentCurrency?: string;
+    paymentInstructions?: string;
     documentScanMode?: 'single' | 'double';
     enableDocumentOcr?: boolean;
     requireValidDocumentMrz?: boolean;

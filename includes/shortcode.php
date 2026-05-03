@@ -138,8 +138,11 @@ function xpressui_render_shortcode( $atts ) {
 								$xp_fld['max_files']                 = $xp_max;
 								$xp_fld['photo_placeholder_slots']   = array_fill( 0, $xp_max, null );
 							}
-						} elseif ( $xp_type === 'camera-photo' ) {
+						} elseif ( $xp_type === 'camera-photo' || $xp_type === 'payment-proof' ) {
 							$xp_fld['input_type'] = 'file';
+							if ( $xp_type === 'payment-proof' && empty( $xp_fld['accept'] ) ) {
+								$xp_fld['accept'] = 'image/*';
+							}
 						}
 						$patched_fields[] = $xp_fld;
 					}

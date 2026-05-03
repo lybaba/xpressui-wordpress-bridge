@@ -237,6 +237,17 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
     if (fieldType === "selectproduct") {
       return "select-product";
     }
+    if (
+      fieldType === "paymentproof" ||
+      fieldType === "payment-screenshot" ||
+      fieldType === "paymentscreenshot" ||
+      fieldType === "camera-screenshot" ||
+      fieldType === "camerascreenshot" ||
+      fieldType === "wave-payment-proof" ||
+      fieldType === "wavepaymentproof"
+    ) {
+      return "payment-proof";
+    }
 
     return fieldType;
   };

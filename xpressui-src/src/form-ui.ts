@@ -1121,6 +1121,9 @@ export class HydratedFormHost extends HTMLElement {
     }
 
     if (!this.isQrScanField(fieldConfig)) {
+      if (input.multiple && input.files && input.files.length > 1) {
+        return Array.from(input.files);
+      }
       return files;
     }
 
@@ -1945,6 +1948,8 @@ export class HydratedFormHost extends HTMLElement {
       ? "Capture or upload the front and back of your document."
       : this.isQrScanField(fieldConfig)
         ? "Use the camera or upload an image containing a QR code."
+        : fieldConfig.type === "payment-proof"
+          ? "Upload the payment confirmation screenshot from your device."
         : fieldConfig.type === "upload-image"
       ? "Drop an image here or use the file picker."
       : "Drop files here or use the file picker."

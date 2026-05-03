@@ -32,10 +32,12 @@ export const EMAIL_TYPE = 'email';
 export const UPLOAD_FILE_TYPE = 'file';
 export const UPLOAD_IMAGE_TYPE = 'upload-image';
 export const CAMERA_PHOTO_TYPE = 'camera-photo';
+export const CAMERA_PHOTO_LIST_TYPE = 'camera-photo-list';
 export const QR_SCAN_TYPE = 'qr-scan';
 export const DOCUMENT_SCAN_TYPE = 'document-scan';
 export const SIGNATURE_TYPE = 'signature';
 export const PAYMENT_STRIPE_TYPE = 'payment-stripe';
+export const PAYMENT_PROOF_TYPE = 'payment-proof';
 export const IMAGE_TYPE = 'image';
 export const NUMBER_TYPE = 'number';
 export const POSITIVE_INTEGER_TYPE = 'integer';
@@ -127,6 +129,7 @@ export const URL_TYPE_FIELD: TFieldType = { type: URL_TYPE, name: 'URL' };
 export const IMAGE_TYPE_FIELD: TFieldType = { type: IMAGE_TYPE, name: 'Image' };
 export const UPLOAD_IMAGE_TYPE_FIELD: TFieldType = { type: UPLOAD_IMAGE_TYPE, name: 'Upload Image' };
 export const UPLOAD_FILE_TYPE_FIELD: TFieldType = { type: UPLOAD_FILE_TYPE, name: 'Upload File' };
+export const PAYMENT_PROOF_TYPE_FIELD: TFieldType = { type: PAYMENT_PROOF_TYPE, name: 'Payment Proof' };
 export const DATETIME_TYPE_FIELD: TFieldType = { type: DATETIME_TYPE, name: 'Date / Time' };
 export const DATE_TYPE_FIELD: TFieldType = { type: DATE_TYPE, name: 'Date' };
 export const TIME_TYPE_FIELD: TFieldType = { type: TIME_TYPE, name: 'Time' };
@@ -152,6 +155,7 @@ export const REQUEST_FORM_FIELD_TYPES: Array<TFieldType> = [
     IMAGE_TYPE_FIELD,
     UPLOAD_IMAGE_TYPE_FIELD,
     UPLOAD_FILE_TYPE_FIELD,
+    PAYMENT_PROOF_TYPE_FIELD,
     { type: PRODUCT_LIST_TYPE, name: 'Product Catalog' },
     { type: SELECT_PRODUCT_TYPE, name: 'Select Product' },
     { type: IMAGE_GALLERY_TYPE, name: 'Select Image' },
@@ -183,8 +187,10 @@ export const isFileFieldType = (type: string): boolean => {
     return type === UPLOAD_FILE_TYPE ||
         type === UPLOAD_IMAGE_TYPE ||
         type === CAMERA_PHOTO_TYPE ||
+        type === CAMERA_PHOTO_LIST_TYPE ||
         type === QR_SCAN_TYPE ||
-        type === DOCUMENT_SCAN_TYPE;
+        type === DOCUMENT_SCAN_TYPE ||
+        type === PAYMENT_PROOF_TYPE;
 }
 
 export const isFileLikeValue = (value: any): boolean => {
@@ -341,8 +347,10 @@ export const getHtmlInputType = (fieldType: string): string => {
         case UPLOAD_FILE_TYPE:
         case UPLOAD_IMAGE_TYPE:
         case CAMERA_PHOTO_TYPE:
+        case CAMERA_PHOTO_LIST_TYPE:
         case QR_SCAN_TYPE:
         case DOCUMENT_SCAN_TYPE:
+        case PAYMENT_PROOF_TYPE:
             return "file";
 
         default:
@@ -427,6 +435,11 @@ export const getHtmlInputProps = (fieldConfig: TFieldConfig): Record<string, any
                 }
             }
 
+
+        case PAYMENT_PROOF_TYPE:
+            return {
+                accept: fieldConfig.accept || "image/*"
+            }
 
         default:
             return {}
