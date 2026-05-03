@@ -18,7 +18,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <div class="xpui-cart-overlay" data-product-cart-overlay data-state="closed" aria-hidden="true">
     <aside class="xpui-cart-panel" data-product-list-global-cart data-product-cart-panel aria-label="Mini cart"></aside>
   </div>
-  <dialog class="xpui-gallery-dialog" data-product-gallery-modal aria-label="Product gallery">
+  <dialog class="xpui-gallery-dialog" data-product-gallery-modal aria-label="Product gallery" style="display:none;">
     <div class="xpui-gallery-panel">
       <button type="button" class="btn xpui-gallery-close" data-product-gallery-close aria-label="Close gallery">×</button>
       <div class="xpui-gallery-title" data-product-gallery-title></div>
@@ -27,7 +27,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       <div class="xpui-gallery-thumbs" data-product-gallery-thumbs></div>
     </div>
   </dialog>
-  <dialog class="xpui-capture-dialog" data-mobile-capture-modal>
+  <dialog class="xpui-capture-dialog" data-mobile-capture-modal style="display:none;">
     <div class="xpui-capture-panel">
       <div class="xpui-capture-title" data-mobile-capture-modal-title>Scan to capture on your phone</div>
       <img class="xpui-capture-qr" data-mobile-capture-modal-qr alt="QR code" hidden />
