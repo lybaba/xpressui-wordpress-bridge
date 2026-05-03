@@ -16,17 +16,31 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <div
     class="xpui-photo-grid"
     data-photo-grid="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_files'))): ?>
-data-photo-grid-max="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_files'))); ?>"<?php endif; ?>
+    data-photo-grid-min="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'min_files'), 2))); ?>"
+    data-photo-grid-max="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_files'), 5))); ?>"
   >
+<?php
+$xpressui_loop_parent_ctx_2 = $xpressui_ctx;
+$xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'photo_placeholder_slots'));
+foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_value_4):
+    $xpressui_ctx = $xpressui_loop_parent_ctx_2;
+    $xpressui_ctx['slot'] = $xpressui_loop_value_4;
+    $xpressui_ctx['loop'] = [
+        'index'  => $xpressui_loop_index_3 + 1,
+        'index0' => $xpressui_loop_index_3,
+        'first'  => $xpressui_loop_index_3 === 0,
+        'last'   => ($xpressui_loop_index_3 + 1) === count($xpressui_loop_items_1),
+    ];
+?>
     <label
       class="xpui-photo-thumb xpui-photo-thumb--placeholder"
       for="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
       data-photo-placeholder="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
     >
       <span class="xpui-photo-thumb-icon">📷</span>
-      <span class="xpui-photo-thumb-text"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Capture on mobile", 'xpressui-bridge'))); ?></span>
+      <span class="xpui-photo-thumb-text"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Add photo", 'xpressui-bridge'))); ?></span>
     </label>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
     <input
       id="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
       class="template-input"
@@ -36,6 +50,7 @@ data-photo-grid-max="<?php echo esc_attr(xpressui_bridge_template_stringify(xpre
       data-label="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'label'))); ?>"
       data-type="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'))); ?>"
       data-section-name="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'section'), 'name'))); ?>"
+      multiple
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'accept'))): ?>
 accept="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'accept'))); ?>"<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'capture'))): ?>

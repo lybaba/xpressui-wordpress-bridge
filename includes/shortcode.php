@@ -120,6 +120,35 @@ function xpressui_render_shortcode( $atts ) {
 		$template_context['rendered_form']['show_title']           = $show_project_title;
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
+		// Ensure camera-photo-list/camera-photo fields always have the right input_type and
+		// photo_placeholder_slots (may be absent in old exports that pre-date this feature).
+		if ( ! empty( $template_context['rendered_form']['sections'] ) ) {
+			$patched_sections = [];
+			foreach ( $template_context['rendered_form']['sections'] as $xp_sec ) {
+				if ( ! empty( $xp_sec['fields'] ) ) {
+					$patched_fields = [];
+					foreach ( $xp_sec['fields'] as $xp_fld ) {
+						$xp_type = (string) ( $xp_fld['type'] ?? '' );
+						if ( $xp_type === 'camera-photo-list' ) {
+							$xp_fld['input_type'] = 'file';
+							if ( ! isset( $xp_fld['photo_placeholder_slots'] ) ) {
+								$xp_min                              = (int) ( $xp_fld['minFiles'] ?? $xp_fld['min_files'] ?? 2 );
+								$xp_max                              = (int) ( $xp_fld['maxFiles'] ?? $xp_fld['max_files'] ?? 5 );
+								$xp_fld['min_files']                 = $xp_min;
+								$xp_fld['max_files']                 = $xp_max;
+								$xp_fld['photo_placeholder_slots']   = array_fill( 0, $xp_max, null );
+							}
+						} elseif ( $xp_type === 'camera-photo' ) {
+							$xp_fld['input_type'] = 'file';
+						}
+						$patched_fields[] = $xp_fld;
+					}
+					$xp_sec['fields'] = $patched_fields;
+				}
+				$patched_sections[] = $xp_sec;
+			}
+			$template_context['rendered_form']['sections'] = $patched_sections;
+		}
 	}
 
 	// Ensure the PHP template runtime helpers are available.

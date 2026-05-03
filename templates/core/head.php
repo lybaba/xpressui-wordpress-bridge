@@ -401,7 +401,17 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-upload-box.xpui-capture-only .template-upload-pills,
     .template-upload-box.xpui-capture-only input[type="file"] { display: none !important; }
     .template-upload-box.xpui-capture-only { justify-items: center; }
-    [data-field-type="camera-photo"] .template-upload-selection { width: fit-content; min-width: 0; padding: 8px; }
+    .xpui-photo-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+    .xpui-photo-thumb { position: relative; width: 96px; height: 96px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: flex; }
+    .xpui-photo-thumb--placeholder { flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); cursor: pointer; text-decoration: none; transition: border-color 0.15s, background 0.15s; padding: 6px; box-sizing: border-box; }
+    .xpui-photo-thumb--placeholder:hover { border-color: var(--template-primary); background: color-mix(in srgb, var(--template-primary) 6%, var(--template-surface)); }
+    .xpui-photo-thumb-icon { font-size: 22px; line-height: 1; }
+    .xpui-photo-thumb-text { font-size: 10px; font-weight: 700; color: var(--template-muted-text); text-align: center; line-height: 1.2; }
+    .xpui-photo-thumb--placeholder:hover .xpui-photo-thumb-text { color: var(--template-primary); }
+    .xpui-photo-thumb--captured { background: #000; cursor: zoom-in; }
+    .xpui-photo-thumb--captured img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .xpui-photo-thumb-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(15,23,42,0.65); color: #fff; border: none; cursor: pointer; font-size: 14px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; backdrop-filter: blur(2px); transition: background 0.12s; }
+    .xpui-photo-thumb-remove:hover { background: #ef4444; }
     #xpressui-root .xpressui-signature-wrap { display: flex; flex-direction: column; gap: 8px; }
     #xpressui-root .xpressui-signature-canvas { border: 1px solid var(--template-border); border-radius: 6px; background: var(--template-surface); cursor: crosshair; touch-action: none; pointer-events: auto; width: 100%; max-width: 580px; display: block; }
     #xpressui-root .xpressui-signature-actions { display: flex; align-items: center; gap: 12px; }

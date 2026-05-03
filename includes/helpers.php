@@ -1926,17 +1926,19 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 
 	// Map form.config.json field types to HTML input types expected by the templates.
 	$input_type_map = [
-		'text'      => 'text',
-		'email'     => 'email',
-		'tel'       => 'tel',
-		'url'       => 'url',
-		'number'    => 'number',
-		'price'     => 'number',
-		'date'      => 'date',
-		'time'      => 'time',
-		'password'  => 'password',
-		'file'      => 'file',
-		'upload-image' => 'file',
+		'text'             => 'text',
+		'email'            => 'email',
+		'tel'              => 'tel',
+		'url'              => 'url',
+		'number'           => 'number',
+		'price'            => 'number',
+		'date'             => 'date',
+		'time'             => 'time',
+		'password'         => 'password',
+		'file'             => 'file',
+		'upload-image'     => 'file',
+		'camera-photo'     => 'file',
+		'camera-photo-list' => 'file',
 	];
 
 	$sections = [];
@@ -1960,6 +1962,15 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 			$field['helpText']    = $field['helpText'] ?? '';
 			$field['accept']      = $field['accept'] ?? '';
 			$field['capture']     = $field['capture'] ?? '';
+			if ( $type === 'camera-photo-list' ) {
+				$min_files                        = (int) ( $field['minFiles'] ?? 2 );
+				$max_files                        = (int) ( $field['maxFiles'] ?? 5 );
+				$field['min_files']               = $min_files;
+				$field['max_files']               = $max_files;
+				$field['photo_placeholder_slots'] = array_fill( 0, $max_files, null );
+			} elseif ( $type === 'camera-photo' ) {
+				$field['max_files'] = isset( $field['maxFiles'] ) ? (int) $field['maxFiles'] : null;
+			}
 			$fields[]             = $field;
 		}
 

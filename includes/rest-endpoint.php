@@ -816,18 +816,24 @@ function xpressui_attach_file_references( $payload, array $stored_files ) {
 	if ( ! is_array( $payload ) || empty( $stored_files ) ) {
 		return $payload;
 	}
+	// Group refs by field name so multi-file fields produce an array instead of
+	// overwriting the entry on each iteration.
+	$by_field = [];
 	foreach ( $stored_files as $file ) {
 		$field_name = isset( $file['field'] ) ? (string) $file['field'] : '';
 		if ( $field_name === '' ) {
 			continue;
 		}
-		$payload[ $field_name ] = [
+		$by_field[ $field_name ][] = [
 			'field'        => $field_name,
 			'kind'         => 'uploaded-file',
 			'originalName' => isset( $file['originalName'] ) ? (string) $file['originalName'] : '',
 			'attachmentId' => isset( $file['attachmentId'] ) ? (int) $file['attachmentId'] : 0,
 			'url'          => isset( $file['url'] ) ? (string) $file['url'] : '',
 		];
+	}
+	foreach ( $by_field as $field_name => $refs ) {
+		$payload[ $field_name ] = count( $refs ) === 1 ? $refs[0] : $refs;
 	}
 	return $payload;
 }

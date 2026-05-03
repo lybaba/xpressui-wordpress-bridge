@@ -90,7 +90,7 @@ $xpressui_has_bg = !empty($xpressui_ctx['project']['background_image_url'])
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-submit-btn { cursor: pointer; font-size: 13px; line-height: 1.1; padding: 11px 16px; min-width: 112px; }
 /* Step title — prominent, clearly separated from fields */
 #<?php echo esc_attr($xpressui_mount_id); ?> .template-section-header { padding-bottom: 14px; border-bottom: 2px solid color-mix(in srgb, var(--template-primary, #2563eb) 18%, transparent); margin-bottom: 2px; }
-#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-label { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: var(--template-text, #0f172a); }
+#<?php echo esc_attr($xpressui_mount_id); ?> .template-section-label { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--template-text, #0f172a); }
 /* Step transition animation */
 @keyframes xpressui-step-in {
   from { opacity: 0; transform: translateY(10px); }

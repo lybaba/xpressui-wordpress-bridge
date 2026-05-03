@@ -26,6 +26,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php xpressui_bridge_template_include_template('fields/upload.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "camera-photo"))): ?>
 <?php xpressui_bridge_template_include_template('fields/camera-photo.php', $xpressui_ctx); ?>
+<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "camera-photo-list"))): ?>
+<?php xpressui_bridge_template_include_template('fields/camera-photo-list.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "qr-scan"))): ?>
 <?php xpressui_bridge_template_include_template('fields/qr-scan.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "document-scan"))): ?>
