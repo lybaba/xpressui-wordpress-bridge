@@ -96,15 +96,33 @@ function xpressui_render_shortcode( $atts ) {
 
 	if ( is_array( $form_config ) ) {
 		$form_config = xpressui_normalize_form_config( $form_config, $slug );
-		// Build rendered_form from config when absent from template context (no full Console export).
+		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );
+		// Refresh rendered_form sections from the live form config so shortcode output
+		// stays aligned with the current runtime even when template.context.json is stale.
 		if ( ! is_array( $template_context['rendered_form'] ?? null ) ) {
-			$template_context['rendered_form'] = xpressui_build_rendered_form_from_config( $form_config );
-			// Recompute section count now that rendered_form is populated.
-			$section_count        = count( $template_context['rendered_form']['sections'] );
-			$show_section_headers = 'show' === $section_label_visibility
-				? true
-				: ( 'hide' === $section_label_visibility ? false : $section_count > 1 );
+			$template_context['rendered_form'] = $fresh_rendered_form;
+		} elseif ( is_array( $fresh_rendered_form['sections'] ?? null ) ) {
+			$template_context['rendered_form']['sections'] = $fresh_rendered_form['sections'];
+			if ( isset( $fresh_rendered_form['navigation_labels'] ) ) {
+				$template_context['rendered_form']['navigation_labels'] = $fresh_rendered_form['navigation_labels'];
+			}
+			if ( isset( $fresh_rendered_form['submit_label'] ) ) {
+				$template_context['rendered_form']['submit_label'] = $fresh_rendered_form['submit_label'];
+			}
+			if ( isset( $fresh_rendered_form['step_status'] ) ) {
+				$template_context['rendered_form']['step_status'] = array_merge(
+					is_array( $template_context['rendered_form']['step_status'] ?? null )
+						? $template_context['rendered_form']['step_status']
+						: [],
+					$fresh_rendered_form['step_status']
+				);
+			}
 		}
+		// Recompute section count now that rendered_form is populated/refreshed.
+		$section_count        = count( $template_context['rendered_form']['sections'] ?? [] );
+		$show_section_headers = 'show' === $section_label_visibility
+			? true
+			: ( 'hide' === $section_label_visibility ? false : $section_count > 1 );
 		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
 			$template_context['runtime'] = [];
 		}

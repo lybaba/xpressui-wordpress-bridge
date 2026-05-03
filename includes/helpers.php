@@ -375,6 +375,26 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	// Allow extensions (e.g. the pro plugin) to modify the template context before rendering.
 	$template_context = apply_filters( 'xpressui_template_context', $template_context, $slug );
 	$template_context = xpressui_apply_additional_file_slots_to_template_context( $template_context, $slug );
+	$raw_form_config_json = $template_context['runtime']['form_config_json'] ?? '';
+	if ( '' === $raw_form_config_json ) {
+		$raw_form_config_json = xpressui_get_workflow_artifact_contents( $slug, 'config', 'form.config.json' );
+	}
+	$form_config = is_string( $raw_form_config_json ) && '' !== $raw_form_config_json
+		? json_decode( $raw_form_config_json, true )
+		: null;
+	if ( is_array( $form_config ) ) {
+		$form_config = xpressui_normalize_form_config( $form_config, $slug );
+		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );
+		if ( ! is_array( $template_context['rendered_form'] ?? null ) ) {
+			$template_context['rendered_form'] = $fresh_rendered_form;
+		} elseif ( is_array( $fresh_rendered_form['sections'] ?? null ) ) {
+			$template_context['rendered_form']['sections'] = $fresh_rendered_form['sections'];
+		}
+		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
+			$template_context['runtime'] = [];
+		}
+		$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
+	}
 
 	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
 	if ( ! file_exists( $runtime_file ) ) {
@@ -1923,6 +1943,45 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 	$sections_map    = is_array( $form_config['sections'] ?? null ) ? $form_config['sections'] : [];
 	$custom_sections = is_array( $sections_map['custom'] ?? null ) ? $sections_map['custom'] : [];
 	$step_count      = count( $custom_sections );
+	$legacy_type_map = [
+		'uploadfile'        => 'file',
+		'uploadimage'       => 'upload-image',
+		'paymentproof'      => 'payment-proof',
+		'payment-screenshot' => 'payment-proof',
+		'paymentscreenshot' => 'payment-proof',
+		'camera-screenshot' => 'payment-proof',
+		'camerascreenshot'  => 'payment-proof',
+		'wave-payment-proof' => 'payment-proof',
+		'wavepaymentproof'  => 'payment-proof',
+	];
+	$normalize_field_type = static function ( $type ) use ( $legacy_type_map ): string {
+		$type = is_string( $type ) ? trim( $type ) : '';
+		if ( '' === $type ) {
+			return 'text';
+		}
+		return $legacy_type_map[ $type ] ?? $type;
+	};
+	$build_upload_accept_label = static function ( string $type, array $field ): string {
+		if ( $type === 'upload-image' || $type === 'payment-proof' ) {
+			return 'Accepted: images';
+		}
+		if ( $type === 'camera-photo' || $type === 'camera-photo-list' ) {
+			return 'Accepted: camera images';
+		}
+		if ( $type === 'qr-scan' ) {
+			return 'Accepted: QR image or live camera';
+		}
+		if ( $type === 'document-scan' ) {
+			return 'Accepted: ID, passport image or PDF';
+		}
+
+		$accept = isset( $field['accept'] ) ? trim( (string) $field['accept'] ) : '';
+		if ( '' !== $accept ) {
+			return 'Accepted: ' . $accept;
+		}
+
+		return 'Accepted: documents';
+	};
 
 	// Map form.config.json field types to HTML input types expected by the templates.
 	$input_type_map = [
@@ -1939,6 +1998,8 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 		'upload-image'     => 'file',
 		'camera-photo'     => 'file',
 		'camera-photo-list' => 'file',
+		'qr-scan'          => 'file',
+		'document-scan'    => 'file',
 		'payment-proof'    => 'file',
 	];
 
@@ -1956,13 +2017,69 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 			if ( ! is_array( $field ) ) {
 				continue;
 			}
-			$type = (string) ( $field['type'] ?? 'text' );
+			$type = $normalize_field_type( $field['type'] ?? 'text' );
+			$field['type'] = $type;
 			$field['input_type']  = $input_type_map[ $type ] ?? 'text';
 			$field['placeholder'] = $field['placeholder'] ?? '';
 			$field['desc']        = $field['desc'] ?? '';
 			$field['helpText']    = $field['helpText'] ?? '';
 			$field['accept']      = $field['accept'] ?? '';
 			$field['capture']     = $field['capture'] ?? '';
+			if ( $type === 'upload-image' && empty( $field['accept'] ) ) {
+				$field['accept'] = 'image/*';
+			}
+			if ( $type === 'camera-photo' || $type === 'camera-photo-list' ) {
+				if ( empty( $field['accept'] ) ) {
+					$field['accept'] = 'image/*';
+				}
+				if ( empty( $field['capture'] ) ) {
+					$field['capture'] = 'environment';
+				}
+			}
+			if ( $type === 'qr-scan' ) {
+				if ( empty( $field['accept'] ) ) {
+					$field['accept'] = 'image/*';
+				}
+				if ( empty( $field['capture'] ) ) {
+					$field['capture'] = 'environment';
+				}
+				$field['upload_accept_label'] = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
+			}
+			if ( $type === 'document-scan' ) {
+				if ( empty( $field['accept'] ) ) {
+					$field['accept'] = 'image/*,application/pdf';
+				}
+				$field['document_scan_mode'] = $field['documentScanMode'] ?? $field['document_scan_mode'] ?? 'double';
+				$field['document_scan_slots'] = $field['document_scan_slots'] ?? (
+					'single' === $field['document_scan_mode']
+						? [
+							[
+								'index'         => 0,
+								'key'           => 'front',
+								'label'         => 'Front',
+								'control_label' => 'Capture Front',
+							],
+						]
+						: [
+							[
+								'index'         => 0,
+								'key'           => 'front',
+								'label'         => 'Front',
+								'control_label' => 'Capture Front',
+							],
+							[
+								'index'         => 1,
+								'key'           => 'back',
+								'label'         => 'Back',
+								'control_label' => 'Capture Back',
+							],
+						]
+				);
+				$field['upload_accept_label'] = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
+			}
+			if ( in_array( $type, [ 'file', 'upload-image', 'camera-photo', 'camera-photo-list' ], true ) ) {
+				$field['upload_accept_label'] = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
+			}
 			if ( $type === 'payment-proof' ) {
 				if ( empty( $field['accept'] ) ) {
 					$field['accept'] = 'image/*';
@@ -1974,7 +2091,7 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				$field['payment_amount']         = $field['paymentAmount'] ?? $field['payment_amount'] ?? '';
 				$field['payment_currency']       = $field['paymentCurrency'] ?? $field['payment_currency'] ?? 'XOF';
 				$field['payment_instructions']   = $field['paymentInstructions'] ?? $field['payment_instructions'] ?? '';
-				$field['upload_accept_label']    = $field['upload_accept_label'] ?? __( 'Accepted: screenshot image', 'xpressui-bridge' );
+				$field['upload_accept_label']    = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
 			}
 			if ( $type === 'camera-photo-list' ) {
 				$min_files                        = (int) ( $field['minFiles'] ?? 2 );
