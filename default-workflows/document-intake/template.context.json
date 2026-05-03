@@ -12,7 +12,9 @@
     "preset_id": "console-clean",
     "layout": "centered",
     "density": "comfortable",
+    "label_position": "stacked",
     "background_style": "panel",
+    "field_columns": 1,
     "colors": {
       "page_background": "#edf3fb",
       "surface": "#ffffff",
@@ -31,7 +33,7 @@
     "target": "form",
     "xpressui_version": "1.0.0",
     "mount_node_id": "xpressui-root",
-    "form_config_json": "{\n  \"mode\": \"form-multi-step\",\n  \"navigationLabels\": {\n    \"prevLabel\": \"Back\",\n    \"nextLabel\": \"Continue\",\n    \"submitLabel\": \"Submit intake\"\n  },\n  \"workflowConfig\": {\n    \"submissionMode\": \"multi-step-submit\",\n    \"providerMode\": \"wordpress-bridge\",\n    \"resumeSupport\": \"disabled\",\n    \"documentHandling\": \"basic-upload\",\n    \"submissionEndpoint\": \"/wp-json/xpressui/v1/submit\",\n    \"successMessage\": \"Your intake was sent successfully.\",\n    \"errorMessage\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  },\n  \"sections\": {\n    \"custom\": [\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 1: Contact\",\n        \"adminLabel\": \"Step 1: Contact\",\n        \"name\": \"section1\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 2: Request\",\n        \"adminLabel\": \"Step 2: Request\",\n        \"name\": \"requestStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 3: Files\",\n        \"adminLabel\": \"Step 3: Files\",\n        \"name\": \"filesStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 4: Review\",\n        \"adminLabel\": \"Step 4: Review\",\n        \"name\": \"reviewStep\"\n      }\n    ],\n    \"section1\": [\n      {\n        \"type\": \"text\",\n        \"label\": \"First name\",\n        \"name\": \"firstname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"text\",\n        \"label\": \"Last name\",\n        \"name\": \"lastname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"email\",\n        \"label\": \"Email\",\n        \"name\": \"email\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"tel\",\n        \"label\": \"Phone number\",\n        \"name\": \"phone\",\n        \"choices\": null\n      }\n    ],\n    \"requestStep\": [\n      {\n        \"type\": \"select-one\",\n        \"label\": \"Request type\",\n        \"name\": \"requestType\",\n        \"choices\": [\n          {\n            \"label\": \"Application file\",\n            \"value\": \"application-file\"\n          },\n          {\n            \"label\": \"Client onboarding\",\n            \"value\": \"client-onboarding\"\n          },\n          {\n            \"label\": \"Supporting documents\",\n            \"value\": \"supporting-documents\"\n          }\n        ],\n        \"minNumOfChoices\": 1,\n        \"maxNumOfChoices\": 1\n      },\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Case summary\",\n        \"name\": \"caseSummary\",\n        \"choices\": null\n      },\n      {\n        \"type\": \"price\",\n        \"label\": \"Estimated budget\",\n        \"name\": \"estimatedBudget\",\n        \"choices\": null\n      }\n    ],\n    \"filesStep\": [\n      {\n        \"type\": \"file\",\n        \"label\": \"Primary document\",\n        \"name\": \"primaryDocument\",\n        \"required\": true,\n        \"accept\": \".pdf,application/pdf,image/*\",\n        \"choices\": null\n      },\n      {\n        \"type\": \"file\",\n        \"label\": \"Supporting file\",\n        \"name\": \"supportingFile\",\n        \"accept\": \".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf\",\n        \"choices\": null\n      }\n    ],\n    \"reviewStep\": [\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Additional notes\",\n        \"name\": \"additionalNotes\",\n        \"choices\": null\n      }\n    ],\n    \"btngroup\": [\n      {\n        \"type\": \"submit\",\n        \"name\": \"prevbtn\",\n        \"label\": \"Back\",\n        \"adminLabel\": \"Back\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"nextbtn\",\n        \"label\": \"Continue\",\n        \"adminLabel\": \"Continue\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"submitbtn\",\n        \"label\": \"Submit intake\",\n        \"adminLabel\": \"Submit intake\"\n      }\n    ]\n  },\n  \"showProjectTitle\": true,\n  \"submit\": {\n    \"endpoint\": \"__XPRESSUI_WORDPRESS_REST_URL__\",\n    \"method\": \"POST\",\n    \"mode\": \"form-data\",\n    \"includeDocumentData\": true,\n    \"metadata\": {\n      \"projectId\": \"document-intake-starter\",\n      \"projectSlug\": \"document-intake\",\n      \"projectConfigVersion\": \"document-intake-starter:2026-03-13T00:00:00+00:00\"\n    }\n  },\n  \"submitFeedback\": {\n    \"title\": \"Submission status\",\n    \"idle_message\": \"Submission feedback will appear here after the runtime handles the form.\",\n    \"loading_message\": \"Submitting...\",\n    \"success_title\": \"Submission received\",\n    \"success_message\": \"Your intake was sent successfully.\",\n    \"error_title\": \"Submission failed\",\n    \"error_message\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  },\n  \"id\": \"document-intake-starter\",\n  \"uid\": \"document-intake-starter\",\n  \"type\": \"form\",\n  \"name\": \"document-intake\",\n  \"title\": \"Document Intake\",\n  \"lockedFields\": [\n    \"firstname\",\n    \"lastname\",\n    \"email\",\n    \"phone\",\n    \"requestType\",\n    \"caseSummary\",\n    \"estimatedBudget\",\n    \"primaryDocument\",\n    \"supportingFile\",\n    \"additionalNotes\"\n  ]\n}",
+    "form_config_json": "{\n  \"mode\": \"form-multi-step\",\n  \"navigationLabels\": {\n    \"prevLabel\": \"Back\",\n    \"nextLabel\": \"Continue\",\n    \"submitLabel\": \"Submit intake\"\n  },\n  \"workflowConfig\": {\n    \"submissionMode\": \"multi-step-submit\",\n    \"providerMode\": \"wordpress-bridge\",\n    \"resumeSupport\": \"disabled\",\n    \"documentHandling\": \"basic-upload\",\n    \"submissionEndpoint\": \"/wp-json/xpressui/v1/submit\",\n    \"successMessage\": \"Your intake was sent successfully.\",\n    \"errorMessage\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  },\n  \"sections\": {\n    \"custom\": [\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 1: Contact\",\n        \"adminLabel\": \"Step 1: Contact\",\n        \"name\": \"section1\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 2: Request\",\n        \"adminLabel\": \"Step 2: Request\",\n        \"name\": \"requestStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 3: Files\",\n        \"adminLabel\": \"Step 3: Files\",\n        \"name\": \"filesStep\"\n      },\n      {\n        \"type\": \"section\",\n        \"subType\": \"section\",\n        \"label\": \"Step 4: Review\",\n        \"adminLabel\": \"Step 4: Review\",\n        \"name\": \"reviewStep\"\n      }\n    ],\n    \"section1\": [\n      {\n        \"type\": \"text\",\n        \"label\": \"First name\",\n        \"name\": \"firstname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"text\",\n        \"label\": \"Last name\",\n        \"name\": \"lastname\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"email\",\n        \"label\": \"Email\",\n        \"name\": \"email\",\n        \"required\": true,\n        \"choices\": null\n      },\n      {\n        \"type\": \"tel\",\n        \"label\": \"Phone number\",\n        \"name\": \"phone\",\n        \"choices\": null\n      }\n    ],\n    \"requestStep\": [\n      {\n        \"type\": \"select-one\",\n        \"label\": \"Request type\",\n        \"name\": \"requestType\",\n        \"choices\": [\n          {\n            \"label\": \"Application file\",\n            \"value\": \"application-file\"\n          },\n          {\n            \"label\": \"Client onboarding\",\n            \"value\": \"client-onboarding\"\n          },\n          {\n            \"label\": \"Supporting documents\",\n            \"value\": \"supporting-documents\"\n          }\n        ],\n        \"minNumOfChoices\": 1,\n        \"maxNumOfChoices\": 1\n      },\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Case summary\",\n        \"name\": \"caseSummary\",\n        \"choices\": null\n      },\n      {\n        \"type\": \"price\",\n        \"label\": \"Estimated budget\",\n        \"name\": \"estimatedBudget\",\n        \"choices\": null\n      }\n    ],\n    \"filesStep\": [\n      {\n        \"type\": \"file\",\n        \"label\": \"Primary document\",\n        \"name\": \"primaryDocument\",\n        \"required\": true,\n        \"accept\": \".pdf,application/pdf,image/*\",\n        \"choices\": null\n      },\n      {\n        \"type\": \"file\",\n        \"label\": \"Supporting file\",\n        \"name\": \"supportingFile\",\n        \"accept\": \".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf\",\n        \"choices\": null\n      }\n    ],\n    \"reviewStep\": [\n      {\n        \"type\": \"textarea\",\n        \"label\": \"Additional notes\",\n        \"name\": \"additionalNotes\",\n        \"choices\": null\n      }\n    ],\n    \"btngroup\": [\n      {\n        \"type\": \"submit\",\n        \"name\": \"prevbtn\",\n        \"label\": \"Back\",\n        \"adminLabel\": \"Back\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"nextbtn\",\n        \"label\": \"Continue\",\n        \"adminLabel\": \"Continue\"\n      },\n      {\n        \"type\": \"submit\",\n        \"name\": \"submitbtn\",\n        \"label\": \"Submit intake\",\n        \"adminLabel\": \"Submit intake\"\n      }\n    ]\n  },\n  \"showProjectTitle\": true,\n  \"submit\": {\n    \"endpoint\": \"__XPRESSUI_WORDPRESS_REST_URL__\",\n    \"method\": \"POST\",\n    \"mode\": \"form-data\",\n    \"includeDocumentData\": true,\n    \"metadata\": {\n      \"projectId\": \"document-intake-starter\",\n      \"projectSlug\": \"document-intake\",\n      \"projectConfigVersion\": \"document-intake-starter:2026-03-26T00:00:00+00:00\"\n    }\n  },\n  \"submitFeedback\": {\n    \"title\": \"Submission status\",\n    \"idle_message\": \"Submission feedback will appear here after the runtime handles the form.\",\n    \"loading_message\": \"Submitting...\",\n    \"success_title\": \"Submission received\",\n    \"success_message\": \"Your intake was sent successfully.\",\n    \"error_title\": \"Submission failed\",\n    \"error_message\": \"Unable to send this intake to WordPress right now. Please try again.\"\n  },\n  \"id\": \"document-intake-starter\",\n  \"uid\": \"document-intake-starter\",\n  \"type\": \"form\",\n  \"name\": \"document-intake\",\n  \"title\": \"Document Intake\",\n  \"lockedFields\": [\n    \"firstname\",\n    \"lastname\",\n    \"email\",\n    \"phone\",\n    \"requestType\",\n    \"caseSummary\",\n    \"estimatedBudget\",\n    \"primaryDocument\",\n    \"supportingFile\",\n    \"additionalNotes\"\n  ],\n  \"sectionLabelVisibility\": \"auto\"\n}",
     "submit_endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
     "submit_method": "post",
     "submit_enctype": "multipart/form-data"
@@ -41,6 +43,7 @@
     "show_title": true,
     "show_subtitle": true,
     "subtitle": "* Required fields",
+    "show_section_headers": true,
     "sections": [
       {
         "name": "section1",
@@ -93,7 +96,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "lastname",
@@ -141,7 +146,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "email",
@@ -189,7 +196,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "phone",
@@ -237,7 +246,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           }
         ]
       },
@@ -332,7 +343,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "caseSummary",
@@ -380,7 +393,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "estimatedBudget",
@@ -428,7 +443,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           }
         ]
       },
@@ -464,7 +481,7 @@
             "max_value": null,
             "step_value": null,
             "upload_type_label": "Document upload",
-            "upload_accept_label": "Accepted: PDF or image",
+            "upload_accept_label": "Accepted: .pdf,application/pdf,image/*",
             "document_scan_mode": "double",
             "document_scan_slots": [
               {
@@ -483,7 +500,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           },
           {
             "name": "supportingFile",
@@ -512,7 +531,7 @@
             "max_value": null,
             "step_value": null,
             "upload_type_label": "Attachment upload",
-            "upload_accept_label": "Accepted: documents",
+            "upload_accept_label": "Accepted: .pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf",
             "document_scan_mode": "double",
             "document_scan_slots": [
               {
@@ -531,7 +550,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           }
         ]
       },
@@ -586,7 +607,9 @@
             "enable_document_ocr": false,
             "require_valid_document_mrz": false,
             "document_text_target_field": null,
-            "document_mrz_target_field": null
+            "document_mrz_target_field": null,
+            "amount": null,
+            "currency": null
           }
         ]
       }
