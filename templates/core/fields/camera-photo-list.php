@@ -56,7 +56,7 @@ accept="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_t
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'capture'))): ?>
 capture="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'capture'))); ?>"<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'required'))): ?>
-required aria-required="true"<?php endif; ?>
+aria-required="true" data-required="true"<?php endif; ?>
       style="position:absolute;left:-9999px;opacity:0;width:1px;height:1px;"
     />
   </div>
