@@ -344,6 +344,7 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-step-progress-container { display: grid; gap: 8px; margin: 16px 0; padding: 14px 16px; border: 1px solid rgba(148,163,184,0.2); border-radius: 18px; background: rgba(248,250,252,0.92); box-shadow: 0 16px 36px -30px rgba(15,23,42,0.18); }
     [data-form-step-progress] { font-size: 14px; font-weight: 600; color: rgb(15,23,42); }
     [data-form-step-summary] { font-size: 12px; opacity: 0.8; color: rgb(71,85,105); }
+    dialog:not([open]) { display: none; }
     .xpui-capture-dialog { border: none; border-radius: 12px; padding: 0; max-width: 90vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
     .xpui-capture-dialog::backdrop { background: rgba(0,0,0,0.55); }
     .xpui-capture-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 28px 32px; text-align: center; max-width: 320px; }
