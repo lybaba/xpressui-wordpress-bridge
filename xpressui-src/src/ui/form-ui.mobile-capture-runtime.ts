@@ -17,6 +17,20 @@ function getWordPressRestBase(): string {
   return (window as any).XPRESSUI_WORDPRESS_REST_URL?.replace('/xpressui/v1/submit', '/xpressui/v1') ?? '';
 }
 
+export function resolveDesktopCaptureMode(): 'remote-capture' | 'native-picker' {
+  return getWordPressRestBase() ? 'remote-capture' : 'native-picker';
+}
+
+export function openNativeFilePicker(fieldWrap: HTMLElement, fn: string): boolean {
+  const fileInput = fieldWrap.querySelector(`input[type="file"][data-name="${fn}"]`) as HTMLInputElement | null;
+  if (!fileInput || typeof fileInput.click !== 'function') {
+    return false;
+  }
+
+  fileInput.click();
+  return true;
+}
+
 async function createCaptureSession(
   fieldName: string,
   fieldType: string,
@@ -59,6 +73,34 @@ function findCaptureDialog(host: TMobileCaptureHost): HTMLDialogElement | null {
   ) as HTMLDialogElement | null;
 }
 
+function showDialog(dialog: HTMLDialogElement): void {
+  dialog.style.display = '';
+  dialog.setAttribute('aria-hidden', 'false');
+  if (typeof dialog.showModal === 'function') {
+    try {
+      dialog.showModal();
+      return;
+    } catch {
+      dialog.setAttribute('open', '');
+      return;
+    }
+  }
+  dialog.setAttribute('open', '');
+}
+
+function hideDialog(dialog: HTMLDialogElement): void {
+  dialog.style.display = 'none';
+  dialog.setAttribute('aria-hidden', 'true');
+}
+
+function closeDialog(dialog: HTMLDialogElement): void {
+  if (typeof dialog.close === 'function' && dialog.open) {
+    dialog.close();
+  } else {
+    dialog.removeAttribute('open');
+  }
+}
+
 async function openCaptureModal(
   host: TMobileCaptureHost,
   fieldName: string,
@@ -80,12 +122,23 @@ async function openCaptureModal(
   statusText.style.color = '';
 
   const abort = new AbortController();
-  const close = () => { dialog.close(); abort.abort(); };
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    hideDialog(dialog);
+    abort.abort();
+  };
+  const close = () => {
+    closeDialog(dialog);
+    cleanup();
+  };
 
   closeBtn?.addEventListener('click', close, { once: true, signal: abort.signal as any });
   dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); }, { once: true, signal: abort.signal as any });
+  dialog.addEventListener('close', cleanup, { once: true });
 
-  dialog.showModal();
+  showDialog(dialog);
 
   const session = await createCaptureSession(fieldName, fieldType, projectSlug);
   if (!session) {
@@ -161,11 +214,22 @@ function openLightbox(fieldWrap: HTMLElement, imageUrl: string): void {
   if (mainImg) mainImg.src = imageUrl;
   if (titleEl) titleEl.textContent = '';
   if (thumbsEl) thumbsEl.replaceChildren();
-  galleryDialog.showModal();
   const abort = new AbortController();
-  const doClose = () => { galleryDialog.close(); abort.abort(); };
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    hideDialog(galleryDialog);
+    abort.abort();
+  };
+  const doClose = () => {
+    closeDialog(galleryDialog);
+    cleanup();
+  };
+  showDialog(galleryDialog);
   galleryDialog.querySelector('[data-product-gallery-close]')?.addEventListener('click', doClose, { once: true, signal: abort.signal as any });
   galleryDialog.addEventListener('click', (ev) => { if (ev.target === galleryDialog) doClose(); }, { once: true, signal: abort.signal as any });
+  galleryDialog.addEventListener('close', cleanup, { once: true });
 }
 
 function createPhotoPlaceholder(fn: string, labelText: string): HTMLElement {
@@ -307,6 +371,10 @@ function initCameraPhotoField(
   function attachClick(placeholder: HTMLElement): void {
     placeholder.addEventListener('click', (e) => {
       e.preventDefault(); // prevent the label from opening the file dialog on desktop
+      if (resolveDesktopCaptureMode() === 'native-picker') {
+        openNativeFilePicker(fieldWrap, fn);
+        return;
+      }
       void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));
     });
   }
