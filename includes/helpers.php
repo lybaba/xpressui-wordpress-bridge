@@ -1186,9 +1186,12 @@ function xpressui_get_additional_file_request( $post_id ) {
 		}
 	}
 
-	$request = [
-		'active'      => '' !== trim( (string) ( $s['additionalFileLabel'] ?? '' ) ),
-		'label'       => (string) ( $s['additionalFileLabel'] ?? '' ),
+	$wf_label = trim( (string) ( $s['additionalFileLabel'] ?? '' ) );
+	$request  = [
+		// Active when the workflow label is set, OR when the admin attached a per-submission
+		// reference file (implying they want the submitter to download and re-upload it).
+		'active'      => '' !== $wf_label || $ref_file_id > 0,
+		'label'       => $wf_label,
 		'ref_file_id' => $ref_file_id,
 	];
 

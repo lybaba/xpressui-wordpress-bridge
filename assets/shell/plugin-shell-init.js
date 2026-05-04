@@ -955,6 +955,31 @@ async function initXPressUI() {
       formConfig = { ...formConfig, mode: 'form' };
     }
 
+    // Silently prefill DOM inputs from payload BEFORE hydration so the runtime reads
+    // prefilled values as initialValues. Without this, hydrateForm captures empty
+    // values, then applyResumeMode's event-dispatched prefill marks every field dirty.
+    if (resumeData?.payload) {
+      const prefillForm = mountNode.querySelector('form');
+      if (prefillForm) {
+        const prefillPayload = resumeData.payload;
+        prefillForm.querySelectorAll(
+          'input:not([type="file"]):not([type="submit"]):not([type="button"]):not([type="hidden"]), textarea, select',
+        ).forEach((input) => {
+          const name = input.name;
+          if (!name || name === 'xpressui_confirm_email') return;
+          const value = prefillPayload[name];
+          if (value === undefined || value === null) return;
+          if (input instanceof HTMLSelectElement) {
+            input.value = String(value);
+          } else if (input instanceof HTMLInputElement && (input.type === 'checkbox' || input.type === 'radio')) {
+            input.checked = input.value === String(value) || value === true || value === 'true';
+          } else {
+            input.value = typeof value === 'object' ? '' : String(value);
+          }
+        });
+      }
+    }
+
     const hydrateForm = window.hydrateForm
       || window.XPressUI?.hydrateForm
       || window.xpressui?.hydrateForm;
