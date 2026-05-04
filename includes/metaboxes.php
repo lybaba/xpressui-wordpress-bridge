@@ -258,10 +258,11 @@ function xpressui_save_submission_status( $post_id ) {
 	xpressui_set_assignee( $post_id, $assignee_id );
 
 	$normalized_note = trim( (string) $note );
-	// Notify on first transition into pending_info, or if note/fields changed while already pending_info.
-	$should_notify_pending_info = 'pending_info' === $status && (
-		'pending_info' !== $previous_status
-		|| $previous_note !== $normalized_note
+	// Re-notify only when note or flagged fields change while status is already pending_info.
+	// The initial pending_info transition (including token generation + first notification) is
+	// handled inside xpressui_set_submission_status to avoid double token generation.
+	$should_notify_pending_info = 'pending_info' === $status && 'pending_info' === $previous_status && (
+		$previous_note !== $normalized_note
 		|| $previous_flagged_fields !== $flagged_fields
 	);
 	if ( $should_notify_pending_info ) {
