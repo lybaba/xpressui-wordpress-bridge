@@ -905,7 +905,13 @@ async function initXPressUI() {
       );
       const form = mountNode.querySelector('form');
       if (form) {
-        form.querySelectorAll('input, textarea, select, button[type="submit"]').forEach((el) => { el.disabled = true; });
+        // Hide all form content — only the error card should remain visible.
+        form.querySelectorAll(
+          '[data-template-zone="form_header"], [data-template-zone="step_status"], ' +
+          '[data-template-zone="section"], [data-form-step-actions], ' +
+          '[data-template-zone="submit_actions"]',
+        ).forEach((el) => { if (el instanceof HTMLElement) el.style.display = 'none'; });
+        form.querySelectorAll('input, textarea, select, button').forEach((el) => { el.disabled = true; });
       }
       return;
     }
