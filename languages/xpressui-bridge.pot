@@ -39,10 +39,6 @@ msgstr ""
 msgid "A required submission identifier is missing."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1977
-msgid "Accepted: screenshot image"
-msgstr ""
-
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:180
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:369
 msgid "Actions"
@@ -138,7 +134,7 @@ msgid "Auto hides section titles when the workflow only contains one section."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:843
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:184
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:202
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:452
 msgid "Book an appointment"
 msgstr ""
@@ -253,7 +249,7 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:154
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:177
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1435
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1455
 msgid "Done"
 msgstr ""
 
@@ -281,14 +277,14 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2246
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2277
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2311
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2315
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2333
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2353
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2374
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2438
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2363
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2394
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2428
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2432
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2450
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2470
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2491
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2555
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:425
 msgid "Empty"
 msgstr ""
@@ -305,7 +301,7 @@ msgstr ""
 msgid "Error."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2301
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2418
 msgid "Estimated total: %s"
 msgstr ""
 
@@ -345,7 +341,7 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:152
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:175
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1433
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1453
 msgid "In review"
 msgstr ""
 
@@ -377,11 +373,11 @@ msgstr ""
 msgid "Invalid or expired resume token."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:752
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:772
 msgid "Invalid workflow slug."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2284
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2401
 msgid "Item"
 msgstr ""
 
@@ -440,7 +436,7 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:151
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:174
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1432
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1452
 msgid "New"
 msgstr ""
 
@@ -448,7 +444,7 @@ msgstr ""
 msgid "New submission: %s"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2435
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2552
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:262
 msgid "No"
 msgstr ""
@@ -563,7 +559,7 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:153
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:176
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1434
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1454
 msgid "Pending info"
 msgstr ""
 
@@ -628,7 +624,7 @@ msgstr ""
 msgid "Projects"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2285
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2402
 msgid "Qty"
 msgstr ""
 
@@ -658,7 +654,7 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:155
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:178
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1436
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1456
 msgid "Rejected"
 msgstr ""
 
@@ -792,7 +788,7 @@ msgstr ""
 msgid "Shows which runtime the plugin shell will try to load and whether the bundled files are present."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2449
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2566
 msgid "Signature"
 msgstr ""
 
@@ -855,7 +851,7 @@ msgstr ""
 msgid "Submission Workflow"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1903
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1923
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:355
 msgid "Submission failed"
 msgstr ""
@@ -889,7 +885,7 @@ msgstr ""
 msgid "Submission project metadata does not match the installed workflow."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1896
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1916
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:360
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:868
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:326
@@ -905,7 +901,7 @@ msgstr ""
 msgid "Submission rejected."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1890
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1910
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:362
 msgid "Submission status"
 msgstr ""
@@ -951,7 +947,7 @@ msgstr ""
 msgid "Submitting..."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1893
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1913
 msgid "Submitting…"
 msgstr ""
 
@@ -983,7 +979,7 @@ msgstr ""
 msgid "The booking URL is not valid."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:695
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:715
 msgid "The bundled workflow could not be installed."
 msgstr ""
 
@@ -1020,11 +1016,11 @@ msgid "The webhook URL is not valid."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:606
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:757
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:777
 msgid "The workflow could not be found."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:761
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:781
 msgid "The workflow directory could not be deleted."
 msgstr ""
 
@@ -1083,7 +1079,7 @@ msgstr ""
 msgid "The workflow was deleted successfully."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:678
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:698
 msgid "This bundled workflow could not be found."
 msgstr ""
 
@@ -1140,7 +1136,7 @@ msgid "Too many uploaded files."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:173
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2287
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2404
 msgid "Total"
 msgstr ""
 
@@ -1152,8 +1148,8 @@ msgstr ""
 msgid "Unable to load this XPressUI workflow."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1841
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1907
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1861
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1927
 msgid "Unable to submit. Please try again."
 msgstr ""
 
@@ -1167,7 +1163,7 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2286
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2403
 msgid "Unit"
 msgstr ""
 
@@ -1317,7 +1313,7 @@ msgstr ""
 msgid "XPressUI submissions"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:2435
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:2552
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:262
 msgid "Yes"
 msgstr ""
@@ -1335,8 +1331,8 @@ msgstr ""
 msgid "Your submission for %s has been reviewed and processed. Thank you for your time."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1838
-#: libs/xpressui-wordpress-bridge/includes/helpers.php:1900
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1858
+#: libs/xpressui-wordpress-bridge/includes/helpers.php:1920
 msgid "Your submission was received successfully."
 msgstr ""
 
@@ -1376,7 +1372,7 @@ msgstr ""
 msgid "[xpressui] error: could not resolve the uploads directory."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:170
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:188
 msgid "[xpressui] error: form fragment template not found."
 msgstr ""
 
@@ -1384,7 +1380,7 @@ msgstr ""
 msgid "[xpressui] error: no package found for id \"%s\". Please install the workflow package first."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/shortcode.php:161
+#: libs/xpressui-wordpress-bridge/includes/shortcode.php:179
 msgid "[xpressui] error: template runtime not found."
 msgstr ""
 
