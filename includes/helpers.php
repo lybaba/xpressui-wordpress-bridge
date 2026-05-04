@@ -2084,14 +2084,103 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				if ( empty( $field['accept'] ) ) {
 					$field['accept'] = 'image/*';
 				}
-				$field['payment_provider']       = (string) ( $field['paymentProvider'] ?? $field['payment_provider'] ?? 'manual' );
-				$field['payment_provider_label'] = ucwords( str_replace( [ '-', '_' ], ' ', $field['payment_provider'] ) );
-				$field['payment_merchant_name']  = $field['merchantName'] ?? $field['merchant_name'] ?? '';
-				$field['payment_merchant_phone'] = $field['merchantPhone'] ?? $field['merchant_phone'] ?? '';
-				$field['payment_amount']         = $field['paymentAmount'] ?? $field['payment_amount'] ?? '';
-				$field['payment_currency']       = $field['paymentCurrency'] ?? $field['payment_currency'] ?? 'XOF';
-				$field['payment_instructions']   = $field['paymentInstructions'] ?? $field['payment_instructions'] ?? '';
-				$field['upload_accept_label']    = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
+				$field['upload_accept_label'] = $field['upload_accept_label'] ?? $build_upload_accept_label( $type, $field );
+
+				$prov_labels = [
+					'wave'          => 'Wave',
+					'orange-money'  => 'Orange Money',
+					'free-money'    => 'Free Money',
+					'bank-transfer' => 'Bank transfer',
+					'manual'        => 'Manual payment',
+				];
+				$format_amount_display = function ( $raw, string $currency ): ?string {
+					if ( $raw === '' || $raw === null || ! is_numeric( $raw ) ) return null;
+					$amt      = (float) $raw;
+					$decimals = ( $amt == floor( $amt ) ) ? 0 : 2;
+					$fmt      = number_format( $amt, $decimals, '.', "\u{202F}" );
+					return $currency ? "$fmt $currency" : $fmt;
+				};
+				$format_iban = function ( string $raw ): ?string {
+					$clean = strtoupper( preg_replace( '/\s+/', '', $raw ) );
+					return $clean ? trim( implode( ' ', str_split( $clean, 4 ) ) ) : null;
+				};
+				$make_prov = function ( string $provider, array $cfg, $fallback_amount, string $fallback_instr, string $currency ) use ( $prov_labels, $format_amount_display, $format_iban ): array {
+					$raw_amt  = $cfg['paymentAmount'] ?? $cfg['payment_amount'] ?? $fallback_amount ?? '';
+					$iban_raw = trim( (string) ( $cfg['paymentIban'] ?? $cfg['payment_iban'] ?? '' ) );
+					$clean_iban = strtoupper( preg_replace( '/\s+/', '', $iban_raw ) );
+					$label    = $prov_labels[ $provider ] ?? ucwords( str_replace( [ '-', '_' ], ' ', $provider ) );
+					return [
+						'provider'                => $provider,
+						'provider_label'          => $label,
+						'payment_amount'          => $raw_amt,
+						'payment_amount_display'  => $format_amount_display( $raw_amt, $currency ),
+						'payment_currency'        => $currency,
+						'payment_instructions'    => (string) ( $cfg['paymentInstructions'] ?? $cfg['payment_instructions'] ?? $fallback_instr ),
+						'merchant_phone'          => (string) ( $cfg['merchantPhone'] ?? $cfg['merchant_phone'] ?? '' ),
+						'merchant_phone_display'  => (string) ( $cfg['merchantPhone'] ?? $cfg['merchant_phone'] ?? '' ),
+						'merchant_phone_href'     => (string) ( $cfg['merchantPhone'] ?? $cfg['merchant_phone'] ?? '' ),
+						'merchant_qr_code'        => (string) ( $cfg['merchantQrCode'] ?? $cfg['merchant_qr_code'] ?? '' ),
+						'merchant_name'           => (string) ( $cfg['merchantName'] ?? $cfg['merchant_name'] ?? '' ),
+						'payment_iban'            => $clean_iban ?: null,
+						'payment_iban_display'    => $format_iban( $iban_raw ),
+						'payment_bic'             => strtoupper( trim( (string) ( $cfg['paymentBic'] ?? $cfg['payment_bic'] ?? '' ) ) ) ?: null,
+						'payment_reference_prefix'=> strtoupper( trim( (string) ( $cfg['paymentReferencePrefix'] ?? $cfg['payment_reference_prefix'] ?? '' ) ) ) ?: null,
+					];
+				};
+
+				$currency        = (string) ( $field['paymentCurrency'] ?? $field['payment_currency'] ?? 'XOF' );
+				$global_amount   = $field['paymentAmount'] ?? $field['payment_amount'] ?? '';
+				$global_instr    = (string) ( $field['paymentInstructions'] ?? $field['payment_instructions'] ?? '' );
+				$mobile_cfg      = is_array( $field['mobileMoney'] ?? null ) ? $field['mobileMoney'] : [];
+				$bank_cfg        = is_array( $field['bankTransfer'] ?? null ) ? $field['bankTransfer'] : [];
+				$manual_cfg      = is_array( $field['manualPayment'] ?? null ) ? $field['manualPayment'] : [];
+				$mobile_provider = (string) ( $field['mobileMoneyProvider'] ?? '' );
+				$has_new_format  = isset( $field['mobileMoneyProvider'] ) || ! empty( $bank_cfg ) || ! empty( $manual_cfg );
+
+				$payment_providers = [];
+				if ( ! $has_new_format ) {
+					$legacy_provider = (string) ( $field['paymentProvider'] ?? $field['subType'] ?? $field['payment_provider'] ?? 'manual' );
+					$legacy_cfg      = array_merge( [
+						'merchantPhone'       => $field['merchantPhone'] ?? $field['merchant_phone'] ?? '',
+						'merchantQrCode'      => $field['merchantQrCode'] ?? $field['merchant_qr_code'] ?? '',
+						'merchantName'        => $field['merchantName'] ?? $field['merchant_name'] ?? '',
+						'paymentAmount'       => $global_amount,
+						'paymentInstructions' => $global_instr,
+						'paymentIban'         => $field['paymentIban'] ?? $field['payment_iban'] ?? '',
+						'paymentBic'          => $field['paymentBic'] ?? $field['payment_bic'] ?? '',
+						'paymentReferencePrefix' => $field['paymentReferencePrefix'] ?? $field['payment_reference_prefix'] ?? '',
+					], [] );
+					$payment_providers[] = $make_prov( $legacy_provider, $legacy_cfg, $global_amount, $global_instr, $currency );
+				} else {
+					if ( in_array( $mobile_provider, [ 'wave', 'orange-money', 'free-money' ], true ) ) {
+						$payment_providers[] = $make_prov( $mobile_provider, $mobile_cfg, $global_amount, $global_instr, $currency );
+					}
+					if ( ! empty( $bank_cfg['enabled'] ) ) {
+						$payment_providers[] = $make_prov( 'bank-transfer', $bank_cfg, $global_amount, $global_instr, $currency );
+					}
+					if ( ! empty( $manual_cfg['enabled'] ) ) {
+						$payment_providers[] = $make_prov( 'manual', $manual_cfg, $global_amount, $global_instr, $currency );
+					}
+					if ( empty( $payment_providers ) ) {
+						$payment_providers[] = $make_prov( 'manual', [], $global_amount, $global_instr, $currency );
+					}
+				}
+
+				$first                           = $payment_providers[0];
+				$field['has_multiple_providers'] = count( $payment_providers ) > 1;
+				$field['payment_providers']      = $payment_providers;
+				$field['payment_provider']       = $first['provider'];
+				$field['payment_provider_label'] = $first['provider_label'];
+				$field['payment_merchant_name']  = $first['merchant_name'];
+				$field['payment_merchant_phone'] = $first['merchant_phone'];
+				$field['payment_amount']         = $first['payment_amount'];
+				$field['payment_amount_display'] = $first['payment_amount_display'];
+				$field['payment_currency']       = $currency;
+				$field['payment_instructions']   = $first['payment_instructions'];
+				$field['payment_iban']           = $first['payment_iban'];
+				$field['payment_iban_display']   = $first['payment_iban_display'];
+				$field['payment_bic']            = $first['payment_bic'];
+				$field['payment_reference_prefix'] = $first['payment_reference_prefix'];
 			}
 			if ( $type === 'camera-photo-list' ) {
 				$min_files                        = (int) ( $field['minFiles'] ?? 2 );
