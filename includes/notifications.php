@@ -41,6 +41,15 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 		update_post_meta( $post_id, '_xpressui_mail_error', '' );
 		update_post_meta( $post_id, '_xpressui_mail_sent_at', '' );
 		update_post_meta( $post_id, '_xpressui_mail_fallback_used', '0' );
+		xpressui_record_submission_event(
+			$post_id,
+			'delivery.email.queued',
+			'bridge',
+			[],
+			[
+				'recipient_domain' => substr( strrchr( $to, '@' ) ?: '', 1 ),
+			]
+		);
 	}
 
 	if ( ! $scheduled ) {
@@ -52,6 +61,15 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 			if ( ! $sent ) {
 				update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() fallback failed' );
 			}
+			xpressui_record_submission_event(
+				$post_id,
+				$sent ? 'delivery.email.sent' : 'delivery.email.failed',
+				'bridge',
+				[],
+				[
+					'fallback_used' => '1',
+				]
+			);
 		}
 	}
 }
@@ -82,6 +100,15 @@ function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [], $pos
 		if ( ! $sent ) {
 			update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() async dispatch failed' );
 		}
+		xpressui_record_submission_event(
+			$post_id,
+			$sent ? 'delivery.email.sent' : 'delivery.email.failed',
+			'bridge',
+			[],
+			[
+				'fallback_used' => '0',
+			]
+		);
 	}
 }
 

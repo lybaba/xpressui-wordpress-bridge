@@ -649,6 +649,7 @@ function xpressui_render_delivery_metabox( $post ) {
 	$webhook_code    = (string) get_post_meta( $post->ID, '_xpressui_webhook_code', true );
 	$webhook_error   = (string) get_post_meta( $post->ID, '_xpressui_webhook_error', true );
 	$webhook_sent_at = (string) get_post_meta( $post->ID, '_xpressui_webhook_sent_at', true );
+	$event_log       = function_exists( 'xpressui_get_submission_events' ) ? xpressui_get_submission_events( $post->ID ) : [];
 
 	echo '<div class="xpressui-delivery-grid">';
 
@@ -685,6 +686,23 @@ function xpressui_render_delivery_metabox( $post ) {
 	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_sent_at !== '' ? $webhook_sent_at : '-' ) . '</dd>';
 	echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_error !== '' ? $webhook_error : '-' ) . '</dd>';
 	echo '</dl>';
+	echo '</div>';
+
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Recent events', 'xpressui-bridge' ) . '</h4>';
+	if ( empty( $event_log ) ) {
+		echo '<p class="xpressui-hint">' . esc_html__( 'No instrumentation events recorded yet.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		echo '<ul class="xpressui-file-list">';
+		foreach ( array_slice( array_reverse( $event_log ), 0, 8 ) as $event ) {
+			$event_type  = sanitize_text_field( (string) ( $event['eventType'] ?? 'unknown' ) );
+			$occurred_at = sanitize_text_field( (string) ( $event['occurredAt'] ?? '' ) );
+			$source      = sanitize_text_field( (string) ( $event['source'] ?? 'bridge' ) );
+			echo '<li><strong>' . esc_html( $event_type ) . '</strong>';
+			echo '<br /><span class="xpressui-muted">' . esc_html( $occurred_at !== '' ? $occurred_at : '-' ) . ' · ' . esc_html( $source ) . '</span></li>';
+		}
+		echo '</ul>';
+	}
 	echo '</div>';
 
 	echo '</div>';

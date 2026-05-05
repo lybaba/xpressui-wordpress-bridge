@@ -286,6 +286,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	$submission_id        = xpressui_sanitize_request_identifier( $request->get_param( 'submissionId' ) );
 	$project_slug         = sanitize_title( (string) $request->get_param( 'projectSlug' ) );
 	$project_config       = xpressui_normalize_config_snapshot( $request->get_param( 'projectConfigSnapshotJson' ) );
+	$submission_channel   = xpressui_detect_submission_channel( $request );
 
 	// Fall back to raw body if payload param is empty.
 	if ( empty( $payload ) ) {
@@ -381,6 +382,22 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		'webhookMs'           => $timing_diff_ms( 'submit_confirmation_sent', 'webhook_sent' ),
 	];
 	update_post_meta( $post_id, '_xpressui_submit_timing', wp_json_encode( $timing_summary ) );
+	xpressui_record_submission_event(
+		$post_id,
+		'submit.completed',
+		'bridge',
+		[
+			'total_ms'         => (int) ( $timing_summary['totalMs'] ?? 0 ),
+			'store_files_ms'   => (int) ( $timing_summary['storeFilesMs'] ?? 0 ),
+			'notification_ms'  => (int) ( $timing_summary['notificationMs'] ?? 0 ),
+			'webhook_ms'       => (int) ( $timing_summary['webhookMs'] ?? 0 ),
+		],
+		[
+			'project_slug'       => $project_slug,
+			'submission_channel' => $submission_channel,
+			'submission_id'      => $submission_id,
+		]
+	);
 
 	// Read per-project redirect URL.
 	$redirect_url = xpressui_get_project_setting( $project_slug, 'redirectUrl' );
@@ -470,6 +487,18 @@ function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $pay
 
 	$file_validation = xpressui_validate_uploaded_files( $file_params );
 	if ( is_wp_error( $file_validation ) ) {
+		xpressui_record_submission_event(
+			$post_id,
+			'upload.failed',
+			'bridge',
+			[],
+			[
+				'project_slug'  => $project_slug,
+				'error_code'    => (string) $file_validation->get_error_code(),
+				'error_message' => (string) $file_validation->get_error_message(),
+				'phase'         => 'resubmission',
+			]
+		);
 		return $file_validation;
 	}
 
@@ -515,6 +544,17 @@ function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $pay
 	// Handle new file uploads for flagged fields only.
 	$stored_files = xpressui_store_uploaded_files( $post_id, $request );
 	$merged       = xpressui_attach_file_references( $merged, $stored_files );
+	xpressui_record_submission_event(
+		$post_id,
+		'resubmit.triggered',
+		'bridge',
+		[
+			'uploaded_file_count' => is_array( $stored_files ) ? count( $stored_files ) : 0,
+		],
+		[
+			'project_slug' => $project_slug,
+		]
+	);
 
 	// Invalidate token before status change (avoids any race on double-submit).
 	xpressui_invalidate_resume_token( $post_id );
@@ -624,6 +664,26 @@ function xpressui_get_request_ip() {
 		}
 	}
 	return '';
+}
+
+/**
+ * Best-effort channel detection for instrumentation.
+ *
+ * @param WP_REST_Request $request Request instance.
+ * @return string
+ */
+function xpressui_detect_submission_channel( WP_REST_Request $request ) {
+	$hint = strtolower( sanitize_text_field( (string) $request->get_header( 'X-XPressUI-Channel' ) ) );
+	if ( in_array( $hint, [ 'mobile', 'web', 'desktop-relay' ], true ) ) {
+		return $hint;
+	}
+
+	$user_agent = strtolower( sanitize_text_field( (string) $request->get_header( 'User-Agent' ) ) );
+	if ( $user_agent !== '' && preg_match( '/android|iphone|ipad|mobile/', $user_agent ) ) {
+		return 'mobile';
+	}
+
+	return 'web';
 }
 
 function xpressui_check_submission_rate_limit( $project_slug ) {
