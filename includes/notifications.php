@@ -9,6 +9,54 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+add_action( 'xpressui_send_mail_async', 'xpressui_dispatch_async_mail', 10, 4 );
+
+/**
+ * Queue an email for asynchronous delivery via WP-Cron.
+ *
+ * @param string          $to      Recipient email.
+ * @param string          $subject Email subject.
+ * @param string          $body    Email HTML/text body.
+ * @param array|string[]  $headers Optional headers.
+ */
+function xpressui_enqueue_mail( $to, $subject, $body, $headers = [] ) {
+	$to      = trim( (string) $to );
+	$subject = (string) $subject;
+	$body    = (string) $body;
+	$headers = is_array( $headers ) ? array_values( $headers ) : [];
+
+	if ( $to === '' || ! is_email( $to ) ) {
+		return;
+	}
+
+	wp_schedule_single_event(
+		time() + 1,
+		'xpressui_send_mail_async',
+		[ $to, $subject, $body, $headers ]
+	);
+}
+
+/**
+ * Async email worker.
+ *
+ * @param string         $to      Recipient email.
+ * @param string         $subject Email subject.
+ * @param string         $body    Email body.
+ * @param array|string[] $headers Headers.
+ */
+function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [] ) {
+	$to      = trim( (string) $to );
+	$subject = (string) $subject;
+	$body    = (string) $body;
+	$headers = is_array( $headers ) ? array_values( $headers ) : [];
+
+	if ( $to === '' || ! is_email( $to ) ) {
+		return;
+	}
+
+	wp_mail( $to, $subject, $body, $headers );
+}
+
 // ---------------------------------------------------------------------------
 // Project settings accessor
 // ---------------------------------------------------------------------------
@@ -90,7 +138,7 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 	$body    = xpressui_build_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $notify_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers );
 }
 
 /**
@@ -111,7 +159,7 @@ function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, 
 	$body    = xpressui_build_resubmitted_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $notify_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers );
 }
 
 // ---------------------------------------------------------------------------
@@ -461,7 +509,7 @@ function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
 	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url, $reference_files, $resubmit_label );
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $to_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $to_email, $subject, $body, $headers );
 }
 
 /**
@@ -485,7 +533,7 @@ function xpressui_maybe_send_done_notification( $post_id, $note ) {
 	$body    = xpressui_build_done_body( $post_id, $project_slug, $note );
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $to_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $to_email, $subject, $body, $headers );
 }
 
 /**
@@ -509,7 +557,7 @@ function xpressui_maybe_send_rejected_notification( $post_id, $note ) {
 	$body    = xpressui_build_rejected_body( $post_id, $project_slug, $note );
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $to_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $to_email, $subject, $body, $headers );
 }
 
 /**
@@ -874,5 +922,5 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 	);
 	$headers = xpressui_build_notification_headers();
 
-	wp_mail( $to_email, $subject, $body, $headers );
+	xpressui_enqueue_mail( $to_email, $subject, $body, $headers );
 }

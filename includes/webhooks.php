@@ -11,6 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+add_action( 'xpressui_dispatch_webhook_async', 'xpressui_dispatch_webhook_async', 10, 3 );
+
 /**
  * Send an outbound webhook for a submission if a webhook URL is configured.
  *
@@ -24,6 +26,37 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 		return;
 	}
 
+	// Queue webhook dispatch to keep submit response fast for end users.
+	$event_args = [ (int) $post_id, (string) $project_slug, is_array( $payload ) ? $payload : [] ];
+	if ( ! wp_next_scheduled( 'xpressui_dispatch_webhook_async', $event_args ) ) {
+		wp_schedule_single_event( time() + 1, 'xpressui_dispatch_webhook_async', $event_args );
+	}
+	update_post_meta( $post_id, '_xpressui_webhook_status', 'queued' );
+	update_post_meta( $post_id, '_xpressui_webhook_code', '' );
+	update_post_meta( $post_id, '_xpressui_webhook_error', '' );
+	update_post_meta( $post_id, '_xpressui_webhook_sent_at', '' );
+}
+
+/**
+ * Async webhook worker (WP-Cron).
+ *
+ * @param int    $post_id      Submission post ID.
+ * @param string $project_slug Workflow project slug.
+ * @param array  $payload      Submission payload.
+ */
+function xpressui_dispatch_webhook_async( $post_id, $project_slug, $payload ) {
+	$post_id      = (int) $post_id;
+	$project_slug = sanitize_title( (string) $project_slug );
+	$payload      = is_array( $payload ) ? $payload : [];
+	if ( $post_id <= 0 || $project_slug === '' ) {
+		return;
+	}
+
+	$webhook_url = xpressui_get_project_setting( $project_slug, 'webhookUrl' );
+	if ( $webhook_url === '' ) {
+		return;
+	}
+
 	$body   = xpressui_build_webhook_payload( $post_id, $project_slug, $payload );
 	$result = wp_remote_post(
 		$webhook_url,
@@ -31,7 +64,7 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 			'timeout'     => 5,
 			'redirection' => 0,
 			'headers'     => [
-				'Content-Type'    => 'application/json',
+				'Content-Type'     => 'application/json',
 				'X-XPressUI-Event' => 'xpressui.submission.created',
 			],
 			'body'        => wp_json_encode( $body ),
