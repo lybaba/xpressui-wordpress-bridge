@@ -29,6 +29,7 @@ import {
   SELECT_PRODUCT_TYPE,
   SETTING_TYPE,
   SIGNATURE_TYPE,
+  PAYMENT_PROOF_TYPE,
   PAYMENT_STRIPE_TYPE,
   UPLOAD_FILE_TYPE,
   UNKNOWN_TYPE,
@@ -1121,8 +1122,21 @@ export class HydratedFormHost extends HTMLElement {
     }
 
     if (!this.isQrScanField(fieldConfig)) {
-      if (input.multiple && input.files && input.files.length > 1) {
-        return Array.from(input.files);
+      if (input.multiple) {
+        const selectedFiles = Array.from(input.files || []).filter((file) => file instanceof File);
+        if (!selectedFiles.length) {
+          return undefined;
+        }
+        const currentFiles = this.getFileValueList(this.getFieldValue(fieldConfig.name));
+        const mergedFiles = [...currentFiles, ...selectedFiles];
+        const uniqueFiles = mergedFiles.filter((file, index, allFiles) => {
+          const signature = `${file.name}:${file.size}:${file.lastModified}`;
+          return allFiles.findIndex((entry) => `${entry.name}:${entry.size}:${entry.lastModified}` === signature) === index;
+        });
+        const maxFiles = typeof fieldConfig.maxFiles === "number" && fieldConfig.maxFiles > 0
+          ? fieldConfig.maxFiles
+          : uniqueFiles.length;
+        return uniqueFiles.slice(0, maxFiles);
       }
       return files;
     }
@@ -1918,6 +1932,10 @@ export class HydratedFormHost extends HTMLElement {
       return "Awaiting QR scan";
     }
 
+    if (fieldConfig.type === "payment-proof") {
+      return selectedFiles.length ? "Payment proof added" : "Awaiting payment proof";
+    }
+
     return !selectedFiles.length
       ? "Awaiting file"
       : selectedFiles.length === 1
@@ -1938,6 +1956,12 @@ export class HydratedFormHost extends HTMLElement {
       return qrValue ? `Latest result: ${qrValue}` : this.getUploadSelectionIdleMessage(fieldConfig);
     }
 
+    if (fieldConfig.type === "payment-proof") {
+      return !selectedFiles.length
+        ? this.getUploadSelectionIdleMessage(fieldConfig)
+        : "Review the screenshot before submitting.";
+    }
+
     return !selectedFiles.length
       ? this.getUploadSelectionIdleMessage(fieldConfig)
       : "";
@@ -1948,9 +1972,306 @@ export class HydratedFormHost extends HTMLElement {
       ? "Capture or upload the front and back of your document."
       : this.isQrScanField(fieldConfig)
         ? "Use the camera or upload an image containing a QR code."
-        : fieldConfig.type === "upload-image" || fieldConfig.type === "payment-proof"
-      ? "Drop an image here or use the file picker."
-      : "Drop files here or use the file picker."
+        : fieldConfig.type === "payment-proof"
+          ? this.getPaymentProofIdleMessage(fieldConfig)
+          : fieldConfig.type === "upload-image"
+            ? "Drop an image here or use the file picker."
+            : "Drop files here or use the file picker."
+
+  getPaymentProofIdleMessage = (fieldConfig: TFieldConfig) => {
+    const providerLabel = this.getPaymentProofProviderLabel(fieldConfig);
+    return providerLabel
+      ? `Add the ${providerLabel} confirmation screenshot.`
+      : "Add the payment confirmation screenshot.";
+  }
+
+  getPaymentProofProviderLabel = (fieldConfig: TFieldConfig) => {
+    const explicitLabel = String(
+      (fieldConfig as any).paymentProviderLabel || (fieldConfig as any).payment_provider_label || "",
+    ).trim();
+    if (explicitLabel) {
+      return explicitLabel;
+    }
+
+    const provider = String(
+      fieldConfig.subType || fieldConfig.paymentProvider || (fieldConfig as any).payment_provider || "",
+    ).trim();
+    if (provider) {
+      return provider
+        .replace(/[-_]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    }
+
+    const label = String(fieldConfig.label || "").toLowerCase();
+    if (label.includes("wave")) {
+      return "Wave";
+    }
+    if (label.includes("orange money")) {
+      return "Orange Money";
+    }
+    if (label.includes("free money")) {
+      return "Free Money";
+    }
+    if (label.includes("bank transfer")) {
+      return "Bank Transfer";
+    }
+
+    return "";
+  }
+
+  normalizePublicAssetUrl = (rawUrl: string) => {
+    const normalized = rawUrl.trim();
+    if (!normalized) {
+      return "";
+    }
+    if (normalized.startsWith("./public/")) {
+      return `/${normalized.slice("./public/".length)}`;
+    }
+    if (normalized.startsWith("public/")) {
+      return `/${normalized.slice("public/".length)}`;
+    }
+    return normalized;
+  }
+
+  extractPublicAssetUrl = (rawValue: unknown): string => {
+    if (typeof rawValue === "string") {
+      return this.normalizePublicAssetUrl(rawValue);
+    }
+
+    if (rawValue && typeof rawValue === "object") {
+      const record = rawValue as Record<string, any>;
+      for (const key of ["publicUrl", "public_url", "url", "src"]) {
+        const resolved = this.extractPublicAssetUrl(record[key]);
+        if (resolved) {
+          return resolved;
+        }
+      }
+      for (const key of ["large", "medium", "thumb", "small"]) {
+        const resolved = this.extractPublicAssetUrl(record[key]);
+        if (resolved) {
+          return resolved;
+        }
+      }
+    }
+
+    return "";
+  }
+
+  getPaymentProofQrCode = (fieldConfig: TFieldConfig, inputElement?: HTMLElement | null) => {
+    const config = fieldConfig as any;
+    const dataset = inputElement?.dataset;
+    for (const value of [
+      config.merchantQrCode,
+      config.merchantQRCode,
+      config.merchant_qr_code,
+      config.paymentMerchantQrCode,
+      config.paymentMerchantQRCode,
+      config.payment_merchant_qr_code,
+      config.qrCode,
+      config.qr_code,
+      dataset?.merchantQrCode,
+    ]) {
+      const resolved = this.extractPublicAssetUrl(value);
+      if (resolved) {
+        return resolved;
+      }
+    }
+    return "";
+  }
+
+  ensurePaymentProofQrImage = (fieldConfig: TFieldConfig, inputElement?: HTMLElement | null) => {
+    if (fieldConfig.type !== PAYMENT_PROOF_TYPE) {
+      return;
+    }
+
+    const qrCodeUrl = this.getPaymentProofQrCode(fieldConfig, inputElement);
+    if (!qrCodeUrl) {
+      return;
+    }
+
+    let summary = this.querySelector(
+      `[data-payment-proof-summary="${fieldConfig.name}"]`,
+    ) as HTMLElement | null;
+    if (!summary) {
+      const dropZone = this.querySelector(
+        `[data-file-drop-zone="${fieldConfig.name}"]`,
+      ) as HTMLElement | null;
+      if (!dropZone) {
+        return;
+      }
+      summary = document.createElement("div");
+      summary.className = "template-payment-proof-summary";
+      summary.setAttribute("data-payment-proof-summary", fieldConfig.name);
+      const insertionPoint = dropZone.querySelector(".template-upload-icon");
+      dropZone.insertBefore(summary, insertionPoint ?? dropZone.firstChild);
+    }
+
+    let qrBlock = summary.querySelector(
+      `[data-payment-proof-qr="${fieldConfig.name}"]`,
+    ) as HTMLElement | null;
+    if (!qrBlock) {
+      qrBlock = document.createElement("div");
+      qrBlock.className = "template-payment-proof-qr";
+      qrBlock.setAttribute("data-payment-proof-qr", fieldConfig.name);
+      const insertionPoint = summary.querySelector(
+        ".template-payment-proof-summary-note, .template-payment-proof-checklist",
+      );
+      summary.insertBefore(qrBlock, insertionPoint ?? null);
+    }
+
+    let image = qrBlock.querySelector("img") as HTMLImageElement | null;
+    if (!image) {
+      image = document.createElement("img");
+      image.className = "template-payment-proof-qr-img";
+      image.loading = "lazy";
+      qrBlock.appendChild(image);
+    }
+    image.src = qrCodeUrl;
+    image.alt = "Scan to pay";
+
+    let label = qrBlock.querySelector(
+      ".template-payment-proof-qr-label",
+    ) as HTMLElement | null;
+    if (!label) {
+      label = document.createElement("span");
+      label.className = "template-payment-proof-qr-label";
+      qrBlock.appendChild(label);
+    }
+    label.textContent = "Scan to pay";
+  }
+
+  ensurePaymentProofProviderSelector = (fieldConfig: TFieldConfig, inputElement?: HTMLElement | null) => {
+    if (fieldConfig.type !== PAYMENT_PROOF_TYPE) return;
+
+    const pills = Array.from(this.querySelectorAll<HTMLElement>(`[data-provider-pill="${fieldConfig.name}"]`));
+    if (pills.length < 2) return;
+
+    const activatePill = (pill: HTMLElement) => {
+      pills.forEach((p) => {
+        p.classList.remove("is-active");
+        p.setAttribute("aria-pressed", "false");
+      });
+      pill.classList.add("is-active");
+      pill.setAttribute("aria-pressed", "true");
+
+      const provider = pill.dataset.provider || "";
+
+      this.querySelectorAll<HTMLElement>(`[data-provider-block="${fieldConfig.name}"]`).forEach((block) => {
+        block.style.display = block.dataset.provider === provider ? "" : "none";
+      });
+
+      if (inputElement) {
+        const copy: Record<string, string> = {
+          paymentProvider: "data-payment-provider",
+          paymentProviderLabel: "data-payment-provider-label",
+          merchantName: "data-merchant-name",
+          merchantPhone: "data-merchant-phone",
+          paymentAmount: "data-payment-amount",
+          merchantQrCode: "data-merchant-qr-code",
+          paymentIban: "data-payment-iban",
+          paymentBic: "data-payment-bic",
+          paymentReferencePrefix: "data-payment-reference-prefix",
+        };
+        Object.entries(copy).forEach(([dsKey, attr]) => {
+          const val = pill.getAttribute(attr);
+          if (val != null) {
+            (inputElement as HTMLElement).dataset[dsKey] = val;
+          } else {
+            delete (inputElement as HTMLElement).dataset[dsKey];
+          }
+        });
+      }
+
+      if (provider === "bank-transfer") {
+        this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+      }
+    };
+
+    pills.forEach((pill) => {
+      pill.addEventListener("click", () => activatePill(pill));
+    });
+
+    const firstActive = pills.find((p) => p.classList.contains("is-active")) ?? pills[0];
+    if (firstActive && firstActive.dataset.provider === "bank-transfer") {
+      this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+    }
+  }
+
+  ensurePaymentProofBankReference = (fieldConfig: TFieldConfig, inputElement?: HTMLElement | null) => {
+    if (fieldConfig.type !== PAYMENT_PROOF_TYPE) {
+      return;
+    }
+    const provider = String(
+      (fieldConfig as any).subType || (fieldConfig as any).paymentProvider || (fieldConfig as any).payment_provider || "",
+    ).trim();
+    if (provider !== "bank-transfer") {
+      return;
+    }
+
+    const refEl = this.querySelector(
+      `[data-payment-proof-reference="${fieldConfig.name}"]`,
+    ) as HTMLElement | null;
+    if (!refEl) {
+      return;
+    }
+
+    const storageKey = `xpressui_pay_ref_${fieldConfig.name}`;
+    let reference = "";
+    try {
+      reference = sessionStorage.getItem(storageKey) || "";
+    } catch {
+      // sessionStorage unavailable
+    }
+
+    if (!reference) {
+      const prefix = (
+        (inputElement?.dataset?.paymentReferencePrefix) ||
+        String((fieldConfig as any).paymentReferencePrefix || (fieldConfig as any).payment_reference_prefix || "").toUpperCase()
+      ).trim() || "REF";
+      const now = new Date();
+      const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      reference = `${prefix}-${ymd}-${rand}`;
+      try {
+        sessionStorage.setItem(storageKey, reference);
+      } catch {
+        // ignore
+      }
+    }
+
+    refEl.textContent = reference;
+
+    const copyBtn = this.querySelector(
+      `[data-copy-reference="${fieldConfig.name}"]`,
+    ) as HTMLButtonElement | null;
+    if (copyBtn) {
+      copyBtn.disabled = false;
+      copyBtn.addEventListener("click", () => {
+        navigator.clipboard?.writeText(reference).then(() => {
+          const original = copyBtn.textContent;
+          copyBtn.textContent = "✓";
+          setTimeout(() => { copyBtn.textContent = original; }, 1800);
+        }).catch(() => {});
+      });
+    }
+
+    this.querySelectorAll(`[data-copy-value]`).forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      const dropZone = node.closest(`[data-file-drop-zone="${fieldConfig.name}"]`);
+      if (!dropZone) return;
+      if (node.dataset.copyListenerAttached) return;
+      node.dataset.copyListenerAttached = "1";
+      node.addEventListener("click", () => {
+        const value = node.dataset.copyValue || "";
+        navigator.clipboard?.writeText(value).then(() => {
+          const original = node.textContent;
+          node.textContent = "✓";
+          setTimeout(() => { node.textContent = original; }, 1800);
+        }).catch(() => {});
+      });
+    });
+  }
 
   setFileDragState = (fieldName: string, active: boolean) => {
     this.fileDragActive[fieldName] = active;
@@ -1980,7 +2301,18 @@ export class HydratedFormHost extends HTMLElement {
     }
 
     const currentFiles = this.getFileValueList(this.getFieldValue(fieldName));
-    const nextValue = files[0]; // single file only
+    const mergedFiles = fieldConfig.multiple
+      ? [...currentFiles, ...files]
+      : [files[0]];
+    const uniqueFiles = mergedFiles.filter((file, index, allFiles) => {
+      const signature = `${file.name}:${file.size}:${file.lastModified}`;
+      return allFiles.findIndex((entry) => `${entry.name}:${entry.size}:${entry.lastModified}` === signature) === index;
+    });
+    const maxFiles = fieldConfig.multiple && typeof fieldConfig.maxFiles === "number" && fieldConfig.maxFiles > 0
+      ? fieldConfig.maxFiles
+      : uniqueFiles.length;
+    const boundedFiles = uniqueFiles.slice(0, maxFiles);
+    const nextValue = fieldConfig.multiple ? boundedFiles : boundedFiles[0];
     const fileValidationError = this.engine.validateFileField(fieldName, nextValue);
     if (fileValidationError) {
       this.emitFileValidationErrorEvent(
@@ -3858,6 +4190,11 @@ export class HydratedFormHost extends HTMLElement {
           }
           this.registered[name] = true;
           this.engine.setField(name, fieldConfig);
+          if (fieldConfig.type === PAYMENT_PROOF_TYPE) {
+            this.ensurePaymentProofQrImage(fieldConfig, inputElement);
+            this.ensurePaymentProofProviderSelector(fieldConfig, inputElement);
+            this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+          }
           if (fieldConfig.type === SIGNATURE_TYPE) {
             this.signatureRuntime.initField(fieldConfig);
           }

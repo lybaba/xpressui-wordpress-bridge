@@ -157,22 +157,37 @@ async function openCaptureModal(
   statusText.textContent = 'Scan the QR code with your phone camera…';
 
   let elapsed = 0;
+  let pollInFlight = false;
+  let captureConsumed = false;
   const interval = setInterval(async () => {
     if (abort.signal.aborted) { clearInterval(interval); return; }
+    if (pollInFlight || captureConsumed) {
+      return;
+    }
+    pollInFlight = true;
     elapsed += POLL_INTERVAL_MS;
     if (elapsed > POLL_TIMEOUT_MS) {
+      pollInFlight = false;
       clearInterval(interval);
       statusText.textContent = 'Session expired. Please try again.';
       statusText.style.color = '#ef4444';
       return;
     }
-    const result = await pollCaptureSession(session.token);
-    if (result?.status === 'completed' && result.data) {
-      clearInterval(interval);
-      statusText.textContent = '✓ Capture received!';
-      statusText.style.color = '#16a34a';
-      onData(result.data);
-      setTimeout(close, 1000);
+    try {
+      const result = await pollCaptureSession(session.token);
+      if (captureConsumed) {
+        return;
+      }
+      if (result?.status === 'completed' && result.data) {
+        captureConsumed = true;
+        clearInterval(interval);
+        statusText.textContent = '✓ Capture received!';
+        statusText.style.color = '#16a34a';
+        onData(result.data);
+        setTimeout(close, 1000);
+      }
+    } finally {
+      pollInFlight = false;
     }
   }, POLL_INTERVAL_MS);
 
@@ -251,9 +266,11 @@ function initCameraPhotoField(
   const isList = type === 'camera-photo-list';
   const grid = fieldWrap.querySelector(`[data-photo-grid="${fn}"]`) as HTMLElement | null;
   if (!grid) return;
+  const maxPhotos = Math.max(1, Number.parseInt(grid.dataset.photoGridMax || '5', 10) || 5);
 
   const capturedFiles: File[] = [];
   const placeholderText = isList ? 'Add photo' : 'Capture on mobile';
+  let desktopCaptureSequenceActive = false;
 
   const getFileInput = (): HTMLElement | null =>
     grid.querySelector(`input[type="file"][data-name="${fn}"]`);
@@ -367,12 +384,49 @@ function initCameraPhotoField(
     }
   };
 
+  const startDesktopCaptureSequence = (): void => {
+    if (desktopCaptureSequenceActive) {
+      return;
+    }
+    if (capturedFiles.length >= maxPhotos) {
+      return;
+    }
+    desktopCaptureSequenceActive = true;
+
+    const run = (): void => {
+      if (capturedFiles.length >= maxPhotos) {
+        desktopCaptureSequenceActive = false;
+        return;
+      }
+      const remainingPlaceholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
+      if (!remainingPlaceholder) {
+        desktopCaptureSequenceActive = false;
+        return;
+      }
+
+      void openCaptureModal(host, fn, type, projectSlug, (data) => {
+        void handleCapture(data).then(() => {
+          if (!desktopCaptureSequenceActive) {
+            return;
+          }
+          queueMicrotask(run);
+        });
+      });
+    };
+
+    run();
+  };
+
   // Must be a function declaration so it can be referenced before definition inside handleCapture.
   function attachClick(placeholder: HTMLElement): void {
     placeholder.addEventListener('click', (e) => {
       e.preventDefault(); // prevent the label from opening the file dialog on desktop
       if (resolveDesktopCaptureMode() === 'native-picker') {
         openNativeFilePicker(fieldWrap, fn);
+        return;
+      }
+      if (isList) {
+        startDesktopCaptureSequence();
         return;
       }
       void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));

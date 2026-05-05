@@ -2630,6 +2630,28 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 		}
 		$is_list = array_keys( $value ) === range( 0, count( $value ) - 1 );
 		if ( $is_list ) {
+			$all_uploaded_files = ! empty( $value );
+			foreach ( $value as $entry ) {
+				if ( ! is_array( $entry ) || ( $entry['kind'] ?? '' ) !== 'uploaded-file' ) {
+					$all_uploaded_files = false;
+					break;
+				}
+			}
+			if ( $all_uploaded_files ) {
+				$html = '<ul class="xpressui-file-list">';
+				foreach ( $value as $entry ) {
+					$original_name = (string) ( $entry['originalName'] ?? $entry['field'] ?? 'File' );
+					$url           = (string) ( $entry['url'] ?? '' );
+					$html         .= '<li>';
+					$html         .= $url !== ''
+						? '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $original_name ) . '</a>'
+						: esc_html( $original_name );
+					$html         .= '</li>';
+				}
+				$html .= '</ul>';
+				return $html;
+			}
+
 			$parts = [];
 			foreach ( $value as $item ) {
 				$parts[] = is_scalar( $item ) || $item === null

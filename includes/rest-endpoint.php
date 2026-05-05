@@ -265,6 +265,21 @@ function xpressui_handle_resume_request( WP_REST_Request $request ) {
 }
 
 function xpressui_handle_submission( WP_REST_Request $request ) {
+	$timing_marks = [
+		'start' => microtime( true ),
+	];
+	$mark_timing = static function ( $name ) use ( &$timing_marks ) {
+		$timing_marks[ (string) $name ] = microtime( true );
+	};
+	$timing_diff_ms = static function ( $from, $to ) use ( &$timing_marks ) {
+		$from_key = (string) $from;
+		$to_key   = (string) $to;
+		if ( ! isset( $timing_marks[ $from_key ], $timing_marks[ $to_key ] ) ) {
+			return null;
+		}
+		return (int) round( ( $timing_marks[ $to_key ] - $timing_marks[ $from_key ] ) * 1000 );
+	};
+
 	$payload              = $request->get_param( 'payload' );
 	$project_id           = xpressui_sanitize_request_identifier( $request->get_param( 'projectId' ) );
 	$project_config_version = xpressui_sanitize_request_identifier( $request->get_param( 'projectConfigVersion' ) );
@@ -303,6 +318,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	if ( is_wp_error( $validation ) ) {
 		return $validation;
 	}
+	$mark_timing( 'validated' );
 
 	$post_id = wp_insert_post( [
 		'post_type'   => 'xpressui_submission',
@@ -316,6 +332,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 			'message' => __( 'Submission failed. Please review the form and try again.', 'xpressui-bridge' ),
 		], 500 );
 	}
+	$mark_timing( 'post_created' );
 
 	update_post_meta( $post_id, '_xpressui_project_id', $project_id );
 	update_post_meta( $post_id, '_xpressui_project_slug', $project_slug );
@@ -326,6 +343,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	xpressui_set_submission_status( $post_id, 'new', __( 'Submission received', 'xpressui-bridge' ) );
 
 	$stored_files        = xpressui_store_uploaded_files( $post_id, $request );
+	$mark_timing( 'files_stored' );
 	$payload_with_files  = xpressui_attach_file_references( $payload, $stored_files );
 
 	update_post_meta( $post_id, '_xpressui_payload_json',
@@ -333,18 +351,36 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 			? $payload_with_files
 			: wp_json_encode( $payload_with_files )
 	);
+	$mark_timing( 'payload_stored' );
 
 	// Allow extensions to react immediately after a brand-new submission is persisted.
 	do_action( 'xpressui_submission_first_created', $post_id, $project_slug, $payload_with_files );
+	$mark_timing( 'first_created_action' );
 
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
+	$mark_timing( 'notification_sent' );
 
 	// Send confirmation email to the submitter on first submit.
 	xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payload_with_files );
+	$mark_timing( 'submit_confirmation_sent' );
 
 	// Send outbound webhook (best-effort — failure does not affect submission response).
 	xpressui_maybe_send_webhook( $post_id, $project_slug, $payload_with_files );
+	$mark_timing( 'webhook_sent' );
+
+	$timing_summary = [
+		'totalMs'             => $timing_diff_ms( 'start', 'webhook_sent' ),
+		'validateMs'          => $timing_diff_ms( 'start', 'validated' ),
+		'postCreateMs'        => $timing_diff_ms( 'validated', 'post_created' ),
+		'storeFilesMs'        => $timing_diff_ms( 'post_created', 'files_stored' ),
+		'storePayloadMs'      => $timing_diff_ms( 'files_stored', 'payload_stored' ),
+		'firstCreatedHookMs'  => $timing_diff_ms( 'payload_stored', 'first_created_action' ),
+		'notificationMs'      => $timing_diff_ms( 'first_created_action', 'notification_sent' ),
+		'submitConfirmMs'     => $timing_diff_ms( 'notification_sent', 'submit_confirmation_sent' ),
+		'webhookMs'           => $timing_diff_ms( 'submit_confirmation_sent', 'webhook_sent' ),
+	];
+	update_post_meta( $post_id, '_xpressui_submit_timing', wp_json_encode( $timing_summary ) );
 
 	// Read per-project redirect URL.
 	$redirect_url = xpressui_get_project_setting( $project_slug, 'redirectUrl' );
@@ -355,6 +391,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		'entryId'      => $post_id,
 		'submissionId' => $submission_id,
 		'files'        => $stored_files,
+		'timing'       => $timing_summary,
 	];
 	if ( $redirect_url !== '' ) {
 		$response['redirectUrl'] = $redirect_url;
@@ -678,7 +715,7 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 	$files             = xpressui_normalize_uploaded_files( $file_params );
 	$allowed_mime_map  = get_allowed_mime_types();
 	$allowed_exts      = array_keys( $allowed_mime_map );
-	$max_files         = 5;
+	$max_files         = 20;
 	$max_bytes_per_file = 10 * MB_IN_BYTES;
 
 	if ( count( $files ) > $max_files ) {

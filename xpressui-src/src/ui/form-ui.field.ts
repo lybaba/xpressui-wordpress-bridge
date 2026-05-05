@@ -449,7 +449,7 @@ export function applyFieldValuePresentation(options: {
   } else if (input instanceof HTMLInputElement && input.type === "checkbox") {
     input.checked = value;
   } else if (input instanceof HTMLInputElement && input.type === "file") {
-    input.multiple = false; // single file only
+    input.multiple = Boolean(options.fieldConfig.multiple) || input.hasAttribute("multiple");
     input.accept = typeof options.fieldConfig.accept === "string" ? options.fieldConfig.accept : "";
     if (typeof options.fieldConfig.capture === "string" && options.fieldConfig.capture) {
       input.setAttribute("capture", options.fieldConfig.capture);

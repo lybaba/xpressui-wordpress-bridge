@@ -234,12 +234,15 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-upload-box[data-file-drop-state='selected'] .template-field-help,
     .template-upload-box[data-file-drop-state='selected'] .template-upload-pills { display: none; }
     .template-upload-box[data-file-drop-state='selected'] .template-input { grid-column: 2; margin-top: 0; }
+    .template-upload-box[data-payment-proof='true'][data-file-drop-state='selected'] { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 16px 18px; }
+    .template-upload-box[data-payment-proof='true'][data-file-drop-state='selected'] .template-upload-icon { grid-row: auto; }
+    .template-upload-box[data-payment-proof='true'][data-file-drop-state='selected'] .template-input { grid-column: auto; width: 100%; margin-top: 4px; }
     .template-upload-icon { width: 36px; height: 36px; border-radius: 12px; background: color-mix(in srgb, var(--template-border) 40%, transparent); color: var(--template-text); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
     .template-upload-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
     .template-upload-box .template-field-label { font-size: 13px; }
     .template-upload-box .template-field-help { max-width: 520px; }
     .template-upload-box .template-input { margin-top: 4px; padding-top: 10px; padding-bottom: 10px; }
-    .template-payment-proof-summary { display: grid; gap: 10px; width: min(100%, 560px); margin: 0 auto 4px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--template-surface) 98%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 70%, transparent); text-align: left; box-shadow: 0 10px 28px -24px rgba(15,23,42,0.22); }
+    .template-payment-proof-summary { display: grid; gap: 10px; width: min(100%, 560px); max-width: 560px; margin: 0 auto 4px; align-self: center; justify-self: center; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--template-surface) 98%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 70%, transparent); text-align: left; box-shadow: 0 10px 28px -24px rgba(15,23,42,0.22); }
     .template-payment-proof-summary-row { display: flex; flex-wrap: wrap; gap: 8px; }
     .template-payment-provider-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 98%, transparent); color: var(--template-text); font-size: 12px; font-weight: 800; line-height: 1; box-shadow: 0 8px 20px -18px rgba(15,23,42,0.24); }
     .template-payment-provider-logo { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px; color: #fff; font-size: 10px; font-weight: 900; letter-spacing: 0; }

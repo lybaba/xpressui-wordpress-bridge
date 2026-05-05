@@ -44,9 +44,38 @@ type TFieldConfig = {
     paymentProvider?: string;
     merchantName?: string;
     merchantPhone?: string;
+    merchantQrCode?: string;
+    merchantQRCode?: string;
     paymentAmount?: number | string;
+    paymentAmountSource?: 'fixed' | 'cart' | string;
+    paymentAmountField?: string;
     paymentCurrency?: string;
     paymentInstructions?: string;
+    paymentIban?: string;
+    paymentBic?: string;
+    paymentReferencePrefix?: string;
+    mobileMoneyProvider?: string;
+    mobileMoney?: {
+        merchantPhone?: string;
+        merchantQrCode?: string;
+        paymentAmount?: number | string;
+        paymentInstructions?: string;
+    };
+    bankTransfer?: {
+        enabled?: boolean;
+        paymentIban?: string;
+        paymentBic?: string;
+        paymentReferencePrefix?: string;
+        paymentAmount?: number | string;
+        paymentInstructions?: string;
+        merchantName?: string;
+    };
+    manualPayment?: {
+        enabled?: boolean;
+        merchantName?: string;
+        paymentAmount?: number | string;
+        paymentInstructions?: string;
+    };
     documentScanMode?: 'single' | 'double';
     enableDocumentOcr?: boolean;
     requireValidDocumentMrz?: boolean;

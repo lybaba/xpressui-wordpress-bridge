@@ -749,12 +749,28 @@ const mergeDomFileInputsIntoValues = (values, form) => {
       return;
     }
 
+    const normalizedName = input.name.endsWith('[]')
+      ? input.name.slice(0, -2)
+      : input.name;
     const files = Array.from(input.files || []).filter((file) => file instanceof File);
     if (!files.length) {
       return;
     }
 
-    nextValues[input.name] = input.multiple ? files : files[0];
+    const existingValue = nextValues[normalizedName] ?? nextValues[input.name];
+    const existingFiles = Array.isArray(existingValue)
+      ? existingValue.filter((file) => file instanceof File)
+      : (existingValue instanceof File ? [existingValue] : []);
+    const mergedFiles = input.multiple ? [...existingFiles, ...files] : [files[0]];
+    const uniqueFiles = mergedFiles.filter((file, index, allFiles) => {
+      const signature = `${file.name}:${file.size}:${file.lastModified}`;
+      return allFiles.findIndex((entry) => `${entry.name}:${entry.size}:${entry.lastModified}` === signature) === index;
+    });
+
+    nextValues[normalizedName] = input.multiple ? uniqueFiles : uniqueFiles[0];
+    if (normalizedName !== input.name) {
+      delete nextValues[input.name];
+    }
   });
 
   return nextValues;
