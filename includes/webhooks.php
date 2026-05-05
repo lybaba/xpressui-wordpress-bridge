@@ -28,13 +28,17 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 
 	// Queue webhook dispatch to keep submit response fast for end users.
 	$event_args = [ (int) $post_id, (string) $project_slug, is_array( $payload ) ? $payload : [] ];
-	if ( ! wp_next_scheduled( 'xpressui_dispatch_webhook_async', $event_args ) ) {
-		wp_schedule_single_event( time() + 1, 'xpressui_dispatch_webhook_async', $event_args );
-	}
 	update_post_meta( $post_id, '_xpressui_webhook_status', 'queued' );
 	update_post_meta( $post_id, '_xpressui_webhook_code', '' );
 	update_post_meta( $post_id, '_xpressui_webhook_error', '' );
 	update_post_meta( $post_id, '_xpressui_webhook_sent_at', '' );
+
+	if ( ! wp_next_scheduled( 'xpressui_dispatch_webhook_async', $event_args ) ) {
+		$scheduled = wp_schedule_single_event( time() + 1, 'xpressui_dispatch_webhook_async', $event_args );
+		if ( ! $scheduled ) {
+			xpressui_dispatch_webhook_async( (int) $post_id, (string) $project_slug, is_array( $payload ) ? $payload : [] );
+		}
+	}
 }
 
 /**
@@ -129,7 +133,7 @@ function xpressui_store_webhook_result( $post_id, $result ) {
 
 	$code = (int) wp_remote_retrieve_response_code( $result );
 	if ( $code >= 200 && $code < 300 ) {
-		update_post_meta( $post_id, '_xpressui_webhook_status', 'success' );
+		update_post_meta( $post_id, '_xpressui_webhook_status', 'sent' );
 	} else {
 		update_post_meta( $post_id, '_xpressui_webhook_status', 'failed' );
 		update_post_meta( $post_id, '_xpressui_webhook_error', wp_remote_retrieve_response_message( $result ) );

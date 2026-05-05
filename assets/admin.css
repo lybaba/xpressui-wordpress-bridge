@@ -887,6 +887,43 @@
 	border-radius: 4px;
 }
 
+.xpressui-delivery-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.xpressui-delivery-card {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 10px 12px;
+}
+
+.xpressui-delivery-card h4 {
+	margin: 0 0 10px;
+	font-size: 13px;
+}
+
+.xpressui-delivery-dl {
+	margin: 0;
+	display: grid;
+	grid-template-columns: 120px 1fr;
+	row-gap: 6px;
+	column-gap: 8px;
+}
+
+.xpressui-delivery-dl dt {
+	color: #64748b;
+	font-size: 12px;
+}
+
+.xpressui-delivery-dl dd {
+	margin: 0;
+	word-break: break-word;
+	font-size: 12px;
+}
+
 /* ---------------------------------------------------------------------------
  * Utility helpers
  * ------------------------------------------------------------------------- */

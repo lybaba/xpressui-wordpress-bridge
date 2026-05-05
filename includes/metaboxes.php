@@ -59,6 +59,7 @@ function xpressui_register_metaboxes( $post_type, $post = null ) {
 	add_meta_box( 'xpressui_submission_afile_mb',   __( 'Request Additional Document', 'xpressui-bridge' ), 'xpressui_render_afile_metabox',   'xpressui_submission', 'normal', 'default' );
 	add_meta_box( 'xpressui_submission_history_mb', __( 'Status History', 'xpressui-bridge' ),             'xpressui_render_history_metabox', 'xpressui_submission', 'side',   'default' );
 	add_meta_box( 'xpressui_submission_preview_mb', __( 'Submission Preview', 'xpressui-bridge' ),         'xpressui_render_preview_metabox', 'xpressui_submission', 'normal', 'high' );
+	add_meta_box( 'xpressui_submission_delivery_mb', __( 'Submission Delivery', 'xpressui-bridge' ),       'xpressui_render_delivery_metabox', 'xpressui_submission', 'normal', 'default' );
 	add_meta_box( 'xpressui_submission_payload_mb', __( 'Submission Payload', 'xpressui-bridge' ),         'xpressui_render_payload_metabox', 'xpressui_submission', 'normal', 'default' );
 	add_meta_box( 'xpressui_submission_files_mb',   __( 'Uploaded Files', 'xpressui-bridge' ),             'xpressui_render_files_metabox',   'xpressui_submission', 'side',   'default' );
 }
@@ -628,6 +629,65 @@ function xpressui_render_preview_metabox( $post ) {
 		}
 		echo '</tbody></table>';
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Delivery metabox
+// ---------------------------------------------------------------------------
+
+function xpressui_render_delivery_metabox( $post ) {
+	$timing_json = (string) get_post_meta( $post->ID, '_xpressui_submit_timing', true );
+	$timing      = $timing_json !== '' ? json_decode( $timing_json, true ) : [];
+	$timing      = is_array( $timing ) ? $timing : [];
+
+	$mail_status        = (string) get_post_meta( $post->ID, '_xpressui_mail_status', true );
+	$mail_error         = (string) get_post_meta( $post->ID, '_xpressui_mail_error', true );
+	$mail_sent_at       = (string) get_post_meta( $post->ID, '_xpressui_mail_sent_at', true );
+	$mail_fallback_used = (string) get_post_meta( $post->ID, '_xpressui_mail_fallback_used', true );
+
+	$webhook_status  = (string) get_post_meta( $post->ID, '_xpressui_webhook_status', true );
+	$webhook_code    = (string) get_post_meta( $post->ID, '_xpressui_webhook_code', true );
+	$webhook_error   = (string) get_post_meta( $post->ID, '_xpressui_webhook_error', true );
+	$webhook_sent_at = (string) get_post_meta( $post->ID, '_xpressui_webhook_sent_at', true );
+
+	echo '<div class="xpressui-delivery-grid">';
+
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Submit timing', 'xpressui-bridge' ) . '</h4>';
+	if ( empty( $timing ) ) {
+		echo '<p class="xpressui-hint">' . esc_html__( 'No timing data recorded yet.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		echo '<dl class="xpressui-delivery-dl">';
+		foreach ( $timing as $key => $value ) {
+			$label = preg_replace( '/([a-z])([A-Z])/', '$1 $2', (string) $key );
+			echo '<dt>' . esc_html( ucfirst( (string) $label ) ) . '</dt>';
+			echo '<dd>' . esc_html( is_numeric( $value ) ? ( (string) $value . ' ms' ) : (string) $value ) . '</dd>';
+		}
+		echo '</dl>';
+	}
+	echo '</div>';
+
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
+	echo '<dl class="xpressui-delivery-dl">';
+	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_status !== '' ? $mail_status : 'not-set' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Fallback used', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_fallback_used === '1' ? 'yes' : 'no' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_sent_at !== '' ? $mail_sent_at : '-' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_error !== '' ? $mail_error : '-' ) . '</dd>';
+	echo '</dl>';
+	echo '</div>';
+
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Webhook delivery', 'xpressui-bridge' ) . '</h4>';
+	echo '<dl class="xpressui-delivery-dl">';
+	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_status !== '' ? $webhook_status : 'not-set' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_code !== '' ? $webhook_code : '-' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_sent_at !== '' ? $webhook_sent_at : '-' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_error !== '' ? $webhook_error : '-' ) . '</dd>';
+	echo '</dl>';
+	echo '</div>';
+
+	echo '</div>';
 }
 
 // ---------------------------------------------------------------------------
