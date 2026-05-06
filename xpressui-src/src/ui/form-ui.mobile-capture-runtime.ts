@@ -5,6 +5,7 @@ type TMobileCaptureHost = any;
 const CAPTURE_ELIGIBLE_TYPES = new Set(['signature', 'camera-photo', 'camera-photo-list', 'qr-scan', 'document-scan']);
 const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const ACTIVE_CAPTURE_CLEANUP = new WeakMap<HTMLDialogElement, () => void>();
 
 function isDesktopBrowser(): boolean {
   if (typeof window === 'undefined') return false;
@@ -27,6 +28,8 @@ export function openNativeFilePicker(fieldWrap: HTMLElement, fn: string): boolea
     return false;
   }
 
+  // Ensure selecting a newly captured file with the same OS filename still fires `change`.
+  fileInput.value = '';
   fileInput.click();
   return true;
 }
@@ -111,6 +114,11 @@ async function openCaptureModal(
   const dialog = findCaptureDialog(host);
   if (!dialog) return;
 
+  const previousCleanup = ACTIVE_CAPTURE_CLEANUP.get(dialog);
+  if (previousCleanup) {
+    previousCleanup();
+  }
+
   const qrImg = dialog.querySelector('[data-mobile-capture-modal-qr]') as HTMLImageElement | null;
   const statusText = dialog.querySelector('[data-mobile-capture-modal-status]') as HTMLElement | null;
   const closeBtn = dialog.querySelector('[data-mobile-capture-modal-close]') as HTMLButtonElement | null;
@@ -128,6 +136,9 @@ async function openCaptureModal(
     cleanedUp = true;
     hideDialog(dialog);
     abort.abort();
+    if (ACTIVE_CAPTURE_CLEANUP.get(dialog) === cleanup) {
+      ACTIVE_CAPTURE_CLEANUP.delete(dialog);
+    }
   };
   const close = () => {
     closeDialog(dialog);
@@ -139,6 +150,7 @@ async function openCaptureModal(
   dialog.addEventListener('close', cleanup, { once: true });
 
   showDialog(dialog);
+  ACTIVE_CAPTURE_CLEANUP.set(dialog, cleanup);
 
   const session = await createCaptureSession(fieldName, fieldType, projectSlug);
   if (!session) {
@@ -256,6 +268,14 @@ function createPhotoPlaceholder(fn: string, labelText: string): HTMLElement {
   return el;
 }
 
+function prepareDesktopPlaceholder(placeholder: HTMLElement): void {
+  placeholder.removeAttribute('for');
+  placeholder.setAttribute('role', 'button');
+  if (!placeholder.hasAttribute('tabindex')) {
+    placeholder.setAttribute('tabindex', '0');
+  }
+}
+
 function initCameraPhotoField(
   host: TMobileCaptureHost,
   fieldWrap: HTMLElement,
@@ -270,7 +290,6 @@ function initCameraPhotoField(
 
   const capturedFiles: File[] = [];
   const placeholderText = isList ? 'Add photo' : 'Capture on mobile';
-  let desktopCaptureSequenceActive = false;
 
   const getFileInput = (): HTMLElement | null =>
     grid.querySelector(`input[type="file"][data-name="${fn}"]`);
@@ -281,45 +300,55 @@ function initCameraPhotoField(
     if (!fileInput) return;
     fileInput.addEventListener('change', (event) => {
       if (!event.isTrusted) return;
-      Array.from(fileInput.files ?? []).forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const dataUrl = e.target?.result as string;
-          if (!dataUrl) return;
-          const placeholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
-          const thumb = document.createElement('div');
-          thumb.className = 'xpui-photo-thumb xpui-photo-thumb--captured';
-          const img = document.createElement('img');
-          img.alt = '';
-          img.src = dataUrl;
-          img.onclick = () => openLightbox(fieldWrap, dataUrl);
-          const removeBtn = document.createElement('button');
-          removeBtn.type = 'button';
-          removeBtn.className = 'xpui-photo-thumb-remove';
-          removeBtn.setAttribute('aria-label', 'Remove photo');
-          removeBtn.textContent = '×';
-          thumb.appendChild(img);
-          thumb.appendChild(removeBtn);
-          if (placeholder) { grid.insertBefore(thumb, placeholder); placeholder.remove(); }
-          else { grid.insertBefore(thumb, getFileInput()); }
-          capturedFiles.push(file);
+      const selectedFiles = Array.from(fileInput.files ?? []);
+      const remainingSlots = Math.max(0, maxPhotos - capturedFiles.length);
+      const maxNewFiles = isList ? remainingSlots : Math.min(1, remainingSlots);
+      if (maxNewFiles <= 0) {
+        fileInput.value = '';
+        return;
+      }
+
+      selectedFiles.slice(0, maxNewFiles).forEach((file) => {
+        const previewUrl = URL.createObjectURL(file);
+        const placeholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
+        const thumb = document.createElement('div');
+        thumb.className = 'xpui-photo-thumb xpui-photo-thumb--captured';
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = previewUrl;
+        img.onclick = () => openLightbox(fieldWrap, previewUrl);
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'xpui-photo-thumb-remove';
+        removeBtn.setAttribute('aria-label', 'Remove photo');
+        removeBtn.textContent = '×';
+        thumb.appendChild(img);
+        thumb.appendChild(removeBtn);
+        if (placeholder) { grid.insertBefore(thumb, placeholder); placeholder.remove(); }
+        else { grid.insertBefore(thumb, getFileInput()); }
+        capturedFiles.push(file);
+        updateFileInputFiles(fieldWrap, fn, capturedFiles);
+        removeBtn.onclick = () => {
+          const idx = capturedFiles.indexOf(file);
+          if (idx !== -1) capturedFiles.splice(idx, 1);
           updateFileInputFiles(fieldWrap, fn, capturedFiles);
-          removeBtn.onclick = () => {
-            const idx = capturedFiles.indexOf(file);
-            if (idx !== -1) capturedFiles.splice(idx, 1);
-            updateFileInputFiles(fieldWrap, fn, capturedFiles);
-            // Restored placeholder naturally opens camera via label[for] — no JS needed.
-            grid.insertBefore(createPhotoPlaceholder(fn, placeholderText), thumb);
-            thumb.remove();
-          };
+          URL.revokeObjectURL(previewUrl);
+          // Restored placeholder naturally opens camera via label[for] — no JS needed.
+          grid.insertBefore(createPhotoPlaceholder(fn, placeholderText), thumb);
+          thumb.remove();
         };
-        reader.readAsDataURL(file);
       });
+      // Allow another capture that may reuse the same filename.
+      fileInput.value = '';
     });
     return;
   }
 
   // ── Desktop path: placeholder click → QR modal ───────────────────────────────
+  Array.from(grid.querySelectorAll(`[data-photo-placeholder="${fn}"]`)).forEach((node) => {
+    prepareDesktopPlaceholder(node as HTMLElement);
+  });
+
   const handleCapture = async (data: string): Promise<void> => {
     const imageUrl = resolveImageUrl(data);
 
@@ -369,7 +398,7 @@ function initCameraPhotoField(
         updateFileInputFiles(fieldWrap, fn, capturedFiles);
         // Restore a placeholder at this position so the slot is reusable.
         const restored = createPhotoPlaceholder(fn, placeholderText);
-        attachClick(restored);
+        prepareDesktopPlaceholder(restored);
         grid.insertBefore(restored, thumb);
         thumb.remove();
       };
@@ -377,66 +406,31 @@ function initCameraPhotoField(
       // Fetch failed — thumbnail is shown but file input won't be set.
       removeBtn.onclick = () => {
         const restored = createPhotoPlaceholder(fn, placeholderText);
-        attachClick(restored);
+        prepareDesktopPlaceholder(restored);
         grid.insertBefore(restored, thumb);
         thumb.remove();
       };
     }
   };
 
-  const startDesktopCaptureSequence = (): void => {
-    if (desktopCaptureSequenceActive) {
+  // Use delegated click handling so capture keeps working even if placeholders
+  // are re-rendered after the first capture/update cycle.
+  fieldWrap.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement | null;
+    const placeholder = target?.closest(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
+    if (!placeholder || !fieldWrap.contains(placeholder)) {
       return;
     }
-    if (capturedFiles.length >= maxPhotos) {
+    e.preventDefault(); // prevent label default file dialog on desktop
+    if (resolveDesktopCaptureMode() === 'native-picker') {
+      openNativeFilePicker(fieldWrap, fn);
       return;
     }
-    desktopCaptureSequenceActive = true;
-
-    const run = (): void => {
-      if (capturedFiles.length >= maxPhotos) {
-        desktopCaptureSequenceActive = false;
-        return;
-      }
-      const remainingPlaceholder = grid.querySelector(`[data-photo-placeholder="${fn}"]`) as HTMLElement | null;
-      if (!remainingPlaceholder) {
-        desktopCaptureSequenceActive = false;
-        return;
-      }
-
-      void openCaptureModal(host, fn, type, projectSlug, (data) => {
-        void handleCapture(data).then(() => {
-          if (!desktopCaptureSequenceActive) {
-            return;
-          }
-          queueMicrotask(run);
-        });
-      });
-    };
-
-    run();
-  };
-
-  // Must be a function declaration so it can be referenced before definition inside handleCapture.
-  function attachClick(placeholder: HTMLElement): void {
-    placeholder.addEventListener('click', (e) => {
-      e.preventDefault(); // prevent the label from opening the file dialog on desktop
-      if (resolveDesktopCaptureMode() === 'native-picker') {
-        openNativeFilePicker(fieldWrap, fn);
-        return;
-      }
-      if (isList) {
-        startDesktopCaptureSequence();
-        return;
-      }
-      void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));
-    });
-  }
-
-  // Wire up all server-rendered placeholders.
-  Array.from(grid.querySelectorAll(`[data-photo-placeholder="${fn}"]`)).forEach((p) =>
-    attachClick(p as HTMLElement),
-  );
+    if (isList && capturedFiles.length >= maxPhotos) {
+      return;
+    }
+    void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));
+  });
 }
 
 function applySignatureCaptureToCanvas(fieldWrap: HTMLElement, fn: string, dataUrl: string): void {

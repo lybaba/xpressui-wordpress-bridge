@@ -202,7 +202,7 @@ function xpressui_render_shortcode( $atts ) {
 		$template_context['runtime']['booking_button_label'] = '' !== $_booking_btn ? $_booking_btn : __( 'Book an appointment', 'xpressui-bridge' );
 	}
 
-	// Render the form fragment (CSS + HTML only; scripts are enqueued below).
+	// Render the form fragment (HTML only; CSS and scripts are enqueued below).
 	// form-fragment.php lives in templates/ (not generated/) as it is manually maintained.
 	ob_start();
 	$xpressui_ctx = $template_context;
@@ -256,6 +256,31 @@ function xpressui_render_shortcode( $atts ) {
 	$inline_before .= 'window.XPRESSUI_SHELL_META = ' . wp_json_encode( $shell_meta ) . ';';
 
 	wp_add_inline_script( 'xpressui-shell-init', $inline_before, 'before' );
+
+	// Enqueue the shortcode-specific CSS via the WordPress style API.
+	// The static CSS file covers component base styles; dynamic/scoped overrides
+	// (theme colours, mount-ID scope) are appended as an inline style block.
+	$style_handle = 'xpressui-shortcode-' . sanitize_key( $slug );
+	$static_css_url  = XPRESSUI_BRIDGE_URL . 'assets/css/xpressui-shortcode.css';
+	$static_css_path = XPRESSUI_BRIDGE_DIR . 'assets/css/xpressui-shortcode.css';
+	$static_css_ver  = file_exists( $static_css_path ) ? (string) filemtime( $static_css_path ) : XPRESSUI_BRIDGE_VERSION;
+	if ( file_exists( $static_css_path ) ) {
+		wp_enqueue_style( $style_handle, $static_css_url, [], $static_css_ver );
+	} else {
+		// No static file yet — register a virtual handle so wp_add_inline_style works.
+		wp_register_style( $style_handle, false, [], null );
+		wp_enqueue_style( $style_handle );
+	}
+	$inline_css = xpressui_build_shortcode_inline_css( $template_context, $mount_node_id );
+	if ( '' !== $inline_css ) {
+		wp_add_inline_style( $style_handle, $inline_css );
+	}
+
+	// Resume-mode detection: set data-resume-loading on the mount element when
+	// ?xpressui_resume= is present. Delivered via wp_add_inline_script so no
+	// inline <script> appears in the shortcode output.
+	$resume_script = 'try{if(/[?&]xpressui_resume=/.test(location.search)){var _xpEl=document.getElementById(' . wp_json_encode( $mount_node_id ) . ');if(_xpEl)_xpEl.setAttribute("data-resume-loading","");}}catch(e){}';
+	wp_add_inline_script( 'xpressui-shell-init', $resume_script, 'after' );
 
 	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
 

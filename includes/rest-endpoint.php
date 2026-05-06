@@ -726,7 +726,8 @@ function xpressui_get_request_file_params( WP_REST_Request $request ) {
 function xpressui_normalize_uploaded_files( array $file_params ) {
 	$normalized = [];
 	foreach ( $file_params as $field_name => $file_info ) {
-		if ( ! is_array( $file_info ) || ! isset( $file_info['name'] ) ) {
+		$field_name = sanitize_key( (string) $field_name );
+		if ( '' === $field_name || ! is_array( $file_info ) || ! isset( $file_info['name'] ) ) {
 			continue;
 		}
 		if ( is_array( $file_info['name'] ) ) {
@@ -734,7 +735,7 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 			for ( $i = 0; $i < $count; $i++ ) {
 				$normalized[] = [
 					'field'    => $field_name,
-					'name'     => $file_info['name'][ $i ] ?? '',
+					'name'     => sanitize_file_name( (string) ( $file_info['name'][ $i ] ?? '' ) ),
 					'type'     => $file_info['type'][ $i ] ?? '',
 					'tmp_name' => $file_info['tmp_name'][ $i ] ?? '',
 					'error'    => $file_info['error'][ $i ] ?? UPLOAD_ERR_NO_FILE,
@@ -745,7 +746,7 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 		}
 		$normalized[] = [
 			'field'    => $field_name,
-			'name'     => $file_info['name'],
+			'name'     => sanitize_file_name( (string) $file_info['name'] ),
 			'type'     => $file_info['type'] ?? '',
 			'tmp_name' => $file_info['tmp_name'] ?? '',
 			'error'    => $file_info['error'] ?? UPLOAD_ERR_NO_FILE,

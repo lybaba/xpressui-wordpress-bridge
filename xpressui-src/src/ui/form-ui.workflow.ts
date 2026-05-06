@@ -343,6 +343,15 @@ export function syncStepControls(options: {
     options.controls.nextButton.setAttribute("aria-disabled", options.isLastStep ? "true" : "false");
   }
 
+  // Also show/hide the submit row container — the pre-rendered template sets it
+  // to display:none initially, and the runtime is responsible for revealing it.
+  const submitRowContainer = options.formElement.querySelector(
+    '[data-template-zone="submit_actions"]',
+  ) as HTMLElement | null;
+  if (submitRowContainer) {
+    submitRowContainer.style.display = options.isLastStep ? "" : "none";
+  }
+
   submitButtons.forEach((button) => {
     button.disabled = !options.isLastStep || options.submitLockedByRules || options.isSubmitting;
     (button as HTMLElement).style.display = options.isLastStep ? "" : "none";

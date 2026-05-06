@@ -364,6 +364,102 @@ function xpressui_get_shell_translations() {
 	];
 }
 
+/**
+ * Builds the scoped inline CSS string for a shortcode embed.
+ *
+ * Extracts <style> blocks from the compiled head.php template, scopes all
+ * selectors to the mount element ID, and returns the resulting CSS string.
+ * Called from xpressui_render_shortcode() so the output can be delivered via
+ * wp_add_inline_style() rather than a bare <style> tag in page content.
+ *
+ * @param array  $template_context Full template context array.
+ * @param string $mount_node_id    CSS ID of the mount element (without #).
+ * @return string Scoped CSS ready for wp_add_inline_style().
+ */
+function xpressui_build_shortcode_inline_css( array $template_context, $mount_node_id ) {
+	require_once XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
+	if ( ! function_exists( 'xpressui_bridge_template_render_template' ) ) {
+		return '';
+	}
+
+	$head_html = xpressui_bridge_template_render_template( 'head.php', $template_context );
+	preg_match_all( '/<style[^>]*>([\s\S]*?)<\/style>/i', $head_html, $style_blocks );
+	$inline_css = implode( "\n", $style_blocks[1] ?? [] );
+
+	$scope       = '#' . $mount_node_id;
+	$inline_css  = preg_replace( '/(?<![#\w-]):root\b/', $scope, $inline_css );
+	$inline_css  = preg_replace( '/#xpressui-root(?![-\w])/', $scope, $inline_css );
+	$inline_css  = str_replace(
+		[ 'body::', 'body {', 'body,', 'body ' ],
+		[ $scope . '::', $scope . ' {', $scope . ',', $scope . ' ' ],
+		$inline_css
+	);
+
+	$has_bg = ! empty( $template_context['project']['background_image_url'] )
+		&& isset( $template_context['theme']['background_style'] )
+		&& $template_context['theme']['background_style'] !== 'none';
+
+	// Static WordPress embedding overrides — scoped to the mount ID.
+	$inline_css .= "\n/* Resume mode */\n";
+	$inline_css .= "{$scope}[data-resume-loading] .template-runtime-shell { display: none !important; }\n";
+	$inline_css .= "{$scope}[data-resume-loading] [data-resume-loader] { display: grid !important; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-banner { background: #fffaf0; border: 1px solid #f6cc87; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.5; }\n";
+	$inline_css .= "{$scope} .xpressui-ref-file-block,\n{$scope} .xpressui-afile-ref-block { padding: 10px 14px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }\n";
+	$inline_css .= "{$scope} .xpressui-ref-file-link,\n{$scope} .xpressui-afile-ref-link { font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 6px; }\n";
+	$inline_css .= "{$scope} .xpressui-ref-file-hint,\n{$scope} .xpressui-afile-ref-hint { margin: 0; font-size: 12px; color: #374151; line-height: 1.5; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-loader { min-height: 320px; display: none; place-items: center; padding: 28px 0; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-loader-card { width: min(100%, 420px); display: grid; justify-items: center; gap: 12px; padding: 28px 24px; border-radius: 24px; border: 1px solid rgba(37, 99, 235, 0.12); background: rgba(255, 255, 255, 0.94); box-shadow: 0 24px 60px -36px rgba(15, 23, 42, 0.28); text-align: center; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-loader-spinner { width: 42px; height: 42px; border-radius: 999px; border: 3px solid rgba(37, 99, 235, 0.16); border-top-color: #2563eb; animation: xpressui-spin 0.72s linear infinite; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-loader-title { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #0f172a; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-loader-text { margin: 0; max-width: 32ch; font-size: 13px; line-height: 1.6; color: #64748b; }\n";
+	$inline_css .= "{$scope} .xpressui-info-only-block { padding: 16px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }\n";
+	$inline_css .= "{$scope} .xpressui-info-only-link { font-size: 14px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 8px; }\n";
+	$inline_css .= "{$scope} .xpressui-info-only-hint { margin: 0; font-size: 13px; color: #374151; line-height: 1.5; }\n";
+	$inline_css .= "/* WordPress inline embed — reset standalone-page layout */\n";
+	if ( $has_bg ) {
+		$inline_css .= "{$scope}.page-shell { min-height: 0 !important; height: auto !important; overflow: hidden !important; padding: 48px max(5%, 24px) !important; display: grid !important; place-items: center !important; background: transparent !important; position: relative !important; border-radius: 24px !important; }\n";
+	} else {
+		$inline_css .= "{$scope}.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }\n";
+	}
+	$box_shadow = $has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)';
+	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : '';
+	$inline_css .= "{$scope} .form-frame { padding: 20px; box-shadow: {$box_shadow};{$extra_fw} }\n";
+	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
+	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
+	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";
+	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 20px 18px; }\n";
+	$inline_css .= "{$scope} .template-fields { gap: 12px; }\n";
+	$inline_css .= "{$scope} .template-field { gap: 6px; }\n";
+	$inline_css .= "{$scope} .template-field-label { font-size: 13px; }\n";
+	$inline_css .= "{$scope} .template-field-help { font-size: 12px; line-height: 1.4; }\n";
+	$inline_css .= "{$scope} .template-input,\n{$scope} .template-textarea { font-size: 14px; line-height: 1.4; padding: 11px 13px; }\n";
+	$inline_css .= "{$scope} .template-textarea { min-height: 124px; }\n";
+	$inline_css .= "{$scope} .template-choice-card { padding: 9px 12px; gap: 3px; }\n";
+	$inline_css .= "{$scope} .template-choice-title { font-size: 12px; line-height: 1.2; font-weight: 600; }\n";
+	$inline_css .= "{$scope} .template-choice-footer { font-size: 11px; }\n";
+	$inline_css .= "{$scope} select.template-input[multiple] { min-height: 120px; padding-top: 7px; padding-bottom: 7px; }\n";
+	$inline_css .= "{$scope} select.template-input option { font-size: 14px; line-height: 1.35; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell select { background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; color: var(--template-text) !important; border-color: var(--template-border) !important; accent-color: var(--template-primary) !important; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell select:focus { border-color: var(--template-primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent) !important; outline: none !important; }\n";
+	$inline_css .= "{$scope} .template-step-progress-track { height: 7px; }\n";
+	$inline_css .= "{$scope} .template-step-actions { margin-top: 14px; gap: 10px; }\n";
+	$inline_css .= "{$scope} .template-step-actions [data-step-action] { font-size: 13px; padding: 11px 16px; min-width: 112px; }\n";
+	$inline_css .= "{$scope} .template-submit-row { padding-top: 14px; }\n";
+	$inline_css .= "{$scope} .template-submit-btn { cursor: pointer; font-size: 13px; line-height: 1.1; padding: 11px 16px; min-width: 112px; }\n";
+	$inline_css .= "{$scope} .template-section-header { padding-bottom: 14px; border-bottom: 2px solid color-mix(in srgb, var(--template-primary, #2563eb) 18%, transparent); margin-bottom: 2px; }\n";
+	$inline_css .= "{$scope} .template-section-label { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; color: var(--template-text, #0f172a); }\n";
+	$inline_css .= "@keyframes xpressui-step-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n";
+	$inline_css .= "{$scope} .template-section[data-template-zone=\"section\"] { animation: xpressui-step-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }\n";
+	$inline_css .= "@media (max-width: 720px) {\n";
+	$inline_css .= "  {$scope} .form-frame { padding: 16px; }\n";
+	$inline_css .= "  {$scope} .template-form-title { font-size: clamp(20px, 7vw, 26px); }\n";
+	$inline_css .= "  {$scope} .template-section { padding: 16px 14px; }\n";
+	$inline_css .= "  {$scope} .template-input,\n  {$scope} .template-textarea { font-size: 13px; }\n";
+	$inline_css .= "}\n";
+
+	return $inline_css;
+}
+
 function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	$slug             = sanitize_title( (string) $slug );
 	$template_context = xpressui_load_workflow_template_context( $slug );
@@ -420,48 +516,68 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	}
 	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 
-	$init_url = xpressui_get_plugin_shell_init_url();
-	$translations_script = '<script>window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';</script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected into a standalone HTML document string; wp_add_inline_script() requires a registered handle and cannot be used outside the WordPress enqueue lifecycle
-	$shell_meta_script   = '<script>window.XPRESSUI_SHELL_META = ' . wp_json_encode(
-		[
-			'slug'             => $slug,
-			'runtimeUrl'       => $runtime_url,
-			'runtimeRelative'  => $runtime_relative,
-			'runtimeSource'    => xpressui_describe_runtime_source( $runtime_url, $slug ),
-			'workflowPackageUrl' => xpressui_get_workflow_package_url( $slug ),
-			'shellInitUrl'     => $init_url,
-		]
-	) . ';</script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected into a standalone HTML document string; wp_add_inline_script() requires a registered handle and cannot be used outside the WordPress enqueue lifecycle
+	$init_url     = xpressui_get_plugin_shell_init_url();
+	$handle_prefix = 'xpressui-shell-' . sanitize_key( $slug );
 
+	// Fix relative script URLs that the template emits for the standalone target.
 	if ( '' !== $runtime_relative && '' !== $runtime_url ) {
 		$rendered_html = str_replace( './' . $runtime_relative, esc_url_raw( $runtime_url ), $rendered_html );
 	}
-
 	if ( '' !== $init_url ) {
 		$rendered_html = str_replace( './init.js', esc_url_raw( $init_url ), $rendered_html );
 	}
 
+	// Register inline data scripts via the WordPress enqueue API so that
+	// wp_add_inline_script() is used rather than manually building <script> strings.
+	// The captured output is then injected into the standalone HTML document that
+	// this function returns — wp_head()/wp_footer() are not called in this code
+	// path because the caller (shell.php) outputs a direct HTTP response and exits.
+	wp_register_script( $handle_prefix . '-data', false, [], null, false );
+	wp_add_inline_script(
+		$handle_prefix . '-data',
+		'window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';' .
+		'window.XPRESSUI_SHELL_META = ' . wp_json_encode(
+			[
+				'slug'               => $slug,
+				'runtimeUrl'         => $runtime_url,
+				'runtimeRelative'    => $runtime_relative,
+				'runtimeSource'      => xpressui_describe_runtime_source( $runtime_url, $slug ),
+				'workflowPackageUrl' => xpressui_get_workflow_package_url( $slug ),
+				'shellInitUrl'       => $init_url,
+			]
+		) . ';'
+	);
+	wp_enqueue_script( $handle_prefix . '-data' );
+
+	// If the template did not already embed the runtime/init scripts (fallback),
+	// enqueue them now so they appear in the captured output below.
+	$runtime_already_embedded = '' !== $runtime_url && false !== strpos( $rendered_html, esc_url_raw( $runtime_url ) );
+	if ( ! $runtime_already_embedded && '' !== $runtime_url ) {
+		wp_enqueue_script( $handle_prefix . '-runtime', $runtime_url, [ $handle_prefix . '-data' ], null, false );
+	}
+	$init_already_embedded = '' !== $init_url && false !== strpos( $rendered_html, esc_url_raw( $init_url ) );
+	if ( ! $init_already_embedded && '' !== $init_url ) {
+		$runtime_dep = $runtime_already_embedded ? [] : [ $handle_prefix . '-runtime' ];
+		wp_enqueue_script( $handle_prefix . '-init', $init_url, array_merge( [ $handle_prefix . '-data' ], $runtime_dep ), null, false );
+	}
+
+	// Capture the script tags produced by the WP enqueue API for injection.
+	global $wp_scripts;
+	$handles_to_print = [ $handle_prefix . '-data' ];
+	if ( ! $runtime_already_embedded && '' !== $runtime_url ) {
+		$handles_to_print[] = $handle_prefix . '-runtime';
+	}
+	if ( ! $init_already_embedded && '' !== $init_url ) {
+		$handles_to_print[] = $handle_prefix . '-init';
+	}
+	ob_start();
+	$wp_scripts->do_items( $handles_to_print );
+	$scripts_html = (string) ob_get_clean();
+
 	if ( false !== strpos( $rendered_html, '</head>' ) ) {
-		$rendered_html = str_replace( '</head>', $translations_script . $shell_meta_script . '</head>', $rendered_html );
+		$rendered_html = str_replace( '</head>', $scripts_html . '</head>', $rendered_html );
 	} else {
-		$rendered_html = $translations_script . $shell_meta_script . $rendered_html;
-	}
-
-	$runtime_script = '';
-	if ( '' !== $runtime_url ) {
-		$runtime_script = '<script src="' . esc_url( $runtime_url ) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected dynamically into rendered HTML string, wp_enqueue_script() cannot be used here
-	}
-	$init_script = '';
-	if ( '' !== $init_url ) {
-		$init_script = '<script src="' . esc_url( $init_url ) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- injected dynamically into rendered HTML string, wp_enqueue_script() cannot be used here
-	}
-
-	if ( false === strpos( $rendered_html, esc_url_raw( $runtime_url ) ) && false === strpos( $rendered_html, './init.js' ) ) {
-		if ( false !== strpos( $rendered_html, '</body>' ) ) {
-			$rendered_html = str_replace( '</body>', $runtime_script . $init_script . '</body>', $rendered_html );
-		} else {
-			$rendered_html .= $runtime_script . $init_script;
-		}
+		$rendered_html = $scripts_html . $rendered_html;
 	}
 
 	return $rendered_html;

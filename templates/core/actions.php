@@ -22,13 +22,13 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
   <div class="template-step-actions" data-form-step-actions="true">
     <div class="template-step-actions-leading">
-      <button type="button" data-step-action="back"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'navigation_labels'), 'previous'))); ?></button>
+      <button type="button" data-step-action="back" style="display:none"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'navigation_labels'), 'previous'))); ?></button>
     </div>
     <div class="template-step-actions-trailing">
       <button type="button" data-step-action="next"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'navigation_labels'), 'next'))); ?></button>
     </div>
   </div>
 <?php endif; ?>
-<div class="template-submit-row" data-template-zone="submit_actions">
+<div class="template-submit-row" data-template-zone="submit_actions"<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?> style="display:none"<?php endif; ?>>
   <button type="submit" class="template-submit-btn"><span data-xpressui-spinner aria-hidden="true" hidden></span><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'submit_label'))); ?></button>
 </div>

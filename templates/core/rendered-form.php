@@ -59,6 +59,7 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
         'last'   => ($xpressui_loop_index_3 + 1) === count($xpressui_loop_items_1),
     ];
 ?>
+<?php $xpressui_ctx['is_initial_form_section'] = xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'loop'), 'first'); ?>
 <?php xpressui_bridge_template_include_template('section.php', $xpressui_ctx); ?>
 <?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
 <?php else: ?>
