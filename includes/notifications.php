@@ -286,28 +286,6 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 	$config      = xpressui_get_config_snapshot( $post_id );
 	$field_index = ! empty( $config ) ? xpressui_build_config_field_index( $config ) : [];
 
-	// Inject active additional-file slots so admin emails render their configured
-	// labels instead of the raw technical payload keys (for example xpressui_afile).
-	foreach ( xpressui_get_resume_additional_files( $post_id ) as $additional_file ) {
-		$slot_id = sanitize_key( (string) ( $additional_file['id'] ?? '' ) );
-		if ( '' === $slot_id || ! is_array( $payload ) || ! array_key_exists( $slot_id, $payload ) ) {
-			continue;
-		}
-
-		$slot_label = sanitize_text_field( (string) ( $additional_file['label'] ?? '' ) );
-		if ( '' === $slot_label ) {
-			$slot_label = __( 'Additional document', 'xpressui-bridge' );
-		}
-
-		$field_index[ $slot_id ] = [
-			'label'         => $slot_label,
-			'sectionLabel'  => __( 'Additional Document Request', 'xpressui-bridge' ),
-			'type'          => 'file',
-			'choices'       => [],
-			'choiceCatalog' => [],
-		];
-	}
-
 	// ── Group payload keys by section ───────────────────────────────────────
 	// Keys not found in the field index land in a catch-all bucket.
 	$sections_ordered = [];
@@ -537,31 +515,14 @@ function xpressui_maybe_send_pending_info_notification( $post_id, $note ) {
 		return;
 	}
 
-	$all_settings   = get_option( 'xpressui_project_settings', [] );
-	$resubmit_label = (string) ( ( is_array( $all_settings[ $project_slug ] ?? null ) ? $all_settings[ $project_slug ] : [] )['resubmitButtonLabel'] ?? '' );
-
-	$token     = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
+	$token      = (string) get_post_meta( $post_id, '_xpressui_resume_token', true );
 	$resume_url = xpressui_build_resume_url( $post_id, $token );
 
-	// Per-field reference files (legacy / flagged-field attachments).
+	// Per-field reference files (flagged-field attachments).
 	$reference_files = xpressui_resolve_field_reference_files( $post_id );
 
-	foreach ( xpressui_get_resume_additional_files( $post_id ) as $additional_file ) {
-		if ( empty( $additional_file['active'] ) || ! is_array( $additional_file['refFile'] ?? null ) ) {
-			continue;
-		}
-		$ref_url = (string) ( $additional_file['refFile']['url'] ?? '' );
-		if ( '' === $ref_url ) {
-			continue;
-		}
-		$reference_files[] = [
-			'url'  => $ref_url,
-			'name' => (string) ( $additional_file['refFile']['name'] ?? '' ),
-		];
-	}
-
 	$subject = xpressui_build_pending_info_subject( $project_slug );
-	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url, $reference_files, $resubmit_label );
+	$body    = xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url, $reference_files );
 	$headers = xpressui_build_notification_headers();
 
 	xpressui_enqueue_mail( $to_email, $subject, $body, $headers, $post_id );
@@ -770,18 +731,9 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 		__( 'Your submission for %s has been reviewed and processed. Thank you for your time.', 'xpressui-bridge' ),
 		$project_slug,
 	) );
-	$reference_files = xpressui_get_done_reference_files( $post_id );
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#f0fdf4;border-left:3px solid #86efac;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
-	$_done_s = get_option( 'xpressui_project_settings', [] );
-	$_done_s = is_array( $_done_s[ $project_slug ] ?? null ) ? $_done_s[ $project_slug ] : [];
-	$done_section_label = trim( (string) ( $_done_s['doneDocumentsSectionLabel'] ?? '' ) );
-	$docs_html = xpressui_build_reference_files_html(
-		$reference_files,
-		__( 'This document is provided for your records. No further upload is required.', 'xpressui-bridge' ),
-		$done_section_label
-	);
 
 	return xpressui_build_submitter_email_html(
 		$header_name,
@@ -790,7 +742,6 @@ function xpressui_build_done_body( $post_id, $project_slug, $note ) {
 		$intro,
 		$note_html,
 		$footer_note,
-		$docs_html,
 	);
 }
 
@@ -833,7 +784,7 @@ function xpressui_build_rejected_body( $post_id, $project_slug, $note ) {
  * @param string $note
  * @return string HTML email body.
  */
-function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url = '', $reference_files = [], $resubmit_label = '' ) {
+function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resume_url = '', $reference_files = [] ) {
 	$site_name    = get_bloginfo( 'name' );
 	$header_name  = xpressui_get_submitter_email_header_name( $project_slug );
 	$has_resubmit = $resume_url !== '';
@@ -850,18 +801,14 @@ function xpressui_build_pending_info_body( $post_id, $project_slug, $note, $resu
 	$note_html = $note !== ''
 		? '<p style="margin:16px 0 0;padding:14px 16px;background:#fffaf0;border-left:3px solid #f6cc87;font-size:13px;color:#374151;line-height:1.6;">' . nl2br( esc_html( $note ) ) . '</p>'
 		: '';
-	$_pi_s = get_option( 'xpressui_project_settings', [] );
-	$_pi_s = is_array( $_pi_s[ $project_slug ] ?? null ) ? $_pi_s[ $project_slug ] : [];
-	$pending_info_section_label = trim( (string) ( $_pi_s['pendingInfoDocumentsSectionLabel'] ?? '' ) );
 	$ref_files_html = xpressui_build_reference_files_html(
 		$reference_files,
 		__( 'Download the file(s), complete or sign them, then re-upload using the link below.', 'xpressui-bridge' ),
-		$pending_info_section_label
 	);
 
 	$cta_html = $ref_files_html;
 	if ( $has_resubmit ) {
-		$btn_label = $resubmit_label !== '' ? $resubmit_label : __( 'Resume', 'xpressui-bridge' );
+		$btn_label = __( 'Resume', 'xpressui-bridge' );
 		$cta_html .= '<p style="margin:20px 0 0;">'
 			. '<a href="' . esc_url( $resume_url ) . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
 			. esc_html( $btn_label )
@@ -916,29 +863,6 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 			$project_slug,
 		) );
 
-	$reference_files = [];
-	foreach ( xpressui_get_submit_confirmation_slots( $project_slug ) as $slot ) {
-		$ref_file_id = absint( $slot['fileId'] ?? 0 );
-		if ( $ref_file_id <= 0 ) {
-			continue;
-		}
-		$ref_url = (string) wp_get_attachment_url( $ref_file_id );
-		if ( '' === $ref_url ) {
-			continue;
-		}
-		$ref_label = trim( (string) ( $slot['label'] ?? '' ) );
-		if ( '' === $ref_label ) {
-			$ref_path  = (string) get_attached_file( $ref_file_id );
-			$ref_label = $ref_path !== '' ? basename( $ref_path ) : (string) get_the_title( $ref_file_id );
-		}
-		$reference_files[] = [
-			'url'  => $ref_url,
-			'name' => $ref_label,
-		];
-	}
-	$confirmation_section_label = trim( (string) ( $s['submitConfirmationSectionLabel'] ?? '' ) );
-	$ref_files_html = xpressui_build_reference_files_html( $reference_files, '', $confirmation_section_label );
-
 	$booking_url = trim( (string) ( $s['bookingUrl'] ?? '' ) );
 	$booking_cta_html = '';
 	if ( $booking_url !== '' ) {
@@ -973,7 +897,7 @@ function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payl
 		$intro,
 		'',
 		$footer_note,
-		$ref_files_html . $booking_cta_html . $extra_cta_html,
+		$booking_cta_html . $extra_cta_html,
 	);
 	$headers = xpressui_build_notification_headers();
 

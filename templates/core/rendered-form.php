@@ -72,6 +72,5 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
 <?php endif; ?>
     </section>
 <?php endif; ?>
-<?php xpressui_bridge_template_include_template('additional-file.php', $xpressui_ctx); ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>
