@@ -119,13 +119,6 @@ function xpressui_render_status_metabox( $post ) {
 	echo '</select>';
 	echo '<p class="xpressui-hint">' . esc_html__( 'Use Update to save the new status.', 'xpressui-bridge' ) . '</p>';
 
-	$project_slug   = (string) get_post_meta( $post->ID, '_xpressui_project_slug', true );
-	$notifies       = $project_slug !== '' && xpressui_project_notifies_submitter( $project_slug );
-	if ( $notifies ) {
-		echo '<p class="xpressui-hint" style="color:#3a7;margin-top:10px;">&#10003; ' . esc_html__( 'Submitter notifications enabled — pending info / done / rejected emails will be sent.', 'xpressui-bridge' ) . '</p>';
-	} else {
-		echo '<p class="xpressui-hint" style="color:#b45309;margin-top:10px;">&#9888; ' . esc_html__( 'Submitter notifications off — no email will be sent to the submitter.', 'xpressui-bridge' ) . '</p>';
-	}
 }
 
 function xpressui_save_submission_status( $post_id ) {
