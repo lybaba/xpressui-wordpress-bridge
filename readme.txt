@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.79
+Stable tag: 1.0.80
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Embed any XPressUI workflow on your WordPress site with a shortcode and review i
 
 == Description ==
 
-**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://xpressui.iakpress.com/) directly in your WordPress pages.
+**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://iakpress.com/) directly in your WordPress pages.
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
@@ -37,7 +37,7 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 == Installation ==
 
-1. Download the plugin `.zip` from the WordPress Plugin Directory or from [xpressui.iakpress.com](https://xpressui.iakpress.com/).
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://iakpress.com/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
 4. In the XPressUI console, export your workflow as a package (`.zip`).
@@ -48,7 +48,7 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 = Where do I get the workflow package (.zip) to upload? =
 
-The recommended way is to design and export it from the XPressUI console at [xpressui.iakpress.com](https://xpressui.iakpress.com/). You can also create a minimal package by hand — see the next question.
+The recommended way is to design and export it from the XPressUI console at [iakpress.com](https://iakpress.com/). You can also create a minimal package by hand — see the next question.
 
 = Can I create a workflow package without the XPressUI console? =
 
@@ -117,11 +117,11 @@ Workflow packs can be reinstalled without deleting submissions. If you delete an
 
 = Does the plugin call any external API at runtime? =
 
-No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at xpressui.iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
 
 == External Services ==
 
-This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at xpressui.iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
 
 The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
@@ -163,6 +163,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.80 =
+* Update plugin site URL to https://iakpress.com/.
 
 = 1.0.79 =
 * Sanitize uploaded file MIME types with sanitize_mime_type() in addition to sanitize_file_name() for file names.
