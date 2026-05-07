@@ -488,16 +488,16 @@ function xpressui_render_delivery_metabox( $post ) {
 	// Mail delivery.
 	echo '<div class="xpressui-delivery-card">';
 	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
-	echo '<dl class="xpressui-delivery-dl">';
-	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . $badge( $mail_status !== '' ? $mail_status : 'not-set' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . $fmt_date( $mail_sent_at ) . '</dd>';
+	echo '<div class="xpressui-delivery-dl">';
+	echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . $badge( $mail_status !== '' ? $mail_status : 'not-set' ) . '</span></div>';
+	echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . $fmt_date( $mail_sent_at ) . '</span></div>';
 	if ( $mail_fallback_used === '1' ) {
-		echo '<dt>' . esc_html__( 'Fallback', 'xpressui-bridge' ) . '</dt><dd>' . $badge( 'yes' ) . '</dd>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Fallback', 'xpressui-bridge' ) . '</span><span>' . $badge( 'yes' ) . '</span></div>';
 	}
 	if ( $mail_error !== '' ) {
-		echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd class="xpressui-error-text">' . esc_html( $mail_error ) . '</dd>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Error', 'xpressui-bridge' ) . '</span><span class="xpressui-error-text">' . esc_html( $mail_error ) . '</span></div>';
 	}
-	echo '</dl>';
+	echo '</div>';
 	echo '</div>';
 
 	// Webhook delivery.
@@ -506,16 +506,16 @@ function xpressui_render_delivery_metabox( $post ) {
 	if ( $webhook_status === '' || $webhook_status === 'not-set' ) {
 		echo '<p class="xpressui-hint">' . esc_html__( 'No webhook configured.', 'xpressui-bridge' ) . '</p>';
 	} else {
-		echo '<dl class="xpressui-delivery-dl">';
-		echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . $badge( $webhook_status ) . '</dd>';
+		echo '<div class="xpressui-delivery-dl">';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . $badge( $webhook_status ) . '</span></div>';
 		if ( $webhook_code !== '' ) {
-			echo '<dt>' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_code ) . '</dd>';
+			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</span><span>' . esc_html( $webhook_code ) . '</span></div>';
 		}
-		echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . $fmt_date( $webhook_sent_at ) . '</dd>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . $fmt_date( $webhook_sent_at ) . '</span></div>';
 		if ( $webhook_error !== '' ) {
-			echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd class="xpressui-error-text">' . esc_html( $webhook_error ) . '</dd>';
+			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Error', 'xpressui-bridge' ) . '</span><span class="xpressui-error-text">' . esc_html( $webhook_error ) . '</span></div>';
 		}
-		echo '</dl>';
+		echo '</div>';
 	}
 	echo '</div>';
 

@@ -867,12 +867,14 @@
 }
 
 .xpressui-delivery-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	display: flex !important;
+	flex-wrap: wrap;
 	gap: 12px;
 }
 
 .xpressui-delivery-card {
+	flex: 1 1 200px;
+	min-width: 200px;
 	background: #f8fafc;
 	border: 1px solid #e2e8f0;
 	border-radius: 8px;
@@ -886,22 +888,22 @@
 
 .xpressui-delivery-dl {
 	margin: 0;
-	display: grid;
-	grid-template-columns: 90px 1fr;
-	row-gap: 6px;
-	column-gap: 8px;
+	display: flex !important;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.xpressui-dl-row {
+	display: flex !important;
 	align-items: center;
+	gap: 8px;
+	font-size: 12px;
 }
 
-.xpressui-delivery-dl dt {
+.xpressui-dl-key {
+	min-width: 68px;
+	flex-shrink: 0;
 	color: #64748b;
-	font-size: 12px;
-}
-
-.xpressui-delivery-dl dd {
-	margin: 0;
-	word-break: break-word;
-	font-size: 12px;
 }
 
 /* Status badges */
@@ -928,13 +930,12 @@
 
 /* Timing bars */
 .xpressui-timing-list {
-	display: flex;
+	display: flex !important;
 	flex-direction: column;
 	gap: 5px;
 }
 .xpressui-timing-row {
-	display: grid;
-	grid-template-columns: 100px 1fr 54px;
+	display: flex !important;
 	align-items: center;
 	gap: 6px;
 	font-size: 12px;
@@ -946,6 +947,8 @@
 	margin-top: 2px;
 }
 .xpressui-timing-label {
+	min-width: 100px;
+	flex-shrink: 0;
 	color: #64748b;
 	white-space: nowrap;
 	overflow: hidden;
@@ -955,6 +958,7 @@
 	color: #1e293b;
 }
 .xpressui-timing-bar-wrap {
+	flex: 1;
 	background: #e2e8f0;
 	border-radius: 2px;
 	height: 6px;
@@ -970,6 +974,8 @@
 	background: #6366f1;
 }
 .xpressui-timing-val {
+	min-width: 54px;
+	flex-shrink: 0;
 	text-align: right;
 	font-variant-numeric: tabular-nums;
 	color: #1e293b;
@@ -986,14 +992,14 @@
 	list-style: none;
 	margin: 0;
 	padding: 0;
-	display: flex;
+	display: flex !important;
 	flex-direction: column;
 	gap: 7px;
 }
 .xpressui-event-list li {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	display: flex !important;
+	align-items: center;
+	gap: 6px;
 }
 .xpressui-event-chip {
 	display: inline-block;
