@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.78
+Stable tag: 1.0.79
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -163,6 +163,14 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.79 =
+* Sanitize uploaded file MIME types with sanitize_mime_type() in addition to sanitize_file_name() for file names.
+* Fix field label resolution for camelCase field names (e.g. primaryDocument) in notification emails and admin preview.
+* Store signature field values as WordPress media attachments; render URL-based signatures in emails and admin preview.
+* Improve admin submission file display: image thumbnails (100×75 px grid) and document list with icons and links.
+* Compiled PHP templates: eliminate non-WordPress (standalone) branches at compile time; wrap inline CSS with phpcs annotations.
+* Bundled XPressUI light runtime updated to 1.0.14.
 
 = 1.0.77 =
 * Cleaned legacy Pro-related strings from the free package.
