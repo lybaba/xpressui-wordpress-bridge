@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.80
+Stable tag: 1.0.81
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -151,7 +151,7 @@ To rebuild the runtime from those sources:
 
 1. Navigate to the source directory: `cd xpressui-src`
 2. Install dependencies: `npm install`
-3. Build the light runtime: `npm run build:dist:light`
+3. Build the light runtime: `npm run build`
 4. The output file is produced in `xpressui-src/dist/xpressui-light-*.umd.js`.
 
 
@@ -163,6 +163,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.81 =
+* Fix xpressui-src/package.json build scripts: remove prebuild/build:css steps that required dev-only files; npm run build now correctly builds the light runtime only.
 
 = 1.0.80 =
 * Update plugin site URL to https://iakpress.com/.

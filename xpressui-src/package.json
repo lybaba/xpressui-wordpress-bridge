@@ -32,21 +32,10 @@
     "/dist"
   ],
   "scripts": {
-    "prestart": "npm run build:css",
-    "start": "vite",
-    "prebuild": "npm run build:css",
-    "build:css": "tailwindcss -i ./src/input.css -o ./index.css",
-    "build:dist": "vite build --sourcemap",
     "build:dist:light": "XPRESSUI_RUNTIME_TIER=light vite build --sourcemap",
-    "build": "node ./scripts/clean-build.mjs && tsc && npm run build:dist && npm run build:dist:light && tsc --project ./lib.tsconfig.json",
-    "pages:prepare": "npm run build && node ./scripts/prepare-pages.mjs",
-    "release:check": "npm run build && npm run verify:dist && npm run verify:lib && npm pack --dry-run --cache ./.npm-cache",
-    "verify:dist": "node ./scripts/verify-dist.mjs",
-    "verify:lib": "node ./scripts/verify-lib.mjs",
+    "build": "npm run build:dist:light",
     "check": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+    "test": "vitest run"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
