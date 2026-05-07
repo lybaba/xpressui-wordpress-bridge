@@ -1244,8 +1244,11 @@ export class HydratedFormHost extends HTMLElement {
   }
 
   shouldShowImagePreview = (fieldConfig: TFieldConfig, file: File) => {
+    const isImageFile = String(file.type || "").startsWith("image/");
+    if (!isImageFile) return false;
+    if (fieldConfig.type === "upload-image") return true;
     const accept = String(fieldConfig.accept || "").toLowerCase();
-    return accept.includes("image/*") && String(file.type || "").startsWith("image/");
+    return accept.includes("image/*") || accept.includes("image/");
   }
 
   isProductListField = (fieldConfig: TFieldConfig) => {
