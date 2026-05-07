@@ -314,22 +314,8 @@ function xpressui_render_review_metabox( $post ) {
 		$saved_status = 'new';
 	}
 
-	$hints = [
-		'pending_info' => __( 'This note will be included in the Pending info email sent to the submitter.', 'xpressui-bridge' ),
-		'done'         => __( 'This note will be included in the Done email sent to the submitter.', 'xpressui-bridge' ),
-		'rejected'     => __( 'This note will be included in the Rejected email sent to the submitter.', 'xpressui-bridge' ),
-		'_default'     => __( 'Internal note — no email will be sent for this status.', 'xpressui-bridge' ),
-	];
-
-	$email_statuses = [ 'pending_info', 'done', 'rejected' ];
-	$initial_hint   = $hints[ $saved_status ] ?? $hints['_default'];
-	$initial_class  = in_array( $saved_status, $email_statuses, true ) ? 'xpressui-hint--email' : 'xpressui-hint--internal';
-
 	echo '<label for="xpressui_review_note"><strong>' . esc_html__( 'Operator notes', 'xpressui-bridge' ) . '</strong></label>';
 	echo '<textarea id="xpressui_review_note" name="xpressui_review_note" rows="5" class="xpressui-full-width"></textarea>';
-	echo '<p id="xpressui-review-note-hint" class="' . esc_attr( $initial_class ) . '" data-hints="' . esc_attr( wp_json_encode( $hints ) ) . '" data-email-statuses="pending_info,done,rejected">'
-		. esc_html( $initial_hint )
-		. '</p>';
 }
 
 // ---------------------------------------------------------------------------

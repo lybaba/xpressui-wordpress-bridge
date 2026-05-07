@@ -44,41 +44,11 @@
 		}
 	}
 
-	// Update the review note hint when status changes.
-	var reviewHintEl = document.getElementById( 'xpressui-review-note-hint' );
-	if ( reviewHintEl ) {
-		var hintMap = {};
-		try { hintMap = JSON.parse( reviewHintEl.dataset.hints || '{}' ); } catch (e) {}
-		var emailStatuses = (reviewHintEl.dataset.emailStatuses || '').split(',');
-		function syncReviewHint() {
-			var status = statusEl.value;
-			var isEmail = emailStatuses.indexOf(status) !== -1;
-			reviewHintEl.textContent = hintMap[ status ] || hintMap['_default'] || '';
-			reviewHintEl.classList.toggle( 'xpressui-hint--email', isEmail );
-			reviewHintEl.classList.toggle( 'xpressui-hint--internal', !isEmail );
-		}
-		statusEl.addEventListener( 'change', syncReviewHint );
-	}
-
-	statusEl.addEventListener( 'change', syncAfileMetabox );
+statusEl.addEventListener( 'change', syncAfileMetabox );
 	syncAfileMetabox(); // Sync on page load — removes stale WP 'hidden' class if needed.
 }());
 
 (function () {
-
-	// --- "Needs modification" label sync ----------------------------------------
-	document.querySelectorAll('.xpressui-inline-flagged-switch').forEach(function (toggleWrap) {
-		var checkbox = toggleWrap.querySelector('input[type="checkbox"]');
-		var label = toggleWrap.querySelector('.xpressui-inline-flagged-switch__text');
-		if (!checkbox || !label) { return; }
-
-		function syncFlaggedLabel() {
-			label.style.display = checkbox.checked ? '' : 'none';
-		}
-
-		checkbox.addEventListener('change', syncFlaggedLabel);
-		syncFlaggedLabel();
-	});
 
 	// --- Reference file media picker --------------------------------------------
 	var mediaFrame = null;
