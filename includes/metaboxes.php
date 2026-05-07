@@ -142,7 +142,7 @@ function xpressui_save_submission_status( $post_id ) {
 
 	$flagged_fields = [];
 	if ( isset( $_POST['xpressui_flagged_fields'] ) ) {
-		$raw_flagged = wp_unslash( $_POST['xpressui_flagged_fields'] );
+		$raw_flagged = wp_unslash( $_POST['xpressui_flagged_fields'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via array_map('sanitize_text_field') below
 		if ( is_array( $raw_flagged ) ) {
 			$flagged_fields = array_values( array_filter(
 				array_map( 'sanitize_text_field', $raw_flagged ),
@@ -189,19 +189,6 @@ function xpressui_save_submission_status( $post_id ) {
 	}
 	xpressui_set_submission_status( $post_id, $status, $note );
 	xpressui_set_assignee( $post_id, $assignee_id );
-
-	$normalized_note = trim( (string) $note );
-	// Re-notify only when note or flagged fields change while status is already pending_info.
-	// The initial pending_info transition (including token generation + first notification) is
-	// handled inside xpressui_set_submission_status to avoid double token generation.
-	$should_notify_pending_info = 'pending_info' === $status && 'pending_info' === $previous_status && (
-		$previous_note !== $normalized_note
-		|| $previous_flagged_fields !== $flagged_fields
-	);
-	if ( $should_notify_pending_info ) {
-		xpressui_generate_resume_token( $post_id );
-		xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
-	}
 
 	// Clear the note after every save so the textarea is empty on the next page load.
 	// The note is already persisted in status history and sent in any notification.
@@ -296,7 +283,7 @@ function xpressui_render_ref_file_picker_row( $field_name, $ref_files ) {
 	echo '<span class="dashicons dashicons-paperclip" style="font-size:14px;vertical-align:middle;margin-right:4px;"></span>';
 	echo esc_html__( 'Attach reference file', 'xpressui-bridge' );
 	echo '</button>';
-	echo '<span class="xpressui-ref-file-preview"' . $clear_style . ' data-field="' . esc_attr( $field_name ) . '">';
+	echo '<span class="xpressui-ref-file-preview"' . $clear_style . ' data-field="' . esc_attr( $field_name ) . '">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $clear_style is a hardcoded string
 	if ( $file_url !== '' ) {
 		echo ' <a href="' . esc_url( $file_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $file_name ) . '</a>';
 	}
@@ -390,7 +377,7 @@ function xpressui_render_preview_metabox( $post ) {
 			foreach ( $fields as $field_name => $field_meta ) {
 				echo '<tr>';
 				echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ) . '</th>';
-				echo '<td>' . xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) . '</td>';
+				echo '<td>' . xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- output goes through wp_kses_post()
 				echo '</tr>';
 			}
 			echo '</tbody></table>';
@@ -411,7 +398,7 @@ function xpressui_render_preview_metabox( $post ) {
 			$field_meta = is_array( $field_index[ $key ] ?? null ) ? $field_index[ $key ] : [];
 			echo '<tr>';
 			echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ?? $key ) . '</th>';
-			echo '<td>' . xpressui_render_preview_field_value( $value, $field_meta ) . '</td>';
+			echo '<td>' . xpressui_render_preview_field_value( $value, $field_meta ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- output goes through wp_kses_post()
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -489,6 +476,7 @@ function xpressui_render_delivery_metabox( $post ) {
 	echo '<div class="xpressui-delivery-card">';
 	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
 	echo '<div class="xpressui-delivery-dl">';
+	// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $badge() and $fmt_date() return pre-escaped HTML
 	echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . $badge( $mail_status !== '' ? $mail_status : 'not-set' ) . '</span></div>';
 	echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . $fmt_date( $mail_sent_at ) . '</span></div>';
 	if ( $mail_fallback_used === '1' ) {
@@ -497,6 +485,7 @@ function xpressui_render_delivery_metabox( $post ) {
 	if ( $mail_error !== '' ) {
 		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Error', 'xpressui-bridge' ) . '</span><span class="xpressui-error-text">' . esc_html( $mail_error ) . '</span></div>';
 	}
+	// phpcs:enable WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo '</div>';
 	echo '</div>';
 
@@ -507,11 +496,11 @@ function xpressui_render_delivery_metabox( $post ) {
 		echo '<p class="xpressui-hint">' . esc_html__( 'No webhook configured.', 'xpressui-bridge' ) . '</p>';
 	} else {
 		echo '<div class="xpressui-delivery-dl">';
-		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . $badge( $webhook_status ) . '</span></div>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . $badge( $webhook_status ) . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		if ( $webhook_code !== '' ) {
 			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</span><span>' . esc_html( $webhook_code ) . '</span></div>';
 		}
-		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . $fmt_date( $webhook_sent_at ) . '</span></div>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . $fmt_date( $webhook_sent_at ) . '</span></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		if ( $webhook_error !== '' ) {
 			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Error', 'xpressui-bridge' ) . '</span><span class="xpressui-error-text">' . esc_html( $webhook_error ) . '</span></div>';
 		}
@@ -532,7 +521,7 @@ function xpressui_render_delivery_metabox( $post ) {
 			$source      = sanitize_text_field( (string) ( $event['source'] ?? 'bridge' ) );
 			echo '<li>';
 			echo '<span class="xpressui-event-chip">' . esc_html( $event_type ) . '</span>';
-			echo '<span class="xpressui-event-meta">' . $fmt_date( $occurred_at ) . ' · ' . esc_html( $source ) . '</span>';
+			echo '<span class="xpressui-event-meta">' . $fmt_date( $occurred_at ) . ' · ' . esc_html( $source ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo '</li>';
 		}
 		echo '</ul>';

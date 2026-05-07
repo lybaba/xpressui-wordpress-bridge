@@ -73,7 +73,6 @@ function xpressui_render_workflow_settings_page(): void {
 
 		$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 		$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
-		$notify_submitter         = ! empty( $_POST['xpressui_notify_submitter'] ) ? '1' : '0';
 		$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
 		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 			$section_label_visibility = 'auto';
@@ -96,7 +95,6 @@ function xpressui_render_workflow_settings_page(): void {
 			'bookingButtonLabel'      => $booking_button_label,
 			'showProjectTitle'        => $show_project_title,
 			'showRequiredFieldsNote'  => $show_required_note,
-			'notifySubmitter'         => $notify_submitter,
 			'sectionLabelVisibility'  => $section_label_visibility,
 			'notifySubmitterOnSubmit' => $notify_submitter_on_submit,
 			'submitConfirmationMessage' => $submit_confirmation_message,
@@ -181,7 +179,7 @@ function xpressui_render_workflow_settings_page(): void {
 	$_name_badge = ( $project_name !== '' && $project_name !== $slug )
 		? ' <span style="font-weight:400;color:#787c82;">/ ' . esc_html( $project_name ) . '</span>'
 		: '';
-	echo '<h1 class="wp-heading-inline">' . esc_html( $slug ) . $_name_badge . ': Settings</h1>';
+	echo '<h1 class="wp-heading-inline">' . esc_html( $slug ) . $_name_badge . ': Settings</h1>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $_name_badge is built with esc_html()
 	echo ' <a href="' . esc_url( $back_url ) . '" class="page-title-action">← ' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</a>';
 	echo '<hr class="wp-header-end">';
 
@@ -264,11 +262,6 @@ function xpressui_render_workflow_settings_page(): void {
 	echo '<td><label><input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1"' . checked( '1', (string) ( $s['showRequiredFieldsNote'] ?? '0' ), false ) . '> ';
 	echo esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
 	echo '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p></td></tr>';
-
-	echo '<tr><th>' . esc_html__( 'Submitter notifications', 'xpressui-bridge' ) . '</th>';
-	echo '<td><label><input type="checkbox" id="xpressui_notify_submitter" name="xpressui_notify_submitter" value="1"' . checked( '1', (string) ( $s['notifySubmitter'] ?? '0' ), false ) . '> ';
-	echo esc_html__( 'Send status update emails to the submitter (pending info, done, rejected).', 'xpressui-bridge' ) . '</label>';
-	echo '<p class="description">' . esc_html__( 'Requires the submission to include an email field. The operator review note is included.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '<tr><th><label for="xpressui_section_label_visibility">' . esc_html__( 'Section labels', 'xpressui-bridge' ) . '</label></th>';
 	echo '<td><select id="xpressui_section_label_visibility" name="xpressui_section_label_visibility" class="regular-text">';

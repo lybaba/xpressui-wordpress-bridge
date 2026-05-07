@@ -332,6 +332,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	$stored_files        = xpressui_store_uploaded_files( $post_id, $request );
 	$mark_timing( 'files_stored' );
 	$payload_with_files  = xpressui_attach_file_references( $payload, $stored_files );
+	$payload_with_files  = xpressui_store_signature_attachments( $post_id, $payload_with_files );
 
 	update_post_meta( $post_id, '_xpressui_payload_json',
 		is_string( $payload_with_files )
@@ -514,6 +515,7 @@ function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $pay
 	// Handle new file uploads for flagged fields only.
 	$stored_files = xpressui_store_uploaded_files( $post_id, $request );
 	$merged       = xpressui_attach_file_references( $merged, $stored_files );
+	$merged       = xpressui_store_signature_attachments( $post_id, $merged );
 	xpressui_record_submission_event(
 		$post_id,
 		'resubmit.triggered',
@@ -696,7 +698,7 @@ function xpressui_get_request_file_params( WP_REST_Request $request ) {
 function xpressui_normalize_uploaded_files( array $file_params ) {
 	$normalized = [];
 	foreach ( $file_params as $field_name => $file_info ) {
-		$field_name = sanitize_key( (string) $field_name );
+		$field_name = preg_replace( '/[^a-zA-Z0-9_]/', '', (string) $field_name );
 		if ( '' === $field_name || ! is_array( $file_info ) || ! isset( $file_info['name'] ) ) {
 			continue;
 		}
@@ -706,7 +708,7 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 				$normalized[] = [
 					'field'    => $field_name,
 					'name'     => sanitize_file_name( (string) ( $file_info['name'][ $i ] ?? '' ) ),
-					'type'     => $file_info['type'][ $i ] ?? '',
+					'type'     => sanitize_mime_type( (string) ( $file_info['type'][ $i ] ?? '' ) ),
 					'tmp_name' => $file_info['tmp_name'][ $i ] ?? '',
 					'error'    => $file_info['error'][ $i ] ?? UPLOAD_ERR_NO_FILE,
 					'size'     => $file_info['size'][ $i ] ?? 0,
@@ -717,7 +719,7 @@ function xpressui_normalize_uploaded_files( array $file_params ) {
 		$normalized[] = [
 			'field'    => $field_name,
 			'name'     => sanitize_file_name( (string) $file_info['name'] ),
-			'type'     => $file_info['type'] ?? '',
+			'type'     => sanitize_mime_type( (string) ( $file_info['type'] ?? '' ) ),
 			'tmp_name' => $file_info['tmp_name'] ?? '',
 			'error'    => $file_info['error'] ?? UPLOAD_ERR_NO_FILE,
 			'size'     => $file_info['size'] ?? 0,
@@ -903,5 +905,80 @@ function xpressui_attach_file_references( $payload, array $stored_files ) {
 	foreach ( $by_field as $field_name => $refs ) {
 		$payload[ $field_name ] = count( $refs ) === 1 ? $refs[0] : $refs;
 	}
+	return $payload;
+}
+
+/**
+ * Scan the payload for signature data URIs (data:image/...) and save each
+ * as a WordPress media attachment. Replaces the data URI with the
+ * attachment URL so the payload stays lightweight and email-renderable.
+ *
+ * @param int   $post_id
+ * @param mixed $payload
+ * @return mixed Updated payload.
+ */
+function xpressui_store_signature_attachments( $post_id, $payload ) {
+	if ( ! is_array( $payload ) ) {
+		return $payload;
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+
+	$ext_map = [
+		'image/png'  => 'png',
+		'image/jpeg' => 'jpg',
+		'image/gif'  => 'gif',
+		'image/webp' => 'webp',
+	];
+
+	foreach ( $payload as $key => $value ) {
+		if ( ! is_string( $value ) || ! str_starts_with( $value, 'data:image/' ) ) {
+			continue;
+		}
+		if ( ! preg_match( '/^data:(image\/[a-zA-Z+]+);base64,(.+)$/s', $value, $m ) ) {
+			continue;
+		}
+		$mime_type = $m[1];
+		$data      = base64_decode( $m[2], true );
+		if ( $data === false ) {
+			continue;
+		}
+
+		$ext      = $ext_map[ $mime_type ] ?? 'png';
+		$filename = sanitize_file_name( "signature-{$key}-{$post_id}.{$ext}" );
+		$tmp_file = wp_tempnam( 'xpressui-sig-' );
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $tmp_file, $data );
+
+		$upload = wp_upload_bits( $filename, null, $data );
+		wp_delete_file( $tmp_file );
+
+		if ( ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
+			continue;
+		}
+
+		$attachment_id = wp_insert_attachment(
+			[
+				'post_mime_type' => $mime_type,
+				'post_title'     => $filename,
+				'post_content'   => '',
+				'post_status'    => 'inherit',
+			],
+			$upload['file'],
+			$post_id
+		);
+
+		if ( is_wp_error( $attachment_id ) ) {
+			continue;
+		}
+
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
+
+		$payload[ $key ] = wp_get_attachment_url( $attachment_id );
+	}
+
 	return $payload;
 }

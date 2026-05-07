@@ -11,7 +11,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'name'))); ?></title>
-  <style>
+  <?php // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- CSS extracted by xpressui_build_shortcode_inline_css() and delivered via wp_add_inline_style(); standalone-shell path outputs a full HTML document ?>
+<style>
     :root {
       --template-font-family: <?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'font_family')) ? xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'font_family') : (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_context_get($xpressui_ctx, 'target'), "wordpress")) ? "inherit" : "Inter, system-ui, sans-serif")))); ?>;
       --template-page-background: <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'colors'), 'page_background'))); ?>;
@@ -459,4 +460,5 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     #xpressui-root [data-stripe-error] { color: #ef4444; min-height: 1em; }
     #xpressui-root .xpressui-stripe-badge { font-size: 12px; color: var(--template-muted-text); display: flex; align-items: center; gap: 6px; }
   </style>
+<?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
 </head>

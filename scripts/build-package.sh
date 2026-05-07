@@ -47,6 +47,8 @@ if [[ -f "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" ]]; then
   mv "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" "${STAGE_DIR}/${DIST_SLUG}/${DIST_MAIN_FILE}"
 fi
 
+find "${STAGE_DIR:?}/${DIST_SLUG}/runtime" -name "*.map" -delete
+
 cd "${STAGE_DIR}"
 zip -rq "${OUTPUT_PATH}" "${DIST_SLUG}"
 

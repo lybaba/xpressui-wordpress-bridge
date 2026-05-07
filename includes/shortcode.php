@@ -266,7 +266,7 @@ function xpressui_render_shortcode( $atts ) {
 		wp_enqueue_style( $style_handle, $static_css_url, [], $static_css_ver );
 	} else {
 		// No static file yet — register a virtual handle so wp_add_inline_style works.
-		wp_register_style( $style_handle, false, [], null );
+		wp_register_style( $style_handle, false, [], XPRESSUI_BRIDGE_VERSION );
 		wp_enqueue_style( $style_handle );
 	}
 	$inline_css = xpressui_build_shortcode_inline_css( $template_context, $mount_node_id );

@@ -531,7 +531,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	// The captured output is then injected into the standalone HTML document that
 	// this function returns — wp_head()/wp_footer() are not called in this code
 	// path because the caller (shell.php) outputs a direct HTTP response and exits.
-	wp_register_script( $handle_prefix . '-data', false, [], null, false );
+	wp_register_script( $handle_prefix . '-data', false, [], XPRESSUI_BRIDGE_VERSION, false );
 	wp_add_inline_script(
 		$handle_prefix . '-data',
 		'window.XPRESSUI_I18N = ' . wp_json_encode( xpressui_get_shell_translations() ) . ';' .
@@ -552,12 +552,12 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	// enqueue them now so they appear in the captured output below.
 	$runtime_already_embedded = '' !== $runtime_url && false !== strpos( $rendered_html, esc_url_raw( $runtime_url ) );
 	if ( ! $runtime_already_embedded && '' !== $runtime_url ) {
-		wp_enqueue_script( $handle_prefix . '-runtime', $runtime_url, [ $handle_prefix . '-data' ], null, false );
+		wp_enqueue_script( $handle_prefix . '-runtime', $runtime_url, [ $handle_prefix . '-data' ], XPRESSUI_BRIDGE_VERSION, false );
 	}
 	$init_already_embedded = '' !== $init_url && false !== strpos( $rendered_html, esc_url_raw( $init_url ) );
 	if ( ! $init_already_embedded && '' !== $init_url ) {
 		$runtime_dep = $runtime_already_embedded ? [] : [ $handle_prefix . '-runtime' ];
-		wp_enqueue_script( $handle_prefix . '-init', $init_url, array_merge( [ $handle_prefix . '-data' ], $runtime_dep ), null, false );
+		wp_enqueue_script( $handle_prefix . '-init', $init_url, array_merge( [ $handle_prefix . '-data' ], $runtime_dep ), XPRESSUI_BRIDGE_VERSION, false );
 	}
 
 	// Capture the script tags produced by the WP enqueue API for injection.
@@ -1003,6 +1003,7 @@ function xpressui_get_resume_post_id_by_token( $token ) {
 		return 0;
 	}
 	global $wpdb;
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- token lookup requires a direct postmeta query; caching would give stale results
 	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_xpressui_resume_token' AND meta_value = %s LIMIT 1",
 		$token
@@ -1028,6 +1029,7 @@ function xpressui_get_project_form_url( $project_slug ) {
 	// Auto-detect the published page/post that embeds this project's shortcode.
 	global $wpdb;
 	$slug_escaped = $wpdb->esc_like( $project_slug );
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- shortcode search requires LIKE on post_content; no WP_Query equivalent
 	$page_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT ID FROM {$wpdb->posts}
 		WHERE post_status = 'publish'
@@ -1972,9 +1974,6 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 			update_post_meta( $post_id, '_xpressui_reviewed_at', current_time( 'mysql' ) );
 		}
 		update_post_meta( $post_id, '_xpressui_done_at', current_time( 'mysql' ) );
-		if ( $current_status !== 'done' ) {
-			xpressui_maybe_send_done_notification( $post_id, $normalized_note );
-		}
 	} elseif ( $current_status === 'done' && $status !== 'done' ) {
 		delete_post_meta( $post_id, '_xpressui_done_at' );
 	}
@@ -1982,7 +1981,6 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 		update_post_meta( $post_id, '_xpressui_pending_info_at', current_time( 'mysql' ) );
 		if ( $current_status !== 'pending_info' ) {
 			xpressui_generate_resume_token( $post_id );
-			xpressui_maybe_send_pending_info_notification( $post_id, $normalized_note );
 		}
 	} elseif ( $current_status === 'pending_info' && $status !== 'pending_info' ) {
 		delete_post_meta( $post_id, '_xpressui_pending_info_at' );
@@ -1993,9 +1991,6 @@ function xpressui_set_submission_status( $post_id, $status, $note = '' ) {
 			update_post_meta( $post_id, '_xpressui_reviewed_at', current_time( 'mysql' ) );
 		}
 		update_post_meta( $post_id, '_xpressui_rejected_at', current_time( 'mysql' ) );
-		if ( $current_status !== 'rejected' ) {
-			xpressui_maybe_send_rejected_notification( $post_id, $normalized_note );
-		}
 	} elseif ( $current_status === 'rejected' && $status !== 'rejected' ) {
 		delete_post_meta( $post_id, '_xpressui_rejected_at' );
 	}
@@ -2288,6 +2283,79 @@ function xpressui_render_image_gallery_value( $value, $field_meta = [] ) {
 	return $html;
 }
 
+function xpressui_get_file_thumb_url( int $attachment_id ): string {
+	if ( $attachment_id <= 0 || ! wp_attachment_is_image( $attachment_id ) ) {
+		return '';
+	}
+	$src = wp_get_attachment_image_src( $attachment_id, 'thumbnail' );
+	return $src ? (string) $src[0] : '';
+}
+
+function xpressui_render_file_entry_html( array $file ): string {
+	$name          = (string) ( $file['originalName'] ?? $file['field'] ?? 'File' );
+	$url           = (string) ( $file['url'] ?? '' );
+	$attachment_id = (int) ( $file['attachmentId'] ?? 0 );
+	$thumb_url     = xpressui_get_file_thumb_url( $attachment_id );
+
+	if ( $url === '' ) {
+		return esc_html( $name );
+	}
+	if ( $thumb_url !== '' ) {
+		return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:6px;">'
+			. '<img src="' . esc_url( $thumb_url ) . '" alt="' . esc_attr( $name ) . '" style="width:48px;height:36px;object-fit:cover;border-radius:3px;border:1px solid #ddd;flex-shrink:0;">'
+			. '<span>' . esc_html( $name ) . '</span>'
+			. '</a>';
+	}
+	return '&#128196; <a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $name ) . '</a>';
+}
+
+function xpressui_render_file_list_html( array $files ): string {
+	$images = [];
+	$docs   = [];
+	foreach ( $files as $file ) {
+		$attachment_id = (int) ( $file['attachmentId'] ?? 0 );
+		if ( xpressui_get_file_thumb_url( $attachment_id ) !== '' ) {
+			$images[] = $file;
+		} else {
+			$docs[] = $file;
+		}
+	}
+
+	$html = '';
+
+	if ( ! empty( $images ) ) {
+		$html .= '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:' . ( $docs ? '10px' : '0' ) . ';">';
+		foreach ( $images as $img ) {
+			$name      = (string) ( $img['originalName'] ?? 'file' );
+			$url       = (string) ( $img['url'] ?? '' );
+			$thumb_url = xpressui_get_file_thumb_url( (int) ( $img['attachmentId'] ?? 0 ) );
+			$html     .= '<div style="text-align:center;width:100px;">'
+				. '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer" title="' . esc_attr( $name ) . '">'
+				. '<img src="' . esc_url( $thumb_url ) . '" alt="' . esc_attr( $name ) . '" style="width:100px;height:75px;object-fit:cover;border-radius:4px;border:1px solid #ddd;">'
+				. '</a>'
+				. '<div style="margin-top:4px;font-size:11px;line-height:1.3;word-break:break-all;">'
+				. '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $name ) . '</a>'
+				. '</div>'
+				. '</div>';
+		}
+		$html .= '</div>';
+	}
+
+	if ( ! empty( $docs ) ) {
+		$html .= '<ul class="xpressui-file-list" style="margin:0;padding-left:0;list-style:none;">';
+		foreach ( $docs as $doc ) {
+			$name  = (string) ( $doc['originalName'] ?? $doc['field'] ?? 'File' );
+			$url   = (string) ( $doc['url'] ?? '' );
+			$html .= '<li style="margin-bottom:3px;">&#128196; '
+				. ( $url !== '' ? '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $name ) . '</a>' : esc_html( $name ) )
+				. '</li>';
+		}
+		$html .= '</ul>';
+	}
+
+	return $html;
+}
+
 function xpressui_format_submission_value( $value, $field_meta = [] ) {
 	$field_type = (string) ( $field_meta['type'] ?? '' );
 	$choice_map = is_array( $field_meta['choices'] ?? null ) ? $field_meta['choices'] : [];
@@ -2307,12 +2375,7 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 	}
 	if ( is_array( $value ) ) {
 		if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
-			$original_name = (string) ( $value['originalName'] ?? $value['field'] ?? 'File' );
-			$url           = (string) ( $value['url'] ?? '' );
-			if ( $url !== '' ) {
-				return '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $original_name ) . '</a>';
-			}
-			return esc_html( $original_name );
+			return xpressui_render_file_entry_html( $value );
 		}
 		$is_list = array_keys( $value ) === range( 0, count( $value ) - 1 );
 		if ( $is_list ) {
@@ -2324,18 +2387,7 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 				}
 			}
 			if ( $all_uploaded_files ) {
-				$html = '<ul class="xpressui-file-list">';
-				foreach ( $value as $entry ) {
-					$original_name = (string) ( $entry['originalName'] ?? $entry['field'] ?? 'File' );
-					$url           = (string) ( $entry['url'] ?? '' );
-					$html         .= '<li>';
-					$html         .= $url !== ''
-						? '<a href="' . esc_url( $url ) . '" target="_blank" rel="noreferrer">' . esc_html( $original_name ) . '</a>'
-						: esc_html( $original_name );
-					$html         .= '</li>';
-				}
-				$html .= '</ul>';
-				return $html;
+				return xpressui_render_file_list_html( $value );
 			}
 
 			$parts = [];
@@ -2362,9 +2414,12 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 
 function xpressui_render_preview_field_value( $value, array $field_meta ): string {
 	$field_type = (string) ( $field_meta['type'] ?? '' );
-	if ( $field_type === 'signature' && is_string( $value ) && 0 === strpos( $value, 'data:image' ) ) {
-		$img = '<img src="' . esc_attr( $value ) . '" alt="' . esc_attr__( 'Signature', 'xpressui-bridge' ) . '" class="xpressui-signature-preview" />';
-		return wp_kses( $img, [ 'img' => [ 'src' => true, 'alt' => true, 'class' => true ] ], [ 'data', 'http', 'https' ] );
+	if ( $field_type === 'signature' && is_string( $value ) && $value !== '' ) {
+		$is_data_uri = str_starts_with( $value, 'data:image/' );
+		$src         = $is_data_uri ? esc_attr( $value ) : esc_url( $value );
+		$img         = '<img src="' . $src . '" alt="' . esc_attr__( 'Signature', 'xpressui-bridge' ) . '" class="xpressui-signature-preview" />';
+		$allowed     = [ 'img' => [ 'src' => true, 'alt' => true, 'class' => true ] ];
+		return wp_kses( $img, $allowed, [ 'data', 'http', 'https' ] );
 	}
 	return wp_kses_post( xpressui_format_submission_value( $value, $field_meta ) );
 }
