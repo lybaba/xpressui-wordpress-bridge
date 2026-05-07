@@ -307,15 +307,6 @@ function xpressui_render_ref_file_picker_row( $field_name, $ref_files ) {
 	echo '</tr>';
 }
 
-function xpressui_render_flagged_field_toggle( $field_name, $is_checked ) {
-	return '<label class="xpressui-inline-flagged-switch" aria-label="' . esc_attr__( 'Needs correction', 'xpressui-bridge' ) . '">'
-		. '<span class="xpressui-inline-flagged-switch__text"' . ( $is_checked ? '' : ' style="display:none;"' ) . '>' . esc_html__( 'Needs modification', 'xpressui-bridge' ) . '</span>'
-		. '<span class="xpressui-flagged-switch">'
-		. '<input type="checkbox" name="xpressui_flagged_fields[]" value="' . esc_attr( $field_name ) . '"' . checked( $is_checked, true, false ) . ' />'
-		. '<span class="xpressui-flagged-switch__track" aria-hidden="true"></span>'
-		. '</span>'
-		. '</label>';
-}
 
 function xpressui_render_review_metabox( $post ) {
 	$saved_status = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
@@ -373,9 +364,8 @@ function xpressui_render_history_metabox( $post ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_render_preview_metabox( $post ) {
-	$payload        = xpressui_get_submission_payload( $post->ID );
-	$flagged_fields = xpressui_get_flagged_fields( $post->ID );
-	$ref_files      = xpressui_get_field_reference_files( $post->ID );
+	$payload   = xpressui_get_submission_payload( $post->ID );
+	$ref_files = xpressui_get_field_reference_files( $post->ID );
 	if ( empty( $payload ) ) {
 		echo '<p>' . esc_html__( 'No structured submission data recorded.', 'xpressui-bridge' ) . '</p>';
 		return;
@@ -412,11 +402,9 @@ function xpressui_render_preview_metabox( $post ) {
 			echo '<p class="xpressui-muted xpressui-section-meta">' . esc_html( $section_meta ) . '</p>';
 			echo '<table class="widefat striped xpressui-preview-table"><tbody>';
 			foreach ( $fields as $field_name => $field_meta ) {
-				$is_checked = in_array( $field_name, $flagged_fields, true );
 				echo '<tr>';
 				echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ) . '</th>';
 				echo '<td>' . xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) . '</td>';
-				echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $field_name, $is_checked ) . '</td>';
 				echo '</tr>';
 			}
 			echo '</tbody></table>';
@@ -435,11 +423,9 @@ function xpressui_render_preview_metabox( $post ) {
 		echo '<table class="widefat striped xpressui-preview-table"><tbody>';
 		foreach ( $remaining as $key => $value ) {
 			$field_meta = is_array( $field_index[ $key ] ?? null ) ? $field_index[ $key ] : [];
-			$is_checked = in_array( $key, $flagged_fields, true );
 			echo '<tr>';
 			echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ?? $key ) . '</th>';
 			echo '<td>' . xpressui_render_preview_field_value( $value, $field_meta ) . '</td>';
-			echo '<td class="xpressui-preview-action">' . xpressui_render_flagged_field_toggle( $key, $is_checked ) . '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -466,55 +452,102 @@ function xpressui_render_delivery_metabox( $post ) {
 	$webhook_sent_at = (string) get_post_meta( $post->ID, '_xpressui_webhook_sent_at', true );
 	$event_log       = function_exists( 'xpressui_get_submission_events' ) ? xpressui_get_submission_events( $post->ID ) : [];
 
+	$badge = static function( string $status ): string {
+		$cls = 'xpressui-badge';
+		if ( in_array( $status, [ 'sent', 'ok', 'success' ], true ) ) {
+			$cls .= ' xpressui-badge--green';
+		} elseif ( $status === '' || $status === 'not-set' ) {
+			$cls .= ' xpressui-badge--gray';
+		} else {
+			$cls .= ' xpressui-badge--amber';
+		}
+		return '<span class="' . esc_attr( $cls ) . '">' . esc_html( $status !== '' ? $status : 'not-set' ) . '</span>';
+	};
+
+	$fmt_date = static function( string $iso ): string {
+		if ( $iso === '' ) {
+			return '—';
+		}
+		$ts = strtotime( $iso );
+		return $ts ? esc_html( (string) wp_date( 'M j, Y · H:i', $ts ) ) : esc_html( $iso );
+	};
+
 	echo '<div class="xpressui-delivery-grid">';
 
+	// Submit timing.
 	echo '<div class="xpressui-delivery-card">';
 	echo '<h4>' . esc_html__( 'Submit timing', 'xpressui-bridge' ) . '</h4>';
 	if ( empty( $timing ) ) {
 		echo '<p class="xpressui-hint">' . esc_html__( 'No timing data recorded yet.', 'xpressui-bridge' ) . '</p>';
 	} else {
-		echo '<dl class="xpressui-delivery-dl">';
+		$total_ms = is_numeric( $timing['totalMs'] ?? null ) ? (float) $timing['totalMs'] : 0;
+		echo '<div class="xpressui-timing-list">';
 		foreach ( $timing as $key => $value ) {
 			$label = preg_replace( '/([a-z])([A-Z])/', '$1 $2', (string) $key );
-			echo '<dt>' . esc_html( ucfirst( (string) $label ) ) . '</dt>';
-			echo '<dd>' . esc_html( is_numeric( $value ) ? ( (string) $value . ' ms' ) : (string) $value ) . '</dd>';
+			$label = (string) preg_replace( '/\s+Ms$/', '', $label );
+			$label = ucfirst( $label );
+			$ms    = is_numeric( $value ) ? (float) $value : 0;
+			$pct   = ( $total_ms > 0 ) ? min( 100, (int) round( ( $ms / $total_ms ) * 100 ) ) : 0;
+			$row_cls = 'xpressui-timing-row' . ( $key === 'totalMs' ? ' xpressui-timing-row--total' : '' );
+			echo '<div class="' . esc_attr( $row_cls ) . '">';
+			echo '<div class="xpressui-timing-label">' . esc_html( $label ) . '</div>';
+			echo '<div class="xpressui-timing-bar-wrap"><div class="xpressui-timing-bar" style="width:' . esc_attr( (string) $pct ) . '%"></div></div>';
+			echo '<div class="xpressui-timing-val">' . esc_html( is_numeric( $value ) ? ( (string) $value . ' ms' ) : (string) $value ) . '</div>';
+			echo '</div>';
+		}
+		echo '</div>';
+	}
+	echo '</div>';
+
+	// Mail delivery.
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
+	echo '<dl class="xpressui-delivery-dl">';
+	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . $badge( $mail_status !== '' ? $mail_status : 'not-set' ) . '</dd>';
+	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . $fmt_date( $mail_sent_at ) . '</dd>';
+	if ( $mail_fallback_used === '1' ) {
+		echo '<dt>' . esc_html__( 'Fallback', 'xpressui-bridge' ) . '</dt><dd>' . $badge( 'yes' ) . '</dd>';
+	}
+	if ( $mail_error !== '' ) {
+		echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd class="xpressui-error-text">' . esc_html( $mail_error ) . '</dd>';
+	}
+	echo '</dl>';
+	echo '</div>';
+
+	// Webhook delivery.
+	echo '<div class="xpressui-delivery-card">';
+	echo '<h4>' . esc_html__( 'Webhook delivery', 'xpressui-bridge' ) . '</h4>';
+	if ( $webhook_status === '' || $webhook_status === 'not-set' ) {
+		echo '<p class="xpressui-hint">' . esc_html__( 'No webhook configured.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		echo '<dl class="xpressui-delivery-dl">';
+		echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . $badge( $webhook_status ) . '</dd>';
+		if ( $webhook_code !== '' ) {
+			echo '<dt>' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_code ) . '</dd>';
+		}
+		echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . $fmt_date( $webhook_sent_at ) . '</dd>';
+		if ( $webhook_error !== '' ) {
+			echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd class="xpressui-error-text">' . esc_html( $webhook_error ) . '</dd>';
 		}
 		echo '</dl>';
 	}
 	echo '</div>';
 
-	echo '<div class="xpressui-delivery-card">';
-	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
-	echo '<dl class="xpressui-delivery-dl">';
-	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_status !== '' ? $mail_status : 'not-set' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Fallback used', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_fallback_used === '1' ? 'yes' : 'no' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_sent_at !== '' ? $mail_sent_at : '-' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $mail_error !== '' ? $mail_error : '-' ) . '</dd>';
-	echo '</dl>';
-	echo '</div>';
-
-	echo '<div class="xpressui-delivery-card">';
-	echo '<h4>' . esc_html__( 'Webhook delivery', 'xpressui-bridge' ) . '</h4>';
-	echo '<dl class="xpressui-delivery-dl">';
-	echo '<dt>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_status !== '' ? $webhook_status : 'not-set' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'HTTP code', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_code !== '' ? $webhook_code : '-' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_sent_at !== '' ? $webhook_sent_at : '-' ) . '</dd>';
-	echo '<dt>' . esc_html__( 'Error', 'xpressui-bridge' ) . '</dt><dd>' . esc_html( $webhook_error !== '' ? $webhook_error : '-' ) . '</dd>';
-	echo '</dl>';
-	echo '</div>';
-
+	// Recent events.
 	echo '<div class="xpressui-delivery-card">';
 	echo '<h4>' . esc_html__( 'Recent events', 'xpressui-bridge' ) . '</h4>';
 	if ( empty( $event_log ) ) {
 		echo '<p class="xpressui-hint">' . esc_html__( 'No instrumentation events recorded yet.', 'xpressui-bridge' ) . '</p>';
 	} else {
-		echo '<ul class="xpressui-file-list">';
+		echo '<ul class="xpressui-event-list">';
 		foreach ( array_slice( array_reverse( $event_log ), 0, 8 ) as $event ) {
 			$event_type  = sanitize_text_field( (string) ( $event['eventType'] ?? 'unknown' ) );
 			$occurred_at = sanitize_text_field( (string) ( $event['occurredAt'] ?? '' ) );
 			$source      = sanitize_text_field( (string) ( $event['source'] ?? 'bridge' ) );
-			echo '<li><strong>' . esc_html( $event_type ) . '</strong>';
-			echo '<br /><span class="xpressui-muted">' . esc_html( $occurred_at !== '' ? $occurred_at : '-' ) . ' · ' . esc_html( $source ) . '</span></li>';
+			echo '<li>';
+			echo '<span class="xpressui-event-chip">' . esc_html( $event_type ) . '</span>';
+			echo '<span class="xpressui-event-meta">' . $fmt_date( $occurred_at ) . ' · ' . esc_html( $source ) . '</span>';
+			echo '</li>';
 		}
 		echo '</ul>';
 	}

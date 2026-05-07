@@ -802,27 +802,6 @@
 	font-weight: 600;
 }
 
-.xpressui-inline-flagged-switch {
-	display: inline-flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 8px;
-	min-width: 44px;
-}
-
-.xpressui-inline-flagged-switch__text {
-	font-size: 11px;
-	font-weight: 600;
-	color: #64748b;
-	white-space: nowrap;
-}
-
-.xpressui-preview-action {
-	width: 180px;
-	text-align: right;
-	vertical-align: middle;
-	white-space: nowrap;
-}
 
 /* ---------------------------------------------------------------------------
  * Reference file picker (pending_info)
@@ -908,9 +887,10 @@
 .xpressui-delivery-dl {
 	margin: 0;
 	display: grid;
-	grid-template-columns: 120px 1fr;
+	grid-template-columns: 90px 1fr;
 	row-gap: 6px;
 	column-gap: 8px;
+	align-items: center;
 }
 
 .xpressui-delivery-dl dt {
@@ -922,6 +902,113 @@
 	margin: 0;
 	word-break: break-word;
 	font-size: 12px;
+}
+
+/* Status badges */
+.xpressui-badge {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.7;
+}
+.xpressui-badge--green {
+	background: #dcfce7;
+	color: #166534;
+}
+.xpressui-badge--gray {
+	background: #f1f5f9;
+	color: #64748b;
+}
+.xpressui-badge--amber {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+/* Timing bars */
+.xpressui-timing-list {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+.xpressui-timing-row {
+	display: grid;
+	grid-template-columns: 100px 1fr 54px;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+}
+.xpressui-timing-row--total {
+	font-weight: 600;
+	border-top: 1px solid #e2e8f0;
+	padding-top: 6px;
+	margin-top: 2px;
+}
+.xpressui-timing-label {
+	color: #64748b;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.xpressui-timing-row--total .xpressui-timing-label {
+	color: #1e293b;
+}
+.xpressui-timing-bar-wrap {
+	background: #e2e8f0;
+	border-radius: 2px;
+	height: 6px;
+	overflow: hidden;
+}
+.xpressui-timing-bar {
+	height: 100%;
+	background: #93c5fd;
+	border-radius: 2px;
+	min-width: 2px;
+}
+.xpressui-timing-row--total .xpressui-timing-bar {
+	background: #6366f1;
+}
+.xpressui-timing-val {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	color: #1e293b;
+}
+
+/* Error text */
+.xpressui-error-text {
+	color: #dc2626;
+	font-size: 12px;
+}
+
+/* Event log */
+.xpressui-event-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+.xpressui-event-list li {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.xpressui-event-chip {
+	display: inline-block;
+	background: #eff6ff;
+	color: #1d4ed8;
+	border-radius: 4px;
+	padding: 1px 6px;
+	font-size: 11px;
+	font-weight: 500;
+	font-family: monospace;
+}
+.xpressui-event-meta {
+	font-size: 11px;
+	color: #94a3b8;
+	padding-left: 2px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1014,64 +1101,6 @@
 	word-break: break-word;
 }
 
-.xpressui-flagged-switch {
-	position: relative;
-	display: inline-flex;
-	flex-shrink: 0;
-	width: 44px;
-	height: 24px;
-}
-
-.xpressui-flagged-switch input {
-	position: absolute;
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	margin: 0;
-	opacity: 0;
-	cursor: pointer;
-}
-
-.xpressui-flagged-switch__track {
-	position: relative;
-	display: block;
-	width: 44px;
-	height: 24px;
-	border-radius: 999px;
-	background: #cbd5e1;
-	box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
-	transition: background 140ms ease, box-shadow 140ms ease;
-}
-
-.xpressui-flagged-switch__track::after {
-	content: "";
-	position: absolute;
-	top: 3px;
-	left: 3px;
-	width: 18px;
-	height: 18px;
-	border-radius: 50%;
-	background: #fff;
-	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.22);
-	transition: transform 140ms ease;
-}
-
-.xpressui-flagged-switch input:checked + .xpressui-flagged-switch__track {
-	background: #2271b1;
-}
-
-.xpressui-flagged-switch input:checked + .xpressui-flagged-switch__track::after {
-	transform: translateX(20px);
-}
-
-.xpressui-flagged-switch input:focus-visible + .xpressui-flagged-switch__track {
-	box-shadow: 0 0 0 2px rgba(34, 113, 177, 0.28);
-}
-
-.xpressui-review-flagged__legacy-label {
-	display: block;
-	margin-top: 14px;
-}
 
 .xpressui-mt-12 {
 	display: block;
