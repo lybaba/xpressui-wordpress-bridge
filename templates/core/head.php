@@ -36,7 +36,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       height: 100%;
       display: grid;
       place-items: center;
-      padding: 32px 16px;
+      padding: 24px 16px;
       position: relative;
       isolation: isolate;
       overflow: hidden;
@@ -45,7 +45,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
       position: relative;
       isolation: isolate;
       width: 100%;
-      padding: 48px 16px;
+      padding: 32px 16px;
       box-sizing: border-box;
       font-size: 14px;
       font-family: var(--template-font-family);
@@ -102,33 +102,59 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     }
 <?php endif; ?>
     .form-frame {
-      width: min(100%, 960px);
+      width: min(100%, 900px);
       background: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>color-mix(in srgb, var(--template-surface) 96%, transparent)<?php else: ?>color-mix(in srgb, var(--template-surface) 92%, white)<?php endif; ?>;
       border-radius: var(--template-card-radius);
-      padding: 24px;
+      padding: 28px;
       box-shadow: <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>0 28px 80px -38px rgba(0,0,0,0.42)<?php else: ?>0 20px 60px rgba(0,0,0,0.08)<?php endif; ?>;
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'), (!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none"))))): ?>
 backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
       position: relative;
       z-index: 1;
     }
-    .template-runtime-shell { display: grid; gap: 20px; }
-    .template-form-header { display: grid; gap: 4px; padding: 4px 2px 0; }
-    .template-form-title { margin: 0; font-size: clamp(28px, 4vw, 42px); line-height: 1.02; letter-spacing: -0.04em; color: var(--template-text); font-weight: 900; }
+    .hosted-link-presentation {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 18px;
+      padding: 18px 20px;
+      border: 1px solid color-mix(in srgb, var(--template-primary) 22%, var(--template-border));
+      border-radius: max(calc(var(--template-card-radius) - 8px), 16px);
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)), color-mix(in srgb, var(--template-surface) 96%, white));
+      box-shadow: 0 14px 34px -30px color-mix(in srgb, var(--template-primary) 45%, transparent);
+    }
+    .hosted-link-presentation[data-theme='dark'],
+    .hosted-link-presentation[data-theme='primary'] {
+      background:
+        linear-gradient(135deg, color-mix(in srgb, var(--template-primary) 88%, #0f172a), color-mix(in srgb, #0f172a 86%, var(--template-primary)));
+      border-color: color-mix(in srgb, var(--template-primary) 55%, rgba(255,255,255,0.28));
+    }
+    .hosted-link-eyebrow { color: var(--template-primary); font-size: 11px; font-weight: 900; letter-spacing: 0.08em; line-height: 1; text-transform: uppercase; }
+    .hosted-link-title { margin: 0; color: var(--template-text); font-size: 24px; font-weight: 900; line-height: 1.1; letter-spacing: 0; overflow-wrap: anywhere; }
+    .hosted-link-description { margin: 0; max-width: 720px; color: var(--template-muted-text); font-size: 14px; line-height: 1.55; }
+    .hosted-link-presentation[data-theme='dark'] .hosted-link-eyebrow,
+    .hosted-link-presentation[data-theme='primary'] .hosted-link-eyebrow { color: color-mix(in srgb, #ffffff 84%, var(--template-primary)); }
+    .hosted-link-presentation[data-theme='dark'] .hosted-link-title,
+    .hosted-link-presentation[data-theme='primary'] .hosted-link-title { color: #f8fafc; }
+    .hosted-link-presentation[data-theme='dark'] .hosted-link-description,
+    .hosted-link-presentation[data-theme='primary'] .hosted-link-description { color: rgba(226,232,240,0.92); }
+    .template-runtime-shell { display: grid; gap: 16px; }
+    .template-form-header { display: grid; gap: 4px; padding: 0 2px; }
+    .template-form-title { margin: 0; font-size: 36px; line-height: 1.04; letter-spacing: 0; color: var(--template-text); font-weight: 900; }
     .template-form-subtitle { margin: 0; color: var(--template-muted-text); font-size: 12px; line-height: 1.45; max-width: 720px; }
-    .template-step-status { display: grid; gap: 10px; padding: 0 4px 10px; background: transparent; border: none; }
+    .template-step-status { display: grid; gap: 8px; padding: 0 4px 6px; background: transparent; border: none; }
     .template-step-status[data-step-feedback-state='loading'] { background: color-mix(in srgb, #3b82f6 8%, var(--template-surface)); border-color: color-mix(in srgb, #3b82f6 20%, transparent); }
     .template-step-status[data-step-feedback-state='success'] { background: color-mix(in srgb, #22c55e 8%, var(--template-surface)); border-color: color-mix(in srgb, #22c55e 20%, transparent); }
     .template-step-status-title { font-size: 12px; font-weight: 800; color: var(--template-primary); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; align-self: start; background: color-mix(in srgb, var(--template-primary) 8%, transparent); padding: 6px 12px; border-radius: 999px; }
     .template-step-status-message { display: none; /* Cleaner to hide this and rely on Section labels */ }
-    .template-section { display: grid; gap: 16px; padding: 20px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
+    .template-section { display: grid; gap: 14px; padding: 18px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
     .template-section-header { display: grid; gap: 4px; }
-    .template-section-label { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: var(--template-text); }
+    .template-section-label { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0; color: var(--template-text); }
     .template-section-desc { margin: 0 0 4px 0; color: var(--template-muted-text); font-size: 14px; line-height: 1.5; }
-    .template-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; width: 100%; }
+    .template-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; width: 100%; }
     .template-runtime-shell[data-field-columns='2'] .template-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .template-field { display: flex; flex-direction: column; gap: 8px; width: 100%; min-width: 0; }
+    .template-field { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
     .template-runtime-shell[data-label-position='inline'] .template-field { display: grid; grid-template-columns: minmax(112px, 150px) minmax(0, 1fr); align-items: start; column-gap: 12px; }
     .template-runtime-shell[data-label-position='inline'] .template-field-label-row { padding-top: 14px; }
     .template-runtime-shell[data-label-position='inline'] .template-field-help,
@@ -147,8 +173,8 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-field-meta { display: flex; flex-wrap: wrap; gap: 8px; }
     #xpressui-root .template-field-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--template-border) 40%, transparent); border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); color: var(--template-text); font-size: 12px; font-weight: 700; line-height: 1; }
     .template-input,
-    .template-textarea { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 14px 16px; }
-    .template-runtime-shell select { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border) !important; border-radius: var(--template-input-radius) !important; background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 16px center !important; background-size: 16px !important; color: var(--template-text) !important; font: inherit; padding: 14px 40px 14px 16px !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; accent-color: var(--template-primary) !important; }
+    .template-textarea { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 12px 14px; }
+    .template-runtime-shell select { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border) !important; border-radius: var(--template-input-radius) !important; background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 16px center !important; background-size: 16px !important; color: var(--template-text) !important; font: inherit; padding: 12px 40px 12px 14px !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; accent-color: var(--template-primary) !important; }
     .template-runtime-shell select option:checked { background: color-mix(in srgb, var(--template-primary) 15%, white) !important; color: var(--template-text) !important; }
     .template-textarea { min-height: 144px; resize: vertical; }
     .template-input::placeholder,
@@ -336,6 +362,14 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-image-gallery-list [data-image-gallery-name] { font-size: 13px; font-weight: 600; color: var(--template-text); }
     .template-image-gallery-list [data-image-gallery-action="remove"] { width: 30px; min-width: 30px; height: 30px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 96%, transparent); color: var(--template-text); }
     @media (max-width: 720px) {
+      .page-shell { padding: 14px 10px; overflow: auto; }
+      #xpressui-root { padding: 18px 10px; }
+      .form-frame { padding: 18px; border-radius: max(calc(var(--template-card-radius) - 8px), 18px); }
+      .hosted-link-presentation { padding: 16px; }
+      .hosted-link-title { font-size: 21px; }
+      .template-form-title { font-size: 28px; }
+      .template-section { padding: 16px; }
+      .template-section-label { font-size: 21px; }
       .template-runtime-shell[data-field-columns='2'] .template-fields,
       .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: 1fr; }
       .template-runtime-shell[data-label-position='inline'] .template-field { display: flex; flex-direction: column; gap: 8px; }
