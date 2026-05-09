@@ -189,7 +189,7 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 		return;
 	}
 
-	$subject = xpressui_build_notification_subject( $project_slug, $payload );
+	$subject = xpressui_build_notification_subject( $project_slug, $payload, $post_id );
 	$body    = xpressui_build_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
@@ -210,7 +210,7 @@ function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, 
 		return;
 	}
 
-	$subject = xpressui_build_resubmitted_notification_subject( $project_slug, $payload );
+	$subject = xpressui_build_resubmitted_notification_subject( $project_slug, $payload, $post_id );
 	$body    = xpressui_build_resubmitted_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
@@ -224,35 +224,82 @@ function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, 
 /**
  * @param string       $project_slug
  * @param array|string $payload
+ * @param int          $post_id
  * @return string
  */
-function xpressui_build_notification_subject( $project_slug, $payload ) {
+function xpressui_build_notification_subject( $project_slug, $payload, $post_id = 0 ) {
 	$site_name = get_bloginfo( 'name' );
 	$contact   = is_array( $payload ) ? xpressui_get_contact_summary( $payload ) : '';
+	$reference = xpressui_build_notification_subject_reference( $post_id, $payload );
 
+	if ( $contact !== '' && $reference !== '' ) {
+		/* translators: 1: site name, 2: project slug, 3: contact name/email, 4: submission reference */
+		return sprintf( __( '[%1$s] New %2$s submission - %3$s - %4$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact, $reference );
+	}
 	if ( $contact !== '' ) {
 		/* translators: 1: site name, 2: project slug, 3: contact name/email */
-		return sprintf( __( '[%1$s] New submission for %2$s: %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+		return sprintf( __( '[%1$s] New %2$s submission - %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+	}
+	if ( $reference !== '' ) {
+		/* translators: 1: site name, 2: project slug, 3: submission reference */
+		return sprintf( __( '[%1$s] New %2$s submission - %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $reference );
 	}
 	/* translators: 1: site name, 2: project slug */
-	return sprintf( __( '[%1$s] New submission for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
+	return sprintf( __( '[%1$s] New %2$s submission', 'xpressui-bridge' ), $site_name, $project_slug );
 }
 
 /**
  * @param string       $project_slug
  * @param array|string $payload
+ * @param int          $post_id
  * @return string
  */
-function xpressui_build_resubmitted_notification_subject( $project_slug, $payload ) {
+function xpressui_build_resubmitted_notification_subject( $project_slug, $payload, $post_id = 0 ) {
 	$site_name = get_bloginfo( 'name' );
 	$contact   = is_array( $payload ) ? xpressui_get_contact_summary( $payload ) : '';
+	$reference = xpressui_build_notification_subject_reference( $post_id, $payload );
 
+	if ( $contact !== '' && $reference !== '' ) {
+		/* translators: 1: site name, 2: project slug, 3: contact name/email, 4: submission reference */
+		return sprintf( __( '[%1$s] %2$s submission updated - %3$s - %4$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact, $reference );
+	}
 	if ( $contact !== '' ) {
 		/* translators: 1: site name, 2: project slug, 3: contact name/email */
-		return sprintf( __( '[%1$s] Submission updated for %2$s: %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+		return sprintf( __( '[%1$s] %2$s submission updated - %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $contact );
+	}
+	if ( $reference !== '' ) {
+		/* translators: 1: site name, 2: project slug, 3: submission reference */
+		return sprintf( __( '[%1$s] %2$s submission updated - %3$s', 'xpressui-bridge' ), $site_name, $project_slug, $reference );
 	}
 	/* translators: 1: site name, 2: project slug */
-	return sprintf( __( '[%1$s] Submission updated for %2$s', 'xpressui-bridge' ), $site_name, $project_slug );
+	return sprintf( __( '[%1$s] %2$s submission updated', 'xpressui-bridge' ), $site_name, $project_slug );
+}
+
+/**
+ * Builds a short stable reference for email subjects so mailbox clients do not
+ * group unrelated submissions into the same conversation.
+ *
+ * @param int          $post_id Submission post ID.
+ * @param array|string $payload Submitted form data.
+ * @return string
+ */
+function xpressui_build_notification_subject_reference( $post_id, $payload ) {
+	if ( is_array( $payload ) ) {
+		$submission_id = isset( $payload['submissionId'] ) && is_scalar( $payload['submissionId'] )
+			? sanitize_text_field( (string) $payload['submissionId'] )
+			: '';
+
+		if ( $submission_id !== '' ) {
+			return 'ID ' . substr( $submission_id, -8 );
+		}
+	}
+
+	$post_id = absint( $post_id );
+	if ( $post_id > 0 ) {
+		return '#' . $post_id;
+	}
+
+	return '';
 }
 
 /**
