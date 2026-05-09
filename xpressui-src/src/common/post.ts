@@ -32,51 +32,65 @@ export type TGetPostAssetsResult = {
     mediaFilesMap: Record<string, TMediaFile>;
 }
 
+const getVariantPublicUrl = (mediaFile: TMediaInfo, variantName: 'small' | 'thumb' | 'medium' | 'large'): string => {
+    const variant = mediaFile[variantName];
+    return typeof variant?.publicUrl === 'string' && variant.publicUrl.trim() ? variant.publicUrl : '';
+}
 
 export const getLargeImageUrl = (mediaFile: TMediaInfo): string => {
-    if (mediaFile.large)
-        return mediaFile.large.publicUrl;
+    const largeUrl = getVariantPublicUrl(mediaFile, 'large');
+    if (largeUrl)
+        return largeUrl;
 
 
     return mediaFile.publicUrl ? mediaFile.publicUrl : '';
 }
 
 export const getSmallImageUrl = (mediaFile: TMediaInfo): string => {
-    if (mediaFile.small)
-        return mediaFile.small.publicUrl
+    const smallUrl = getVariantPublicUrl(mediaFile, 'small');
+    if (smallUrl)
+        return smallUrl;
 
-    if (mediaFile.thumb)
-        return mediaFile.thumb.publicUrl
+    const thumbUrl = getVariantPublicUrl(mediaFile, 'thumb');
+    if (thumbUrl)
+        return thumbUrl;
 
-    if (mediaFile.medium)
-        return mediaFile.medium.publicUrl;
+    const mediumUrl = getVariantPublicUrl(mediaFile, 'medium');
+    if (mediumUrl)
+        return mediumUrl;
 
-    if (mediaFile.large)
-        return mediaFile.large.publicUrl;
+    const largeUrl = getVariantPublicUrl(mediaFile, 'large');
+    if (largeUrl)
+        return largeUrl;
 
 
     return mediaFile.publicUrl ? mediaFile.publicUrl : '';
 }
 
 export const getThumbImageUrl = (mediaFile: TMediaInfo): string => {
-    if (mediaFile.thumb)
-        return mediaFile.thumb.publicUrl
+    const thumbUrl = getVariantPublicUrl(mediaFile, 'thumb');
+    if (thumbUrl)
+        return thumbUrl;
 
-    if (mediaFile.medium)
-        return mediaFile.medium.publicUrl;
+    const mediumUrl = getVariantPublicUrl(mediaFile, 'medium');
+    if (mediumUrl)
+        return mediumUrl;
 
-    if (mediaFile.large)
-        return mediaFile.large.publicUrl;
+    const largeUrl = getVariantPublicUrl(mediaFile, 'large');
+    if (largeUrl)
+        return largeUrl;
 
     return mediaFile.publicUrl ? mediaFile.publicUrl : '';
 }
 
 export const getMediumImageUrl = (mediaFile: TMediaInfo): string => {
-    if (mediaFile.medium)
-        return mediaFile.medium.publicUrl;
+    const mediumUrl = getVariantPublicUrl(mediaFile, 'medium');
+    if (mediumUrl)
+        return mediumUrl;
 
-    if (mediaFile.large)
-        return mediaFile.large.publicUrl;
+    const largeUrl = getVariantPublicUrl(mediaFile, 'large');
+    if (largeUrl)
+        return largeUrl;
 
     return mediaFile.publicUrl ? mediaFile.publicUrl : '';
 }
