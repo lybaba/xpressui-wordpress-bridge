@@ -72,5 +72,8 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
 <?php endif; ?>
     </section>
 <?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains("checkout_summary", xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form')), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'checkout_summary'), 'enabled')))): ?>
+<?php xpressui_bridge_template_include_template('product-checkout-summary.php', $xpressui_ctx); ?>
+<?php endif; ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>

@@ -2121,14 +2121,37 @@ function xpressui_render_scalar_badge( $label, $tone = 'neutral' ) {
 	return '<span class="' . esc_attr( $class ) . '">' . esc_html( $label ) . '</span>';
 }
 
-function xpressui_format_money( $raw ) {
+function xpressui_format_money( $raw, $currency = '', $format = 'amount-code' ) {
 	if ( ! is_numeric( $raw ) ) {
 		return '';
 	}
 	$amount = (float) $raw;
-	return floor( $amount ) === $amount
-		? (string) (int) $amount
+	$formatted = floor( $amount ) === $amount
+		? number_format( $amount, 0, '.', ' ' )
 		: number_format( $amount, 2, '.', ' ' );
+	$currency = strtoupper( trim( (string) $currency ) );
+	if ( $currency === '' ) {
+		return $formatted;
+	}
+	$symbols = [
+		'EUR' => '€',
+		'USD' => '$',
+		'GBP' => '£',
+		'XOF' => 'F CFA',
+		'XAF' => 'F CFA',
+	];
+	$symbol = $symbols[ $currency ] ?? $currency;
+	switch ( (string) $format ) {
+		case 'code-amount':
+			return $currency . ' ' . $formatted;
+		case 'amount-symbol':
+			return $formatted . ' ' . $symbol;
+		case 'symbol-amount':
+			return $symbol . ' ' . $formatted;
+		case 'amount-code':
+		default:
+			return $formatted . ' ' . $currency;
+	}
 }
 
 function xpressui_render_product_list_value( $value, $field_meta = [] ) {
@@ -2136,6 +2159,8 @@ function xpressui_render_product_list_value( $value, $field_meta = [] ) {
 		return '<span class="xpressui-empty">' . esc_html__( 'Empty', 'xpressui-bridge' ) . '</span>';
 	}
 	$catalog_index  = xpressui_build_choice_catalog_index( $field_meta );
+	$currency       = strtoupper( trim( (string) ( $field_meta['productCurrency'] ?? $field_meta['product_currency'] ?? $field_meta['paymentCurrency'] ?? $field_meta['payment_currency'] ?? 'EUR' ) ) );
+	$amount_format  = (string) ( $field_meta['productAmountFormat'] ?? $field_meta['product_amount_format'] ?? 'amount-code' );
 	$rows           = [];
 	$total_quantity = 0;
 	$total_amount   = 0.0;
@@ -2158,8 +2183,8 @@ function xpressui_render_product_list_value( $value, $field_meta = [] ) {
 		$rows[] = [
 			'name'     => $name,
 			'quantity' => $quantity,
-			'unit'     => is_numeric( $unit_amount ) ? xpressui_format_money( $unit_amount ) : '',
-			'line'     => $line_amount !== null ? xpressui_format_money( $line_amount ) : '',
+			'unit'     => is_numeric( $unit_amount ) ? xpressui_format_money( $unit_amount, $currency, $amount_format ) : '',
+			'line'     => $line_amount !== null ? xpressui_format_money( $line_amount, $currency, $amount_format ) : '',
 		];
 	}
 
@@ -2188,7 +2213,7 @@ function xpressui_render_product_list_value( $value, $field_meta = [] ) {
 	$html .= '</tbody></table>';
 	if ( $total_amount > 0 ) {
 		/* translators: %s: formatted total amount */
-		$html .= '<div class="xpressui-value-header">' . esc_html( sprintf( __( 'Estimated total: %s', 'xpressui-bridge' ), xpressui_format_money( $total_amount ) ) ) . '</div>';
+		$html .= '<div class="xpressui-value-header">' . esc_html( sprintf( __( 'Estimated total: %s', 'xpressui-bridge' ), xpressui_format_money( $total_amount, $currency, $amount_format ) ) ) . '</div>';
 	}
 	$html .= '</div>';
 	return $html;
