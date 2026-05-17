@@ -21,6 +21,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <?php xpressui_bridge_template_include_template('fields/choice-list-date-range.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains(xpressui_bridge_template_context_get($xpressui_ctx, 'render_type'), ["radio-buttons", "checkboxes"]), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'is_month_range_catalog')))): ?>
 <?php xpressui_bridge_template_include_template('fields/choice-list-month-range.php', $xpressui_ctx); ?>
+<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains(xpressui_bridge_template_context_get($xpressui_ctx, 'render_type'), ["radio-buttons", "checkboxes"]), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'is_time_slots_catalog')))): ?>
+<?php xpressui_bridge_template_include_template('fields/choice-list-time-slots.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_contains(xpressui_bridge_template_context_get($xpressui_ctx, 'render_type'), ["radio-buttons", "checkboxes"]))): ?>
 <?php xpressui_bridge_template_include_template('fields/choice-list.php', $xpressui_ctx); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_contains(xpressui_bridge_template_context_get($xpressui_ctx, 'render_type'), ["checkbox", "switch"]))): ?>

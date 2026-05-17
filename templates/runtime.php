@@ -179,6 +179,13 @@ function xpressui_bridge_template_equals( mixed $left, mixed $right ): bool {
 	return $left == $right;
 }
 
+function xpressui_bridge_template_add( mixed $left, mixed $right ): mixed {
+	if ( is_array( $left ) && is_array( $right ) ) {
+		return array_merge( $left, $right );
+	}
+	return $left + $right;
+}
+
 function xpressui_bridge_template_contains( mixed $needle, mixed $haystack ): bool {
 	if ( is_array( $haystack ) ) {
 		return in_array( $needle, $haystack, false );

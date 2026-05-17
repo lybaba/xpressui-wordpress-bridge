@@ -9,6 +9,8 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 ?><form
   class="template-runtime-shell"
   data-template-zone="rendered_form"
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
+data-product-form-gated="true" hidden<?php endif; ?>
   data-field-columns="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'field_columns'))); ?>"
   data-label-position="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'label_position'))); ?>"
   method="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_method'))); ?>"
@@ -22,7 +24,16 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
   <input type="hidden" name="xpressui_resume_entry_id" value="" data-resume-entry-id>
   <input type="text" name="xpressui_confirm_email" tabindex="-1" autocomplete="off" aria-hidden="true" style="opacity:0;position:absolute;top:0;left:0;height:0;width:0;z-index:-1;pointer-events:none;">
   <input type="hidden" name="xpressui_resume_token" data-resume-token disabled>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
+  <input type="hidden" name="xpressuiProductCart" value="[]" />
+  <input type="hidden" name="xpressuiProductTotal" value="0" />
+  <input type="hidden" name="xpressuiProductCurrency" value="" />
+  <input type="hidden" name="xpressuiProductCount" value="0" />
+<?php endif; ?>
   <div class="xpressui-resume-banner" data-resume-banner style="display:none;"><span data-resume-banner-note></span></div>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
+  <button type="button" class="template-product-selection-back" data-product-selection-back hidden style="display:none"></button>
+<?php endif; ?>
   <header class="template-form-header" data-template-zone="form_header">
     <h1 class="template-form-title"<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_title'))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'title'))); ?></h1>
     <p class="template-form-subtitle"<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'))), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
@@ -44,6 +55,9 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
       </div>
       <div class="template-step-status-message" data-form-step-summary><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'idle_message'))); ?></div>
     </section>
+<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
+<?php xpressui_bridge_template_include_template('product-catalog/checkout-summary.php', $xpressui_ctx); ?>
 <?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'has_sections'))): ?>
 <?php
@@ -72,7 +86,7 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
 <?php endif; ?>
     </section>
 <?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains("checkout_summary", xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form')), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'checkout_summary'), 'enabled')))): ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_and_value(xpressui_bridge_template_contains("checkout_summary", xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form')), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'checkout_summary'), 'enabled')), (!xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items'))))))): ?>
 <?php xpressui_bridge_template_include_template('product-checkout-summary.php', $xpressui_ctx); ?>
 <?php endif; ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
