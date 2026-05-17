@@ -9,8 +9,29 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 ?><head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'))): ?>
+  <meta name="robots" content="index, follow" />
+  <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'title'))); ?></title>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))): ?>
+<meta name="description" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))); ?>" /><?php endif; ?>
+  <link rel="canonical" href="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'canonical_url'))); ?>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'title'))); ?>" />
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))): ?>
+<meta property="og:description" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))); ?>" /><?php endif; ?>
+  <meta property="og:url" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'canonical_url'))); ?>" />
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'og_image'))): ?>
+<meta property="og:image" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'og_image'))); ?>" /><?php endif; ?>
+  <meta name="twitter:card" content="<?php echo esc_attr(xpressui_bridge_template_stringify((xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'og_image')) ? "summary_large_image" : "summary"))); ?>" />
+  <meta name="twitter:title" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'title'))); ?>" />
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))): ?>
+<meta name="twitter:description" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'description'))); ?>" /><?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'og_image'))): ?>
+<meta name="twitter:image" content="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'catalog_seo'), 'og_image'))); ?>" /><?php endif; ?>
+<?php else: ?>
   <meta name="robots" content="noindex, nofollow" />
   <title><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'name'))); ?></title>
+<?php endif; ?>
   <?php // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- CSS extracted by xpressui_build_shortcode_inline_css() and delivered via wp_add_inline_style(); standalone-shell path outputs a full HTML document ?>
 <style>
     :root {
