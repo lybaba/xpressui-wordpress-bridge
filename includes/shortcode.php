@@ -157,7 +157,7 @@ function xpressui_render_shortcode( $atts ) {
 						} elseif ( $xp_type === 'camera-photo' || $xp_type === 'payment-proof' ) {
 							$xp_fld['input_type'] = 'file';
 							if ( $xp_type === 'payment-proof' && empty( $xp_fld['accept'] ) ) {
-								$xp_fld['accept'] = 'image/*';
+								$xp_fld['accept'] = '.pdf,application/pdf,.jpg,.jpeg,image/jpeg,.png,image/png';
 							}
 						}
 						$patched_fields[] = $xp_fld;

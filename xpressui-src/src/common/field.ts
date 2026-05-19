@@ -438,7 +438,7 @@ export const getHtmlInputProps = (fieldConfig: TFieldConfig): Record<string, any
 
         case PAYMENT_PROOF_TYPE:
             return {
-                accept: fieldConfig.accept || "image/*"
+                accept: fieldConfig.accept || ".pdf,application/pdf,.jpg,.jpeg,image/jpeg,.png,image/png"
             }
 
         default:
