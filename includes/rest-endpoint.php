@@ -922,10 +922,6 @@ function xpressui_store_signature_attachments( $post_id, $payload ) {
 		return $payload;
 	}
 
-	require_once ABSPATH . 'wp-admin/includes/file.php';
-	require_once ABSPATH . 'wp-admin/includes/image.php';
-	require_once ABSPATH . 'wp-admin/includes/media.php';
-
 	$ext_map = [
 		'image/png'  => 'png',
 		'image/jpeg' => 'jpg',

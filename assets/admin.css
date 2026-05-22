@@ -1171,3 +1171,48 @@
 	background: #fff;
 	display: block;
 }
+
+/* ---------------------------------------------------------------------------
+ * Workflow settings page — accordion + sticky save bar
+ * ------------------------------------------------------------------------- */
+
+.xpressui-admin-card details { margin: 0; }
+.xpressui-admin-card summary {
+	list-style: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-bottom: 14px;
+	margin-bottom: 0;
+	user-select: none;
+}
+.xpressui-admin-card summary::-webkit-details-marker { display: none; }
+.xpressui-admin-card summary h2 { margin: 0; padding: 0; font-size: 1.3em; }
+.xpressui-admin-card summary .xpressui-toggle-icon {
+	color: #787c82;
+	font-size: 20px;
+	line-height: 1;
+	flex-shrink: 0;
+	transition: transform 0.15s ease;
+	display: inline-block;
+}
+.xpressui-admin-card details:not([open]) summary .xpressui-toggle-icon {
+	transform: rotate(-90deg);
+}
+.xpressui-admin-card:has(details:not([open])) { padding-bottom: 6px; }
+.xpressui-settings-sticky {
+	position: sticky;
+	top: 32px;
+	z-index: 100;
+	background: #fff;
+	border-left: 3px solid #2271b1;
+	border-radius: 0 4px 4px 0;
+	padding: 7px 14px;
+	margin-bottom: 14px;
+	box-shadow: 0 2px 10px rgba(34,113,177,.15);
+	display: flex;
+	align-items: center;
+}
+.xpressui-settings-sticky .button { margin: 0; }

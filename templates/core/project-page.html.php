@@ -3,28 +3,40 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
-    throw new RuntimeException('Missing template context array.');
+if ( ! isset( $xpressui_ctx ) || ! is_array( $xpressui_ctx ) ) {
+    throw new RuntimeException( 'Missing template context array.' );
 }
+
+$_theme    = $xpressui_ctx['theme']    ?? [];
+$_colors   = $_theme['colors']         ?? [];
+$_radius   = $_theme['radius']         ?? [];
+$_project  = $xpressui_ctx['project'] ?? [];
+$_bg_url   = $_project['background_image_url'] ?? '';
+$_bg_style = $_theme['background_style']        ?? 'none';
+$_font     = ! empty( $_theme['font_family'] ) ? $_theme['font_family'] : 'Inter, system-ui, sans-serif';
+
+$_data_bg_style = ( $_bg_url && 'none' !== $_bg_style ) ? $_bg_style : 'none';
+
+$_vars = implode( '; ', [
+    '--template-font-family:'     . esc_attr( $_font ),
+    '--template-page-background:' . esc_attr( $_colors['page_background'] ?? '' ),
+    '--template-surface:'         . esc_attr( $_colors['surface']         ?? '' ),
+    '--template-text:'            . esc_attr( $_colors['text']            ?? '' ),
+    '--template-muted-text:color-mix(in srgb, var(--template-text) 65%, transparent)',
+    '--template-primary:'         . esc_attr( $_colors['primary']         ?? '' ),
+    '--template-border:'          . esc_attr( $_colors['border']          ?? '' ),
+    '--template-card-radius:'     . esc_attr( (string) ( $_radius['card']   ?? 0 ) ) . 'px',
+    '--template-input-radius:'    . esc_attr( (string) ( $_radius['input']  ?? 0 ) ) . 'px',
+    '--template-button-radius:'   . esc_attr( (string) ( $_radius['button'] ?? 0 ) ) . 'px',
+] );
 ?><!doctype html>
-<html lang="en">
-<?php xpressui_bridge_template_include_template('head.php', $xpressui_ctx); ?>
-<?php // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- CSS extracted by xpressui_build_shortcode_inline_css() and delivered via wp_add_inline_style(); standalone-shell path outputs a full HTML document ?>
-<style>
-  /* WordPress plugin-shell overrides — scoped to #xpressui-root so they don't bleed to the surrounding page */
-  #xpressui-root form-ui { display: block !important; }
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'project'), 'background_image_url'))), xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'background_style'), "none")))): ?>
-  #xpressui-root.page-shell { background: transparent !important; padding: 2px !important; min-height: 0 !important; height: auto !important; overflow: visible !important; align-items: flex-start !important; width: 100% !important; }
-  #xpressui-root.page-shell::before, #xpressui-root.page-shell::after { display: none !important; }
-  #xpressui-root .form-frame { background: transparent !important; box-shadow: none !important; border: none !important; margin: 0 auto !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-<?php endif; ?>
-</style>
-<?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
-<body>
+<html lang="en" style="<?php echo esc_attr( $_vars ); ?>; --template-background-image:<?php echo $_bg_url ? 'url(' . esc_url( $_bg_url ) . ')' : 'none'; ?>">
+<?php xpressui_bridge_template_include_template( 'head.php', $xpressui_ctx ); ?>
+<body data-bg-style="<?php echo esc_attr( $_data_bg_style ); ?>">
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
-<?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?>
-<?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?>
-<?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>
+<?php xpressui_bridge_template_include_template( 'header.php', $xpressui_ctx ); ?>
+<?php xpressui_bridge_template_include_template( 'form-frame.php', $xpressui_ctx ); ?>
+<?php xpressui_bridge_template_include_template( 'footer.php', $xpressui_ctx ); ?>
   </div>
   <script id="xpressui-custom-config" type="application/json">
 <?php echo wp_json_encode( json_decode( xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json')), true ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode escapes HTML special chars and produces a safe JSON string ?>  </script>

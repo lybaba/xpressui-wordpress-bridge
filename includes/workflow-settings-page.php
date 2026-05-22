@@ -183,48 +183,6 @@ function xpressui_render_workflow_settings_page(): void {
 	echo ' <a href="' . esc_url( $back_url ) . '" class="page-title-action">← ' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</a>';
 	echo '<hr class="wp-header-end">';
 
-	echo '<style>
-.xpressui-admin-card details { margin: 0; }
-.xpressui-admin-card summary {
-	list-style: none;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	padding-bottom: 14px;
-	margin-bottom: 0;
-	user-select: none;
-}
-.xpressui-admin-card summary::-webkit-details-marker { display: none; }
-.xpressui-admin-card summary h2 { margin: 0; padding: 0; font-size: 1.3em; }
-.xpressui-admin-card summary .xpressui-toggle-icon {
-	color: #787c82;
-	font-size: 20px;
-	line-height: 1;
-	flex-shrink: 0;
-	transition: transform 0.15s ease;
-	display: inline-block;
-}
-.xpressui-admin-card details:not([open]) summary .xpressui-toggle-icon {
-	transform: rotate(-90deg);
-}
-.xpressui-admin-card:has(details:not([open])) { padding-bottom: 6px; }
-.xpressui-settings-sticky {
-	position: sticky;
-	top: 32px;
-	z-index: 100;
-	background: #fff;
-	border-left: 3px solid #2271b1;
-	border-radius: 0 4px 4px 0;
-	padding: 7px 14px;
-	margin-bottom: 14px;
-	box-shadow: 0 2px 10px rgba(34,113,177,.15);
-	display: flex;
-	align-items: center;
-}
-.xpressui-settings-sticky .button { margin: 0; }
-</style>';
 
 	echo '<form method="post">';
 	wp_nonce_field( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );

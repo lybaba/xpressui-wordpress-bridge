@@ -367,37 +367,55 @@ function xpressui_get_shell_translations() {
 /**
  * Builds the scoped inline CSS string for a shortcode embed.
  *
- * Extracts <style> blocks from the compiled head.php template, scopes all
- * selectors to the mount element ID, and returns the resulting CSS string.
- * Called from xpressui_render_shortcode() so the output can be delivered via
- * wp_add_inline_style() rather than a bare <style> tag in page content.
+ * Sets CSS custom properties on the mount element, loads the static shell CSS
+ * and scopes body-level selectors to the mount ID so they don't affect the
+ * surrounding WordPress page. Delivered via wp_add_inline_style().
  *
  * @param array  $template_context Full template context array.
  * @param string $mount_node_id    CSS ID of the mount element (without #).
  * @return string Scoped CSS ready for wp_add_inline_style().
  */
 function xpressui_build_shortcode_inline_css( array $template_context, $mount_node_id ) {
-	require_once XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
-	if ( ! function_exists( 'xpressui_bridge_template_render_template' ) ) {
-		return '';
+	$scope   = '#' . $mount_node_id;
+	$theme   = $template_context['theme']   ?? [];
+	$colors  = $theme['colors']             ?? [];
+	$radius  = $theme['radius']             ?? [];
+	$project = $template_context['project'] ?? [];
+	$bg_url  = $project['background_image_url'] ?? '';
+	$font    = ! empty( $theme['font_family'] ) ? $theme['font_family'] : 'Inter, system-ui, sans-serif';
+
+	// CSS custom properties scoped to the mount element (equivalent to :root for this embed).
+	$inline_css  = "{$scope} {\n";
+	$inline_css .= '  --template-font-family: '      . esc_attr( $font ) . ";\n";
+	$inline_css .= '  --template-page-background: '  . esc_attr( $colors['page_background'] ?? '' ) . ";\n";
+	$inline_css .= '  --template-surface: '          . esc_attr( $colors['surface']         ?? '' ) . ";\n";
+	$inline_css .= '  --template-text: '             . esc_attr( $colors['text']            ?? '' ) . ";\n";
+	$inline_css .= "  --template-muted-text: color-mix(in srgb, var(--template-text) 65%, transparent);\n";
+	$inline_css .= '  --template-primary: '          . esc_attr( $colors['primary']         ?? '' ) . ";\n";
+	$inline_css .= '  --template-border: '           . esc_attr( $colors['border']          ?? '' ) . ";\n";
+	$inline_css .= '  --template-card-radius: '      . esc_attr( (string) ( $radius['card']   ?? 0 ) ) . "px;\n";
+	$inline_css .= '  --template-input-radius: '     . esc_attr( (string) ( $radius['input']  ?? 0 ) ) . "px;\n";
+	$inline_css .= '  --template-button-radius: '    . esc_attr( (string) ( $radius['button'] ?? 0 ) ) . "px;\n";
+	$inline_css .= '  --template-background-image: ' . ( $bg_url ? 'url(' . esc_url_raw( $bg_url ) . ')' : 'none' ) . ";\n";
+	$inline_css .= "}\n";
+
+	// Load component CSS from the static shell file, scoping body-level selectors
+	// to the mount element so they don't affect the surrounding WordPress page.
+	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
+	if ( file_exists( $shell_css_path ) ) {
+		$shell_css  = (string) file_get_contents( $shell_css_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin file read
+		$shell_css  = preg_replace( '/#xpressui-root(?![-\w])/', $scope, $shell_css );
+		$shell_css  = str_replace(
+			[ 'body::', 'body {', 'body,', 'body ' ],
+			[ $scope . '::', $scope . ' {', $scope . ',', $scope . ' ' ],
+			$shell_css
+		);
+		$inline_css .= "\n" . $shell_css . "\n";
 	}
 
-	$head_html = xpressui_bridge_template_render_template( 'head.php', $template_context );
-	preg_match_all( '/<style[^>]*>([\s\S]*?)<\/style>/i', $head_html, $style_blocks );
-	$inline_css = implode( "\n", $style_blocks[1] ?? [] );
-
-	$scope       = '#' . $mount_node_id;
-	$inline_css  = preg_replace( '/(?<![#\w-]):root\b/', $scope, $inline_css );
-	$inline_css  = preg_replace( '/#xpressui-root(?![-\w])/', $scope, $inline_css );
-	$inline_css  = str_replace(
-		[ 'body::', 'body {', 'body,', 'body ' ],
-		[ $scope . '::', $scope . ' {', $scope . ',', $scope . ' ' ],
-		$inline_css
-	);
-
-	$has_bg = ! empty( $template_context['project']['background_image_url'] )
-		&& isset( $template_context['theme']['background_style'] )
-		&& $template_context['theme']['background_style'] !== 'none';
+	$has_bg = ! empty( $bg_url )
+		&& isset( $theme['background_style'] )
+		&& $theme['background_style'] !== 'none';
 
 	// Static WordPress embedding overrides — scoped to the mount ID.
 	$inline_css .= "\n/* Resume mode */\n";

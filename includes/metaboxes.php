@@ -377,7 +377,7 @@ function xpressui_render_preview_metabox( $post ) {
 			foreach ( $fields as $field_name => $field_meta ) {
 				echo '<tr>';
 				echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ) . '</th>';
-				echo '<td>' . xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- output goes through wp_kses_post()
+				echo '<td>' . wp_kses_post( xpressui_render_preview_field_value( $payload[ $field_name ], $field_meta ) ) . '</td>';
 				echo '</tr>';
 			}
 			echo '</tbody></table>';
@@ -398,7 +398,7 @@ function xpressui_render_preview_metabox( $post ) {
 			$field_meta = is_array( $field_index[ $key ] ?? null ) ? $field_index[ $key ] : [];
 			echo '<tr>';
 			echo '<th class="xpressui-preview-th">' . esc_html( $field_meta['label'] ?? $key ) . '</th>';
-			echo '<td>' . xpressui_render_preview_field_value( $value, $field_meta ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- output goes through wp_kses_post()
+			echo '<td>' . wp_kses_post( xpressui_render_preview_field_value( $value, $field_meta ) ) . '</td>';
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
