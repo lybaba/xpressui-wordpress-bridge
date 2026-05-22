@@ -9,10 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once ABSPATH . 'wp-admin/includes/file.php';
-require_once ABSPATH . 'wp-admin/includes/media.php';
-require_once ABSPATH . 'wp-admin/includes/image.php';
-
 function xpressui_register_rest_routes() {
 	register_rest_route( 'xpressui/v1', '/submit', [
 		'methods'             => 'POST',
@@ -817,6 +813,9 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 }
 
 function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
 	$stored_files = [];
 	$debug        = [
 		'requestFileKeys'   => [],
