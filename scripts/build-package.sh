@@ -41,6 +41,8 @@ rm -f "${STAGE_DIR:?}/${DIST_SLUG}/WP_ORG_PRE_SUBMISSION_CHECKLIST.txt" \
       "${STAGE_DIR:?}/${DIST_SLUG}/render-compiled-template.php" \
       "${STAGE_DIR:?}/${DIST_SLUG}/templates/render-compiled-template.php" \
       "${STAGE_DIR:?}/${DIST_SLUG}/languages/.gitkeep"
+rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/templates/core/time-slots-catalog"
+rm -f "${STAGE_DIR:?}/${DIST_SLUG}/templates/core/fields/choice-list-time-slots.php"
 
 if [[ -f "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" ]]; then
   mv "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" "${STAGE_DIR}/${DIST_SLUG}/${DIST_MAIN_FILE}"

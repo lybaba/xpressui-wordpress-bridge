@@ -1216,3 +1216,7 @@
 	align-items: center;
 }
 .xpressui-settings-sticky .button { margin: 0; }
+.xpressui-heading-badge {
+	font-weight: 400;
+	color: #787c82;
+}

@@ -275,19 +275,18 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	// Resume-mode detection: set data-resume-loading on the mount element when
-	// ?xpressui_resume= is present. Delivered via wp_add_inline_script so no
-	// inline <script> appears in the shortcode output.
+	// ?xpressui_resume= is present. Delivered via wp_add_inline_script.
 	$resume_script = 'try{if(/[?&]xpressui_resume=/.test(location.search)){var _xpEl=document.getElementById(' . wp_json_encode( $mount_node_id ) . ');if(_xpEl)_xpEl.setAttribute("data-resume-loading","");}}catch(e){}';
 	wp_add_inline_script( 'xpressui-shell-init', $resume_script, 'after' );
 
 	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
 
-	// Embed the form config as an inline JSON script tag (not JavaScript).
+	// Embed the form config as inert JSON markup read by plugin-shell-init.js.
 	$form_config_json = $template_context['runtime']['form_config_json'] ?? '{}';
 
-	$config_tag = '<script id="' . esc_attr( $config_script_id ) . '" type="application/json">'
-		. wp_json_encode( json_decode( $form_config_json, true ) )
-		. '</script>';
+	$config_tag = '<template id="' . esc_attr( $config_script_id ) . '">'
+		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
+		. '</template>';
 
 	return '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $fragment_html

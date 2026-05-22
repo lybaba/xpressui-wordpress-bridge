@@ -403,7 +403,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// to the mount element so they don't affect the surrounding WordPress page.
 	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
 	if ( file_exists( $shell_css_path ) ) {
-		$shell_css  = (string) file_get_contents( $shell_css_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin file read
+		$shell_css  = (string) file_get_contents( $shell_css_path );
 		$shell_css  = preg_replace( '/#xpressui-root(?![-\w])/', $scope, $shell_css );
 		$shell_css  = str_replace(
 			[ 'body::', 'body {', 'body,', 'body ' ],
@@ -544,8 +544,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 		$rendered_html = str_replace( './init.js', esc_url_raw( $init_url ), $rendered_html );
 	}
 
-	// Register inline data scripts via the WordPress enqueue API so that
-	// wp_add_inline_script() is used rather than manually building <script> strings.
+	// Register inline data through the WordPress enqueue API.
 	// The captured output is then injected into the standalone HTML document that
 	// this function returns — wp_head()/wp_footer() are not called in this code
 	// path because the caller (shell.php) outputs a direct HTTP response and exits.
@@ -1021,7 +1020,7 @@ function xpressui_get_resume_post_id_by_token( $token ) {
 		return 0;
 	}
 	global $wpdb;
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- token lookup requires a direct postmeta query; caching would give stale results
+
 	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_xpressui_resume_token' AND meta_value = %s LIMIT 1",
 		$token
@@ -1047,7 +1046,7 @@ function xpressui_get_project_form_url( $project_slug ) {
 	// Auto-detect the published page/post that embeds this project's shortcode.
 	global $wpdb;
 	$slug_escaped = $wpdb->esc_like( $project_slug );
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- shortcode search requires LIKE on post_content; no WP_Query equivalent
+
 	$page_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT ID FROM {$wpdb->posts}
 		WHERE post_status = 'publish'
@@ -1234,7 +1233,7 @@ function xpressui_get_workflow_page_ids( $slug ) {
 	// misinterprets the quotes in [xpressui id="slug"] and returns no results.
 	$like = '%' . $wpdb->esc_like( '[xpressui id="' . $slug . '"]' ) . '%';
 
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- precise shortcode search requires a targeted LIKE query and returns lightweight IDs only.
+
 	$ids = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}

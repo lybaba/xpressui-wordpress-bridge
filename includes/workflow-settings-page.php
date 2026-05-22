@@ -50,7 +50,7 @@ function xpressui_render_workflow_settings_page(): void {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
 	}
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
 	$slug = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
 	if ( $slug === '' || ! xpressui_is_installed_workflow( $slug ) ) {
 		wp_die( esc_html__( 'Unknown workflow.', 'xpressui-bridge' ) );
@@ -61,13 +61,13 @@ function xpressui_render_workflow_settings_page(): void {
 	$has_pro_settings = xpressui_is_pro_workflow_settings_available();
 
 	if ( isset( $_POST['xpressui_save_workflow_settings'] ) && check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' ) ) {
-		$raw_notify_email = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_notify_email = trim( wp_unslash( $_POST['xpressui_notify_email'] ?? '' ) );
 		$notify_email     = sanitize_email( $raw_notify_email );
-		$raw_redirect_url = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_redirect_url = trim( wp_unslash( $_POST['xpressui_redirect_url'] ?? '' ) );
 		$redirect_url     = esc_url_raw( $raw_redirect_url );
-		$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_webhook_url  = trim( wp_unslash( $_POST['xpressui_webhook_url'] ?? '' ) );
 		$webhook_url      = esc_url_raw( $raw_webhook_url );
-		$raw_booking_url      = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw_booking_url      = trim( wp_unslash( $_POST['xpressui_booking_url'] ?? '' ) );
 		$booking_url          = esc_url_raw( $raw_booking_url );
 		$booking_button_label = isset( $_POST['xpressui_booking_button_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_booking_button_label'] ) ) : '';
 
@@ -176,10 +176,11 @@ function xpressui_render_workflow_settings_page(): void {
 	}
 
 	echo '<div class="wrap xpressui-wrap">';
-	$_name_badge = ( $project_name !== '' && $project_name !== $slug )
-		? ' <span style="font-weight:400;color:#787c82;">/ ' . esc_html( $project_name ) . '</span>'
-		: '';
-	echo '<h1 class="wp-heading-inline">' . esc_html( $slug ) . $_name_badge . ': Settings</h1>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $_name_badge is built with esc_html()
+	echo '<h1 class="wp-heading-inline">' . esc_html( $slug );
+	if ( $project_name !== '' && $project_name !== $slug ) {
+		echo ' <span class="xpressui-heading-badge">/ ' . esc_html( $project_name ) . '</span>';
+	}
+	echo ': ' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</h1>';
 	echo ' <a href="' . esc_url( $back_url ) . '" class="page-title-action">← ' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</a>';
 	echo '<hr class="wp-header-end">';
 

@@ -22,7 +22,7 @@ function xpressui_filter_pages_by_workflow_slug( $query ) {
 	if ( ! is_admin() || ! $query->is_main_query() ) {
 		return;
 	}
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only admin list filter.
+
 	$slug = sanitize_title( wp_unslash( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) ) );
 	if ( '' === $slug ) {
 		return;
@@ -515,9 +515,9 @@ function xpressui_handle_workflow_admin_actions() {
 		return;
 	}
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- action requests are nonce-verified before execution below.
+
 	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_action'] ) ) : '';
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- action requests are nonce-verified before execution below.
+
 	$slug   = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
 	if ( $action === '' || $slug === '' ) {
 		return;
@@ -636,11 +636,11 @@ function xpressui_create_workflow_page( $slug ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_handle_zip_upload() {
-	// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- protected by check_admin_referer() before this helper is called; individual fields are sanitized below.
+
 	$file = isset( $_FILES['xpressui_zip'] ) && is_array( $_FILES['xpressui_zip'] )
 		? wp_unslash( $_FILES['xpressui_zip'] )
 		: [];
-	// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
 
 	if ( empty( $file['tmp_name'] ) ) {
 		return new WP_Error( 'no_file', __( 'Please select a file.', 'xpressui-bridge' ) );

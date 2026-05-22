@@ -38,7 +38,8 @@ $xpressui_bridge_vars = implode( '; ', [
 <?php xpressui_bridge_template_include_template( 'form-frame.php', $xpressui_ctx ); ?>
 <?php xpressui_bridge_template_include_template( 'footer.php', $xpressui_ctx ); ?>
   </div>
-  <script id="xpressui-custom-config" type="application/json">
-<?php echo wp_json_encode( json_decode( xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'form_config_json')), true ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode escapes HTML special chars and produces a safe JSON string ?>  </script>
+  <template id="xpressui-custom-config">
+<?php echo esc_html( wp_json_encode( json_decode( xpressui_bridge_template_stringify( xpressui_bridge_template_attr( xpressui_bridge_template_context_get( $xpressui_ctx, 'runtime' ), 'form_config_json' ) ), true ) ) ); ?>
+  </template>
 </body>
 </html>

@@ -34,25 +34,6 @@ $xpressui_bridge_project     = $xpressui_ctx['project']     ?? [];
   wp_enqueue_style( 'xpressui-shell', XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-shell.css', [], XPRESSUI_BRIDGE_VERSION );
   wp_print_styles( 'xpressui-shell' );
   ?>
-  <script>
-  (function(){
-    function disablePastTimeSlots(){
-      var now = Date.now();
-      document.querySelectorAll('[data-slot-starts-at]').forEach(function(card){
-        var raw = card.getAttribute('data-slot-starts-at');
-        if(!raw) return;
-        var ts = Date.parse(raw);
-        if(isNaN(ts) || ts >= now) return;
-        card.setAttribute('data-disabled','true');
-        card.setAttribute('aria-disabled','true');
-        card.setAttribute('tabindex','-1');
-        card.removeAttribute('data-choice-option-action');
-      });
-    }
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',disablePastTimeSlots);
-    else disablePastTimeSlots();
-  })();
-  </script>
 <?php if ( ! empty( $xpressui_ctx['workspace_public'] ) ) : ?>
 <?php xpressui_bridge_template_include_template( 'workspace-public/_mairie_shell_styles.php', $xpressui_ctx ); ?>
 <?php xpressui_bridge_template_include_template( 'workspace-public/_mairie_catalog_styles.php', $xpressui_ctx ); ?>

@@ -5,6 +5,14 @@ function getMountNode() {
   return document.getElementById(shellMeta.mountNodeId || 'xpressui-root');
 }
 
+function getConfigText(configNode) {
+  if (!configNode) return '';
+  if (configNode instanceof HTMLTemplateElement) {
+    return configNode.content?.textContent || configNode.textContent || '';
+  }
+  return configNode.textContent || '';
+}
+
 function t(key, fallback) {
   return typeof i18n[key] === 'string' && i18n[key].trim() !== ''
     ? i18n[key]
@@ -938,7 +946,7 @@ async function initXPressUI() {
   try {
     const configNode = document.getElementById(shellMeta.configId || 'xpressui-custom-config');
     if (configNode) {
-      formConfig = JSON.parse(configNode.textContent);
+      formConfig = JSON.parse(getConfigText(configNode));
     } else {
       const configUrl = mountNode.dataset.configUrl || './form.config.json';
       const response = await fetch(configUrl);

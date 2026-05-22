@@ -417,7 +417,7 @@ function xpressui_find_resubmission_post_id( $project_slug, $submission_id ) {
 		'post_status'    => 'private',
 		'fields'         => 'ids',
 		'posts_per_page' => 1,
-		'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- targeted resume fallback lookup by stored metadata
+		'meta_query'     => [
 			[
 				'key'   => '_xpressui_project_slug',
 				'value' => $project_slug,
@@ -589,7 +589,7 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 			'post_status'    => 'private',
 			'fields'         => 'ids',
 			'posts_per_page' => 1,
-			'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- no alternative without meta_query for this lookup
+			'meta_query'     => [
 				[
 					'key'   => '_xpressui_project_slug',
 					'value' => $project_slug,
@@ -682,7 +682,7 @@ function xpressui_check_submission_rate_limit( $project_slug ) {
 
 function xpressui_get_request_file_params( WP_REST_Request $request ) {
 	$request_files    = $request->get_file_params();
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- REST endpoint authenticated via WP REST API nonce (X-WP-Nonce header) or falls back to public submission for unauthenticated forms; nonce is not applicable to file upload REST routes.
+
 	$superglobal_files = is_array( $_FILES ) ? $_FILES : [];
 
 	if ( ! is_array( $request_files ) || empty( $request_files ) ) {
@@ -813,9 +813,6 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 }
 
 function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
-	require_once ABSPATH . 'wp-admin/includes/file.php';
-	require_once ABSPATH . 'wp-admin/includes/media.php';
-	require_once ABSPATH . 'wp-admin/includes/image.php';
 	$stored_files = [];
 	$debug        = [
 		'requestFileKeys'   => [],
@@ -826,7 +823,7 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 
 	$file_params = xpressui_get_request_file_params( $request );
 	$debug['requestFileKeys']    = array_keys( (array) $request->get_file_params() );
-	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- public REST endpoint intentionally accepts unauthenticated file submissions.
+
 	$debug['superglobalFileKeys'] = array_keys( is_array( $_FILES ) ? $_FILES : [] );
 
 	foreach ( xpressui_normalize_uploaded_files( $file_params ) as $index => $file ) {
@@ -856,6 +853,9 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 			'size'     => $file['size'],
 		];
 
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$attachment = media_handle_upload( $tmp_key, $post_id, [], [ 'test_form' => false ] );
 		unset( $_FILES[ $tmp_key ] );
 
@@ -943,13 +943,7 @@ function xpressui_store_signature_attachments( $post_id, $payload ) {
 
 		$ext      = $ext_map[ $mime_type ] ?? 'png';
 		$filename = sanitize_file_name( "signature-{$key}-{$post_id}.{$ext}" );
-		$tmp_file = wp_tempnam( 'xpressui-sig-' );
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		file_put_contents( $tmp_file, $data );
-
 		$upload = wp_upload_bits( $filename, null, $data );
-		wp_delete_file( $tmp_file );
 
 		if ( ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
 			continue;
@@ -970,6 +964,7 @@ function xpressui_store_signature_attachments( $post_id, $payload ) {
 			continue;
 		}
 
+		require_once ABSPATH . 'wp-admin/includes/image.php';
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $upload['file'] ) );
 
 		$payload[ $key ] = wp_get_attachment_url( $attachment_id );
