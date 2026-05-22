@@ -72,5 +72,9 @@ aria-disabled="true"<?php endif; ?>
 <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'choice'), 'slot_available'))); ?> <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("spots left", 'xpressui-bridge'))); ?><?php endif; ?>
     </div>
 <?php endif; ?>
+  <div class="template-time-slot-select-indicator">
+    <span class="template-time-slot-select-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Select", 'xpressui-bridge'))); ?></span>
+    <span class="template-time-slot-selected-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Selected", 'xpressui-bridge'))); ?></span>
+  </div>
   <div class="template-choice-footer" data-choice-option-footer="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'choice'), 'value'))); ?>" hidden></div>
 </article>

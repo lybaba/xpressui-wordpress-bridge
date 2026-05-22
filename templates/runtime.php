@@ -77,6 +77,32 @@ function xpressui_bridge_template_attr( mixed $value, string $attr ): mixed {
 	return null;
 }
 
+function xpressui_bridge_template_getitem( mixed $value, mixed $key ): mixed {
+	if ( is_array( $value ) ) {
+		return $value[ $key ] ?? null;
+	}
+	if ( is_object( $value ) ) {
+		return xpressui_bridge_template_attr( $value, xpressui_bridge_template_stringify( $key ) );
+	}
+	return null;
+}
+
+function xpressui_bridge_template_slice( mixed $value, mixed $start = null, mixed $stop = null ): mixed {
+	if ( is_array( $value ) ) {
+		$offset = null === $start ? 0 : (int) $start;
+		$length = null === $stop ? null : max( 0, (int) $stop - $offset );
+		return null === $length ? array_slice( $value, $offset ) : array_slice( $value, $offset, $length );
+	}
+
+	$text = xpressui_bridge_template_stringify( $value );
+	$offset = null === $start ? 0 : (int) $start;
+	if ( null === $stop ) {
+		return function_exists( 'mb_substr' ) ? mb_substr( $text, $offset ) : substr( $text, $offset );
+	}
+	$length = max( 0, (int) $stop - $offset );
+	return function_exists( 'mb_substr' ) ? mb_substr( $text, $offset, $length ) : substr( $text, $offset, $length );
+}
+
 function xpressui_bridge_template_mark_safe( mixed $value ): XpressuiBridgeTemplateSafeString {
 	if ( $value instanceof XpressuiBridgeTemplateSafeString ) {
 		return $value;
@@ -249,6 +275,35 @@ function xpressui_bridge_template_filter_tojson( mixed $value ): string {
 		[ '\\u003c', '\\u003e', '\\u0026', '\\u0027' ],
 		$json
 	);
+}
+
+function xpressui_bridge_template_filter_select( mixed $value, mixed $test_name = null ): array {
+	$items = xpressui_bridge_template_iterable( $value );
+	if ( 'string' !== $test_name ) {
+		return array_values( array_filter( $items, 'xpressui_bridge_template_truthy' ) );
+	}
+
+	return array_values(
+		array_filter(
+			$items,
+			static fn ( mixed $item ): bool => is_string( $item )
+		)
+	);
+}
+
+function xpressui_bridge_template_method_split( mixed $value, mixed $separator = null, mixed $limit = null ): array {
+	$text = xpressui_bridge_template_stringify( $value );
+	if ( null === $separator ) {
+		return preg_split( '/\s+/', trim( $text ) ) ?: [];
+	}
+	if ( null === $limit ) {
+		return explode( xpressui_bridge_template_stringify( $separator ), $text );
+	}
+	return explode( xpressui_bridge_template_stringify( $separator ), $text, (int) $limit );
+}
+
+function xpressui_bridge_template_method_strip( mixed $value ): string {
+	return trim( xpressui_bridge_template_stringify( $value ) );
 }
 
 function xpressui_bridge_template_test_none( mixed $value ): bool {

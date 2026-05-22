@@ -99,21 +99,22 @@ style="display:none"<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider_label'))): ?>
                     <label class="template-payment-proof-method">
                       <span><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Payment method", 'xpressui-bridge'))); ?></span>
-                      <select class="template-payment-proof-provider-select" disabled>
-                        <option selected><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider_label'))); ?></option>
-                      </select>
+                      <span class="template-payment-provider-badge">
+                        <span class="template-payment-provider-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider_label'))); ?></span>
+                      </span>
                     </label>
 <?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount_display'), xpressui_bridge_template_contains(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), ["cart", "cart_total"])))): ?>
+<?php $xpressui_ctx['expected_amount'] = xpressui_bridge_template_or_value(xpressui_bridge_template_or_value(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount_display'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_display')), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount')), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount')); ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value(xpressui_bridge_template_context_get($xpressui_ctx, 'expected_amount'), xpressui_bridge_template_contains(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), ["cart", "cart_total", "operator_expected_amount"])))): ?>
                     <span
                       class="template-field-pill template-payment-proof-amount-pill"
                       data-payment-proof-amount-pill="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>"
                       data-payment-proof-amount-source="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), "fixed"))); ?>"
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), ["cart", "cart_total"]), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount')))))): ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), ["cart", "cart_total"]), (!xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'expected_amount')))))): ?>
 style="display:none"<?php endif; ?>
                     >
                       <span><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Expected amount:", 'xpressui-bridge'))); ?></span>
-                      <span data-payment-proof-amount="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>" data-payment-proof-original-amount="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount_display'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount')))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount_display'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_amount')))); ?></span>
+                      <span data-payment-proof-amount="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>" data-payment-proof-original-amount="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_context_get($xpressui_ctx, 'expected_amount'))); ?>"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_context_get($xpressui_ctx, 'expected_amount'), "—"))); ?></span>
                     </span>
 <?php endif; ?>
                   <button
@@ -198,7 +199,36 @@ style="display:none"<?php endif; ?>
                 </div>
 <?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_instructions'))): ?>
-                <div class="template-payment-proof-summary-note"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_instructions'))); ?></div>
+<?php $xpressui_ctx['instruction_lines'] = xpressui_bridge_template_method_split(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_instructions'), "\n"); ?>
+<?php $xpressui_ctx['table_lines'] = xpressui_bridge_template_iterable(xpressui_bridge_template_filter_select(xpressui_bridge_template_context_get($xpressui_ctx, 'instruction_lines'), "string")); ?>
+                <div class="template-payment-proof-context-table" role="table" aria-label="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Payment context", 'xpressui-bridge'))); ?>">
+<?php
+$xpressui_loop_parent_ctx_10 = $xpressui_ctx;
+$xpressui_loop_items_9 = xpressui_bridge_template_iterable(xpressui_bridge_template_context_get($xpressui_ctx, 'table_lines'));
+foreach ($xpressui_loop_items_9 as $xpressui_loop_index_11 => $xpressui_loop_value_12):
+    $xpressui_ctx = $xpressui_loop_parent_ctx_10;
+    $xpressui_ctx['line'] = $xpressui_loop_value_12;
+    $xpressui_ctx['loop'] = [
+        'index'  => $xpressui_loop_index_11 + 1,
+        'index0' => $xpressui_loop_index_11,
+        'first'  => $xpressui_loop_index_11 === 0,
+        'last'   => ($xpressui_loop_index_11 + 1) === count($xpressui_loop_items_9),
+    ];
+?>
+<?php $xpressui_ctx['parts'] = xpressui_bridge_template_method_split(xpressui_bridge_template_context_get($xpressui_ctx, 'line'), ":", 1); ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_equals(xpressui_bridge_template_filter_length(xpressui_bridge_template_context_get($xpressui_ctx, 'parts')), 2), xpressui_bridge_template_method_strip(xpressui_bridge_template_getitem(xpressui_bridge_template_context_get($xpressui_ctx, 'parts'), 0))))): ?>
+                      <div class="template-payment-proof-context-row" role="row">
+                        <div class="template-payment-proof-context-key" role="cell"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_method_strip(xpressui_bridge_template_getitem(xpressui_bridge_template_context_get($xpressui_ctx, 'parts'), 0)))); ?></div>
+                        <div class="template-payment-proof-context-value" role="cell"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_method_strip(xpressui_bridge_template_getitem(xpressui_bridge_template_context_get($xpressui_ctx, 'parts'), 1)))); ?></div>
+                      </div>
+<?php else: ?>
+                      <div class="template-payment-proof-context-row" role="row">
+                        <div class="template-payment-proof-context-key" role="cell"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Notes", 'xpressui-bridge'))); ?></div>
+                        <div class="template-payment-proof-context-value" role="cell"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_context_get($xpressui_ctx, 'line'))); ?></div>
+                      </div>
+<?php endif; ?>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_10; ?>
+                </div>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_contains(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'payment_amount_source'), ["cart", "cart_total"]), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'has_multiple_providers')))))): ?>
                 <div class="template-payment-proof-summary-note"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("This amount updates from the selected cart items.", 'xpressui-bridge'))); ?></div>
 <?php endif; ?>
@@ -206,14 +236,16 @@ style="display:none"<?php endif; ?>
 <?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_6; ?>
 <?php endif; ?>
         <ul class="template-payment-proof-checklist">
-          <li><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Keep the confirmation screen visible.", 'xpressui-bridge'))); ?></li>
-          <li><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Make sure the amount can be read clearly.", 'xpressui-bridge'))); ?></li>
+          <li><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Please ensure the transaction date and amount are clearly visible.", 'xpressui-bridge'))); ?></li>
+          <li><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Accepted formats: PDF, JPG, PNG.", 'xpressui-bridge'))); ?></li>
         </ul>
       </div>
 <?php endif; ?>
     <span class="template-upload-icon">↑</span>
     <div class="template-field-label">
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'is_image_upload'))): ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "payment-proof"))): ?>
+        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Upload your proof of payment", 'xpressui-bridge'))); ?>
+<?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'is_image_upload'))): ?>
         <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Upload image", 'xpressui-bridge'))); ?>
 <?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'type'), "camera-photo"))): ?>
         <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Take photo", 'xpressui-bridge'))); ?>
