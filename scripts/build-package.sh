@@ -12,6 +12,8 @@ DIST_MAIN_FILE="xpressui-bridge.php"
 ZIP_NAME="${1:-${DIST_SLUG}.zip}"
 OUTPUT_PATH="${LIBS_DIR}/${ZIP_NAME}"
 STAGE_DIR="$(mktemp -d /tmp/xpressui-bridge-build.XXXXXX)"
+RUNTIME_SRC_DIR="${PLUGIN_DIR}/xpressui-src"
+RUNTIME_DIST_DIR="${RUNTIME_SRC_DIR}/dist"
 
 cleanup() {
   rm -rf "${STAGE_DIR}"
@@ -20,6 +22,15 @@ trap cleanup EXIT
 
 rm -f "${OUTPUT_PATH}"
 
+if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]]; then
+  npm --prefix "${RUNTIME_SRC_DIR}" run build
+  mkdir -p "${PLUGIN_DIR}/runtime"
+  rm -f "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js \
+        "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js.map
+  cp "${RUNTIME_DIST_DIR}"/xpressui-light-*.umd.js "${PLUGIN_DIR}/runtime/"
+  cp "${RUNTIME_DIST_DIR}"/xpressui-light-*.umd.js.map "${PLUGIN_DIR}/runtime/"
+fi
+
 cp -R "${PLUGIN_DIR}" "${STAGE_DIR}/${DIST_SLUG}"
 
 rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
@@ -27,7 +38,8 @@ rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org" \
        "${STAGE_DIR:?}/${DIST_SLUG}/scripts" \
        "${STAGE_DIR:?}/${DIST_SLUG}/node_modules" \
-       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src/dist" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src/node_modules" \
        "${STAGE_DIR:?}/${DIST_SLUG}/default-workflows/validation-playground"
 rm -f "${STAGE_DIR:?}/${DIST_SLUG}/.gitignore" \
       "${STAGE_DIR:?}/${DIST_SLUG}/.gitkeep" \
@@ -47,8 +59,6 @@ rm -f "${STAGE_DIR:?}/${DIST_SLUG}/templates/core/fields/choice-list-time-slots.
 if [[ -f "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" ]]; then
   mv "${STAGE_DIR}/${DIST_SLUG}/${SOURCE_MAIN_FILE}" "${STAGE_DIR}/${DIST_SLUG}/${DIST_MAIN_FILE}"
 fi
-
-find "${STAGE_DIR:?}/${DIST_SLUG}/runtime" -name "*.map" -delete
 
 cd "${STAGE_DIR}"
 zip -rq "${OUTPUT_PATH}" "${DIST_SLUG}"
