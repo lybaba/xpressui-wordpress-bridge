@@ -249,7 +249,10 @@ backdrop-filter: blur(18px) saturate(1.08);<?php endif; ?>
     .template-textarea { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border); border-radius: var(--template-input-radius); background: color-mix(in srgb, var(--template-surface) 96%, white); color: var(--template-text); font: inherit; padding: 12px 14px; }
     .template-runtime-shell select { display: block; width: 100%; min-width: 0; max-width: none; box-sizing: border-box; border: 1px solid var(--template-border) !important; border-radius: var(--template-input-radius) !important; background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23888888'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 16px center !important; background-size: 16px !important; color: var(--template-text) !important; font: inherit; padding: 12px 40px 12px 14px !important; -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important; accent-color: var(--template-primary) !important; }
     .template-runtime-shell select option:checked { background: color-mix(in srgb, var(--template-primary) 15%, white) !important; color: var(--template-text) !important; }
-    .template-textarea { min-height: 144px; resize: vertical; }
+    .template-textarea { min-height: 96px; resize: vertical; }
+    .template-field[data-field-name="address"] .template-textarea,
+    .template-field[data-field-name="adresse"] .template-textarea,
+    .template-field[data-field-name="parentAddress"] .template-textarea { min-height: 56px; }
     .template-input::placeholder,
     .template-textarea::placeholder { color: var(--template-muted-text); opacity: 0.8; }
     .template-runtime-shell .template-input:focus,
