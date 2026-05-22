@@ -39,7 +39,7 @@ function xpressui_maybe_render_shell_page() {
 	if ( '' !== $compiled_shell_html ) {
 		status_header( 200 );
 
-		echo $compiled_shell_html;
+		echo wp_kses( $compiled_shell_html, xpressui_get_shell_allowed_html(), [ 'http', 'https', 'data' ] );
 		exit;
 	}
 

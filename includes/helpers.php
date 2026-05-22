@@ -364,6 +364,62 @@ function xpressui_get_shell_translations() {
 	];
 }
 
+function xpressui_get_shell_allowed_html() {
+	$global_attrs = [
+		'id'          => true,
+		'class'       => true,
+		'style'       => true,
+		'title'       => true,
+		'role'        => true,
+		'aria-label'  => true,
+		'aria-hidden' => true,
+		'data-*'      => true,
+	];
+
+	return [
+		'html'     => [ 'lang' => true ],
+		'head'     => [],
+		'meta'     => [ 'charset' => true, 'name' => true, 'content' => true, 'viewport' => true ],
+		'title'    => [],
+		'link'     => [ 'rel' => true, 'href' => true, 'as' => true, 'crossorigin' => true ],
+		'style'    => array_merge( $global_attrs, [ 'type' => true ] ),
+		'script'   => array_merge( $global_attrs, [ 'type' => true, 'src' => true, 'defer' => true, 'async' => true ] ),
+		'body'     => $global_attrs,
+		'main'     => $global_attrs,
+		'section'  => $global_attrs,
+		'div'      => $global_attrs,
+		'span'     => $global_attrs,
+		'p'        => $global_attrs,
+		'h1'       => $global_attrs,
+		'h2'       => $global_attrs,
+		'h3'       => $global_attrs,
+		'h4'       => $global_attrs,
+		'form'     => array_merge( $global_attrs, [ 'action' => true, 'method' => true, 'enctype' => true, 'novalidate' => true ] ),
+		'fieldset' => $global_attrs,
+		'legend'   => $global_attrs,
+		'label'    => array_merge( $global_attrs, [ 'for' => true ] ),
+		'input'    => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'placeholder' => true, 'required' => true, 'checked' => true, 'disabled' => true, 'readonly' => true, 'min' => true, 'max' => true, 'step' => true, 'accept' => true, 'autocomplete' => true ] ),
+		'textarea' => array_merge( $global_attrs, [ 'name' => true, 'placeholder' => true, 'required' => true, 'disabled' => true, 'readonly' => true, 'rows' => true, 'cols' => true ] ),
+		'select'   => array_merge( $global_attrs, [ 'name' => true, 'required' => true, 'disabled' => true, 'multiple' => true ] ),
+		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
+		'button'   => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'disabled' => true ] ),
+		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true ] ),
+		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true ] ),
+		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewBox' => true, 'fill' => true, 'stroke' => true ] ),
+		'path'     => [ 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
+		'ul'       => $global_attrs,
+		'ol'       => $global_attrs,
+		'li'       => $global_attrs,
+		'table'    => $global_attrs,
+		'thead'    => $global_attrs,
+		'tbody'    => $global_attrs,
+		'tr'       => $global_attrs,
+		'th'       => array_merge( $global_attrs, [ 'scope' => true, 'colspan' => true, 'rowspan' => true ] ),
+		'td'       => array_merge( $global_attrs, [ 'colspan' => true, 'rowspan' => true ] ),
+		'template' => array_merge( $global_attrs, [ 'type' => true ] ),
+	];
+}
+
 /**
  * Builds the scoped inline CSS string for a shortcode embed.
  *
@@ -1014,18 +1070,36 @@ function xpressui_generate_resume_token( $post_id ) {
 	return $token;
 }
 
+function xpressui_get_all_submission_ids_for_lookup() {
+	return get_posts( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'fields'         => 'ids',
+		'posts_per_page' => -1,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	] );
+}
+
 function xpressui_get_resume_post_id_by_token( $token ) {
 	$token = (string) $token;
 	if ( strlen( $token ) !== 64 || ! ctype_xdigit( $token ) ) {
 		return 0;
 	}
-	global $wpdb;
-
-
-	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
-		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_xpressui_resume_token' AND meta_value = %s LIMIT 1",
-		$token
-	) );
+	$cache_key = 'resume_token_' . md5( $token );
+	$cached    = wp_cache_get( $cache_key, 'xpressui_bridge' );
+	if ( false !== $cached ) {
+		$post_id = (int) $cached;
+	} else {
+		$post_id = 0;
+		foreach ( xpressui_get_all_submission_ids_for_lookup() as $candidate_id ) {
+			if ( hash_equals( $token, (string) get_post_meta( $candidate_id, '_xpressui_resume_token', true ) ) ) {
+				$post_id = (int) $candidate_id;
+				break;
+			}
+		}
+		wp_cache_set( $cache_key, $post_id, 'xpressui_bridge', MINUTE_IN_SECONDS );
+	}
 	if ( $post_id <= 0 ) {
 		return 0;
 	}
@@ -1044,19 +1118,8 @@ function xpressui_invalidate_resume_token( $post_id ) {
 }
 
 function xpressui_get_project_form_url( $project_slug ) {
-	// Auto-detect the published page/post that embeds this project's shortcode.
-	global $wpdb;
-	$slug_escaped = $wpdb->esc_like( $project_slug );
-
-
-	$page_id = (int) $wpdb->get_var( $wpdb->prepare(
-		"SELECT ID FROM {$wpdb->posts}
-		WHERE post_status = 'publish'
-		AND ( post_content LIKE %s OR post_content LIKE %s )
-		LIMIT 1",
-		'%[xpressui id="' . $slug_escaped . '"%]%',
-		"%[xpressui id='" . $slug_escaped . "'%]%"
-	) );
+	$page_ids = xpressui_get_workflow_page_ids( $project_slug, [ 'publish' ] );
+	$page_id  = ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
 	if ( $page_id > 0 ) {
 		return (string) get_permalink( $page_id );
 	}
@@ -1222,33 +1285,42 @@ function xpressui_get_runtime_health_summary() {
 	];
 }
 
-function xpressui_get_workflow_page_ids( $slug ) {
-	global $wpdb;
-
+function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish', 'pending', 'private' ] ) {
 	$slug = sanitize_title( (string) $slug );
 	if ( '' === $slug ) {
 		return [];
 	}
 
-	// Use a direct LIKE query instead of WP_Query 's' parameter.
-	// WP_Query tokenises the search string via wp_parse_search_terms(), which
-	// misinterprets the quotes in [xpressui id="slug"] and returns no results.
-	$like = '%' . $wpdb->esc_like( '[xpressui id="' . $slug . '"]' ) . '%';
+	$statuses = array_values( array_filter( array_map( 'sanitize_key', (array) $statuses ) ) );
+	if ( empty( $statuses ) ) {
+		$statuses = [ 'draft', 'publish', 'pending', 'private' ];
+	}
 
+	$cache_key = 'workflow_pages_' . md5( $slug . '|' . implode( ',', $statuses ) );
+	$cached    = wp_cache_get( $cache_key, 'xpressui_bridge' );
+	if ( false !== $cached ) {
+		return is_array( $cached ) ? array_map( 'intval', $cached ) : [];
+	}
 
+	$ids = [];
+	foreach ( get_posts( [
+		'post_type'      => 'page',
+		'post_status'    => $statuses,
+		'posts_per_page' => -1,
+		'orderby'        => 'date',
+		'order'          => 'ASC',
+	] ) as $page ) {
+		$content = (string) ( $page->post_content ?? '' );
+		if (
+			false !== strpos( $content, '[xpressui id="' . $slug . '"' )
+			|| false !== strpos( $content, "[xpressui id='" . $slug . "'" )
+		) {
+			$ids[] = (int) $page->ID;
+		}
+	}
 
-	$ids = $wpdb->get_col(
-		$wpdb->prepare(
-			"SELECT ID FROM {$wpdb->posts}
-			 WHERE post_type = 'page'
-			   AND post_status IN ('draft','publish','pending','private')
-			   AND post_content LIKE %s
-			 ORDER BY post_date ASC",
-			$like
-		)
-	);
-
-	return array_map( 'intval', $ids ?: [] );
+	wp_cache_set( $cache_key, $ids, 'xpressui_bridge', MINUTE_IN_SECONDS );
+	return $ids;
 }
 
 function xpressui_get_workflow_primary_page_id( $slug ) {

@@ -142,10 +142,10 @@ function xpressui_save_submission_status( $post_id ) {
 
 	$flagged_fields = [];
 	if ( isset( $_POST['xpressui_flagged_fields'] ) ) {
-		$raw_flagged = wp_unslash( $_POST['xpressui_flagged_fields'] );
+		$raw_flagged = map_deep( wp_unslash( $_POST['xpressui_flagged_fields'] ), 'sanitize_text_field' );
 		if ( is_array( $raw_flagged ) ) {
 			$flagged_fields = array_values( array_filter(
-				array_map( 'sanitize_text_field', $raw_flagged ),
+				$raw_flagged,
 				static function ( $f ) { return is_string( $f ) && preg_match( '/^[a-zA-Z][a-zA-Z0-9_]*$/', $f ); }
 			) );
 		} else {
@@ -170,7 +170,7 @@ function xpressui_save_submission_status( $post_id ) {
 
 	// Save reference files (field name → attachment ID).
 	$ref_files_raw = isset( $_POST['xpressui_ref_files'] ) && is_array( $_POST['xpressui_ref_files'] )
-		? wp_unslash( $_POST['xpressui_ref_files'] )
+		? map_deep( wp_unslash( $_POST['xpressui_ref_files'] ), 'absint' )
 		: [];
 	$ref_files = [];
 	foreach ( $ref_files_raw as $field_name => $attachment_id ) {

@@ -405,6 +405,41 @@ function xpressui_handle_resubmission( WP_REST_Request $request, $payload, $toke
 	return xpressui_handle_resubmission_by_post_id( $request, $payload, $post_id, $project_slug );
 }
 
+function xpressui_get_submission_ids_for_project_and_submission( $project_slug, $submission_id ) {
+	$project_slug  = sanitize_title( (string) $project_slug );
+	$submission_id = xpressui_sanitize_request_identifier( $submission_id );
+	if ( '' === $project_slug || '' === $submission_id ) {
+		return [];
+	}
+
+	$cache_key = 'submission_lookup_' . md5( $project_slug . '|' . $submission_id );
+	$cached    = wp_cache_get( $cache_key, 'xpressui_bridge' );
+	if ( false !== $cached ) {
+		return is_array( $cached ) ? array_map( 'intval', $cached ) : [];
+	}
+
+	$matches = [];
+	foreach ( get_posts( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'fields'         => 'ids',
+		'posts_per_page' => -1,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+	] ) as $post_id ) {
+		if ( $project_slug !== (string) get_post_meta( $post_id, '_xpressui_project_slug', true ) ) {
+			continue;
+		}
+		if ( $submission_id !== (string) get_post_meta( $post_id, '_xpressui_submission_id', true ) ) {
+			continue;
+		}
+		$matches[] = (int) $post_id;
+	}
+
+	wp_cache_set( $cache_key, $matches, 'xpressui_bridge', MINUTE_IN_SECONDS );
+	return $matches;
+}
+
 function xpressui_find_resubmission_post_id( $project_slug, $submission_id ) {
 	$project_slug  = sanitize_title( (string) $project_slug );
 	$submission_id = xpressui_sanitize_request_identifier( $submission_id );
@@ -412,28 +447,13 @@ function xpressui_find_resubmission_post_id( $project_slug, $submission_id ) {
 		return 0;
 	}
 
-	$existing_ids = get_posts( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'fields'         => 'ids',
-		'posts_per_page' => 1,
-		'meta_query'     => [
-			[
-				'key'   => '_xpressui_project_slug',
-				'value' => $project_slug,
-			],
-			[
-				'key'   => '_xpressui_submission_id',
-				'value' => $submission_id,
-			],
-			[
-				'key'   => '_xpressui_submission_status',
-				'value' => 'pending_info',
-			],
-		],
-	] );
+	foreach ( xpressui_get_submission_ids_for_project_and_submission( $project_slug, $submission_id ) as $post_id ) {
+		if ( 'pending_info' === (string) get_post_meta( $post_id, '_xpressui_submission_status', true ) ) {
+			return (int) $post_id;
+		}
+	}
 
-	return ! empty( $existing_ids ) ? (int) $existing_ids[0] : 0;
+	return 0;
 }
 
 function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $payload, $post_id, $project_slug ) {
@@ -584,22 +604,7 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 	}
 
 	if ( $submission_id !== '' ) {
-		$existing_ids = get_posts( [
-			'post_type'      => 'xpressui_submission',
-			'post_status'    => 'private',
-			'fields'         => 'ids',
-			'posts_per_page' => 1,
-			'meta_query'     => [
-				[
-					'key'   => '_xpressui_project_slug',
-					'value' => $project_slug,
-				],
-				[
-					'key'   => '_xpressui_submission_id',
-					'value' => $submission_id,
-				],
-			],
-		] );
+		$existing_ids = xpressui_get_submission_ids_for_project_and_submission( $project_slug, $submission_id );
 		if ( ! empty( $existing_ids ) ) {
 			return new WP_Error(
 				'xpressui_duplicate_submission',
@@ -681,14 +686,8 @@ function xpressui_check_submission_rate_limit( $project_slug ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_get_request_file_params( WP_REST_Request $request ) {
-	$request_files    = $request->get_file_params();
-
-	$superglobal_files = is_array( $_FILES ) ? $_FILES : [];
-
-	if ( ! is_array( $request_files ) || empty( $request_files ) ) {
-		return $superglobal_files;
-	}
-	return array_replace_recursive( $superglobal_files, $request_files );
+	$request_files = $request->get_file_params();
+	return is_array( $request_files ) ? $request_files : [];
 }
 
 function xpressui_normalize_uploaded_files( array $file_params ) {
@@ -814,19 +813,16 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 
 function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 	$stored_files = [];
-	$debug        = [
-		'requestFileKeys'   => [],
-		'superglobalFileKeys' => [],
-		'normalizedFiles'   => [],
-		'errors'            => [],
-	];
+		$debug        = [
+			'requestFileKeys'   => [],
+			'normalizedFiles'   => [],
+			'errors'            => [],
+		];
 
-	$file_params = xpressui_get_request_file_params( $request );
-	$debug['requestFileKeys']    = array_keys( (array) $request->get_file_params() );
+		$file_params = xpressui_get_request_file_params( $request );
+		$debug['requestFileKeys']    = array_keys( (array) $request->get_file_params() );
 
-	$debug['superglobalFileKeys'] = array_keys( is_array( $_FILES ) ? $_FILES : [] );
-
-	foreach ( xpressui_normalize_uploaded_files( $file_params ) as $index => $file ) {
+		foreach ( xpressui_normalize_uploaded_files( $file_params ) as $index => $file ) {
 		$debug['normalizedFiles'][] = [
 			'field'      => $file['field'] ?? '',
 			'name'       => $file['name'] ?? '',
@@ -844,33 +840,52 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 			continue;
 		}
 
-		$tmp_key          = sprintf( 'xpressui_upload_%d', $index );
-		$_FILES[ $tmp_key ] = [
-			'name'     => $file['name'],
-			'type'     => $file['type'],
-			'tmp_name' => $file['tmp_name'],
-			'error'    => $file['error'],
-			'size'     => $file['size'],
-		];
-
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		$attachment = media_handle_upload( $tmp_key, $post_id, [], [ 'test_form' => false ] );
-		unset( $_FILES[ $tmp_key ] );
-
-		if ( is_wp_error( $attachment ) ) {
-			$debug['errors'][] = [
-				'field'     => $file['field'] ?? '',
-				'message'   => $attachment->get_error_message(),
-				'errorCode' => $attachment->get_error_code(),
+			$sideload_file = [
+				'name'     => $file['name'],
+				'type'     => $file['type'],
+				'tmp_name' => $file['tmp_name'],
+				'error'    => $file['error'],
+				'size'     => $file['size'],
 			];
-			continue;
-		}
 
-		$stored_files[] = [
-			'field'        => $file['field'],
-			'originalName' => $file['name'],
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			$upload = wp_handle_sideload( $sideload_file, [ 'test_form' => false ] );
+
+			if ( ! is_array( $upload ) || ! empty( $upload['error'] ) || empty( $upload['file'] ) ) {
+				$debug['errors'][] = [
+					'field'     => $file['field'] ?? '',
+					'message'   => is_array( $upload ) && ! empty( $upload['error'] ) ? (string) $upload['error'] : 'Upload sideload failed.',
+					'errorCode' => 'upload_failed',
+				];
+				continue;
+			}
+
+			$attachment = wp_insert_attachment(
+				[
+					'post_mime_type' => sanitize_mime_type( (string) ( $upload['type'] ?? $file['type'] ?? '' ) ),
+					'post_title'     => sanitize_file_name( (string) ( $file['name'] ?? 'upload' ) ),
+					'post_content'   => '',
+					'post_status'    => 'inherit',
+				],
+				(string) $upload['file'],
+				$post_id
+			);
+			if ( is_wp_error( $attachment ) ) {
+				wp_delete_file( (string) $upload['file'] );
+				$debug['errors'][] = [
+					'field'     => $file['field'] ?? '',
+					'message'   => $attachment->get_error_message(),
+					'errorCode' => $attachment->get_error_code(),
+				];
+				continue;
+			}
+
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			wp_update_attachment_metadata( $attachment, wp_generate_attachment_metadata( $attachment, (string) $upload['file'] ) );
+
+			$stored_files[] = [
+				'field'        => $file['field'],
+				'originalName' => $file['name'],
 			'attachmentId' => $attachment,
 			'url'          => wp_get_attachment_url( $attachment ),
 		];

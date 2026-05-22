@@ -22,6 +22,9 @@ function xpressui_filter_pages_by_workflow_slug( $query ) {
 	if ( ! is_admin() || ! $query->is_main_query() ) {
 		return;
 	}
+	if ( ! isset( $_GET['xpressui_pages_filter_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_GET['xpressui_pages_filter_nonce'] ) ), 'xpressui_filter_workflow_pages' ) ) {
+		return;
+	}
 
 	$slug = sanitize_title( wp_unslash( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) ) );
 	if ( '' === $slug ) {
@@ -181,8 +184,16 @@ function xpressui_render_project_inbox_page() {
 	echo '</tr></thead><tbody>';
 
 	foreach ( $rows as $row ) {
-		$all_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'] ], admin_url( 'edit.php' ) );
-		$new_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'], 'xpressui_status' => 'new' ], admin_url( 'edit.php' ) );
+		$all_url = wp_nonce_url(
+			add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'] ], admin_url( 'edit.php' ) ),
+			'xpressui_filter_submissions',
+			'xpressui_filter_nonce'
+		);
+		$new_url = wp_nonce_url(
+			add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'], 'xpressui_status' => 'new' ], admin_url( 'edit.php' ) ),
+			'xpressui_filter_submissions',
+			'xpressui_filter_nonce'
+		);
 
 		echo '<tr>';
 		$project_title = sanitize_text_field( (string) ( $row['projectTitle'] ?? '' ) );
@@ -225,8 +236,16 @@ function xpressui_render_my_queue_page() {
 		return;
 	}
 	$current_user_id = get_current_user_id();
-	$queue_url  = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id ], admin_url( 'edit.php' ) );
-	$review_url = add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id, 'xpressui_status' => 'in-review' ], admin_url( 'edit.php' ) );
+	$queue_url  = wp_nonce_url(
+		add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id ], admin_url( 'edit.php' ) ),
+		'xpressui_filter_submissions',
+		'xpressui_filter_nonce'
+	);
+	$review_url = wp_nonce_url(
+		add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_assignee' => $current_user_id, 'xpressui_status' => 'in-review' ], admin_url( 'edit.php' ) ),
+		'xpressui_filter_submissions',
+		'xpressui_filter_nonce'
+	);
 
 	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'My Queue', 'xpressui-bridge' ) . '</h1>';
@@ -419,13 +438,17 @@ function xpressui_render_workflows_page() {
 			$view_page_url   = $primary_page_id > 0 ? get_permalink( $primary_page_id ) : '';
 			// 'Find pages' passes a custom param; pre_get_posts translates it to
 			// post__in so WP_Query never tokenises the shortcode string.
-			$open_page_url = add_query_arg(
-				[
-					'post_type'               => 'page',
-					'post_status'             => 'all',
-					'xpressui_workflow_slug'  => $slug,
-				],
-				admin_url( 'edit.php' )
+			$open_page_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'              => 'page',
+						'post_status'            => 'all',
+						'xpressui_workflow_slug' => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_filter_workflow_pages',
+				'xpressui_pages_filter_nonce'
 			);
 			echo '<tr>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
@@ -636,9 +659,12 @@ function xpressui_create_workflow_page( $slug ) {
 // ---------------------------------------------------------------------------
 
 function xpressui_handle_zip_upload() {
+	if ( ! isset( $_POST['xpressui_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_nonce'] ) ), 'xpressui_upload_action' ) ) {
+		return new WP_Error( 'invalid_nonce', __( 'Security check failed. Please try again.', 'xpressui-bridge' ) );
+	}
 
 	$file = isset( $_FILES['xpressui_zip'] ) && is_array( $_FILES['xpressui_zip'] )
-		? wp_unslash( $_FILES['xpressui_zip'] )
+		? xpressui_sanitize_uploaded_zip_file( map_deep( wp_unslash( $_FILES['xpressui_zip'] ), 'sanitize_text_field' ) )
 		: [];
 
 	if ( empty( $file['tmp_name'] ) ) {
@@ -729,6 +755,16 @@ function xpressui_handle_zip_upload() {
 	xpressui_store_workflow_manifest_meta( $slug, $manifest );
 
 	return $slug;
+}
+
+function xpressui_sanitize_uploaded_zip_file( array $file ) {
+	return [
+		'name'     => isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '',
+		'type'     => isset( $file['type'] ) ? sanitize_mime_type( (string) $file['type'] ) : '',
+		'tmp_name' => isset( $file['tmp_name'] ) ? sanitize_text_field( (string) $file['tmp_name'] ) : '',
+		'error'    => isset( $file['error'] ) ? absint( $file['error'] ) : UPLOAD_ERR_NO_FILE,
+		'size'     => isset( $file['size'] ) ? absint( $file['size'] ) : 0,
+	];
 }
 
 function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
