@@ -531,7 +531,7 @@
             "max_value": null,
             "step_value": null,
             "upload_type_label": "Attachment upload",
-            "upload_accept_label": "Accepted: .pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf",
+            "upload_accept_label": "Accepted: document",
             "document_scan_mode": "double",
             "document_scan_slots": [
               {
