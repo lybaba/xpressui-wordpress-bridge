@@ -31,6 +31,7 @@ import {
   SIGNATURE_TYPE,
   PAYMENT_PROOF_TYPE,
   PAYMENT_STRIPE_TYPE,
+  SMART_CATALOG_TYPE,
   UPLOAD_FILE_TYPE,
   UNKNOWN_TYPE,
 } from "./common/field";
@@ -101,6 +102,7 @@ import {
 } from "./ui/form-ui.commerce";
 import { createCommerceRuntime } from "./ui/form-ui.commerce-runtime";
 import { createOverlayRuntime } from "./ui/form-ui.overlay-runtime";
+import { createRepeaterRuntime } from "./ui/form-ui.repeater-runtime";
 import { isOpenQuizField as isConfiguredOpenQuizField } from "./ui/form-ui.quiz";
 import { createQuizRuntime } from "./ui/form-ui.quiz-runtime";
 import {
@@ -151,6 +153,7 @@ import { createDocumentQrRuntime } from "./ui/form-ui.document-qr-runtime";
 import { createSignatureRuntime } from "./ui/form-ui.signature-runtime";
 import { createPaymentRuntime } from "./ui/form-ui.payment-runtime";
 import { createMobileCaptureRuntime } from "./ui/form-ui.mobile-capture-runtime";
+import { createChoiceCatalogRuntime } from "./ui/form-ui.choice-catalog-runtime";
 export type {
   TFormApprovalState,
   THydratedFormSubmitDetail,
@@ -371,6 +374,8 @@ export class HydratedFormHost extends HTMLElement {
   signatureRuntime: ReturnType<typeof createSignatureRuntime>;
   paymentRuntime: ReturnType<typeof createPaymentRuntime>;
   mobileCaptureRuntime: ReturnType<typeof createMobileCaptureRuntime>;
+  repeaterRuntime: ReturnType<typeof createRepeaterRuntime>;
+  choiceCatalogRuntime: ReturnType<typeof createChoiceCatalogRuntime>;
 
   constructor() {
     super();
@@ -427,6 +432,8 @@ export class HydratedFormHost extends HTMLElement {
     this.signatureRuntime = createSignatureRuntime(this);
     this.paymentRuntime = createPaymentRuntime(this);
     this.mobileCaptureRuntime = createMobileCaptureRuntime(this);
+    this.repeaterRuntime = createRepeaterRuntime(this);
+    this.choiceCatalogRuntime = createChoiceCatalogRuntime(this);
     this.dynamic = new FormDynamicRuntime({
       getFieldConfigs: () => Object.values(this.engine.getFields()),
       getRules: () => this.formConfig?.rules || [],
@@ -1251,20 +1258,77 @@ export class HydratedFormHost extends HTMLElement {
     return accept.includes("image/*") || accept.includes("image/");
   }
 
+  getEffectiveFieldType = (fieldConfig: TFieldConfig) => {
+    if (fieldConfig.type !== SMART_CATALOG_TYPE) {
+      const fieldType = String(fieldConfig.type || "").trim().toLowerCase();
+      if (fieldType === "imagegallery" || fieldType === "image-gallery") {
+        return "image-gallery";
+      }
+      if (fieldType === "selectimage") {
+        return IMAGE_GALLERY_TYPE;
+      }
+      if (fieldType === "productlist" || fieldType === "product-list") {
+        return PRODUCT_LIST_TYPE;
+      }
+      if (fieldType === "selectproduct" || fieldType === "select-product") {
+        return SELECT_PRODUCT_TYPE;
+      }
+      if (fieldType === "radiobuttons" || fieldType === "radio_buttons" || fieldType === "radio-buttons") {
+        return RADIO_BUTTONS_TYPE;
+      }
+      if (fieldType === "checkboxgroup" || fieldType === "checkboxes") {
+        return CHECKBOXES_TYPE;
+      }
+      return fieldConfig.type;
+    }
+
+    const renderAs = String(fieldConfig.renderAs || "checkboxes").trim().toLowerCase();
+    if (renderAs === "radio_buttons" || renderAs === "radio-buttons" || renderAs === "radiobuttons") {
+      return RADIO_BUTTONS_TYPE;
+    }
+    if (renderAs === "select_product" || renderAs === "select-product" || renderAs === "selectproduct") {
+      return SELECT_PRODUCT_TYPE;
+    }
+    if (
+      renderAs === "select_product_list"
+      || renderAs === "select-product-list"
+      || renderAs === "product_list"
+      || renderAs === "product-list"
+      || renderAs === "productlist"
+    ) {
+      return PRODUCT_LIST_TYPE;
+    }
+    if (renderAs === "select_image" || renderAs === "select-image" || renderAs === "selectimage") {
+      return IMAGE_GALLERY_TYPE;
+    }
+    return CHECKBOXES_TYPE;
+  }
+
   isProductListField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === PRODUCT_LIST_TYPE;
+    return this.getEffectiveFieldType(fieldConfig) === PRODUCT_LIST_TYPE;
   }
 
   isImageGalleryField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === IMAGE_GALLERY_TYPE || fieldConfig.type === SELECT_PRODUCT_TYPE;
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return effectiveType === IMAGE_GALLERY_TYPE || effectiveType === SELECT_PRODUCT_TYPE || effectiveType === "image-gallery";
   }
 
   isQuizField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === QUIZ_TYPE;
+    return this.getEffectiveFieldType(fieldConfig) === QUIZ_TYPE;
   }
 
   isChoiceListField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === RADIO_BUTTONS_TYPE || fieldConfig.type === CHECKBOXES_TYPE;
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return effectiveType === RADIO_BUTTONS_TYPE || effectiveType === CHECKBOXES_TYPE;
+  }
+
+  isAutoAdvanceSingleChoiceField = (fieldConfig: TFieldConfig) => {
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return (
+      effectiveType === SELECT_PRODUCT_TYPE
+      || effectiveType === IMAGE_GALLERY_TYPE
+      || effectiveType === RADIO_BUTTONS_TYPE
+    );
   }
 
   isOpenQuizField = (fieldConfig: TFieldConfig) => {
@@ -1301,7 +1365,7 @@ export class HydratedFormHost extends HTMLElement {
   }
 
   getImageGallerySelectionLimit = (fieldConfig: TFieldConfig) => {
-    if (fieldConfig.type === SELECT_PRODUCT_TYPE) {
+    if (fieldConfig.type === SELECT_PRODUCT_TYPE || fieldConfig.type === IMAGE_GALLERY_TYPE) {
       return 1;
     }
 
@@ -1339,7 +1403,7 @@ export class HydratedFormHost extends HTMLElement {
   }
 
   getChoiceSelectionItems = (fieldConfig: TFieldConfig, value: any): string[] => {
-    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+    if (this.getEffectiveFieldType(fieldConfig) === RADIO_BUTTONS_TYPE) {
       return typeof value === "string" && value ? [value] : [];
     }
     return Array.isArray(value) ? value.map((entry) => String(entry)) : [];
@@ -1362,7 +1426,8 @@ export class HydratedFormHost extends HTMLElement {
     currentValue: any,
     choiceValue: string,
   ) => {
-    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    if (effectiveType === RADIO_BUTTONS_TYPE) {
       return currentValue === choiceValue ? "" : choiceValue;
     }
 
@@ -1375,12 +1440,24 @@ export class HydratedFormHost extends HTMLElement {
     const maxChoices =
       typeof fieldConfig.maxNumOfChoices === "number"
         ? fieldConfig.maxNumOfChoices
-        : fieldConfig.type === CHECKBOXES_TYPE ? 1 : null;
+        : null;
     if (maxChoices !== null && maxChoices > 0 && currentValues.length >= maxChoices) {
       return maxChoices === 1 ? [choiceValue] : currentValues;
     }
     return [...currentValues, choiceValue];
   }
+
+  getNextChoiceMonthSelectionValue = (
+    fieldConfig: TFieldConfig,
+    currentValue: any,
+    monthKey: string,
+  ) => this.choiceCatalogRuntime.getNextChoiceMonthSelectionValue(fieldConfig, currentValue, monthKey)
+
+  getNextChoiceYearSelectionValue = (
+    fieldConfig: TFieldConfig,
+    currentValue: any,
+    year: string,
+  ) => this.choiceCatalogRuntime.getNextChoiceYearSelectionValue(fieldConfig, currentValue, year)
 
   getProductCartTotal = (cartItems: TProductCartItem[]): number => {
     return getNormalizedProductCartTotal(cartItems);
@@ -1392,6 +1469,10 @@ export class HydratedFormHost extends HTMLElement {
 
   getProductCartEntries = (): Array<{ fieldName: string; item: TProductCartItem }> => {
     return this.commerceRuntime.getProductCartEntries();
+  }
+
+  renderProductCheckoutSummary = () => {
+    return this.commerceRuntime.renderProductCheckoutSummary();
   }
 
   ensureProductCartTrigger = (): HTMLElement | null => {
@@ -1456,12 +1537,12 @@ export class HydratedFormHost extends HTMLElement {
     return this.commerceRuntime.bindProductListGlobalCartEvents();
   }
 
-  openMediaGallery = (name: string, photos: string[]) => {
-    return this.commerceRuntime.openMediaGallery(name, photos);
+  openMediaGallery = (name: string, photos: string[], options?: { product?: any; fieldConfig?: TFieldConfig }) => {
+    return this.commerceRuntime.openMediaGallery(name, photos, options);
   }
 
-  openProductListGallery = (product: TProductListItem) => {
-    return this.commerceRuntime.openProductListGallery(product);
+  openProductListGallery = (product: TProductListItem, fieldConfig?: TFieldConfig) => {
+    return this.commerceRuntime.openProductListGallery(product, fieldConfig);
   }
 
   openImageGalleryItem = (item: TImageGalleryItem) => {
@@ -1471,10 +1552,11 @@ export class HydratedFormHost extends HTMLElement {
   getNextProductCartItems = (
     fieldConfig: TFieldConfig,
     currentValue: any,
-    action: "add" | "inc" | "dec" | "remove",
+    action: "add" | "inc" | "dec" | "remove" | "set",
     productId: string,
+    quantity?: number,
   ): TProductCartItem[] => {
-    return this.commerceRuntime.getNextProductCartItems(fieldConfig, currentValue, action, productId);
+    return this.commerceRuntime.getNextProductCartItems(fieldConfig, currentValue, action, productId, quantity);
   }
 
   getNextImageGallerySelectionItems = (
@@ -1536,6 +1618,37 @@ export class HydratedFormHost extends HTMLElement {
     return !previewSrc && !desc && label.trim().length <= 20;
   }
 
+  private updatePaymentProofExpectedAmount = (amountDisplay: string) => {
+    const amountNodes = Array.from(
+      this.querySelectorAll<HTMLElement>("[data-payment-proof-amount]"),
+    );
+    if (!amountNodes.length) {
+      return;
+    }
+
+    amountNodes.forEach((node) => {
+      if (!node.dataset.paymentProofOriginalAmount) {
+        node.dataset.paymentProofOriginalAmount = node.textContent?.trim() || "";
+      }
+      node.textContent = amountDisplay || node.dataset.paymentProofOriginalAmount || "";
+    });
+
+    Array.from(this.querySelectorAll<HTMLElement>("[data-payment-proof-amount-pill]")).forEach((pill) => {
+      const originalDisplay = pill.dataset.originalDisplay || pill.style.display || "";
+      if (!pill.dataset.originalDisplay) {
+        pill.dataset.originalDisplay = originalDisplay;
+      }
+      if (amountDisplay) {
+        pill.style.display = "inline-flex";
+        pill.setAttribute("data-dynamic-amount", "true");
+      } else {
+        pill.style.display = originalDisplay;
+        pill.removeAttribute("data-dynamic-amount");
+      }
+    });
+  }
+
+
   renderQuizSelection = (
     fieldConfig: TFieldConfig,
     value: any,
@@ -1553,16 +1666,25 @@ export class HydratedFormHost extends HTMLElement {
 
     const choices = fieldConfig.choices || [];
     const selectedValues = this.getChoiceSelectionItems(fieldConfig, value);
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    if (this.choiceCatalogRuntime.isDateRange(fieldConfig)) {
+      this.choiceCatalogRuntime.renderDateRangeSelection(fieldConfig, value, selectionElement);
+      return;
+    }
+    if (this.choiceCatalogRuntime.isMonthRange(fieldConfig)) {
+      this.choiceCatalogRuntime.renderMonthRangeSelection(fieldConfig, value, selectionElement);
+      return;
+    }
     const selectedMap = selectedValues.reduce((accumulator, item) => {
       accumulator[item] = true;
       return accumulator;
     }, {} as Record<string, boolean>);
     const selectionLimit =
-      fieldConfig.type === CHECKBOXES_TYPE && typeof fieldConfig.maxNumOfChoices === "number"
+      effectiveType === CHECKBOXES_TYPE && typeof fieldConfig.maxNumOfChoices === "number"
         ? fieldConfig.maxNumOfChoices
         : 1;
     const limitReached =
-      fieldConfig.type === CHECKBOXES_TYPE && selectionLimit > 1 && selectedValues.length >= selectionLimit;
+      effectiveType === CHECKBOXES_TYPE && selectionLimit > 1 && selectedValues.length >= selectionLimit;
 
     const grid =
       (selectionElement.querySelector(
@@ -1578,7 +1700,8 @@ export class HydratedFormHost extends HTMLElement {
     choices.forEach((choice) => {
       const optionValue = String(choice.value ?? choice.id ?? choice.label ?? "");
       const selected = Boolean(selectedMap[optionValue]);
-      const disabled = !selected && limitReached;
+      const choiceDisabled = Boolean(choice.disabled || choice.enabled === false);
+      const disabled = choiceDisabled || (!selected && limitReached);
 
       let card = grid.querySelector(`[data-choice-option-value="${optionValue}"]`) as HTMLDivElement | null;
       if (!card) {
@@ -1633,7 +1756,7 @@ export class HydratedFormHost extends HTMLElement {
       }
       footer.className = "template-choice-footer";
       footer.hidden = !disabled;
-      footer.textContent = disabled ? "Limit reached" : "";
+      footer.textContent = choiceDisabled ? "Unavailable" : disabled ? "Limit reached" : "";
     });
     Array.from(grid.querySelectorAll("[data-choice-option-value]")).forEach((node) => {
       const optionValue = (node as HTMLElement).getAttribute("data-choice-option-value");
@@ -2147,23 +2270,34 @@ export class HydratedFormHost extends HTMLElement {
     if (fieldConfig.type !== PAYMENT_PROOF_TYPE) return;
 
     const pills = Array.from(this.querySelectorAll<HTMLElement>(`[data-provider-pill="${fieldConfig.name}"]`));
-    if (pills.length < 2) return;
+    const selects = Array.from(this.querySelectorAll<HTMLSelectElement>(`[data-provider-select="${fieldConfig.name}"]`));
+    if (pills.length < 2 && selects.length < 1) return;
 
-    const activatePill = (pill: HTMLElement) => {
+    const activateProvider = (provider: string, source: HTMLElement) => {
       pills.forEach((p) => {
         p.classList.remove("is-active");
         p.setAttribute("aria-pressed", "false");
       });
-      pill.classList.add("is-active");
-      pill.setAttribute("aria-pressed", "true");
-
-      const provider = pill.dataset.provider || "";
+      if (source.matches("[data-provider-pill]")) {
+        source.classList.add("is-active");
+        source.setAttribute("aria-pressed", "true");
+      } else {
+        const matchingPill = pills.find((pill) => pill.dataset.provider === provider);
+        if (matchingPill) {
+          matchingPill.classList.add("is-active");
+          matchingPill.setAttribute("aria-pressed", "true");
+        }
+      }
+      selects.forEach((select) => {
+        select.value = provider;
+      });
 
       this.querySelectorAll<HTMLElement>(`[data-provider-block="${fieldConfig.name}"]`).forEach((block) => {
         block.style.display = block.dataset.provider === provider ? "" : "none";
       });
 
       if (inputElement) {
+        const selectedOption = source instanceof HTMLSelectElement ? source.selectedOptions[0] : null;
         const copy: Record<string, string> = {
           paymentProvider: "data-payment-provider",
           paymentProviderLabel: "data-payment-provider-label",
@@ -2176,7 +2310,7 @@ export class HydratedFormHost extends HTMLElement {
           paymentReferencePrefix: "data-payment-reference-prefix",
         };
         Object.entries(copy).forEach(([dsKey, attr]) => {
-          const val = pill.getAttribute(attr);
+          const val = selectedOption?.getAttribute(attr) ?? source.getAttribute(attr);
           if (val != null) {
             (inputElement as HTMLElement).dataset[dsKey] = val;
           } else {
@@ -2191,12 +2325,19 @@ export class HydratedFormHost extends HTMLElement {
     };
 
     pills.forEach((pill) => {
-      pill.addEventListener("click", () => activatePill(pill));
+      pill.addEventListener("click", () => activateProvider(pill.dataset.provider || "", pill));
+    });
+    selects.forEach((select) => {
+      select.addEventListener("change", () => activateProvider(select.value, select));
     });
 
     const firstActive = pills.find((p) => p.classList.contains("is-active")) ?? pills[0];
     if (firstActive && firstActive.dataset.provider === "bank-transfer") {
       this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+    }
+    const firstSelect = selects[0];
+    if (firstSelect) {
+      activateProvider(firstSelect.value, firstSelect);
     }
   }
 
@@ -2468,8 +2609,15 @@ export class HydratedFormHost extends HTMLElement {
         if (this.workflowState === "submitting") {
           return;
         }
+        this.repeaterRuntime.sync(formElem);
         if (this.isMultiStepMode() && !this.isLastStep()) {
           this.nextStep();
+          return;
+        }
+        const repeaterValidation = this.repeaterRuntime.validateAll(formElem);
+        if (!repeaterValidation.valid) {
+          repeaterValidation.focusNode?.focus({ preventScroll: true });
+          repeaterValidation.focusNode?.scrollIntoView({ block: "center", behavior: "smooth" });
           return;
         }
         const submitValues = this.form?.getState().values || {};
@@ -2538,6 +2686,13 @@ export class HydratedFormHost extends HTMLElement {
           this.previousStep();
         } else if (action === "next") {
           event.preventDefault();
+          this.repeaterRuntime.sync(formElem);
+          const repeaterValidation = this.repeaterRuntime.validateAll(formElem, { includeHidden: false });
+          if (!repeaterValidation.valid) {
+            repeaterValidation.focusNode?.focus({ preventScroll: true });
+            repeaterValidation.focusNode?.scrollIntoView({ block: "center", behavior: "smooth" });
+            return;
+          }
           this.nextStep();
         }
       });
@@ -2558,6 +2713,7 @@ export class HydratedFormHost extends HTMLElement {
         }
       });
     }
+      this.repeaterRuntime.attach(formElem);
       this.bindProductListGlobalCartEvents();
       this.resetFieldErrorDisplays();
       this.ensureStepControls(formElem);
@@ -3044,6 +3200,45 @@ export class HydratedFormHost extends HTMLElement {
     this.syncFieldErrorDisplay(fieldName);
   }
 
+  fieldHasSingleChoiceSelection = (fieldConfig: TFieldConfig, value: any): boolean => {
+    if (fieldConfig.type === SELECT_PRODUCT_TYPE || fieldConfig.type === IMAGE_GALLERY_TYPE) {
+      return Array.isArray(value) && value.length > 0;
+    }
+
+    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+      return value !== undefined && value !== null && String(value) !== "";
+    }
+
+    return false;
+  }
+
+  maybeAutoAdvanceSingleChoiceStep = (fieldConfig: TFieldConfig) => {
+    if (!this.isMultiStepMode() || this.isLastStep() || !this.isAutoAdvanceSingleChoiceField(fieldConfig)) {
+      return;
+    }
+
+    const currentStepName = this.getCurrentStepName();
+    if (!currentStepName) {
+      return;
+    }
+
+    const currentStepFields = (this.formConfig?.sections?.[currentStepName] || [])
+      .filter((stepField) => Boolean(stepField?.name));
+    if (currentStepFields.length !== 1 || currentStepFields[0]?.name !== fieldConfig.name) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (this.getCurrentStepName() !== currentStepName || this.isLastStep()) {
+        return;
+      }
+      if (!this.fieldHasSingleChoiceSelection(fieldConfig, this.getFieldValue(fieldConfig.name))) {
+        return;
+      }
+      this.nextStep();
+    }, 0);
+  }
+
   validateCurrentStep = (): boolean => {
     if (!this.form || !this.isMultiStepMode() || this.stepNames.length <= 1) {
       return true;
@@ -3189,6 +3384,7 @@ export class HydratedFormHost extends HTMLElement {
           nextButton: this.stepNextButton,
         },
       });
+      this.renderProductCheckoutSummary();
       return;
     }
     syncConfiguredStepControls({
@@ -3213,6 +3409,7 @@ export class HydratedFormHost extends HTMLElement {
         nextButton: this.stepNextButton,
       },
     });
+    this.renderProductCheckoutSummary();
   }
 
   emitStepChange = () => {
@@ -4101,6 +4298,7 @@ export class HydratedFormHost extends HTMLElement {
               },
               onAfterChange: () => {
                 this.queuePostChangeEffects(name);
+                this.maybeAutoAdvanceSingleChoiceStep(fieldConfig);
               },
               resolveFileInputValue: async (nextFieldConfig, nextInput) =>
                 this.resolveFileInputValue(nextFieldConfig as TFieldConfig, nextInput),
@@ -4128,19 +4326,24 @@ export class HydratedFormHost extends HTMLElement {
               },
               onAfterChange: () => {
                 this.queuePostChangeEffects(name);
+                this.maybeAutoAdvanceSingleChoiceStep(fieldConfig);
               },
-              getNextProductCartItems: (action, productId) =>
-                this.getNextProductCartItems(fieldConfig, this.getFieldValue(name), action, productId),
+              getNextProductCartItems: (action, productId, quantity) =>
+                this.getNextProductCartItems(fieldConfig, this.getFieldValue(name), action, productId, quantity),
               getNextImageGallerySelectionItems: (action, imageId) =>
                 this.getNextImageGallerySelectionItems(fieldConfig, this.getFieldValue(name), action, imageId),
               getNextQuizSelectionItems: (answerId) =>
                 this.getNextQuizSelectionItems(fieldConfig, this.getFieldValue(name), answerId),
               getNextChoiceSelectionValue: (choiceValue) =>
                 this.getNextChoiceSelectionValue(fieldConfig, this.getFieldValue(name), choiceValue),
+              getNextChoiceMonthSelectionValue: (monthKey) =>
+                this.getNextChoiceMonthSelectionValue(fieldConfig, this.getFieldValue(name), monthKey),
+              getNextChoiceYearSelectionValue: (year) =>
+                this.getNextChoiceYearSelectionValue(fieldConfig, this.getFieldValue(name), year),
               openProductGallery: (productId) => {
                 const product = this.getProductListCatalog(fieldConfig).find((entry) => entry.id === productId);
                 if (product) {
-                  this.openProductListGallery(product);
+                  this.openProductListGallery(product, fieldConfig);
                 }
               },
               openImageGallery: (imageId) => {

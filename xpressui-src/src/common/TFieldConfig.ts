@@ -31,6 +31,9 @@ type TFieldConfig = {
     adminLabel?: string;
     name: string;
     subType?: string;
+    renderAs?: string;
+    checkedStatusLabel?: string;
+    uncheckedStatusLabel?: string;
     refType?: string;
     desc?: string;
     canEdit?: boolean;
@@ -109,6 +112,18 @@ type TFieldConfig = {
     includeInSubmit?: boolean;
     minNumOfChoices?: number;
     maxNumOfChoices?: number;
+    choiceCatalogRef?: {
+        catalogId?: string;
+        catalogName?: string;
+        catalogKind?: string;
+        versionId?: string;
+        mode?: 'live_catalog' | 'frozen_catalog' | 'generated' | string;
+        snapshotAtPublish?: boolean;
+    };
+    choiceCatalogSnapshot?: any;
+    productSummaryLabel?: string;
+    productCurrency?: string;
+    productAmountFormat?: string;
     helpText?: string;
     errorMsg?: string;
     successMsg?: string;

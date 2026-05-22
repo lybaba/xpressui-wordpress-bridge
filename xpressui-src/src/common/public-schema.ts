@@ -231,7 +231,10 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
   const config = cloneObject(input) as Record<string, any>;
 
   const normalizeFieldType = (fieldType: unknown) => {
-    if (fieldType === "image-gallery" || fieldType === "imagegallery" || fieldType === "selectimage") {
+    if (fieldType === "image-gallery" || fieldType === "imagegallery") {
+      return "image-gallery";
+    }
+    if (fieldType === "selectimage") {
       return "select-image";
     }
     if (fieldType === "selectproduct") {
