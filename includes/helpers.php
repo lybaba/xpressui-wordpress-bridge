@@ -1021,6 +1021,7 @@ function xpressui_get_resume_post_id_by_token( $token ) {
 	}
 	global $wpdb;
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- security lookup by token; caching would create a security hole
 	$post_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_xpressui_resume_token' AND meta_value = %s LIMIT 1",
 		$token
@@ -1047,6 +1048,7 @@ function xpressui_get_project_form_url( $project_slug ) {
 	global $wpdb;
 	$slug_escaped = $wpdb->esc_like( $project_slug );
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- LIKE query for shortcode detection; WP_Query cannot handle this pattern
 	$page_id = (int) $wpdb->get_var( $wpdb->prepare(
 		"SELECT ID FROM {$wpdb->posts}
 		WHERE post_status = 'publish'
@@ -1234,6 +1236,7 @@ function xpressui_get_workflow_page_ids( $slug ) {
 	$like = '%' . $wpdb->esc_like( '[xpressui id="' . $slug . '"]' ) . '%';
 
 
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- WP_Query tokenises the search string and breaks the shortcode attribute match (see comment above)
 	$ids = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}

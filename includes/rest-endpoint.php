@@ -417,7 +417,7 @@ function xpressui_find_resubmission_post_id( $project_slug, $submission_id ) {
 		'post_status'    => 'private',
 		'fields'         => 'ids',
 		'posts_per_page' => 1,
-		'meta_query'     => [
+		'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 			[
 				'key'   => '_xpressui_project_slug',
 				'value' => $project_slug,
@@ -589,7 +589,7 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 			'post_status'    => 'private',
 			'fields'         => 'ids',
 			'posts_per_page' => 1,
-			'meta_query'     => [
+			'meta_query'     => [ // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				[
 					'key'   => '_xpressui_project_slug',
 					'value' => $project_slug,
@@ -683,7 +683,7 @@ function xpressui_check_submission_rate_limit( $project_slug ) {
 function xpressui_get_request_file_params( WP_REST_Request $request ) {
 	$request_files    = $request->get_file_params();
 
-	$superglobal_files = is_array( $_FILES ) ? $_FILES : [];
+	$superglobal_files = is_array( $_FILES ) ? $_FILES : []; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- REST route, authentication via permission_callback
 
 	if ( ! is_array( $request_files ) || empty( $request_files ) ) {
 		return $superglobal_files;
@@ -824,7 +824,7 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 	$file_params = xpressui_get_request_file_params( $request );
 	$debug['requestFileKeys']    = array_keys( (array) $request->get_file_params() );
 
-	$debug['superglobalFileKeys'] = array_keys( is_array( $_FILES ) ? $_FILES : [] );
+	$debug['superglobalFileKeys'] = array_keys( is_array( $_FILES ) ? $_FILES : [] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- REST route, authentication via permission_callback
 
 	foreach ( xpressui_normalize_uploaded_files( $file_params ) as $index => $file ) {
 		$debug['normalizedFiles'][] = [
