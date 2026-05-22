@@ -1686,7 +1686,24 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 
 		$accept = isset( $field['accept'] ) ? trim( (string) $field['accept'] ) : '';
 		if ( '' !== $accept ) {
-			return 'Accepted: ' . $accept;
+			$parts = array_filter( array_map( 'trim', explode( ',', $accept ) ) );
+			$exts  = array_values( array_filter( $parts, static fn( $p ) => str_starts_with( $p, '.' ) ) );
+			if ( count( $exts ) > 0 ) {
+				return 'Accepted: ' . implode( ', ', $exts );
+			}
+		}
+
+		$lower_label = strtolower( (string) ( $field['label'] ?? '' ) );
+		$lower_name  = strtolower( (string) ( $field['name'] ?? '' ) );
+		foreach ( [ 'resume', 'cv' ] as $kw ) {
+			if ( str_contains( $lower_label, $kw ) || str_contains( $lower_name, $kw ) ) {
+				return 'Accepted: PDF, DOC';
+			}
+		}
+		foreach ( [ 'identity', 'passport', 'document', 'proof' ] as $kw ) {
+			if ( str_contains( $lower_label, $kw ) || str_contains( $lower_name, $kw ) ) {
+				return 'Accepted: PDF or image';
+			}
 		}
 
 		return 'Accepted: documents';

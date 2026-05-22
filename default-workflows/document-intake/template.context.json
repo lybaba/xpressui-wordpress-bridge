@@ -481,7 +481,7 @@
             "max_value": null,
             "step_value": null,
             "upload_type_label": "Document upload",
-            "upload_accept_label": "Accepted: .pdf,application/pdf,image/*",
+            "upload_accept_label": "Accepted: PDF or image",
             "document_scan_mode": "double",
             "document_scan_slots": [
               {
