@@ -14,11 +14,13 @@ function xpressui_render_submission_filters( $post_type ) {
 		return;
 	}
 
+
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only GET params for admin list table filters; no state change
 	$selected_status   = isset( $_GET['xpressui_status'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) ) : '';
 	$selected_project  = isset( $_GET['xpressui_project'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_project'] ) ) : '';
 	$selected_assignee = isset( $_GET['xpressui_assignee'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['xpressui_assignee'] ) ) : '';
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
 
 	$submission_ids = get_posts( [
 		'post_type'      => 'xpressui_submission',
@@ -74,6 +76,7 @@ function xpressui_apply_submission_filters( $query ) {
 		$meta_query = [];
 	}
 
+
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only GET params for admin list table filters; no state change
 		if ( ! empty( $_GET['xpressui_status'] ) ) {
 			$selected_status = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_status'] ) );
@@ -99,6 +102,7 @@ function xpressui_apply_submission_filters( $query ) {
 		];
 	}
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
 	if ( ! empty( $meta_query ) ) {
 		$query->set( 'meta_query', $meta_query );
 	}
