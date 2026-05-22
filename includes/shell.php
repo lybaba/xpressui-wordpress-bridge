@@ -39,7 +39,7 @@ function xpressui_maybe_render_shell_page() {
 	if ( '' !== $compiled_shell_html ) {
 		status_header( 200 );
 
-		echo $compiled_shell_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- intentional: server-rendered HTML template
+		echo $compiled_shell_html;
 		exit;
 	}
 
