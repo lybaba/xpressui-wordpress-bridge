@@ -71,9 +71,9 @@ function xpressui_render_workflow_settings_page(): void {
 
 	if ( isset( $_POST['xpressui_save_workflow_settings'] ) && check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' ) ) {
 		$raw_notify_email = isset( $_POST['xpressui_notify_email'] ) ? trim( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_notify_email'] ) ) ) : '';
-		$raw_redirect_url = xpressui_normalize_optional_settings_url( $_POST['xpressui_redirect_url'] ?? '' );
-		$raw_webhook_url  = xpressui_normalize_optional_settings_url( $_POST['xpressui_webhook_url'] ?? '' );
-		$raw_booking_url  = xpressui_normalize_optional_settings_url( $_POST['xpressui_booking_url'] ?? '' );
+		$raw_redirect_url = isset( $_POST['xpressui_redirect_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_redirect_url'] ) ) ) : '';
+		$raw_webhook_url  = isset( $_POST['xpressui_webhook_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_webhook_url'] ) ) ) : '';
+		$raw_booking_url  = isset( $_POST['xpressui_booking_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_booking_url'] ) ) ) : '';
 
 		$notify_email         = '' !== $raw_notify_email ? sanitize_email( $raw_notify_email ) : '';
 		$redirect_url         = '' !== $raw_redirect_url ? esc_url_raw( $raw_redirect_url ) : '';
