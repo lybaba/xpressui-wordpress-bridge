@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.83
+Stable tag: 1.0.84
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -163,6 +163,10 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.84 =
+* Add a print/download-only workflow mode that validates the form and opens the browser print dialog without storing a submission.
+* Update the bundled XPressUI light runtime to 1.0.16.
 
 = 1.0.83 =
 * Update the bundled XPressUI light runtime to 1.0.15.

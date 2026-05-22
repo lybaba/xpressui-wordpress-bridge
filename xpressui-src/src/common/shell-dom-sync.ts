@@ -19,6 +19,7 @@ export interface TShellSubmitFeedbackConfig {
   success_title?: string;
   success_message?: string;
   idle_message?: string;
+  document_download_label?: string;
 }
 
 export interface TShellFormConfig {
@@ -28,7 +29,7 @@ export interface TShellFormConfig {
   sectionLabelVisibility?: 'show' | 'hide' | 'auto';
   sections?: Record<string, any[]> & { custom?: Array<{ name: string; label: string }> };
   submitFeedback?: TShellSubmitFeedbackConfig;
-  workflowConfig?: { redirectUrl?: string };
+  workflowConfig?: { redirectUrl?: string; submissionMode?: string };
 }
 
 export interface TAttachShellFeedbackOptions {
@@ -281,6 +282,44 @@ export function setShellFeedbackState(
   if (feedbackMessageNode instanceof HTMLElement) feedbackMessageNode.textContent = message;
 }
 
+function removeShellFeedbackDownloadLink(mountNode: Element): void {
+  mountNode.querySelectorAll('[data-submit-feedback-download]').forEach((node) => node.remove());
+}
+
+function appendShellFeedbackDownloadLink(
+  mountNode: Element,
+  result: any,
+  label: string,
+): void {
+  removeShellFeedbackDownloadLink(mountNode);
+  const rawUrl = result?.downloadUrl || result?.url;
+  if (typeof rawUrl !== 'string' || rawUrl.trim() === '') return;
+
+  const feedbackMessageNode = mountNode.querySelector('[data-submit-feedback-message]');
+  const feedbackNode = mountNode.querySelector('[data-submit-feedback]');
+  const link = document.createElement('a');
+  link.setAttribute('data-submit-feedback-download', 'true');
+  link.href = rawUrl;
+  link.textContent = result?.downloadLabel || label || 'Download document';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  if (typeof result?.downloadFilename === 'string' && result.downloadFilename.trim() !== '') {
+    link.setAttribute('download', result.downloadFilename.trim());
+  }
+  link.style.display = 'inline-flex';
+  link.style.marginTop = '0.75rem';
+  link.style.fontWeight = '700';
+  link.style.textDecoration = 'underline';
+
+  if (feedbackMessageNode instanceof HTMLElement) {
+    feedbackMessageNode.insertAdjacentElement('afterend', link);
+    return;
+  }
+  if (feedbackNode instanceof HTMLElement) {
+    feedbackNode.appendChild(link);
+  }
+}
+
 function isMeaningfulSubmitMessage(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   const normalized = value.trim();
@@ -337,6 +376,8 @@ export function resolveShellSubmitErrorMessage(
  */
 export function handleShellSuccessRedirect(result: any, formConfig: TShellFormConfig): void {
   if (typeof window === 'undefined') return;
+  const submissionMode = String(formConfig.workflowConfig?.submissionMode || '').trim().toLowerCase();
+  if (submissionMode === 'print-only' || submissionMode === 'download-only' || submissionMode === 'mail-only') return;
   const urlParams = new URLSearchParams(window.location.search);
   const redirectUrl =
     urlParams.get('redirect') ||
@@ -389,6 +430,7 @@ export function attachShellFeedbackHandlers(
   );
 
   mountNode.addEventListener('xpressui:submit', () => {
+    removeShellFeedbackDownloadLink(mountNode);
     setShellActionButtonsDisabled(mountNode, true);
     setShellFeedbackState(
       mountNode,
@@ -406,10 +448,16 @@ export function attachShellFeedbackHandlers(
       configuredSuccessMessage || result?.message || defaultSuccessMessage,
       cfg.success_title ?? 'Submission received',
     );
+    appendShellFeedbackDownloadLink(
+      mountNode,
+      result,
+      cfg.document_download_label ?? t('downloadDocument', 'Download document'),
+    );
     handleShellSuccessRedirect(result, formConfig);
   });
 
   mountNode.addEventListener('xpressui:submit-error', (event) => {
+    removeShellFeedbackDownloadLink(mountNode);
     const result = (event as CustomEvent)?.detail?.result;
     const error = (event as CustomEvent)?.detail?.error;
     setShellActionButtonsDisabled(mountNode, false);

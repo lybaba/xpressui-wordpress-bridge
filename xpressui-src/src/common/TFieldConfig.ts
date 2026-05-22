@@ -32,6 +32,8 @@ type TFieldConfig = {
     name: string;
     subType?: string;
     renderAs?: string;
+    checkedLabel?: string;
+    uncheckedLabel?: string;
     checkedStatusLabel?: string;
     uncheckedStatusLabel?: string;
     refType?: string;

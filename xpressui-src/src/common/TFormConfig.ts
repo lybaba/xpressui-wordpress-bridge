@@ -25,7 +25,7 @@ export enum RenderingMode {
 }
 
 export type TFormSubmitRequest = {
-    endpoint: string;
+    endpoint?: string;
     metadata?: Record<string, any>;
     baseUrl?: string;
     includeSettingFields?: boolean;
@@ -59,7 +59,10 @@ export type TFormSubmitRequest = {
     fileAcceptancePolicy?: TFormUploadPolicyHook;
     contentModerationPolicy?: TFormUploadPolicyHook;
     virusScanPolicy?: TFormUploadPolicyHook;
-    action?: string;
+    action?: 'submit' | 'print' | 'print-only' | 'generate-pdf' | 'download-pdf' | string;
+    documentEndpoint?: string;
+    documentReadyMessage?: string;
+    documentDownloadLabel?: string;
     lifecycle?: TFormSubmitLifecycle;
     transport?: TFormSubmitTransport;
 };
@@ -274,6 +277,7 @@ export type TWorkflowConfig = {
     resumeSupport?: 'disabled' | 'enabled' | string;
     submissionMode?: 'multi-step-submit' | 'single-step-submit' | string;
     successMessage?: string;
+    documentDownloadLabel?: string;
     documentHandling?: 'none' | string;
     submissionEndpoint?: string;
 };

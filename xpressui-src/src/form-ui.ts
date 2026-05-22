@@ -3922,6 +3922,89 @@ export class HydratedFormHost extends HTMLElement {
     assertProviderResponseContract(result, submitConfig);
   }
 
+  isPrintSubmitAction = (): boolean => {
+    const action = String(this.formConfig?.submit?.action || "").trim().toLowerCase();
+    const submissionMode = String(this.formConfig?.workflowConfig?.submissionMode || "").trim().toLowerCase();
+    return (
+      action === "print" ||
+      action === "print-only" ||
+      action === "generate-pdf" ||
+      action === "download-pdf" ||
+      submissionMode === "print-only" ||
+      submissionMode === "download-only"
+    );
+  }
+
+  runPrintSubmitAction = async (
+    detail: THydratedFormSubmitDetail,
+  ) => {
+    const submitConfig = this.formConfig?.submit;
+    const defaultReadyMessage = submitConfig?.documentReadyMessage || "Your document is ready.";
+    const defaultDownloadLabel = submitConfig?.documentDownloadLabel || "Download document";
+    let result: any = {
+      action: "download-document",
+      mode: "download-link",
+      message: defaultReadyMessage,
+      downloadLabel: defaultDownloadLabel,
+    };
+    const printDetail = {
+      ...detail,
+      result,
+    } as THydratedFormSubmitDetail & { resultPromise?: Promise<any> };
+    this.clearDraft();
+    await new Promise((resolve) => {
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => resolve(undefined));
+        return;
+      }
+      setTimeout(resolve, 0);
+    });
+    this.emitFormEvent("xpressui:print-request", printDetail, true);
+    if (printDetail.resultPromise) {
+      const eventResult = await printDetail.resultPromise;
+      result = {
+        ...result,
+        ...(eventResult || {}),
+        message: eventResult?.message || result.message,
+        downloadLabel: eventResult?.downloadLabel || result.downloadLabel,
+      };
+      printDetail.result = result;
+    } else if (submitConfig?.documentEndpoint) {
+      const response = await fetch(submitConfig.documentEndpoint, {
+        method: submitConfig.method || "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(submitConfig.headers || {}),
+        },
+        body: JSON.stringify({
+          values: detail.values || {},
+          submittedAt: new Date().toISOString(),
+          locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Document generation failed with status ${response.status}.`);
+      }
+      const endpointResult = await response.json();
+      result = {
+        ...result,
+        ...endpointResult,
+        downloadUrl: endpointResult.downloadUrl || endpointResult.url,
+        downloadFilename: endpointResult.downloadFilename || endpointResult.filename,
+        message: endpointResult.message || result.message,
+        downloadLabel: endpointResult.downloadLabel || result.downloadLabel,
+      };
+      printDetail.result = result;
+    }
+    this.setWorkflowState("submitted", printDetail, undefined, result);
+    this.emitFormEvent("xpressui:submit-success", printDetail);
+    try {
+      await runConfiguredSubmitLifecycleStage(this.formConfig?.submit, "postSuccess", printDetail);
+    } catch (hookError) {
+      this.emitSubmitHookError("postSuccess", printDetail, hookError);
+    }
+  }
+
   emitSubmitHookError = (
     stage: TFormSubmitLifecycleStage,
     detail: THydratedFormSubmitDetail,
@@ -3990,6 +4073,11 @@ export class HydratedFormHost extends HTMLElement {
 
     const customTransport = this.formConfig?.submit?.transport;
     const hasEndpoint = Boolean(this.formConfig?.submit?.endpoint);
+
+    if (this.isPrintSubmitAction()) {
+      await this.runPrintSubmitAction(detail);
+      return;
+    }
 
     if (!hasEndpoint && !customTransport) {
       this.clearDraft();

@@ -1266,11 +1266,10 @@
     .xpressui-member-verification__msg { font-size: 13px; color: #475569; font-weight: 700; }
     .xpressui-member-verification__msg--ok { color: #047857; }
     .xpressui-member-verification__msg--err { color: #b91c1c; }
-  </style>
     /* standalone shell overrides — no background image */
     #xpressui-root form-ui { display: block !important; }
-    body[data-bg-style="none"] #xpressui-root.page-shell,
-    body:not([data-bg-style]) #xpressui-root.page-shell {
+    body:not([data-xpressui-preview-loader])[data-bg-style="none"] #xpressui-root.page-shell,
+    body:not([data-xpressui-preview-loader]):not([data-bg-style]) #xpressui-root.page-shell {
       background: transparent !important;
       padding: 2px !important;
       min-height: 0 !important;
@@ -1279,12 +1278,12 @@
       align-items: flex-start !important;
       width: 100% !important;
     }
-    body[data-bg-style="none"] #xpressui-root.page-shell::before,
-    body[data-bg-style="none"] #xpressui-root.page-shell::after,
-    body:not([data-bg-style]) #xpressui-root.page-shell::before,
-    body:not([data-bg-style]) #xpressui-root.page-shell::after { display: none !important; }
-    body[data-bg-style="none"] .form-frame,
-    body:not([data-bg-style]) .form-frame {
+    body:not([data-xpressui-preview-loader])[data-bg-style="none"] #xpressui-root.page-shell::before,
+    body:not([data-xpressui-preview-loader])[data-bg-style="none"] #xpressui-root.page-shell::after,
+    body:not([data-xpressui-preview-loader]):not([data-bg-style]) #xpressui-root.page-shell::before,
+    body:not([data-xpressui-preview-loader]):not([data-bg-style]) #xpressui-root.page-shell::after { display: none !important; }
+    body:not([data-xpressui-preview-loader])[data-bg-style="none"] .form-frame,
+    body:not([data-xpressui-preview-loader]):not([data-bg-style]) .form-frame {
       background: transparent !important;
       box-shadow: none !important;
       border: none !important;
