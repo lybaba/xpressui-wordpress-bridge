@@ -270,7 +270,7 @@
     .template-choice-grid--auto .template-choice-month-heading,
     .template-choice-grid[data-choice-layout="horizontal"] .template-choice-month-heading,
     .template-choice-grid[data-choice-layout="auto"] .template-choice-month-heading { grid-column: 1 / -1; }
-    .template-date-range-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; align-items: start; margin-top: 12px; }
+    .template-date-range-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; align-items: end; margin-top: 12px; }
     .template-date-range-month { overflow: hidden; border: 1.5px solid color-mix(in srgb, var(--template-border) 75%, transparent); border-radius: 12px; background: var(--template-surface); }
     .template-date-range-month-title { display: grid; grid-template-columns: minmax(0, 1fr) 18px; align-items: center; gap: 6px; padding: 8px 10px; text-align: left; font-size: 14px; font-weight: 900; color: var(--template-text); background: color-mix(in srgb, var(--template-primary) 6%, var(--template-surface)); border-bottom: 1px solid color-mix(in srgb, var(--template-border) 75%, transparent); }
     .template-date-range-month-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
