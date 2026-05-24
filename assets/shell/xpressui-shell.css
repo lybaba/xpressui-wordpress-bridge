@@ -135,8 +135,8 @@
     .template-runtime-shell { display: grid; gap: 16px; }
     .template-runtime-shell[hidden] { display: none !important; }
     .template-form-header { display: grid; gap: 4px; padding: 0 2px; }
-    .template-form-title { margin: 0; font-size: 36px; line-height: 1.04; letter-spacing: 0; color: var(--template-text); font-weight: 900; }
-    .template-form-subtitle { margin: 0; color: var(--template-muted-text); font-size: 12px; line-height: 1.45; max-width: 720px; }
+    #xpressui-root .template-form-title { margin: 0; font-size: 36px; line-height: 1.04; letter-spacing: 0; color: var(--template-text); font-weight: 900; }
+    #xpressui-root .template-form-subtitle { margin: 0; color: var(--template-muted-text); font-size: 12px; line-height: 1.45; max-width: 720px; }
     .template-step-status { display: grid; gap: 8px; padding: 0 4px 6px; background: transparent; border: none; }
     .template-step-status[data-step-feedback-state='loading'] { background: color-mix(in srgb, #3b82f6 8%, var(--template-surface)); border-color: color-mix(in srgb, #3b82f6 20%, transparent); }
     .template-step-status[data-step-feedback-state='success'] { background: color-mix(in srgb, #22c55e 8%, var(--template-surface)); border-color: color-mix(in srgb, #22c55e 20%, transparent); }
@@ -150,6 +150,10 @@
     .template-runtime-shell[data-field-columns='2'] .template-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .template-field { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
+    .template-runtime-shell[data-field-columns='2'] .template-field:has([data-choice-date-range="true"]),
+    .template-runtime-shell[data-field-columns='3'] .template-field:has([data-choice-date-range="true"]),
+    .template-runtime-shell[data-field-columns='2'] .template-field:has([data-choice-month-range="true"]),
+    .template-runtime-shell[data-field-columns='3'] .template-field:has([data-choice-month-range="true"]) { grid-column: 1 / -1; }
     .template-runtime-shell[data-label-position='inline'] .template-field { display: grid; grid-template-columns: minmax(112px, 150px) minmax(0, 1fr); align-items: start; column-gap: 12px; }
     .template-runtime-shell[data-label-position='inline'] .template-field-label-row { padding-top: 14px; }
     .template-runtime-shell[data-label-position='inline'] .template-field-help,
@@ -164,6 +168,23 @@
     .template-field[data-field-type="checkboxes"] .template-field-label-row,
     .template-field[data-field-type="quiz"] .template-field-label-row { margin-bottom: 8px; }
     .template-field-label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--template-text); }
+    .template-field[data-field-type="radio-buttons"] > .template-field-label-row,
+    .template-field[data-field-type="checkboxes"] > .template-field-label-row,
+    .template-field[data-field-type="quiz"] > .template-field-label-row { margin-bottom: 12px; }
+    .template-field[data-field-type="radio-buttons"] > .template-field-label-row .template-field-label,
+    .template-field[data-field-type="checkboxes"] > .template-field-label-row .template-field-label,
+    .template-field[data-field-type="quiz"] > .template-field-label-row .template-field-label {
+      width: 100%;
+      padding-bottom: 8px;
+      border-bottom: 1px solid color-mix(in srgb, var(--template-border) 70%, transparent);
+    }
+    .template-field[data-field-type="radio-buttons"] .template-choice-title,
+    .template-field[data-field-type="checkboxes"] .template-choice-title,
+    .template-field[data-field-type="quiz"] .template-choice-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
     .template-field-meta-inline { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
     .template-required { color: var(--template-muted-text); font-size: 13px; font-weight: 700; line-height: 1; }
     .template-field-help { font-size: 13px; color: var(--template-muted-text); }
@@ -271,7 +292,7 @@
     .template-choice-grid[data-choice-layout="horizontal"] .template-choice-month-heading,
     .template-choice-grid[data-choice-layout="auto"] .template-choice-month-heading { grid-column: 1 / -1; }
     .template-date-range-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; align-items: end; margin-top: 12px; }
-    .template-date-range-month { overflow: hidden; border: 1.5px solid color-mix(in srgb, var(--template-border) 75%, transparent); border-radius: 12px; background: var(--template-surface); }
+    .template-date-range-month { display: flex; flex-direction: column; overflow: hidden; border: 1.5px solid color-mix(in srgb, var(--template-border) 75%, transparent); border-radius: 12px; background: var(--template-surface); }
     .template-date-range-month-title { display: grid; grid-template-columns: minmax(0, 1fr) 18px; align-items: center; gap: 6px; padding: 8px 10px; text-align: left; font-size: 14px; font-weight: 900; color: var(--template-text); background: color-mix(in srgb, var(--template-primary) 6%, var(--template-surface)); border-bottom: 1px solid color-mix(in srgb, var(--template-border) 75%, transparent); }
     .template-date-range-month-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .template-date-range-month-toggle { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
@@ -490,7 +511,7 @@
       .form-frame { padding: 18px; border-radius: max(calc(var(--template-card-radius) - 8px), 18px); }
       .hosted-link-presentation { padding: 16px; }
       .hosted-link-title { font-size: 21px; }
-      .template-form-title { font-size: 28px; }
+      #xpressui-root .template-form-title { font-size: 28px; }
       .template-section { padding: 16px; }
       .template-section-label { font-size: 21px; }
       .template-runtime-shell[data-field-columns='2'] .template-fields,
