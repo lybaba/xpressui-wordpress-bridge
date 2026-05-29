@@ -801,6 +801,14 @@ const ensureSubmitMetadata = (values, formConfig, form) => {
   if (resumeEntryId > 0) {
     nextValues.xpressui_resume_entry_id = String(resumeEntryId);
   }
+  const submitterVerificationToken = form?.querySelector('[data-submitter-verification-token]');
+  if (
+    submitterVerificationToken instanceof HTMLInputElement &&
+    submitterVerificationToken.name &&
+    submitterVerificationToken.value
+  ) {
+    nextValues[submitterVerificationToken.name] = submitterVerificationToken.value;
+  }
   return nextValues;
 };
 
