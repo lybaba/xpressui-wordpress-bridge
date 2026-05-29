@@ -260,7 +260,7 @@ function renderResumeAdditionalFileSelection(slotId, fileInput, form) {
     title.textContent = '';
     message.textContent = '';
     message.style.display = 'none';
-    body.innerHTML = '';
+    body.replaceChildren();
     return;
   }
 
@@ -270,7 +270,7 @@ function renderResumeAdditionalFileSelection(slotId, fileInput, form) {
   title.textContent = 'Selected file';
   message.textContent = '';
   message.style.display = 'none';
-  body.innerHTML = '';
+  body.replaceChildren();
 
   const row = document.createElement('div');
   row.className = 'flex items-start justify-between gap-3 rounded border border-base-300 px-3 py-2';
