@@ -170,18 +170,19 @@ export function syncShellDomWithConfig(
         ) as HTMLSelectElement | null;
         if (select) {
           const hasEmptyFirst = select.options.length > 0 && select.options[0].value === '';
-          const firstOption = hasEmptyFirst ? select.options[0].outerHTML : '';
-          select.innerHTML =
-            firstOption +
-            (field.choices as any[])
-              .map((c) => {
-                const val = String(c.value ?? c.id ?? c.name ?? '');
-                const lbl = String(c.label ?? c.name ?? val);
-                const safeVal = val.replace(/"/g, '&quot;');
-                const safeLbl = lbl.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                return `<option value="${safeVal}">${safeLbl}</option>`;
-              })
-              .join('');
+          const options: HTMLOptionElement[] = [];
+          if (hasEmptyFirst) {
+            options.push(select.options[0].cloneNode(true) as HTMLOptionElement);
+          }
+          (field.choices as any[]).forEach((c) => {
+            const val = String(c.value ?? c.id ?? c.name ?? '');
+            const lbl = String(c.label ?? c.name ?? val);
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = lbl;
+            options.push(option);
+          });
+          select.replaceChildren(...options);
         }
       }
     });

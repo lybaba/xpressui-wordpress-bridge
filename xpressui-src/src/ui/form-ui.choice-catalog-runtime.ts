@@ -30,6 +30,11 @@ function getDateRangeMonth(choice: any): { key: string; label: string; date: str
   return { key, label, date };
 }
 
+function getCustomDateRangeNote(choice: any): string {
+  const rawNote = String(choice.desc || choice.reason || "").trim();
+  return ["weekday_not_allowed", "Unavailable", "unavailable"].includes(rawNote) ? "" : rawNote;
+}
+
 export function createChoiceCatalogRuntime(host: TChoiceCatalogHost) {
   const self = {
     isDateRange(fieldConfig: any): boolean {
@@ -233,8 +238,7 @@ export function createChoiceCatalogRuntime(host: TChoiceCatalogHost) {
           const date = getDateRangeMonth(choice).date;
           const dayName = String(choice.dayName || choice.day_name || choice.label || optionValue).replace(/\s+\d+$/, "");
           const dayNumber = String(choice.dayNumber || choice.day_number || (date.length >= 10 ? date.slice(8, 10) : ""));
-          const rawNote = String(choice.desc || choice.reason || "");
-          const note = rawNote === "weekday_not_allowed" ? "" : rawNote;
+          const note = getCustomDateRangeNote(choice);
 
           const row = document.createElement("article");
           row.className = "template-date-range-day";
@@ -297,8 +301,8 @@ export function createChoiceCatalogRuntime(host: TChoiceCatalogHost) {
           const footer = document.createElement("span");
           footer.className = "template-choice-footer";
           footer.setAttribute("data-choice-option-footer", optionValue);
-          footer.hidden = !disabled;
-          footer.textContent = disabled ? "Unavailable" : "";
+          footer.hidden = true;
+          footer.textContent = "";
           row.appendChild(footer);
 
           monthElement.appendChild(row);
@@ -463,8 +467,8 @@ export function createChoiceCatalogRuntime(host: TChoiceCatalogHost) {
           const footer = document.createElement("span");
           footer.className = "template-choice-footer";
           footer.setAttribute("data-choice-option-footer", optionValue);
-          footer.hidden = !disabled;
-          footer.textContent = disabled ? "Unavailable" : "";
+          footer.hidden = true;
+          footer.textContent = "";
           card.appendChild(footer);
         });
       });

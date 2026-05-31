@@ -247,11 +247,11 @@ function xpressui_render_workflow_settings_page(): void {
 
 	echo '<tr><th><label for="xpressui_submission_action">' . esc_html__( 'Submission action', 'xpressui-bridge' ) . '</label></th>';
 	echo '<td><select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text">';
-	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
+	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'Print / download PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
 		echo '<option value="' . esc_attr( $val ) . '"' . selected( (string) ( $s['submissionAction'] ?? 'submit' ), $val, false ) . '>' . esc_html( $label ) . '</option>';
 	}
 	echo '</select>';
-	echo '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing a submission in WordPress.', 'xpressui-bridge' ) . '</p></td></tr>';
+	echo '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing the submission in WordPress.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '</tbody></table>';
 	echo '</details>';

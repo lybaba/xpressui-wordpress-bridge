@@ -262,7 +262,15 @@ function createPhotoPlaceholder(fn: string, labelText: string): HTMLElement {
   el.className = 'xpui-photo-thumb xpui-photo-thumb--placeholder';
   el.setAttribute('for', fn);
   el.setAttribute('data-photo-placeholder', fn);
-  el.innerHTML = `<span class="xpui-photo-thumb-icon">📷</span><span class="xpui-photo-thumb-text">${labelText}</span>`;
+  const icon = document.createElement('span');
+  icon.className = 'xpui-photo-thumb-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = '📷';
+  const text = document.createElement('span');
+  text.className = 'xpui-photo-thumb-text';
+  text.textContent = labelText;
+  el.appendChild(icon);
+  el.appendChild(text);
   return el;
 }
 
