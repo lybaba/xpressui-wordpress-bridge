@@ -778,9 +778,6 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 	}
 
 	$allowed_extensions = [
-		'html',
-		'css',
-		'js',
 		'json',
 		'md',
 		'txt',
@@ -795,7 +792,6 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 		'woff2',
 		'ttf',
 		'eot',
-		'map',
 	];
 	$blocked_extensions = [
 		// PHP variants
