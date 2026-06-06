@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+
 type TMobileCaptureHost = any;
 
 const CAPTURE_ELIGIBLE_TYPES = new Set(['signature', 'camera-photo', 'camera-photo-list', 'qr-scan', 'document-scan']);
@@ -66,15 +68,9 @@ async function pollCaptureSession(
   }
 }
 
-function createQrImageUrl(value: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=2&data=${encodeURIComponent(value)}`;
-}
-
 function findCaptureDialog(host: TMobileCaptureHost): HTMLDialogElement | null {
   return (
-    host.closest('[data-template-zone="form_frame"]')?.querySelector('[data-mobile-capture-modal]') ??
-    document.querySelector('[data-mobile-capture-modal]') ??
-    null
+    host.closest('[data-template-zone="form_frame"]')?.querySelector('[data-mobile-capture-modal]') ?? null
   ) as HTMLDialogElement | null;
 }
 
@@ -112,6 +108,7 @@ async function openCaptureModal(
   fieldType: string,
   projectSlug: string,
   onData: (data: string) => void,
+  onFallback?: () => void,
 ): Promise<void> {
   const dialog = findCaptureDialog(host);
   if (!dialog) return;
@@ -156,13 +153,17 @@ async function openCaptureModal(
 
   const session = await createCaptureSession(fieldName, fieldType, projectSlug);
   if (!session) {
-    statusText.textContent = 'Could not start capture session.';
-    statusText.style.color = '#ef4444';
+    close();
+    onFallback?.();
     return;
   }
 
-  qrImg.src = createQrImageUrl(session.captureUrl);
-  qrImg.removeAttribute('hidden');
+  try {
+    qrImg.src = await QRCode.toDataURL(session.captureUrl, { width: 200, margin: 2 });
+    qrImg.removeAttribute('hidden');
+  } catch {
+    qrImg.toggleAttribute('hidden', true);
+  }
 
   statusText.textContent = 'Scan the QR code with your phone camera…';
 
@@ -229,8 +230,7 @@ function updateFileInputFiles(fieldWrap: HTMLElement, fn: string, files: File[])
 
 function openLightbox(fieldWrap: HTMLElement, imageUrl: string): void {
   const galleryDialog = (
-    fieldWrap.closest('[data-template-zone="form_frame"]')?.querySelector('[data-product-gallery-modal]') ??
-    document.querySelector('[data-product-gallery-modal]')
+    fieldWrap.closest('[data-template-zone="form_frame"]')?.querySelector('[data-product-gallery-modal]') ?? null
   ) as HTMLDialogElement | null;
   if (!galleryDialog) { window.open(imageUrl, '_blank', 'noopener'); return; }
   const mainImg = galleryDialog.querySelector('[data-product-gallery-main]') as HTMLImageElement | null;
@@ -262,15 +262,7 @@ function createPhotoPlaceholder(fn: string, labelText: string): HTMLElement {
   el.className = 'xpui-photo-thumb xpui-photo-thumb--placeholder';
   el.setAttribute('for', fn);
   el.setAttribute('data-photo-placeholder', fn);
-  const icon = document.createElement('span');
-  icon.className = 'xpui-photo-thumb-icon';
-  icon.setAttribute('aria-hidden', 'true');
-  icon.textContent = '📷';
-  const text = document.createElement('span');
-  text.className = 'xpui-photo-thumb-text';
-  text.textContent = labelText;
-  el.appendChild(icon);
-  el.appendChild(text);
+  el.innerHTML = `<span class="xpui-photo-thumb-icon">📷</span><span class="xpui-photo-thumb-text">${labelText}</span>`;
   return el;
 }
 
@@ -435,7 +427,11 @@ function initCameraPhotoField(
     if (isList && capturedFiles.length >= maxPhotos) {
       return;
     }
-    void openCaptureModal(host, fn, type, projectSlug, (data) => void handleCapture(data));
+    void openCaptureModal(
+      host, fn, type, projectSlug,
+      (data) => void handleCapture(data),
+      () => openNativeFilePicker(fieldWrap, fn),
+    );
   });
 }
 

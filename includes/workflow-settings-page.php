@@ -87,10 +87,6 @@ function xpressui_render_workflow_settings_page(): void {
 		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 			$section_label_visibility = 'auto';
 		}
-		$submission_action = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
-		if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
-			$submission_action = 'submit';
-		}
 
 		$notify_submitter_on_submit  = ! empty( $_POST['xpressui_notify_submitter_on_submit'] ) ? '1' : '0';
 		$submit_confirmation_message = isset( $_POST['xpressui_submit_confirmation_message'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_message'] ) ) : '';
@@ -110,7 +106,6 @@ function xpressui_render_workflow_settings_page(): void {
 			'showProjectTitle'        => $show_project_title,
 			'showRequiredFieldsNote'  => $show_required_note,
 			'sectionLabelVisibility'  => $section_label_visibility,
-			'submissionAction'        => $submission_action,
 			'notifySubmitterOnSubmit' => $notify_submitter_on_submit,
 			'submitConfirmationMessage' => $submit_confirmation_message,
 			'submitSuccessMessage'    => $submit_success_message,
@@ -244,14 +239,6 @@ function xpressui_render_workflow_settings_page(): void {
 	}
 	echo '</select>';
 	echo '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p></td></tr>';
-
-	echo '<tr><th><label for="xpressui_submission_action">' . esc_html__( 'Submission action', 'xpressui-bridge' ) . '</label></th>';
-	echo '<td><select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text">';
-	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'Print / download PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
-		echo '<option value="' . esc_attr( $val ) . '"' . selected( (string) ( $s['submissionAction'] ?? 'submit' ), $val, false ) . '>' . esc_html( $label ) . '</option>';
-	}
-	echo '</select>';
-	echo '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing the submission in WordPress.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '</tbody></table>';
 	echo '</details>';

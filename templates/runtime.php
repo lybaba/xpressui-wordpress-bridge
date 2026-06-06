@@ -134,7 +134,7 @@ function xpressui_bridge_template_stringify( mixed $value ): string {
 		return is_string( $encoded ) ? $encoded : (string) $value;
 	}
 	if ( is_array( $value ) ) {
-		$is_list = array_is_list( $value );
+		$is_list = array_values( $value ) === $value;
 		$parts   = [];
 		foreach ( $value as $key => $item ) {
 			if ( $is_list ) {

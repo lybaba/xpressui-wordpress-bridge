@@ -24,7 +24,6 @@ Use **XPressUI -> Workflows -> Project Settings** if you want to configure:
 ---
 
 ## 🛠 Included Files (For Developers)
-- `wordpress/shortcode-example.php`: PHP shortcode logic example
 - `manifest.json`, `form.config.json`, `template.context.json`: Workflow metadata and render payload consumed by the plugin runtime
 
 Workflow included:

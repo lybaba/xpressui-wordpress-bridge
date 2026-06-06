@@ -724,7 +724,7 @@ function xpressui_handle_zip_upload() {
 	if ( file_exists( $slug_dir ) ) {
 		$wp_filesystem->delete( $slug_dir, true );
 	}
-	$unzip_result = unzip_file( $tmp_zip, $target_dir );
+	$unzip_result = xpressui_unzip_safe( $tmp_zip, $target_dir );
 	wp_delete_file( $tmp_zip );
 
 	if ( is_wp_error( $unzip_result ) ) {
@@ -757,6 +757,85 @@ function xpressui_handle_zip_upload() {
 	return $slug;
 }
 
+function xpressui_unzip_safe( $zip_path, $target_dir ) {
+	if ( ! class_exists( 'ZipArchive' ) ) {
+		return new WP_Error( 'zip_extension_missing', __( 'The ZIP extension is required to extract workflow packages.', 'xpressui-bridge' ) );
+	}
+
+	$archive = new ZipArchive();
+	if ( true !== $archive->open( $zip_path ) ) {
+		return new WP_Error( 'zip_open_failed', __( 'The workflow package could not be opened.', 'xpressui-bridge' ) );
+	}
+
+	$allowed_extensions = [
+		'json',
+		'md',
+		'txt',
+		'png',
+		'jpg',
+		'jpeg',
+		'gif',
+		'webp',
+		'ico',
+		'woff',
+		'woff2',
+		'ttf',
+		'eot',
+	];
+
+	global $wp_filesystem;
+	if ( empty( $wp_filesystem ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		WP_Filesystem();
+	}
+
+	$target_dir = trailingslashit( $target_dir );
+
+	for ( $i = 0; $i < $archive->numFiles; $i++ ) {
+		$entry_name = (string) $archive->getNameIndex( $i );
+		if ( $entry_name === '' ) {
+			continue;
+		}
+
+		$normalized_entry = str_replace( '\\', '/', $entry_name );
+		$normalized_entry = ltrim( $normalized_entry, '/' );
+
+		if ( $normalized_entry === '' || strpos( $normalized_entry, '../' ) !== false ) {
+			continue;
+		}
+
+		$is_directory = substr( $normalized_entry, -1 ) === '/';
+		$dest_path    = $target_dir . $normalized_entry;
+
+		if ( $is_directory ) {
+			if ( ! file_exists( $dest_path ) ) {
+				wp_mkdir_p( $dest_path );
+			}
+			continue;
+		}
+
+		$basename = basename( $normalized_entry );
+		$ext      = strtolower( (string) pathinfo( $basename, PATHINFO_EXTENSION ) );
+
+		if ( ! in_array( $ext, $allowed_extensions, true ) ) {
+			continue;
+		}
+
+		$parent_dir = dirname( $dest_path );
+		if ( ! file_exists( $parent_dir ) ) {
+			wp_mkdir_p( $parent_dir );
+		}
+
+		$content = $archive->getFromIndex( $i );
+		if ( false !== $content ) {
+			$wp_filesystem->put_contents( $dest_path, $content, FS_CHMOD_FILE );
+		}
+	}
+
+	$archive->close();
+	return true;
+}
+
 function xpressui_sanitize_uploaded_zip_file( array $file ) {
 	return [
 		'name'     => isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '',
@@ -785,7 +864,6 @@ function xpressui_validate_workflow_zip( $zip_path, $original_name ) {
 		'jpg',
 		'jpeg',
 		'gif',
-		'svg',
 		'webp',
 		'ico',
 		'woff',
@@ -932,9 +1010,6 @@ function xpressui_validate_workflow_manifest( array $manifest, $root_slug ) {
 
 function xpressui_get_required_manifest_artifacts( array $manifest ) {
 	$artifacts         = is_array( $manifest['artifacts'] ?? null ) ? $manifest['artifacts'] : [];
-	$compatibility     = is_array( $manifest['wordpressCompatibility'] ?? null ) ? $manifest['wordpressCompatibility'] : [];
-	$wordpress_artifacts = is_array( $artifacts['wordpress'] ?? null ) ? $artifacts['wordpress'] : [];
-	$bridge_mode       = sanitize_key( (string) ( $compatibility['bridgeMode'] ?? 'plugin-shell' ) );
 	$required          = [ 'manifest.json' ];
 
 	$config_path = isset( $artifacts['config'] ) ? sanitize_text_field( (string) $artifacts['config'] ) : '';
@@ -949,21 +1024,6 @@ function xpressui_get_required_manifest_artifacts( array $manifest ) {
 		if ( '' !== $template_context_path ) {
 			$required[] = $template_context_path;
 		}
-	}
-
-	$html_path = isset( $artifacts['html'] ) ? sanitize_text_field( (string) $artifacts['html'] ) : '';
-	if ( 'legacy-shell' === $bridge_mode ) {
-		$required[] = $html_path !== '' ? $html_path : 'index.html';
-	}
-
-	$init_path = isset( $artifacts['initJs'] ) ? sanitize_text_field( (string) $artifacts['initJs'] ) : '';
-	if ( 'legacy-shell' === $bridge_mode ) {
-		$required[] = $init_path !== '' ? $init_path : 'init.js';
-	}
-
-	$runtime_path = isset( $wordpress_artifacts['runtime'] ) ? sanitize_text_field( (string) $wordpress_artifacts['runtime'] ) : '';
-	if ( 'legacy-shell' === $bridge_mode && $runtime_path !== '' ) {
-		$required[] = $runtime_path;
 	}
 
 	return array_values( array_unique( $required ) );

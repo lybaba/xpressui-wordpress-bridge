@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.84
+Stable tag: 1.0.83
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -164,15 +164,9 @@ To rebuild the runtime from those sources:
 
 == Changelog ==
 
-= 1.0.84 =
-* Add a print/download-only workflow mode that validates the form and opens the browser print dialog without storing a submission.
-* Update the bundled XPressUI light runtime to 1.0.16.
-
 = 1.0.83 =
-* Update the bundled XPressUI light runtime to 1.0.15.
-* Refresh the included runtime sources used to rebuild the WordPress.org package.
-
-= 1.0.82 =
+* Remove SVG from the workflow ZIP allowed-extensions list; SVG files can embed JavaScript and are therefore code-like assets not permitted in user-uploaded packages.
+* Remove bundled shortcode-example.php from the document-intake starter workflow to prevent executable code files from being written to the uploads directory on first install.
 * Rebuild the bundled light runtime from the included xpressui-src sources during packaging.
 * Include readable runtime sources in the WordPress.org package while excluding generated dist files and dependency folders.
 
