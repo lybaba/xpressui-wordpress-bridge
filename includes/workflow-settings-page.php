@@ -87,15 +87,15 @@ function xpressui_render_workflow_settings_page(): void {
 		if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 			$section_label_visibility = 'auto';
 		}
-		$submission_action = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
-		if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
-			$submission_action = 'submit';
-		}
 
 		$notify_submitter_on_submit  = ! empty( $_POST['xpressui_notify_submitter_on_submit'] ) ? '1' : '0';
 		$submit_confirmation_message = isset( $_POST['xpressui_submit_confirmation_message'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_message'] ) ) : '';
 		$submit_success_message      = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
 		$submit_error_message        = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
+		$submission_action = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
+		if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
+			$submission_action = 'submit';
+		}
 
 		$all_settings = get_option( 'xpressui_project_settings', [] );
 		if ( ! is_array( $all_settings ) ) {
@@ -110,11 +110,11 @@ function xpressui_render_workflow_settings_page(): void {
 			'showProjectTitle'        => $show_project_title,
 			'showRequiredFieldsNote'  => $show_required_note,
 			'sectionLabelVisibility'  => $section_label_visibility,
-			'submissionAction'        => $submission_action,
 			'notifySubmitterOnSubmit' => $notify_submitter_on_submit,
 			'submitConfirmationMessage' => $submit_confirmation_message,
 			'submitSuccessMessage'    => $submit_success_message,
 			'submitErrorMessage'      => $submit_error_message,
+			'submissionAction'        => $submission_action,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
 

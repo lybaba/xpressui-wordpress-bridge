@@ -62,11 +62,6 @@ function xpressui_workflow_directory_has_required_artifacts( $workflow_dir ) {
 		}
 	}
 
-	$runtime_path = isset( $manifest['artifacts']['wordpress']['runtime'] ) ? sanitize_text_field( (string) $manifest['artifacts']['wordpress']['runtime'] ) : '';
-	if ( '' !== $runtime_path ) {
-		$artifacts[] = $runtime_path;
-	}
-
 	foreach ( array_values( array_unique( $artifacts ) ) as $artifact ) {
 		if ( ! file_exists( $workflow_dir . ltrim( $artifact, '/' ) ) ) {
 			return false;
@@ -404,7 +399,7 @@ function xpressui_get_shell_allowed_html() {
 		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
 		'button'   => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'disabled' => true ] ),
 		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true ] ),
-		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true ] ),
+		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true, 'hidden' => true ] ),
 		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewBox' => true, 'fill' => true, 'stroke' => true ] ),
 		'path'     => [ 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
 		'ul'       => $global_attrs,
@@ -417,6 +412,7 @@ function xpressui_get_shell_allowed_html() {
 		'th'       => array_merge( $global_attrs, [ 'scope' => true, 'colspan' => true, 'rowspan' => true ] ),
 		'td'       => array_merge( $global_attrs, [ 'colspan' => true, 'rowspan' => true ] ),
 		'template' => array_merge( $global_attrs, [ 'type' => true ] ),
+		'dialog'   => array_merge( $global_attrs, [ 'open' => true ] ),
 	];
 }
 
@@ -584,8 +580,10 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	$wordpress_artifacts = is_array( $manifest['artifacts']['wordpress'] ?? null ) ? $manifest['artifacts']['wordpress'] : [];
 	$runtime_relative    = is_string( $wordpress_artifacts['runtime'] ?? null ) ? ltrim( (string) $wordpress_artifacts['runtime'], '/' ) : '';
 	$runtime_url         = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
-	if ( '' !== $runtime_relative ) {
+	if ( '' !== $runtime_relative && file_exists( xpressui_get_workflow_package_dir( $slug ) . $runtime_relative ) ) {
 		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
+	} else {
+		$runtime_relative = '';
 	}
 	$runtime_url = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );
 

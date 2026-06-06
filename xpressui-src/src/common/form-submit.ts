@@ -159,7 +159,7 @@ export async function submitFormValues(
   const mode = submitConfig.mode || "json";
   const formDataArrayMode = submitConfig.formDataArrayMode || "brackets";
   const headers = { ...(submitConfig.headers || {}) };
-  let url = resolveSubmitRequestUrl(submitConfig.endpoint || "", submitConfig.baseUrl);
+  let url = resolveSubmitRequestUrl(submitConfig.endpoint, submitConfig.baseUrl);
   const init: RequestInit = { method, headers };
   const payload = buildSubmitPayload(values, submitConfig, fieldMap);
 

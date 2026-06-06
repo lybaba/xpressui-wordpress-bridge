@@ -18,12 +18,12 @@ function xpressui_register_submission_post_type() {
 			'labels'   => [
 				'name'          => __( 'Submissions', 'xpressui-bridge' ),
 				'singular_name' => __( 'Submission', 'xpressui-bridge' ),
-				'menu_name'     => __( 'XPressUI', 'xpressui-bridge' ),
+				'menu_name'     => __( 'IntakeFlow', 'xpressui-bridge' ),
 				'all_items'     => __( 'All Submissions', 'xpressui-bridge' ),
 			],
 			'menu_icon'    => 'dashicons-layout',
 			'menu_position' => 80,
-			'label'        => __( 'XPressUI Submissions', 'xpressui-bridge' ),
+			'label'        => __( 'IntakeFlow Submissions', 'xpressui-bridge' ),
 			'supports'     => [ 'title' ],
 			'capabilities' => [
 				'create_posts' => 'do_not_allow',
