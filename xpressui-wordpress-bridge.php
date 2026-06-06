@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       XPressUI Bridge
- * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your site with a shortcode and review submissions in wp-admin.
+ * Plugin Name:       IntakeFlow Bridge
+ * Description:       Receives and manages submissions from exported IntakeFlow workflow packages. Embed any IntakeFlow form on your site with a shortcode and review submissions in wp-admin.
  * Version:           1.0.84
  * Requires at least: 6.0
  * Requires PHP:      8.0

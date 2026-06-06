@@ -260,7 +260,7 @@ function renderResumeAdditionalFileSelection(slotId, fileInput, form) {
     title.textContent = '';
     message.textContent = '';
     message.style.display = 'none';
-    body.replaceChildren();
+    body.innerHTML = '';
     return;
   }
 
@@ -270,7 +270,7 @@ function renderResumeAdditionalFileSelection(slotId, fileInput, form) {
   title.textContent = 'Selected file';
   message.textContent = '';
   message.style.display = 'none';
-  body.replaceChildren();
+  body.innerHTML = '';
 
   const row = document.createElement('div');
   row.className = 'flex items-start justify-between gap-3 rounded border border-base-300 px-3 py-2';
@@ -800,14 +800,6 @@ const ensureSubmitMetadata = (values, formConfig, form) => {
   const resumeEntryId = resolveResumeEntryIdValue(values, form);
   if (resumeEntryId > 0) {
     nextValues.xpressui_resume_entry_id = String(resumeEntryId);
-  }
-  const submitterVerificationToken = form?.querySelector('[data-submitter-verification-token]');
-  if (
-    submitterVerificationToken instanceof HTMLInputElement &&
-    submitterVerificationToken.name &&
-    submitterVerificationToken.value
-  ) {
-    nextValues[submitterVerificationToken.name] = submitterVerificationToken.value;
   }
   return nextValues;
 };
