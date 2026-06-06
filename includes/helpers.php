@@ -1609,6 +1609,10 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	$project_settings = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
 	$custom_success_message = sanitize_text_field( (string) ( $project_settings['submitSuccessMessage'] ?? '' ) );
 	$custom_error_message   = sanitize_text_field( (string) ( $project_settings['submitErrorMessage'] ?? '' ) );
+	$submission_action      = sanitize_key( (string) ( $project_settings['submissionAction'] ?? 'submit' ) );
+	if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
+		$submission_action = 'submit';
+	}
 
 	// mode
 	if ( empty( $form_config['mode'] ) ) {
@@ -1625,6 +1629,9 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	}
 	if ( empty( $wc['submissionMode'] ) ) {
 		$wc['submissionMode'] = $multi_step ? 'multi-step-submit' : 'single-step-submit';
+	}
+	if ( 'print' === $submission_action ) {
+		$wc['submissionMode'] = 'print-only';
 	}
 	if ( empty( $wc['submissionEndpoint'] ) ) {
 		$wc['submissionEndpoint'] = '/wp-json/xpressui/v1/submit';
@@ -1666,6 +1673,12 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	if ( ! isset( $form_config['submit']['includeDocumentData'] ) ) {
 		$form_config['submit']['includeDocumentData'] = true;
 	}
+	if ( 'print' === $submission_action ) {
+		$form_config['submit']['action']    = 'print';
+		$form_config['submit']['includeDocumentData'] = false;
+		$form_config['submit']['documentReadyMessage'] = __( 'Votre document est prêt.', 'xpressui-bridge' );
+		$form_config['submit']['documentDownloadLabel'] = __( 'Télécharger le document', 'xpressui-bridge' );
+	}
 	if ( ! is_array( $form_config['submit']['metadata'] ?? null ) ) {
 		$form_config['submit']['metadata'] = [];
 	}
@@ -1691,14 +1704,23 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 		$sf['title'] = __( 'Submission status', 'xpressui-bridge' );
 	}
 	if ( empty( $sf['loading_message'] ) ) {
-		$sf['loading_message'] = __( 'Submitting…', 'xpressui-bridge' );
+		$sf['loading_message'] = 'print' === $submission_action
+			? __( 'Préparation du document…', 'xpressui-bridge' )
+			: __( 'Submitting…', 'xpressui-bridge' );
 	}
 	if ( empty( $sf['success_title'] ) ) {
-		$sf['success_title'] = __( 'Submission received', 'xpressui-bridge' );
+		$sf['success_title'] = 'print' === $submission_action
+			? __( 'Document prêt', 'xpressui-bridge' )
+			: __( 'Submission received', 'xpressui-bridge' );
 	}
 	if ( empty( $sf['success_message'] ) ) {
-		$sf['success_message'] = $form_config['workflowConfig']['successMessage']
-			?? __( 'Your submission was received successfully.', 'xpressui-bridge' );
+		$sf['success_message'] = 'print' === $submission_action
+			? __( 'Votre document est prêt.', 'xpressui-bridge' )
+			: ( $form_config['workflowConfig']['successMessage']
+				?? __( 'Your submission was received successfully.', 'xpressui-bridge' ) );
+	}
+	if ( empty( $sf['document_download_label'] ) ) {
+		$sf['document_download_label'] = __( 'Télécharger le document', 'xpressui-bridge' );
 	}
 	if ( empty( $sf['error_title'] ) ) {
 		$sf['error_title'] = __( 'Submission failed', 'xpressui-bridge' );
