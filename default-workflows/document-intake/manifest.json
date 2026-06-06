@@ -21,7 +21,7 @@
     "algorithm": "fnv1a-64",
     "files": {
       "wordpress/README.md": "b4835645b8b5e18a",
-      "wordpress/shortcode-example.php": "6761578c8e762bc4",
+      "wordpress/shortcode-example.php": "15c032e0da51a792",
       "form.config.json": "196cce3b5419fe54"
     }
   },
