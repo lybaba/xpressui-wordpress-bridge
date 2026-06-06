@@ -56,9 +56,6 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
       <div class="template-step-status-message" data-form-step-summary><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'idle_message'))); ?></div>
     </section>
 <?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
-<?php xpressui_bridge_template_include_template('product-catalog/checkout-summary.php', $xpressui_ctx); ?>
-<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'has_sections'))): ?>
 <?php
 $xpressui_loop_parent_ctx_2 = $xpressui_ctx;
@@ -85,9 +82,6 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
       </header>
 <?php endif; ?>
     </section>
-<?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_and_value(xpressui_bridge_template_contains("checkout_summary", xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form')), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'checkout_summary'), 'enabled')), (!xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items'))))))): ?>
-<?php xpressui_bridge_template_include_template('product-checkout-summary.php', $xpressui_ctx); ?>
 <?php endif; ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
 </form>
