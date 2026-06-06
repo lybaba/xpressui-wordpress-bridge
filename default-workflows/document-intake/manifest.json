@@ -13,15 +13,13 @@
     "config": "form.config.json",
     "templateContext": "template.context.json",
     "wordpress": {
-      "readme": "wordpress/README.md",
-      "shortcode": "wordpress/shortcode-example.php"
+      "readme": "wordpress/README.md"
     }
   },
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
       "wordpress/README.md": "b4835645b8b5e18a",
-      "wordpress/shortcode-example.php": "15c032e0da51a792",
       "form.config.json": "196cce3b5419fe54"
     }
   },

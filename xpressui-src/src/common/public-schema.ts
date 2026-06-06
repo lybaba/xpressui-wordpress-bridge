@@ -31,9 +31,6 @@ const PUBLIC_FORM_SCHEMA = {
         method: { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
         mode: { type: "string", enum: ["json", "form-data"] },
         action: { type: "string", minLength: 1 },
-        documentEndpoint: { type: "string", minLength: 1 },
-        documentReadyMessage: { type: "string" },
-        documentDownloadLabel: { type: "string" },
         presignEndpoint: { type: "string", minLength: 1 },
         presignMethod: { type: "string", enum: ["POST", "PUT", "PATCH"] },
         presignUploadUrlKey: { type: "string", minLength: 1 },
@@ -234,10 +231,7 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
   const config = cloneObject(input) as Record<string, any>;
 
   const normalizeFieldType = (fieldType: unknown) => {
-    if (fieldType === "image-gallery" || fieldType === "imagegallery") {
-      return "image-gallery";
-    }
-    if (fieldType === "selectimage") {
+    if (fieldType === "image-gallery" || fieldType === "imagegallery" || fieldType === "selectimage") {
       return "select-image";
     }
     if (fieldType === "selectproduct") {

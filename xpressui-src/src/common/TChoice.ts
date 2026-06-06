@@ -23,12 +23,6 @@ type TChoice = {
     photosFull?: string[];
     photos_full?: string[];
     disabled?: boolean;
-    enabled?: boolean;
-    amount?: number | string;
-    amountDisplay?: string;
-    amount_display?: string;
-    currency?: string;
-    month?: string;
 }
 
 export default TChoice;

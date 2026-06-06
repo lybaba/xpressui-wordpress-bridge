@@ -32,22 +32,27 @@ function xpressui_render_shortcode( $atts ) {
 	$slug = sanitize_title( (string) $atts['id'] );
 
 	if ( $slug === '' ) {
-		return '<p class="xpressui-embed-error">'
+		return wp_kses_post(
+			'<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: the "id" attribute is required.', 'xpressui-bridge' )
-			. '</p>';
+			. '</p>'
+		);
 	}
 
 	$base_dir = xpressui_get_workflows_base_dir();
 	if ( $base_dir === '' ) {
-		return '<p class="xpressui-embed-error">'
+		return wp_kses_post(
+			'<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: could not resolve the uploads directory.', 'xpressui-bridge' )
-			. '</p>';
+			. '</p>'
+		);
 	}
 
 	$package_dir = xpressui_get_workflow_package_dir( $slug );
 
 	if ( ! is_dir( $package_dir ) || ! xpressui_workflow_directory_has_required_artifacts( $package_dir ) ) {
-		return '<p class="xpressui-embed-error">'
+		return wp_kses_post(
+			'<p class="xpressui-embed-error">'
 			. esc_html(
 				sprintf(
 					/* translators: %s: project slug */
@@ -55,7 +60,8 @@ function xpressui_render_shortcode( $atts ) {
 					$slug
 				)
 			)
-			. '</p>';
+			. '</p>'
+		);
 	}
 
 	// Load template context from uploads — JSON data only, no executable code.
@@ -173,18 +179,22 @@ function xpressui_render_shortcode( $atts ) {
 	// Ensure the PHP template runtime helpers are available.
 	$runtime_file = XPRESSUI_BRIDGE_DIR . 'templates/runtime.php';
 	if ( ! file_exists( $runtime_file ) ) {
-		return '<p class="xpressui-embed-error">'
+		return wp_kses_post(
+			'<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: template runtime not found.', 'xpressui-bridge' )
-			. '</p>';
+			. '</p>'
+		);
 	}
 	require_once $runtime_file;
 
 	// Ensure the fragment template exists.
 	$fragment_path = XPRESSUI_BRIDGE_DIR . 'templates/form-fragment.php';
 	if ( ! file_exists( $fragment_path ) ) {
-		return '<p class="xpressui-embed-error">'
+		return wp_kses_post(
+			'<p class="xpressui-embed-error">'
 			. esc_html__( '[xpressui] error: form fragment template not found.', 'xpressui-bridge' )
-			. '</p>';
+			. '</p>'
+		);
 	}
 
 	// Inject unique IDs so multiple forms on the same page don't collide.
@@ -288,8 +298,10 @@ function xpressui_render_shortcode( $atts ) {
 		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
 		. '</template>';
 
-	return '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
+	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $fragment_html
 		. $config_tag
 		. '</div>';
+
+	return wp_kses( $html_out, xpressui_get_shell_allowed_html() );
 }
