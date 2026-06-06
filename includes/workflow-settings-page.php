@@ -92,6 +92,10 @@ function xpressui_render_workflow_settings_page(): void {
 		$submit_confirmation_message = isset( $_POST['xpressui_submit_confirmation_message'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_message'] ) ) : '';
 		$submit_success_message      = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
 		$submit_error_message        = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
+		$submission_action = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
+		if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
+			$submission_action = 'submit';
+		}
 
 		$all_settings = get_option( 'xpressui_project_settings', [] );
 		if ( ! is_array( $all_settings ) ) {
@@ -110,6 +114,7 @@ function xpressui_render_workflow_settings_page(): void {
 			'submitConfirmationMessage' => $submit_confirmation_message,
 			'submitSuccessMessage'    => $submit_success_message,
 			'submitErrorMessage'      => $submit_error_message,
+			'submissionAction'        => $submission_action,
 		];
 		update_option( 'xpressui_project_settings', $all_settings );
 
@@ -239,6 +244,14 @@ function xpressui_render_workflow_settings_page(): void {
 	}
 	echo '</select>';
 	echo '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p></td></tr>';
+
+	echo '<tr><th><label for="xpressui_submission_action">' . esc_html__( 'Submission action', 'xpressui-bridge' ) . '</label></th>';
+	echo '<td><select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text">';
+	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'Print / download PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
+		echo '<option value="' . esc_attr( $val ) . '"' . selected( (string) ( $s['submissionAction'] ?? 'submit' ), $val, false ) . '>' . esc_html( $label ) . '</option>';
+	}
+	echo '</select>';
+	echo '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing the submission in WordPress.', 'xpressui-bridge' ) . '</p></td></tr>';
 
 	echo '</tbody></table>';
 	echo '</details>';
