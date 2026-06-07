@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version to build & deploy (e.g. 1.0.85)"
+        required: true
 
 permissions:
   contents: write
@@ -13,13 +18,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Exposed to step-level `if:` so the wp.org deploy is skipped (instead of
+    # failing the whole build) until the SVN credentials are configured as secrets.
+    env:
+      HAS_SVN: ${{ secrets.SVN_PASSWORD != '' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract plugin version from tag
+      - name: Resolve plugin version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Read xpressui version
         id: xpressui
@@ -71,7 +87,31 @@ jobs:
           cp "$OUTPUT_PATH" "$ZIP_NAME"
           echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_ENV"
 
+      # --- WordPress.org SVN deploy -------------------------------------------
+      # Deploys the *built* plugin (runtime + WP.org patches already applied) — the
+      # repo checkout alone would be missing the bundled runtime. Skipped until the
+      # SVN_USERNAME / SVN_PASSWORD secrets are set, so it never breaks the build.
+      - name: Stage built plugin for SVN
+        if: ${{ env.HAS_SVN == 'true' }}
+        run: |
+          rm -rf svn-build
+          mkdir -p svn-build
+          unzip -q "$ZIP_NAME" -d svn-build
+          test -d svn-build/xpressui-bridge
+
+      - name: Deploy to WordPress.org
+        if: ${{ env.HAS_SVN == 'true' }}
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: xpressui-bridge
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_DIR: ./svn-build/xpressui-bridge
+          ASSETS_DIR: .wordpress-org
+
       - name: Create GitHub Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: softprops/action-gh-release@v2
         with:
           name: "v${{ steps.version.outputs.version }}"
