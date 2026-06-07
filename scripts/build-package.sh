@@ -22,7 +22,11 @@ trap cleanup EXIT
 
 rm -f "${OUTPUT_PATH}"
 
-if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]]; then
+# Build the runtime from xpressui-src only when it has not already been provided
+# in runtime/ (CI installs it from the published npm package via
+# ci-install-runtime.py, so the local vite build is both redundant and
+# unavailable there — xpressui-src deps are not installed in CI).
+if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && ! ls "${PLUGIN_DIR}"/runtime/xpressui-light-*.umd.js >/dev/null 2>&1; then
   npm --prefix "${RUNTIME_SRC_DIR}" run build
   mkdir -p "${PLUGIN_DIR}/runtime"
   rm -f "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js \
