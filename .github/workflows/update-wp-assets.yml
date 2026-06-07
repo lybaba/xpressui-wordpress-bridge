@@ -1,8 +1,12 @@
 name: Update WordPress.org Assets
 
-# Pushes only the directory assets (banner, icon, screenshots) from
-# .wordpress-org/ to the plugin's SVN /assets/ folder. Assets are versionless on
-# wordpress.org, so this never touches trunk/ or tags/ and needs no version bump.
+# Pushes the directory assets (banner, icon, screenshots) from .wordpress-org/ to
+# the plugin's SVN /assets/ folder. Assets are versionless on wordpress.org, so
+# this never touches trunk/ or tags/ and needs no version bump.
+#
+# Done with a targeted manual SVN commit rather than 10up's asset-update action:
+# that action also inspects trunk (which holds the *built* plugin, not the repo
+# source) and aborts with "Other files have been modified".
 on:
   workflow_dispatch:
 
@@ -16,10 +20,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update wordpress.org plugin assets
-        uses: 10up/action-wordpress-plugin-asset-update@stable
+      - name: Install subversion
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq subversion
+
+      - name: Sync .wordpress-org -> SVN /assets/
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          SLUG: xpressui-bridge
-          ASSETS_DIR: .wordpress-org
+        run: |
+          set -euo pipefail
+          SVN_URL="https://plugins.svn.wordpress.org/xpressui-bridge"
+          # Check out only the /assets/ tree (trunk/tags stay untouched).
+          svn checkout --depth immediates "$SVN_URL" svn
+          svn update --set-depth infinity svn/assets
+
+          # Copy every asset from the repo into the working copy.
+          cp .wordpress-org/* svn/assets/ 2>/dev/null || true
+
+          cd svn/assets
+          # Stage new files and removals, set png mime-type.
+          svn add --force . >/dev/null 2>&1 || true
+          svn status | awk '/^!/{print $2}' | xargs -r svn delete --force
+          for f in *.png; do [ -e "$f" ] && svn propset svn:mime-type image/png "$f" >/dev/null 2>&1 || true; done
+
+          echo "=== svn status ==="
+          svn status
+          if [ -z "$(svn status)" ]; then
+            echo "No asset changes to commit."; exit 0
+          fi
+          svn commit -m "Update plugin directory assets (hero banner)" \
+            --username "$SVN_USERNAME" --password "$SVN_PASSWORD" \
+            --non-interactive --no-auth-cache --trust-server-cert
+          echo "Assets committed to wordpress.org SVN."
