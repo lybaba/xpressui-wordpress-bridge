@@ -4,7 +4,7 @@ Tags: form, submission, workflow, document intake, multi-step
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.85
+Stable tag: 1.0.86
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -163,6 +163,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.86 =
+* Keep the plugin name "XPressUI Bridge" consistent across the plugin header, description and admin UI (menu, labels) to match the wordpress.org listing and slug.
 
 = 1.0.85 =
 * Rename the product from XPressUI to IntakeFlow in metadata and the admin UI; regenerate the translation template (POT).
