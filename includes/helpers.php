@@ -396,7 +396,7 @@ function xpressui_get_shell_allowed_html() {
 		'fieldset' => $global_attrs,
 		'legend'   => $global_attrs,
 		'label'    => array_merge( $global_attrs, [ 'for' => true ] ),
-		'input'    => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'placeholder' => true, 'required' => true, 'checked' => true, 'disabled' => true, 'readonly' => true, 'min' => true, 'max' => true, 'step' => true, 'accept' => true, 'autocomplete' => true ] ),
+		'input'    => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'placeholder' => true, 'required' => true, 'checked' => true, 'disabled' => true, 'readonly' => true, 'min' => true, 'max' => true, 'step' => true, 'accept' => true, 'autocomplete' => true, 'multiple' => true, 'capture' => true ] ),
 		'textarea' => array_merge( $global_attrs, [ 'name' => true, 'placeholder' => true, 'required' => true, 'disabled' => true, 'readonly' => true, 'rows' => true, 'cols' => true ] ),
 		'select'   => array_merge( $global_attrs, [ 'name' => true, 'required' => true, 'disabled' => true, 'multiple' => true ] ),
 		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
