@@ -469,20 +469,18 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     }
   };
 
-  // SaaS-style correction: keep the full multi-step form visible and prefilled,
-  // and enable + highlight only the fields the operator flagged; everything else
-  // stays visible but read-only. (Prefill + per-input interactivity below.)
+  // SaaS-style correction: keep the full multi-step form (let the runtime manage
+  // which step/section is visible — do NOT force section visibility, or the
+  // multi-step navigation breaks and every step shows at once). Here we only
+  // mark each field: flagged fields are highlighted + editable, the rest stay
+  // read-only. (Prefill + per-input interactivity happen below.)
   if (!showAllFields) {
     form.querySelectorAll('[data-field-name]').forEach((fieldNode) => {
       if (!(fieldNode instanceof HTMLElement)) return;
       const fieldName = fieldNode.getAttribute('data-field-name') || '';
       const flagged = allowedFieldNames.has(fieldName);
-      setResumeNodeVisibility(fieldNode, true);
       fieldNode.classList.toggle('xpressui-resume-flagged', flagged);
       fieldNode.classList.toggle('xpressui-resume-locked', !flagged);
-    });
-    form.querySelectorAll('[data-template-zone="section"]').forEach((section) => {
-      setResumeNodeVisibility(section, true);
     });
   }
 

@@ -493,16 +493,25 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	}
 	$box_shadow = $has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)';
 	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : '';
-	$inline_css .= "{$scope} .form-frame { padding: 20px; box-shadow: {$box_shadow};{$extra_fw} }\n";
+	// Single framed card (like the hosted link). Forced with !important so the
+	// surrounding WordPress theme can't strip the border/background/radius — the
+	// unscoped shell rule loses specificity to most themes.
+	$inline_css .= "{$scope} .form-frame { background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; padding: 24px !important; box-shadow: {$box_shadow} !important;{$extra_fw} }\n";
 	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
 	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
 	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";
-	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 20px 18px; }\n";
+	// Sections are flat content inside the single .form-frame card — no inner card
+	// chrome, no extra padding (the frame already pads), so nav/submit sit inside.
+	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 0; border: 0; background: none; }\n";
 	$inline_css .= "{$scope} .template-fields { gap: 12px; }\n";
 	$inline_css .= "{$scope} .template-field { gap: 6px; }\n";
 	$inline_css .= "{$scope} .template-field-label { font-size: 13px; }\n";
 	$inline_css .= "{$scope} .template-field-help { font-size: 12px; line-height: 1.4; }\n";
-	$inline_css .= "{$scope} .template-input,\n{$scope} .template-textarea { font-size: 14px; line-height: 1.4; padding: 11px 13px; }\n";
+	// Force input/textarea theming with !important too — same reason as the card:
+	// some WordPress themes style bare inputs dark and beat the unscoped shell rule.
+	$inline_css .= "{$scope} .template-input,\n{$scope} .template-textarea { background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; color: var(--template-text) !important; border-color: var(--template-border) !important; font-size: 14px; line-height: 1.4; padding: 11px 13px; }\n";
+	$inline_css .= "{$scope} .template-input:focus,\n{$scope} .template-textarea:focus { border-color: var(--template-primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent) !important; outline: none !important; }\n";
+	$inline_css .= "{$scope} .template-input::placeholder,\n{$scope} .template-textarea::placeholder { color: var(--template-muted-text) !important; }\n";
 	$inline_css .= "{$scope} .template-textarea { min-height: 124px; }\n";
 	$inline_css .= "{$scope} .template-choice-card { padding: 9px 12px; gap: 3px; }\n";
 	$inline_css .= "{$scope} .template-choice-title { font-size: 12px; line-height: 1.2; font-weight: 600; }\n";
@@ -521,9 +530,9 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "@keyframes xpressui-step-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n";
 	$inline_css .= "{$scope} .template-section[data-template-zone=\"section\"] { animation: xpressui-step-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }\n";
 	$inline_css .= "@media (max-width: 720px) {\n";
-	$inline_css .= "  {$scope} .form-frame { padding: 16px; }\n";
+	$inline_css .= "  {$scope} .form-frame { padding: 16px !important; }\n";
 	$inline_css .= "  {$scope} .template-form-title { font-size: clamp(20px, 7vw, 26px); }\n";
-	$inline_css .= "  {$scope} .template-section { padding: 16px 14px; }\n";
+	$inline_css .= "  {$scope} .template-section { padding: 0; }\n";
 	$inline_css .= "  {$scope} .template-input,\n  {$scope} .template-textarea { font-size: 13px; }\n";
 	$inline_css .= "}\n";
 
