@@ -43,7 +43,7 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
 
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'is_step_timeline'))): ?>
   <div class="template-step-layout" data-step-layout-grid>
-    <nav class="template-step-timeline" data-step-timeline aria-label="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Steps", 'xpressui-bridge'))); ?>">
+    <div class="template-step-timeline" data-step-timeline role="navigation" aria-label="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Steps", 'xpressui-bridge'))); ?>">
 <?php
 $xpressui_loop_parent_ctx_2 = $xpressui_ctx;
 $xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_descriptors'));
@@ -69,7 +69,7 @@ disabled<?php endif; ?>
         <span class="template-step-timeline-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'step'), 'label'))); ?></span>
       </button>
 <?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
-    </nav>
+    </div>
     <div class="template-step-layout-main">
 <?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
