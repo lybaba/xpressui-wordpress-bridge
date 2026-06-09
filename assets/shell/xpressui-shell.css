@@ -1603,6 +1603,7 @@
   padding: 0 !important;
 }
 .template-step-timeline-item {
+  position: relative !important;
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
@@ -1619,6 +1620,20 @@
   cursor: default !important;
   transition: background 120ms ease, color 120ms ease !important;
 }
+.template-step-timeline-item:not(:last-child)::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 28px !important; /* 14px left padding + 14px (half of 28px circle) */
+  top: 39px !important; /* 11px top padding + 28px circle height */
+  height: 26px !important; /* Spans to the next circle */
+  width: 2px !important;
+  background: color-mix(in srgb, var(--template-border) 45%, transparent) !important;
+  z-index: 1 !important;
+  transition: background 150ms ease !important;
+}
+.template-step-timeline-item.is-complete:not(:last-child)::after {
+  background: var(--template-primary) !important;
+}
 .template-step-timeline-index {
   display: inline-flex !important;
   align-items: center !important;
@@ -1631,12 +1646,19 @@
   color: var(--template-text) !important;
   font-size: 13px !important;
   font-weight: 800 !important;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease !important;
 }
 .template-step-timeline-label { line-height: 1.25 !important; }
 .template-step-timeline-item.is-complete { color: var(--template-text) !important; }
 .template-step-timeline-item.is-complete .template-step-timeline-index {
-  background: color-mix(in srgb, var(--template-primary) 20%, transparent) !important;
+  font-size: 0 !important;
+  background: color-mix(in srgb, var(--template-primary) 15%, transparent) !important;
   color: var(--template-primary) !important;
+}
+.template-step-timeline-item.is-complete .template-step-timeline-index::before {
+  content: "✓" !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
 }
 .template-step-timeline-item.is-active {
   color: var(--template-text) !important;
@@ -1649,6 +1671,12 @@
 .template-step-timeline-item.is-clickable { cursor: pointer !important; }
 .template-step-timeline-item.is-clickable:hover {
   background: color-mix(in srgb, var(--template-primary) 7%, transparent) !important;
+  color: var(--template-primary) !important;
+}
+.template-step-timeline-item.is-clickable:hover .template-step-timeline-index {
+  transform: scale(1.05) !important;
+  background: color-mix(in srgb, var(--template-primary) 22%, transparent) !important;
+  color: var(--template-primary) !important;
 }
 .template-step-timeline-item[disabled] { cursor: default !important; }
 
@@ -1668,5 +1696,6 @@
     border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important;
   }
   .template-step-timeline-item { width: auto !important; flex: 0 0 auto !important; padding: 8px 10px !important; }
+  .template-step-timeline-item::after { display: none !important; }
   .template-step-timeline-label { display: none !important; }
 }
