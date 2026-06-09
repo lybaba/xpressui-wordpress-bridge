@@ -26,11 +26,14 @@ import {
   QUIZ_TYPE,
   RADIO_BUTTONS_TYPE,
   QR_SCAN_TYPE,
+  SELECT_ONE_TYPE,
+  SELECT_MULTIPLE_TYPE,
   SELECT_PRODUCT_TYPE,
   SETTING_TYPE,
   SIGNATURE_TYPE,
   PAYMENT_PROOF_TYPE,
   PAYMENT_STRIPE_TYPE,
+  SMART_CATALOG_TYPE,
   UPLOAD_FILE_TYPE,
   UNKNOWN_TYPE,
 } from "./common/field";
@@ -101,6 +104,7 @@ import {
 } from "./ui/form-ui.commerce";
 import { createCommerceRuntime } from "./ui/form-ui.commerce-runtime";
 import { createOverlayRuntime } from "./ui/form-ui.overlay-runtime";
+import { createRepeaterRuntime } from "./ui/form-ui.repeater-runtime";
 import { isOpenQuizField as isConfiguredOpenQuizField } from "./ui/form-ui.quiz";
 import { createQuizRuntime } from "./ui/form-ui.quiz-runtime";
 import {
@@ -119,6 +123,7 @@ import {
   getStepElements as getConfiguredStepElements,
   syncStepControls as syncConfiguredStepControls,
   syncStepVisibility as syncConfiguredStepVisibility,
+  syncStepTimeline as syncConfiguredStepTimeline,
 } from "./ui/form-ui.workflow";
 import {
   applyFieldValuePresentation as applyConfiguredFieldValuePresentation,
@@ -151,6 +156,7 @@ import { createDocumentQrRuntime } from "./ui/form-ui.document-qr-runtime";
 import { createSignatureRuntime } from "./ui/form-ui.signature-runtime";
 import { createPaymentRuntime } from "./ui/form-ui.payment-runtime";
 import { createMobileCaptureRuntime } from "./ui/form-ui.mobile-capture-runtime";
+import { createChoiceCatalogRuntime } from "./ui/form-ui.choice-catalog-runtime";
 export type {
   TFormApprovalState,
   THydratedFormSubmitDetail,
@@ -340,6 +346,8 @@ export class HydratedFormHost extends HTMLElement {
   workflowState: TFormWorkflowState;
   stepNames: string[];
   currentStepIndex: number;
+  /** Furthest step the user has reached — used to gate clickable timeline jumps. */
+  maxReachedStepIndex: number;
   stepProgressContainer: HTMLElement | null;
   stepActionsContainer: HTMLElement | null;
   stepProgressElement: HTMLElement | null;
@@ -371,6 +379,8 @@ export class HydratedFormHost extends HTMLElement {
   signatureRuntime: ReturnType<typeof createSignatureRuntime>;
   paymentRuntime: ReturnType<typeof createPaymentRuntime>;
   mobileCaptureRuntime: ReturnType<typeof createMobileCaptureRuntime>;
+  repeaterRuntime: ReturnType<typeof createRepeaterRuntime>;
+  choiceCatalogRuntime: ReturnType<typeof createChoiceCatalogRuntime>;
 
   constructor() {
     super();
@@ -396,6 +406,7 @@ export class HydratedFormHost extends HTMLElement {
     this.workflowState = "draft";
     this.stepNames = [];
     this.currentStepIndex = 0;
+    this.maxReachedStepIndex = 0;
     this.stepProgressContainer = null;
     this.stepActionsContainer = null;
     this.stepProgressElement = null;
@@ -427,6 +438,8 @@ export class HydratedFormHost extends HTMLElement {
     this.signatureRuntime = createSignatureRuntime(this);
     this.paymentRuntime = createPaymentRuntime(this);
     this.mobileCaptureRuntime = createMobileCaptureRuntime(this);
+    this.repeaterRuntime = createRepeaterRuntime(this);
+    this.choiceCatalogRuntime = createChoiceCatalogRuntime(this);
     this.dynamic = new FormDynamicRuntime({
       getFieldConfigs: () => Object.values(this.engine.getFields()),
       getRules: () => this.formConfig?.rules || [],
@@ -1251,20 +1264,81 @@ export class HydratedFormHost extends HTMLElement {
     return accept.includes("image/*") || accept.includes("image/");
   }
 
+  getEffectiveFieldType = (fieldConfig: TFieldConfig) => {
+    if (fieldConfig.type !== SMART_CATALOG_TYPE) {
+      const fieldType = String(fieldConfig.type || "").trim().toLowerCase();
+      if (fieldType === "imagegallery" || fieldType === "image-gallery") {
+        return "image-gallery";
+      }
+      if (fieldType === "selectimage") {
+        return IMAGE_GALLERY_TYPE;
+      }
+      if (fieldType === "productlist" || fieldType === "product-list") {
+        return PRODUCT_LIST_TYPE;
+      }
+      if (fieldType === "selectproduct" || fieldType === "select-product") {
+        return SELECT_PRODUCT_TYPE;
+      }
+      if (fieldType === "radiobuttons" || fieldType === "radio_buttons" || fieldType === "radio-buttons") {
+        return RADIO_BUTTONS_TYPE;
+      }
+      if (fieldType === "checkboxgroup" || fieldType === "checkboxes") {
+        return CHECKBOXES_TYPE;
+      }
+      return fieldConfig.type;
+    }
+
+    const renderAs = String(fieldConfig.renderAs || "checkboxes").trim().toLowerCase();
+    if (renderAs === "radio_buttons" || renderAs === "radio-buttons" || renderAs === "radiobuttons") {
+      return RADIO_BUTTONS_TYPE;
+    }
+    if (renderAs === "select_product" || renderAs === "select-product" || renderAs === "selectproduct") {
+      return SELECT_PRODUCT_TYPE;
+    }
+    if (
+      renderAs === "select_product_list"
+      || renderAs === "select-product-list"
+      || renderAs === "product_list"
+      || renderAs === "product-list"
+      || renderAs === "productlist"
+    ) {
+      return PRODUCT_LIST_TYPE;
+    }
+    if (renderAs === "select_image" || renderAs === "select-image" || renderAs === "selectimage") {
+      return IMAGE_GALLERY_TYPE;
+    }
+    return CHECKBOXES_TYPE;
+  }
+
   isProductListField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === PRODUCT_LIST_TYPE;
+    return this.getEffectiveFieldType(fieldConfig) === PRODUCT_LIST_TYPE;
   }
 
   isImageGalleryField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === IMAGE_GALLERY_TYPE || fieldConfig.type === SELECT_PRODUCT_TYPE;
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return effectiveType === IMAGE_GALLERY_TYPE || effectiveType === SELECT_PRODUCT_TYPE || effectiveType === "image-gallery";
   }
 
   isQuizField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === QUIZ_TYPE;
+    return this.getEffectiveFieldType(fieldConfig) === QUIZ_TYPE;
   }
 
   isChoiceListField = (fieldConfig: TFieldConfig) => {
-    return fieldConfig.type === RADIO_BUTTONS_TYPE || fieldConfig.type === CHECKBOXES_TYPE;
+    const renderAs = String(fieldConfig.renderAs || (fieldConfig as any).render_as || "").trim().toLowerCase();
+    if (renderAs === "pricing-plans" || renderAs === "pricing_plans") {
+      return false;
+    }
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return effectiveType === RADIO_BUTTONS_TYPE || effectiveType === CHECKBOXES_TYPE;
+  }
+
+  isAutoAdvanceSingleChoiceField = (fieldConfig: TFieldConfig) => {
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    return (
+      effectiveType === SELECT_PRODUCT_TYPE
+      || effectiveType === IMAGE_GALLERY_TYPE
+      || effectiveType === RADIO_BUTTONS_TYPE
+    );
   }
 
   isOpenQuizField = (fieldConfig: TFieldConfig) => {
@@ -1301,7 +1375,7 @@ export class HydratedFormHost extends HTMLElement {
   }
 
   getImageGallerySelectionLimit = (fieldConfig: TFieldConfig) => {
-    if (fieldConfig.type === SELECT_PRODUCT_TYPE) {
+    if (fieldConfig.type === SELECT_PRODUCT_TYPE || fieldConfig.type === IMAGE_GALLERY_TYPE) {
       return 1;
     }
 
@@ -1339,7 +1413,7 @@ export class HydratedFormHost extends HTMLElement {
   }
 
   getChoiceSelectionItems = (fieldConfig: TFieldConfig, value: any): string[] => {
-    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+    if (this.getEffectiveFieldType(fieldConfig) === RADIO_BUTTONS_TYPE) {
       return typeof value === "string" && value ? [value] : [];
     }
     return Array.isArray(value) ? value.map((entry) => String(entry)) : [];
@@ -1362,7 +1436,8 @@ export class HydratedFormHost extends HTMLElement {
     currentValue: any,
     choiceValue: string,
   ) => {
-    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    if (effectiveType === RADIO_BUTTONS_TYPE) {
       return currentValue === choiceValue ? "" : choiceValue;
     }
 
@@ -1375,12 +1450,24 @@ export class HydratedFormHost extends HTMLElement {
     const maxChoices =
       typeof fieldConfig.maxNumOfChoices === "number"
         ? fieldConfig.maxNumOfChoices
-        : fieldConfig.type === CHECKBOXES_TYPE ? 1 : null;
+        : null;
     if (maxChoices !== null && maxChoices > 0 && currentValues.length >= maxChoices) {
       return maxChoices === 1 ? [choiceValue] : currentValues;
     }
     return [...currentValues, choiceValue];
   }
+
+  getNextChoiceMonthSelectionValue = (
+    fieldConfig: TFieldConfig,
+    currentValue: any,
+    monthKey: string,
+  ) => this.choiceCatalogRuntime.getNextChoiceMonthSelectionValue(fieldConfig, currentValue, monthKey)
+
+  getNextChoiceYearSelectionValue = (
+    fieldConfig: TFieldConfig,
+    currentValue: any,
+    year: string,
+  ) => this.choiceCatalogRuntime.getNextChoiceYearSelectionValue(fieldConfig, currentValue, year)
 
   getProductCartTotal = (cartItems: TProductCartItem[]): number => {
     return getNormalizedProductCartTotal(cartItems);
@@ -1392,6 +1479,10 @@ export class HydratedFormHost extends HTMLElement {
 
   getProductCartEntries = (): Array<{ fieldName: string; item: TProductCartItem }> => {
     return this.commerceRuntime.getProductCartEntries();
+  }
+
+  renderProductCheckoutSummary = () => {
+    return this.commerceRuntime.renderProductCheckoutSummary();
   }
 
   ensureProductCartTrigger = (): HTMLElement | null => {
@@ -1456,12 +1547,12 @@ export class HydratedFormHost extends HTMLElement {
     return this.commerceRuntime.bindProductListGlobalCartEvents();
   }
 
-  openMediaGallery = (name: string, photos: string[]) => {
-    return this.commerceRuntime.openMediaGallery(name, photos);
+  openMediaGallery = (name: string, photos: string[], options?: { product?: any; fieldConfig?: TFieldConfig }) => {
+    return this.commerceRuntime.openMediaGallery(name, photos, options);
   }
 
-  openProductListGallery = (product: TProductListItem) => {
-    return this.commerceRuntime.openProductListGallery(product);
+  openProductListGallery = (product: TProductListItem, fieldConfig?: TFieldConfig) => {
+    return this.commerceRuntime.openProductListGallery(product, fieldConfig);
   }
 
   openImageGalleryItem = (item: TImageGalleryItem) => {
@@ -1471,10 +1562,11 @@ export class HydratedFormHost extends HTMLElement {
   getNextProductCartItems = (
     fieldConfig: TFieldConfig,
     currentValue: any,
-    action: "add" | "inc" | "dec" | "remove",
+    action: "add" | "inc" | "dec" | "remove" | "set",
     productId: string,
+    quantity?: number,
   ): TProductCartItem[] => {
-    return this.commerceRuntime.getNextProductCartItems(fieldConfig, currentValue, action, productId);
+    return this.commerceRuntime.getNextProductCartItems(fieldConfig, currentValue, action, productId, quantity);
   }
 
   getNextImageGallerySelectionItems = (
@@ -1536,6 +1628,143 @@ export class HydratedFormHost extends HTMLElement {
     return !previewSrc && !desc && label.trim().length <= 20;
   }
 
+  private updatePaymentProofExpectedAmount = (amountDisplay: string) => {
+    const amountNodes = Array.from(
+      this.querySelectorAll<HTMLElement>("[data-payment-proof-amount]"),
+    );
+    if (!amountNodes.length) {
+      return;
+    }
+
+    amountNodes.forEach((node) => {
+      if (!node.dataset.paymentProofOriginalAmount) {
+        node.dataset.paymentProofOriginalAmount = node.textContent?.trim() || "";
+      }
+      node.textContent = amountDisplay || node.dataset.paymentProofOriginalAmount || "";
+    });
+
+    Array.from(this.querySelectorAll<HTMLElement>("[data-payment-proof-amount-pill]")).forEach((pill) => {
+      const originalDisplay = pill.dataset.originalDisplay || pill.style.display || "";
+      if (!pill.dataset.originalDisplay) {
+        pill.dataset.originalDisplay = originalDisplay;
+      }
+      if (amountDisplay) {
+        pill.style.display = "inline-flex";
+        pill.setAttribute("data-dynamic-amount", "true");
+      } else {
+        pill.style.display = originalDisplay;
+        pill.removeAttribute("data-dynamic-amount");
+      }
+    });
+  }
+
+  private isPlainPricedChoiceField = (fieldConfig: TFieldConfig): boolean => {
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    const rawType = String(fieldConfig.type || "").trim().toLowerCase();
+    const isChoiceType =
+      effectiveType === RADIO_BUTTONS_TYPE
+      || effectiveType === CHECKBOXES_TYPE
+      || effectiveType === SELECT_ONE_TYPE
+      || effectiveType === SELECT_MULTIPLE_TYPE
+      || rawType === "radio"
+      || rawType === "checkbox"
+      || rawType === "select";
+    if (!isChoiceType) {
+      return false;
+    }
+    // Month-range / date-range catalogs drive their own dynamic total.
+    if (this.choiceCatalogRuntime.isMonthRange(fieldConfig) || this.choiceCatalogRuntime.isDateRange(fieldConfig)) {
+      return false;
+    }
+    return Array.isArray(fieldConfig.choices)
+      && fieldConfig.choices.some((choice) => this.getChoiceOptionPrice(choice) > 0);
+  }
+
+  private getChoiceOptionPrice = (choice: any): number => {
+    if (!choice || typeof choice !== "object") {
+      return 0;
+    }
+    const candidates = [
+      choice.price,
+      choice.salePrice,
+      choice.sale_price,
+      choice.regularPrice,
+      choice.regular_price,
+      choice.amount,
+    ];
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === "") {
+        continue;
+      }
+      const amount = Number(typeof candidate === "string" ? candidate.replace(/\s/g, "").replace(",", ".") : candidate);
+      if (Number.isFinite(amount)) {
+        return amount;
+      }
+    }
+    return 0;
+  }
+
+  private getSelectedChoiceValues = (fieldConfig: TFieldConfig, value: any): Set<string> => {
+    const items = Array.isArray(value)
+      ? value
+      : value === null || value === undefined || value === ""
+        ? []
+        : [value];
+    return new Set(items.map((item) => String((item && typeof item === "object") ? (item.value ?? item.id ?? item.label) : item)));
+  }
+
+  // Priced choice fields (checkbox / radio / select) contribute their selected
+  // options' prices to the same "Cart total" expected-amount used for payment.
+  // Skipped when a product-list or month-range field already owns the total node.
+  private updatePricedChoiceExpectedAmount = (): void => {
+    const fields = Object.values(this.engine.getFields()) as TFieldConfig[];
+    const hasOwnedTotalDriver = fields.some(
+      (fieldConfig) =>
+        this.isProductListField(fieldConfig)
+        || this.choiceCatalogRuntime.isMonthRange(fieldConfig),
+    );
+    if (hasOwnedTotalDriver) {
+      return;
+    }
+    const pricedChoiceFields = fields.filter((fieldConfig) => this.isPlainPricedChoiceField(fieldConfig));
+    if (!pricedChoiceFields.length) {
+      return;
+    }
+    let total = 0;
+    let currency = "";
+    pricedChoiceFields.forEach((fieldConfig) => {
+      const selected = this.getSelectedChoiceValues(fieldConfig, this.getFieldValue(fieldConfig.name));
+      if (!selected.size) {
+        return;
+      }
+      (fieldConfig.choices || []).forEach((choice: any) => {
+        const optionKey = String(choice.value ?? choice.id ?? choice.label ?? "");
+        if (!optionKey || !selected.has(optionKey)) {
+          return;
+        }
+        const price = this.getChoiceOptionPrice(choice);
+        if (price > 0) {
+          total += price;
+          currency = currency || String(choice.currency || fieldConfig.paymentCurrency || "").trim();
+        }
+      });
+    });
+    if (total > 0) {
+      this.updatePaymentProofExpectedAmount(this.formatPricedChoiceMoney(total, currency));
+    } else {
+      this.updatePaymentProofExpectedAmount("");
+    }
+  }
+
+  private formatPricedChoiceMoney = (amount: number, currency: string): string => {
+    const formatted = new Intl.NumberFormat("fr-FR", {
+      minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+      maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    }).format(amount).replace(/[  ]/g, " ");
+    return `${formatted} ${currency}`.trim();
+  }
+
+
   renderQuizSelection = (
     fieldConfig: TFieldConfig,
     value: any,
@@ -1553,16 +1782,25 @@ export class HydratedFormHost extends HTMLElement {
 
     const choices = fieldConfig.choices || [];
     const selectedValues = this.getChoiceSelectionItems(fieldConfig, value);
+    const effectiveType = this.getEffectiveFieldType(fieldConfig);
+    if (this.choiceCatalogRuntime.isDateRange(fieldConfig)) {
+      this.choiceCatalogRuntime.renderDateRangeSelection(fieldConfig, value, selectionElement);
+      return;
+    }
+    if (this.choiceCatalogRuntime.isMonthRange(fieldConfig)) {
+      this.choiceCatalogRuntime.renderMonthRangeSelection(fieldConfig, value, selectionElement);
+      return;
+    }
     const selectedMap = selectedValues.reduce((accumulator, item) => {
       accumulator[item] = true;
       return accumulator;
     }, {} as Record<string, boolean>);
     const selectionLimit =
-      fieldConfig.type === CHECKBOXES_TYPE && typeof fieldConfig.maxNumOfChoices === "number"
+      effectiveType === CHECKBOXES_TYPE && typeof fieldConfig.maxNumOfChoices === "number"
         ? fieldConfig.maxNumOfChoices
         : 1;
     const limitReached =
-      fieldConfig.type === CHECKBOXES_TYPE && selectionLimit > 1 && selectedValues.length >= selectionLimit;
+      effectiveType === CHECKBOXES_TYPE && selectionLimit > 1 && selectedValues.length >= selectionLimit;
 
     const grid =
       (selectionElement.querySelector(
@@ -1575,10 +1813,26 @@ export class HydratedFormHost extends HTMLElement {
     const choiceLayout = this.resolveChoiceLayout(fieldConfig, grid, "vertical");
     this.applyChoiceLayout(grid, choiceLayout);
 
+    // Resilience against a stale/mismatched server template: a correct template
+    // wraps each option in a card carrying `data-choice-option-value`, with the
+    // title/footer nested inside. An out-of-date template may emit loose
+    // title/footer fragments with no card wrapper — the card lookup below then
+    // misses, a fresh card is built, and the loose fragments remain as a
+    // duplicated, unstyled list. Drop any direct child of the grid that is not a
+    // proper card (and not a date/month heading) before (re)building.
+    Array.from(grid.children).forEach((child) => {
+      const el = child as HTMLElement;
+      if (typeof el.hasAttribute !== "function") return;
+      if (el.hasAttribute("data-choice-option-value")) return;
+      if (el.hasAttribute("data-choice-date-month")) return;
+      el.remove();
+    });
+
     choices.forEach((choice) => {
       const optionValue = String(choice.value ?? choice.id ?? choice.label ?? "");
       const selected = Boolean(selectedMap[optionValue]);
-      const disabled = !selected && limitReached;
+      const choiceDisabled = Boolean(choice.disabled || choice.enabled === false);
+      const disabled = choiceDisabled || (!selected && limitReached);
 
       let card = grid.querySelector(`[data-choice-option-value="${optionValue}"]`) as HTMLDivElement | null;
       if (!card) {
@@ -1632,8 +1886,8 @@ export class HydratedFormHost extends HTMLElement {
         card.appendChild(footer);
       }
       footer.className = "template-choice-footer";
-      footer.hidden = !disabled;
-      footer.textContent = disabled ? "Limit reached" : "";
+      footer.textContent = choiceDisabled ? "Unavailable" : "";
+      footer.hidden = !footer.textContent;
     });
     Array.from(grid.querySelectorAll("[data-choice-option-value]")).forEach((node) => {
       const optionValue = (node as HTMLElement).getAttribute("data-choice-option-value");
@@ -2147,23 +2401,34 @@ export class HydratedFormHost extends HTMLElement {
     if (fieldConfig.type !== PAYMENT_PROOF_TYPE) return;
 
     const pills = Array.from(this.querySelectorAll<HTMLElement>(`[data-provider-pill="${fieldConfig.name}"]`));
-    if (pills.length < 2) return;
+    const selects = Array.from(this.querySelectorAll<HTMLSelectElement>(`[data-provider-select="${fieldConfig.name}"]`));
+    if (pills.length < 2 && selects.length < 1) return;
 
-    const activatePill = (pill: HTMLElement) => {
+    const activateProvider = (provider: string, source: HTMLElement) => {
       pills.forEach((p) => {
         p.classList.remove("is-active");
         p.setAttribute("aria-pressed", "false");
       });
-      pill.classList.add("is-active");
-      pill.setAttribute("aria-pressed", "true");
-
-      const provider = pill.dataset.provider || "";
+      if (source.matches("[data-provider-pill]")) {
+        source.classList.add("is-active");
+        source.setAttribute("aria-pressed", "true");
+      } else {
+        const matchingPill = pills.find((pill) => pill.dataset.provider === provider);
+        if (matchingPill) {
+          matchingPill.classList.add("is-active");
+          matchingPill.setAttribute("aria-pressed", "true");
+        }
+      }
+      selects.forEach((select) => {
+        select.value = provider;
+      });
 
       this.querySelectorAll<HTMLElement>(`[data-provider-block="${fieldConfig.name}"]`).forEach((block) => {
         block.style.display = block.dataset.provider === provider ? "" : "none";
       });
 
       if (inputElement) {
+        const selectedOption = source instanceof HTMLSelectElement ? source.selectedOptions[0] : null;
         const copy: Record<string, string> = {
           paymentProvider: "data-payment-provider",
           paymentProviderLabel: "data-payment-provider-label",
@@ -2176,7 +2441,7 @@ export class HydratedFormHost extends HTMLElement {
           paymentReferencePrefix: "data-payment-reference-prefix",
         };
         Object.entries(copy).forEach(([dsKey, attr]) => {
-          const val = pill.getAttribute(attr);
+          const val = selectedOption?.getAttribute(attr) ?? source.getAttribute(attr);
           if (val != null) {
             (inputElement as HTMLElement).dataset[dsKey] = val;
           } else {
@@ -2191,12 +2456,23 @@ export class HydratedFormHost extends HTMLElement {
     };
 
     pills.forEach((pill) => {
-      pill.addEventListener("click", () => activatePill(pill));
+      pill.addEventListener("click", () => activateProvider(pill.dataset.provider || "", pill));
+    });
+    selects.forEach((select) => {
+      select.addEventListener("change", () => activateProvider(select.value, select));
     });
 
-    const firstActive = pills.find((p) => p.classList.contains("is-active")) ?? pills[0];
-    if (firstActive && firstActive.dataset.provider === "bank-transfer") {
-      this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+    // Initialise the selected provider on load: from the <select> if present,
+    // otherwise (logo radio pills) from the first active pill — this seeds the
+    // input dataset (provider, IBAN/BIC, reference) and the visible block.
+    const firstSelect = selects[0];
+    if (firstSelect) {
+      activateProvider(firstSelect.value, firstSelect);
+    } else {
+      const firstActive = pills.find((p) => p.classList.contains("is-active")) ?? pills[0];
+      if (firstActive) {
+        activateProvider(firstActive.dataset.provider || "", firstActive);
+      }
     }
   }
 
@@ -2205,7 +2481,10 @@ export class HydratedFormHost extends HTMLElement {
       return;
     }
     const provider = String(
-      (fieldConfig as any).subType || (fieldConfig as any).paymentProvider || (fieldConfig as any).payment_provider || "",
+      (fieldConfig as any).subType || (fieldConfig as any).paymentProvider || (fieldConfig as any).payment_provider ||
+      // Multi-provider payment fields carry no fixed provider; fall back to the
+      // currently active provider (set on the input by activateProvider).
+      (inputElement?.dataset?.paymentProvider) || "",
     ).trim();
     if (provider !== "bank-transfer") {
       return;
@@ -2244,6 +2523,19 @@ export class HydratedFormHost extends HTMLElement {
     }
 
     refEl.textContent = reference;
+    // Persist the generated reference into the submitted values so the operator
+    // can reconcile the bank transfer.
+    this.form?.change("payment_reference", reference);
+
+    const flashCopied = (btn: HTMLElement) => {
+      btn.classList.add("is-copied");
+      if (btn.dataset.copyResetTimer) {
+        window.clearTimeout(Number(btn.dataset.copyResetTimer));
+      }
+      btn.dataset.copyResetTimer = String(
+        window.setTimeout(() => { btn.classList.remove("is-copied"); }, 1800),
+      );
+    };
 
     const copyBtn = this.querySelector(
       `[data-copy-reference="${fieldConfig.name}"]`,
@@ -2251,11 +2543,7 @@ export class HydratedFormHost extends HTMLElement {
     if (copyBtn) {
       copyBtn.disabled = false;
       copyBtn.addEventListener("click", () => {
-        navigator.clipboard?.writeText(reference).then(() => {
-          const original = copyBtn.textContent;
-          copyBtn.textContent = "✓";
-          setTimeout(() => { copyBtn.textContent = original; }, 1800);
-        }).catch(() => {});
+        navigator.clipboard?.writeText(reference).then(() => flashCopied(copyBtn)).catch(() => {});
       });
     }
 
@@ -2267,11 +2555,7 @@ export class HydratedFormHost extends HTMLElement {
       node.dataset.copyListenerAttached = "1";
       node.addEventListener("click", () => {
         const value = node.dataset.copyValue || "";
-        navigator.clipboard?.writeText(value).then(() => {
-          const original = node.textContent;
-          node.textContent = "✓";
-          setTimeout(() => { node.textContent = original; }, 1800);
-        }).catch(() => {});
+        navigator.clipboard?.writeText(value).then(() => flashCopied(node)).catch(() => {});
       });
     });
   }
@@ -2468,8 +2752,15 @@ export class HydratedFormHost extends HTMLElement {
         if (this.workflowState === "submitting") {
           return;
         }
+        this.repeaterRuntime.sync(formElem);
         if (this.isMultiStepMode() && !this.isLastStep()) {
           this.nextStep();
+          return;
+        }
+        const repeaterValidation = this.repeaterRuntime.validateAll(formElem);
+        if (!repeaterValidation.valid) {
+          repeaterValidation.focusNode?.focus({ preventScroll: true });
+          repeaterValidation.focusNode?.scrollIntoView({ block: "center", behavior: "smooth" });
           return;
         }
         const submitValues = this.form?.getState().values || {};
@@ -2538,8 +2829,33 @@ export class HydratedFormHost extends HTMLElement {
           this.previousStep();
         } else if (action === "next") {
           event.preventDefault();
+          this.repeaterRuntime.sync(formElem);
+          const repeaterValidation = this.repeaterRuntime.validateAll(formElem, { includeHidden: false });
+          if (!repeaterValidation.valid) {
+            repeaterValidation.focusNode?.focus({ preventScroll: true });
+            repeaterValidation.focusNode?.scrollIntoView({ block: "center", behavior: "smooth" });
+            return;
+          }
           this.nextStep();
         }
+      });
+
+      // Clickable step timeline (data-step-layout="timeline"): jump to any visited
+      // step. Backward jumps are free; forward jumps re-validate the current step.
+      formElem.addEventListener("click", (event) => {
+        if (!this.isMultiStepMode()) {
+          return;
+        }
+        const navItem = (event.target as HTMLElement | null)?.closest("[data-step-nav-item]") as HTMLElement | null;
+        if (!navItem || !formElem.contains(navItem)) {
+          return;
+        }
+        const target = Number(navItem.getAttribute("data-step-nav-item"));
+        if (!Number.isFinite(target)) {
+          return;
+        }
+        event.preventDefault();
+        this.goToStepIndex(target);
       });
 
     if (useHydration && this.formConfig) {
@@ -2558,6 +2874,7 @@ export class HydratedFormHost extends HTMLElement {
         }
       });
     }
+      this.repeaterRuntime.attach(formElem);
       this.bindProductListGlobalCartEvents();
       this.resetFieldErrorDisplays();
       this.ensureStepControls(formElem);
@@ -3007,6 +3324,46 @@ export class HydratedFormHost extends HTMLElement {
     return true;
   }
 
+  /**
+   * Jump to a step via the clickable timeline. Backward (or same) jumps are always
+   * allowed. Forward jumps are only allowed to already-visited steps and re-validate
+   * the current step first (so the user can't skip past an incomplete required step).
+   */
+  goToStepIndex = (index: number): boolean => {
+    if (!this.isMultiStepMode()) {
+      return false;
+    }
+    if (index === this.currentStepIndex) {
+      return false;
+    }
+    if (index < 0 || index >= this.stepNames.length) {
+      return false;
+    }
+    // Forward jump: only to a previously-reached step, and only if the current
+    // step validates (mirrors the Continue button's gate).
+    if (index > this.currentStepIndex) {
+      if (index > this.maxReachedStepIndex) {
+        return false;
+      }
+      const formElem = this.querySelector("form") as HTMLFormElement | null;
+      if (formElem) {
+        this.repeaterRuntime.sync(formElem);
+        const repeaterValidation = this.repeaterRuntime.validateAll(formElem, { includeHidden: false });
+        if (!repeaterValidation.valid) {
+          repeaterValidation.focusNode?.focus({ preventScroll: true });
+          repeaterValidation.focusNode?.scrollIntoView({ block: "center", behavior: "smooth" });
+          return false;
+        }
+      }
+      if (!this.validateCurrentStep()) {
+        this.stepSubmitFailed = true;
+        this.syncAllFieldErrors();
+        return false;
+      }
+    }
+    return this.setCurrentStepIndex(index);
+  }
+
   getCurrentStepFieldElements = (): Array<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> => {
     return getConfiguredCurrentStepFieldElements(this, this.getCurrentStepName());
   }
@@ -3042,6 +3399,45 @@ export class HydratedFormHost extends HTMLElement {
     }
     this.suppressedStepErrorFields.delete(fieldName);
     this.syncFieldErrorDisplay(fieldName);
+  }
+
+  fieldHasSingleChoiceSelection = (fieldConfig: TFieldConfig, value: any): boolean => {
+    if (fieldConfig.type === SELECT_PRODUCT_TYPE || fieldConfig.type === IMAGE_GALLERY_TYPE) {
+      return Array.isArray(value) && value.length > 0;
+    }
+
+    if (fieldConfig.type === RADIO_BUTTONS_TYPE) {
+      return value !== undefined && value !== null && String(value) !== "";
+    }
+
+    return false;
+  }
+
+  maybeAutoAdvanceSingleChoiceStep = (fieldConfig: TFieldConfig) => {
+    if (!this.isMultiStepMode() || this.isLastStep() || !this.isAutoAdvanceSingleChoiceField(fieldConfig)) {
+      return;
+    }
+
+    const currentStepName = this.getCurrentStepName();
+    if (!currentStepName) {
+      return;
+    }
+
+    const currentStepFields = (this.formConfig?.sections?.[currentStepName] || [])
+      .filter((stepField) => Boolean(stepField?.name));
+    if (currentStepFields.length !== 1 || currentStepFields[0]?.name !== fieldConfig.name) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (this.getCurrentStepName() !== currentStepName || this.isLastStep()) {
+        return;
+      }
+      if (!this.fieldHasSingleChoiceSelection(fieldConfig, this.getFieldValue(fieldConfig.name))) {
+        return;
+      }
+      this.nextStep();
+    }, 0);
   }
 
   validateCurrentStep = (): boolean => {
@@ -3189,6 +3585,7 @@ export class HydratedFormHost extends HTMLElement {
           nextButton: this.stepNextButton,
         },
       });
+      this.renderProductCheckoutSummary();
       return;
     }
     syncConfiguredStepControls({
@@ -3213,6 +3610,14 @@ export class HydratedFormHost extends HTMLElement {
         nextButton: this.stepNextButton,
       },
     });
+    // Reflect progress onto the clickable step timeline (if the form renders one).
+    this.maxReachedStepIndex = Math.max(this.maxReachedStepIndex, this.currentStepIndex);
+    syncConfiguredStepTimeline({
+      formElement,
+      currentStepIndex: this.currentStepIndex,
+      maxReachedStepIndex: this.maxReachedStepIndex,
+    });
+    this.renderProductCheckoutSummary();
   }
 
   emitStepChange = () => {
@@ -3725,6 +4130,89 @@ export class HydratedFormHost extends HTMLElement {
     assertProviderResponseContract(result, submitConfig);
   }
 
+  isPrintSubmitAction = (): boolean => {
+    const action = String(this.formConfig?.submit?.action || "").trim().toLowerCase();
+    const submissionMode = String(this.formConfig?.workflowConfig?.submissionMode || "").trim().toLowerCase();
+    return (
+      action === "print" ||
+      action === "print-only" ||
+      action === "generate-pdf" ||
+      action === "download-pdf" ||
+      submissionMode === "print-only" ||
+      submissionMode === "download-only"
+    );
+  }
+
+  runPrintSubmitAction = async (
+    detail: THydratedFormSubmitDetail,
+  ) => {
+    const submitConfig = this.formConfig?.submit;
+    const defaultReadyMessage = submitConfig?.documentReadyMessage || "Your document is ready.";
+    const defaultDownloadLabel = submitConfig?.documentDownloadLabel || "Download document";
+    let result: any = {
+      action: "download-document",
+      mode: "download-link",
+      message: defaultReadyMessage,
+      downloadLabel: defaultDownloadLabel,
+    };
+    const printDetail = {
+      ...detail,
+      result,
+    } as THydratedFormSubmitDetail & { resultPromise?: Promise<any> };
+    this.clearDraft();
+    await new Promise((resolve) => {
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => resolve(undefined));
+        return;
+      }
+      setTimeout(resolve, 0);
+    });
+    this.emitFormEvent("xpressui:print-request", printDetail, true);
+    if (printDetail.resultPromise) {
+      const eventResult = await printDetail.resultPromise;
+      result = {
+        ...result,
+        ...(eventResult || {}),
+        message: eventResult?.message || result.message,
+        downloadLabel: eventResult?.downloadLabel || result.downloadLabel,
+      };
+      printDetail.result = result;
+    } else if (submitConfig?.documentEndpoint) {
+      const response = await fetch(submitConfig.documentEndpoint, {
+        method: submitConfig.method || "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(submitConfig.headers || {}),
+        },
+        body: JSON.stringify({
+          values: detail.values || {},
+          submittedAt: new Date().toISOString(),
+          locale: typeof navigator !== "undefined" ? navigator.language : undefined,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Document generation failed with status ${response.status}.`);
+      }
+      const endpointResult = await response.json();
+      result = {
+        ...result,
+        ...endpointResult,
+        downloadUrl: endpointResult.downloadUrl || endpointResult.url,
+        downloadFilename: endpointResult.downloadFilename || endpointResult.filename,
+        message: endpointResult.message || result.message,
+        downloadLabel: endpointResult.downloadLabel || result.downloadLabel,
+      };
+      printDetail.result = result;
+    }
+    this.setWorkflowState("submitted", printDetail, undefined, result);
+    this.emitFormEvent("xpressui:submit-success", printDetail);
+    try {
+      await runConfiguredSubmitLifecycleStage(this.formConfig?.submit, "postSuccess", printDetail);
+    } catch (hookError) {
+      this.emitSubmitHookError("postSuccess", printDetail, hookError);
+    }
+  }
+
   emitSubmitHookError = (
     stage: TFormSubmitLifecycleStage,
     detail: THydratedFormSubmitDetail,
@@ -3793,6 +4281,11 @@ export class HydratedFormHost extends HTMLElement {
 
     const customTransport = this.formConfig?.submit?.transport;
     const hasEndpoint = Boolean(this.formConfig?.submit?.endpoint);
+
+    if (this.isPrintSubmitAction()) {
+      await this.runPrintSubmitAction(detail);
+      return;
+    }
 
     if (!hasEndpoint && !customTransport) {
       this.clearDraft();
@@ -4101,6 +4594,7 @@ export class HydratedFormHost extends HTMLElement {
               },
               onAfterChange: () => {
                 this.queuePostChangeEffects(name);
+                this.maybeAutoAdvanceSingleChoiceStep(fieldConfig);
               },
               resolveFileInputValue: async (nextFieldConfig, nextInput) =>
                 this.resolveFileInputValue(nextFieldConfig as TFieldConfig, nextInput),
@@ -4128,19 +4622,24 @@ export class HydratedFormHost extends HTMLElement {
               },
               onAfterChange: () => {
                 this.queuePostChangeEffects(name);
+                this.maybeAutoAdvanceSingleChoiceStep(fieldConfig);
               },
-              getNextProductCartItems: (action, productId) =>
-                this.getNextProductCartItems(fieldConfig, this.getFieldValue(name), action, productId),
+              getNextProductCartItems: (action, productId, quantity) =>
+                this.getNextProductCartItems(fieldConfig, this.getFieldValue(name), action, productId, quantity),
               getNextImageGallerySelectionItems: (action, imageId) =>
                 this.getNextImageGallerySelectionItems(fieldConfig, this.getFieldValue(name), action, imageId),
               getNextQuizSelectionItems: (answerId) =>
                 this.getNextQuizSelectionItems(fieldConfig, this.getFieldValue(name), answerId),
               getNextChoiceSelectionValue: (choiceValue) =>
                 this.getNextChoiceSelectionValue(fieldConfig, this.getFieldValue(name), choiceValue),
+              getNextChoiceMonthSelectionValue: (monthKey) =>
+                this.getNextChoiceMonthSelectionValue(fieldConfig, this.getFieldValue(name), monthKey),
+              getNextChoiceYearSelectionValue: (year) =>
+                this.getNextChoiceYearSelectionValue(fieldConfig, this.getFieldValue(name), year),
               openProductGallery: (productId) => {
                 const product = this.getProductListCatalog(fieldConfig).find((entry) => entry.id === productId);
                 if (product) {
-                  this.openProductListGallery(product);
+                  this.openProductListGallery(product, fieldConfig);
                 }
               },
               openImageGallery: (imageId) => {
@@ -4270,6 +4769,9 @@ export class HydratedFormHost extends HTMLElement {
           submitFailed || this.stepSubmitFailed,
           this.getCurrentStepIndex(),
         );
+
+        // Recompute the priced-choice contribution to the expected payment amount.
+        this.updatePricedChoiceExpectedAmount();
       },
       {
         value: true,

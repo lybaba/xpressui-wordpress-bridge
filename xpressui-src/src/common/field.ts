@@ -58,6 +58,7 @@ export const PRODUCT_LIST_TYPE = 'product-list';
 export const SELECT_PRODUCT_TYPE = 'select-product';
 export const SELECT_IMAGE_TYPE = 'select-image';
 export const IMAGE_GALLERY_TYPE = SELECT_IMAGE_TYPE;
+export const SMART_CATALOG_TYPE = 'smart-catalog';
 export const QUIZ_TYPE = 'quiz';
 export const SETTING_TYPE = 'setting';
 
@@ -159,6 +160,7 @@ export const REQUEST_FORM_FIELD_TYPES: Array<TFieldType> = [
     { type: PRODUCT_LIST_TYPE, name: 'Product Catalog' },
     { type: SELECT_PRODUCT_TYPE, name: 'Select Product' },
     { type: IMAGE_GALLERY_TYPE, name: 'Select Image' },
+    { type: SMART_CATALOG_TYPE, name: 'Smart Catalog' },
     { type: QUIZ_TYPE, name: 'Quiz' },
     { type: SETTING_TYPE, name: 'Setting' },
 ];
@@ -180,7 +182,8 @@ export const PRICING_DECIMAL_VALUES = [
 
 export const getIsChoiceField = (type: string): boolean => {
     return type === SELECT_MULTIPLE_TYPE ||
-        type === SELECT_ONE_TYPE
+        type === SELECT_ONE_TYPE ||
+        type === SMART_CATALOG_TYPE
 }
 
 export const isFileFieldType = (type: string): boolean => {
@@ -331,6 +334,7 @@ export const getHtmlInputType = (fieldType: string): string => {
 
         case PRODUCT_LIST_TYPE:
         case IMAGE_GALLERY_TYPE:
+        case SMART_CATALOG_TYPE:
         case QUIZ_TYPE:
         case SETTING_TYPE:
             return "text";

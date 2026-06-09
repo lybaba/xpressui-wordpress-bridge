@@ -16,7 +16,41 @@ export function getStepUiConfig(formConfig: TFormConfig | null) {
     progressPlacement: formConfig?.stepUi?.progressPlacement || "top",
     navigationPlacement: formConfig?.stepUi?.navigationPlacement || "bottom",
     backBehavior: formConfig?.stepUi?.backBehavior || "always",
+    stepLayout: formConfig?.themeConfig?.stepLayout || "default",
   } as const;
+}
+
+/**
+ * Reflects active/completed/clickable state onto a server-rendered step timeline
+ * (the clickable sidebar). Hydration-only: it just toggles classes/attributes on
+ * existing `[data-step-nav-item]` nodes — it never creates DOM.
+ */
+export function syncStepTimeline(options: {
+  formElement: Element | null;
+  currentStepIndex: number;
+  maxReachedStepIndex: number;
+}): void {
+  if (!options.formElement) {
+    return;
+  }
+  const items = options.formElement.querySelectorAll<HTMLElement>("[data-step-nav-item]");
+  items.forEach((item) => {
+    const index = Number(item.getAttribute("data-step-nav-item"));
+    if (!Number.isFinite(index)) {
+      return;
+    }
+    const isActive = index === options.currentStepIndex;
+    const isComplete = index < options.currentStepIndex;
+    const isVisited = index <= options.maxReachedStepIndex;
+    item.classList.toggle("is-active", isActive);
+    item.classList.toggle("is-complete", isComplete);
+    item.classList.toggle("is-clickable", isVisited && !isActive);
+    item.setAttribute("aria-current", isActive ? "step" : "false");
+    if (item instanceof HTMLButtonElement) {
+      // Visited (or current) steps are reachable; unvisited future steps are not.
+      item.disabled = !isVisited;
+    }
+  });
 }
 
 export function getStepButtonLabels(

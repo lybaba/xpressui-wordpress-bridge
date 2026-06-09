@@ -2492,7 +2492,15 @@ function xpressui_render_quiz_value( $value, $field_meta = [] ) {
 		if ( ! is_array( $entry ) ) {
 			continue;
 		}
-		$entry_id      = (string) ( $entry['id'] ?? $entry['value'] ?? ( 'answer_' . ( $pos + 1 ) ) );
+		$entry_id = '';
+		if ( isset( $entry['id'] ) && (string) $entry['id'] !== '' ) {
+			$entry_id = (string) $entry['id'];
+		} elseif ( isset( $entry['value'] ) && (string) $entry['value'] !== '' ) {
+			$entry_id = (string) $entry['value'];
+		}
+		if ( $entry_id === '' ) {
+			continue;
+		}
 		$catalog_entry = $catalog_index[ $entry_id ] ?? [];
 		$items[]       = [
 			'name' => (string) ( $entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id ),
@@ -2530,7 +2538,15 @@ function xpressui_render_image_gallery_value( $value, $field_meta = [] ) {
 		if ( ! is_array( $entry ) ) {
 			continue;
 		}
-		$entry_id      = (string) ( $entry['id'] ?? $entry['value'] ?? ( 'image_' . ( $pos + 1 ) ) );
+		$entry_id = '';
+		if ( isset( $entry['id'] ) && (string) $entry['id'] !== '' ) {
+			$entry_id = (string) $entry['id'];
+		} elseif ( isset( $entry['value'] ) && (string) $entry['value'] !== '' ) {
+			$entry_id = (string) $entry['value'];
+		}
+		if ( $entry_id === '' ) {
+			continue;
+		}
 		$catalog_entry = $catalog_index[ $entry_id ] ?? [];
 		$thumbnail     = (string) ( $entry['image_thumbnail'] ?? $catalog_entry['image_thumbnail'] ?? $catalog_entry['imageThumbnail'] ?? '' );
 		$full_url      = (string) ( $entry['image_medium'] ?? $catalog_entry['image_medium'] ?? $catalog_entry['imageMedium'] ?? $thumbnail );
