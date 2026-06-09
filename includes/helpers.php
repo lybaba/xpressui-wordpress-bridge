@@ -473,7 +473,11 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "\n/* Resume mode */\n";
 	$inline_css .= "{$scope}[data-resume-loading] .template-runtime-shell { display: none !important; }\n";
 	$inline_css .= "{$scope}[data-resume-loading] [data-resume-loader] { display: grid !important; }\n";
-	$inline_css .= "{$scope} .xpressui-resume-banner { background: #fffaf0; border: 1px solid #f6cc87; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.5; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-banner { margin: 0 0 12px; background: #fffbeb; border: 1px solid #fcd34d; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 16px 18px; font-size: 14px; color: #713f12; line-height: 1.5; }\n";
+	// Locked (read-only) fields: frozen-data look — readable value on a muted grey
+	// surface, not-allowed cursor. !important + -webkit-text-fill-color override the
+	// forced input theming above and the browser's ghosted-disabled rendering.
+	$inline_css .= "{$scope} .xpressui-resume-locked .template-input,\n{$scope} .xpressui-resume-locked .template-textarea { background-color: #f3f4f6 !important; color: color-mix(in srgb, var(--template-text) 80%, transparent) !important; -webkit-text-fill-color: color-mix(in srgb, var(--template-text) 80%, transparent); cursor: not-allowed !important; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-block,\n{$scope} .xpressui-afile-ref-block { padding: 10px 14px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-link,\n{$scope} .xpressui-afile-ref-link { font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 6px; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-hint,\n{$scope} .xpressui-afile-ref-hint { margin: 0; font-size: 12px; color: #374151; line-height: 1.5; }\n";

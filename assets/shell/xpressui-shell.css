@@ -1562,5 +1562,8 @@
   margin: 8px 0;
 }
 .xpressui-resume-locked {
-  opacity: 0.55;
+  opacity: 0.92;
+}
+.xpressui-resume-locked .template-field-label {
+  color: color-mix(in srgb, var(--template-text) 70%, transparent);
 }
