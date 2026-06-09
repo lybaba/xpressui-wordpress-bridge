@@ -17,6 +17,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ( isset( $_GET['xpressui_clear_cache'] ) || isset( $_GET['nocache'] ) ) && function_exists( 'opcache_reset' ) ) {
+	opcache_reset();
+}
+
+register_activation_hook( __FILE__, function() {
+	if ( function_exists( 'opcache_reset' ) ) {
+		opcache_reset();
+	}
+} );
+
 define( 'XPRESSUI_BRIDGE_VERSION', '1.0.86' );
 define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.16' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
