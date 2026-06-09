@@ -1038,11 +1038,11 @@ async function initXPressUI() {
     if (resumeData) {
       formConfig = pruneResumeFormConfig(formConfig, resumeData);
     }
-    // Resume mode: collapse multi-step to single-step so the runtime hides nav/progress
-    // and shows the submit button immediately. Section visibility is handled by applyResumeMode.
-    if (resumeData && formConfig.mode === 'form-multi-step') {
-      formConfig = { ...formConfig, mode: 'form' };
-    }
+    // Resume mode keeps the original multi-step mode: we re-display the full
+    // multi-step form (like the SaaS correction flow) and let the runtime own step
+    // navigation/visibility. Downgrading to single-step here would make the runtime
+    // ignore [data-step-action] clicks (isMultiStepMode() === false), so the "Continue"
+    // button — still rendered by the template — would do nothing.
 
     // Silently prefill DOM inputs from payload BEFORE hydration so the runtime reads
     // prefilled values as initialValues. Without this, hydrateForm captures empty
