@@ -543,7 +543,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload, $i
 		foreach ( $fields as $key => $value ) {
 			$field_meta = is_array( $field_index[ $key ] ?? null ) ? $field_index[ $key ] : [];
 			$label      = isset( $field_meta['label'] ) && $field_meta['label'] !== ''
-				? $field_meta['label']
+				? xpressui_clean_field_label( $field_meta['label'] )
 				: $key;
 			$rows_html .= $render_row( $label, $value, $i, $field_meta );
 			$i++;
