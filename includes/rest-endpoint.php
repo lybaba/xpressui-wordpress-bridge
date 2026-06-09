@@ -343,6 +343,8 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
+	// Optionally email the submitter a copy of the admin-style notification (no admin button).
+	xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload_with_files );
 	$mark_timing( 'notification_sent' );
 
 	// Send confirmation email to the submitter on first submit.
