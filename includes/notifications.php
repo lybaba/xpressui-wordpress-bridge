@@ -223,8 +223,15 @@ function xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload
 
 	$site_name = get_bloginfo( 'name' );
 	$label     = xpressui_get_submitter_workflow_label( $project_slug );
-	/* translators: 1: site name, 2: workflow label */
-	$subject = sprintf( __( '[%1$s] Your %2$s submission', 'xpressui-bridge' ), $site_name, $label !== '' ? $label : $project_slug );
+	$label     = $label !== '' ? $label : $project_slug;
+	$reference = xpressui_build_notification_subject_reference( $post_id, $payload );
+	if ( $reference !== '' ) {
+		/* translators: 1: site name, 2: workflow label, 3: submission reference */
+		$subject = sprintf( __( '[%1$s] Your %2$s submission - %3$s', 'xpressui-bridge' ), $site_name, $label, $reference );
+	} else {
+		/* translators: 1: site name, 2: workflow label */
+		$subject = sprintf( __( '[%1$s] Your %2$s submission', 'xpressui-bridge' ), $site_name, $label );
+	}
 	$body    = xpressui_build_notification_body( $post_id, $project_slug, $payload, false );
 	$headers = xpressui_build_notification_headers();
 

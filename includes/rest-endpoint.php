@@ -303,6 +303,12 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	}
 	$mark_timing( 'validated' );
 
+	// Submission gate: allows add-ons (e.g. Pro license) to block submission.
+	$submission_gate = apply_filters( 'xpressui_submission_gate', null, $project_slug, $payload, $request );
+	if ( is_wp_error( $submission_gate ) ) {
+		return $submission_gate;
+	}
+
 	$post_id = wp_insert_post( [
 		'post_type'   => 'xpressui_submission',
 		'post_status' => 'private',
