@@ -77,10 +77,12 @@ function appendFormDataValue(
   }
 
   if (Array.isArray(value)) {
-    value.forEach((entry) => {
+    value.forEach((entry, index) => {
+      const isObj = entry && typeof entry === "object" && !isFileLikeValue(entry);
+      const suffix = isObj ? `[${index}]` : "[]";
       appendFormDataValue(
         formData,
-        arrayMode === "brackets" ? `${key}[]` : key,
+        arrayMode === "brackets" ? `${key}${suffix}` : key,
         entry,
         arrayMode,
         fieldMap,
@@ -159,7 +161,7 @@ export async function submitFormValues(
   const mode = submitConfig.mode || "json";
   const formDataArrayMode = submitConfig.formDataArrayMode || "brackets";
   const headers = { ...(submitConfig.headers || {}) };
-  let url = resolveSubmitRequestUrl(submitConfig.endpoint, submitConfig.baseUrl);
+  let url = resolveSubmitRequestUrl(submitConfig.endpoint || "", submitConfig.baseUrl);
   const init: RequestInit = { method, headers };
   const payload = buildSubmitPayload(values, submitConfig, fieldMap);
 

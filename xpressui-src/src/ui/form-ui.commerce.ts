@@ -1,26 +1,38 @@
 import TFieldConfig from "../common/TFieldConfig";
 import type { TImageGalleryItem, TProductCartItem, TProductListItem } from "./form-ui.types";
 
+function getCatalogDisplayName(choice: any, fallback: string): string {
+  return String(
+    choice?.label
+      || choice?.title
+      || choice?.adminLabel
+      || choice?.name
+      || choice?.value
+      || choice?.id
+      || fallback,
+  );
+}
+
 export function getProductListCatalog(fieldConfig: TFieldConfig): TProductListItem[] {
   const source = Array.isArray(fieldConfig.choices) ? fieldConfig.choices : [];
   return source
     .slice(0, 20)
     .map((choice, index) => {
       const id = String((choice as any).value || (choice as any).id || `product_${index + 1}`);
-      const name = String((choice as any).name || (choice as any).label || id);
+      const name = getCatalogDisplayName(choice, id);
       const salePriceRaw = (choice as any).sale_price ?? (choice as any).salePrice;
       const discountPriceRaw = (choice as any).discount_price ?? (choice as any).discountPrice;
       const sale_price = salePriceRaw === undefined || salePriceRaw === null ? null : Number(salePriceRaw);
       const discount_price =
         discountPriceRaw === undefined || discountPriceRaw === null ? null : Number(discountPriceRaw);
       const image_thumbnail = String((choice as any).image_thumbnail || (choice as any).imageThumbnail || "");
-      const image_medium = String(
-        (choice as any).image_medium || (choice as any).imageMedium || image_thumbnail,
-      );
       const photosSource = (choice as any).photos_full ?? (choice as any).photosFull;
       const photos_full = Array.isArray(photosSource)
         ? photosSource.map((entry: any) => String(entry)).filter(Boolean)
         : [];
+      const image_medium = String(
+        photos_full[0] || (choice as any).image_medium || (choice as any).imageMedium || image_thumbnail,
+      );
       const maxNumOfChoicesRaw = Number((choice as any).maxNumOfChoices);
 
       return {
@@ -44,20 +56,20 @@ export function getImageGalleryCatalog(fieldConfig: TFieldConfig): TImageGallery
     .slice(0, 20)
     .map((choice, index) => {
       const id = String((choice as any).value || (choice as any).id || `image_${index + 1}`);
-      const name = String((choice as any).name || (choice as any).label || id);
+      const name = getCatalogDisplayName(choice, id);
       const salePriceRaw = (choice as any).sale_price ?? (choice as any).salePrice;
       const discountPriceRaw = (choice as any).discount_price ?? (choice as any).discountPrice;
       const sale_price = salePriceRaw === undefined || salePriceRaw === null ? null : Number(salePriceRaw);
       const discount_price =
         discountPriceRaw === undefined || discountPriceRaw === null ? null : Number(discountPriceRaw);
       const image_thumbnail = String((choice as any).image_thumbnail || (choice as any).imageThumbnail || "");
-      const image_medium = String(
-        (choice as any).image_medium || (choice as any).imageMedium || image_thumbnail,
-      );
       const photosSource = (choice as any).photos_full ?? (choice as any).photosFull;
       const photos_full = Array.isArray(photosSource)
         ? photosSource.map((entry: any) => String(entry)).filter(Boolean)
         : [];
+      const image_medium = String(
+        photos_full[0] || (choice as any).image_medium || (choice as any).imageMedium || image_thumbnail,
+      );
       const maxNumOfChoicesRaw = Number((choice as any).maxNumOfChoices);
 
       return {
@@ -86,7 +98,7 @@ export function getProductCartItems(value: any): TProductCartItem[] {
       const quantityRaw = Number((entry as any).quantity || 1);
       return {
         id: String((entry as any).id || (entry as any).value || ""),
-        name: String((entry as any).name || (entry as any).label || ""),
+        name: getCatalogDisplayName(entry, ""),
         sale_price:
           (entry as any).sale_price === undefined || (entry as any).sale_price === null
             ? null
@@ -118,7 +130,7 @@ export function getImageGallerySelectionItems(value: any): TImageGalleryItem[] {
     .filter((entry) => entry && typeof entry === "object")
     .map((entry, index) => ({
       id: String((entry as any).id || (entry as any).value || `image_${index + 1}`),
-      name: String((entry as any).name || (entry as any).label || (entry as any).id || ""),
+      name: getCatalogDisplayName(entry, (entry as any).id || ""),
       sale_price:
         (entry as any).sale_price === undefined || (entry as any).sale_price === null
           ? null

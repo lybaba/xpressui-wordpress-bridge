@@ -275,7 +275,13 @@ function appendRepeaterRow(repeaterNode: HTMLElement): void {
     return;
   }
   const rowTemplate = fragment.querySelector("[data-repeater-row]");
-  replaceRepeaterIndexPlaceholders(rowTemplate instanceof HTMLElement ? rowTemplate : null, currentRows);
+  // Guard against a malformed/empty template: if the clone has no row node, the row
+  // count would never increase and updateRepeaterControls() ↔ appendRepeaterRow()
+  // would recurse until the call stack overflows. Bail out instead of hanging.
+  if (!(rowTemplate instanceof HTMLElement)) {
+    return;
+  }
+  replaceRepeaterIndexPlaceholders(rowTemplate, currentRows);
   rowsNode.appendChild(fragment);
   updateRepeaterControls(repeaterNode);
   serializeRepeater(repeaterNode);

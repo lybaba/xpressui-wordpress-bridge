@@ -7,7 +7,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
 ?><main
-  class="form-frame<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?> form-frame--commerce-landing<?php endif; ?>"
+  class="form-frame<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?> form-frame--commerce-landing<?php endif; ?><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_layout'), "timeline"), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled')))): ?> form-frame--timeline<?php endif; ?>"
   data-template-zone="form_frame"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
 data-commerce-experience-frame="true"<?php endif; ?>

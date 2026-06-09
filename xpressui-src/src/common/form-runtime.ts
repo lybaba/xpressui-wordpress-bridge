@@ -458,6 +458,7 @@ export class FormRuntime {
     if (
       fieldConfig.type === IMAGE_TYPE ||
       fieldConfig.type === IMAGE_GALLERY_TYPE ||
+      fieldConfig.type === "image-gallery" ||
       fieldConfig.type === UPLOAD_IMAGE_TYPE ||
       fieldConfig.type === CAMERA_PHOTO_TYPE
     ) {

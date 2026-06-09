@@ -197,6 +197,48 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 }
 
 /**
+ * When the submitter opted in (the `emailMeCopy` field is checked), email THEM the
+ * same field-by-field notification the admin receives — minus the admin-only
+ * "Review submission" button (they have no wp-admin access). Independent of the
+ * admin notifyEmail setting.
+ *
+ * @param int          $post_id      Submission post ID.
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submitted payload (incl. files).
+ */
+function xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload ) {
+	if ( ! is_array( $payload ) ) {
+		return;
+	}
+	$opt_in = $payload['emailMeCopy'] ?? false;
+	$opt_in = in_array( $opt_in, [ true, 1, '1', 'true', 'yes', 'on' ], true );
+	if ( ! $opt_in ) {
+		return;
+	}
+
+	$to_email = trim( (string) ( $payload['email'] ?? '' ) );
+	if ( $to_email === '' || ! is_email( $to_email ) ) {
+		return;
+	}
+
+	$site_name = get_bloginfo( 'name' );
+	$label     = xpressui_get_submitter_workflow_label( $project_slug );
+	$label     = $label !== '' ? $label : $project_slug;
+	$reference = xpressui_build_notification_subject_reference( $post_id, $payload );
+	if ( $reference !== '' ) {
+		/* translators: 1: site name, 2: workflow label, 3: submission reference */
+		$subject = sprintf( __( '[%1$s] Your %2$s submission - %3$s', 'xpressui-bridge' ), $site_name, $label, $reference );
+	} else {
+		/* translators: 1: site name, 2: workflow label */
+		$subject = sprintf( __( '[%1$s] Your %2$s submission', 'xpressui-bridge' ), $site_name, $label );
+	}
+	$body    = xpressui_build_notification_body( $post_id, $project_slug, $payload, false );
+	$headers = xpressui_build_notification_headers();
+
+	xpressui_enqueue_mail( $to_email, $subject, $body, $headers, $post_id );
+}
+
+/**
  * Sends an admin notification email when a submitter resubmits requested files
  * or corrections for an existing pending_info submission.
  *
@@ -313,6 +355,7 @@ function xpressui_notification_skip_fields() {
 		'projectConfigVersion',
 		'projectConfigSnapshotJson',
 		'submissionId',
+		'emailMeCopy',
 	];
 }
 
@@ -322,7 +365,7 @@ function xpressui_notification_skip_fields() {
  * @param array|string $payload
  * @return string HTML email body.
  */
-function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
+function xpressui_build_notification_body( $post_id, $project_slug, $payload, $include_admin_link = true ) {
 	$site_name   = esc_html( get_bloginfo( 'name' ) );
 	$date        = esc_html( wp_date( 'Y-m-d H:i T' ) );
 	$admin_url   = esc_url( add_query_arg( [ 'post' => $post_id, 'action' => 'edit' ], admin_url( 'post.php' ) ) );
@@ -360,6 +403,22 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 
 	// Helper: format a single choice value as its human label when a map is available.
 	$format_choice = static function ( $slug, $choice_map ) {
+		if ( is_array( $slug ) ) {
+			foreach ( [ 'label', 'name', 'title' ] as $k ) {
+				if ( isset( $slug[ $k ] ) && is_scalar( $slug[ $k ] ) && (string) $slug[ $k ] !== '' ) {
+					return esc_html( (string) $slug[ $k ] );
+				}
+			}
+			$resolved = '';
+			foreach ( [ 'value', 'id' ] as $k ) {
+				if ( isset( $slug[ $k ] ) && is_scalar( $slug[ $k ] ) && (string) $slug[ $k ] !== '' ) {
+					$resolved = (string) $slug[ $k ];
+					break;
+				}
+			}
+			$slug = $resolved !== '' ? $resolved : (string) reset( $slug );
+		}
+
 		$s     = (string) $slug;
 		$lbl   = isset( $choice_map[ $s ] ) ? (string) $choice_map[ $s ] : '';
 		if ( $lbl !== '' ) {
@@ -442,7 +501,10 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 			return $html;
 		};
 
-		if ( is_array( $value ) ) {
+		$type = (string) ( $field_meta['type'] ?? '' );
+		if ( in_array( $type, [ 'repeater', 'quiz', 'product-list', 'select-image' ], true ) ) {
+			$display = xpressui_format_submission_value( $value, $field_meta );
+		} elseif ( is_array( $value ) ) {
 			if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
 				$display = $render_file_list( [ $value ] );
 			} elseif ( isset( $value[0] ) && is_array( $value[0] ) && ( $value[0]['kind'] ?? '' ) === 'uploaded-file' ) {
@@ -517,6 +579,14 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 			. '</tr>';
 	}
 
+	// Admin-only "Review submission" button — omitted for submitter sample copies
+	// (the submitter has no wp-admin access).
+	$cta_button = $include_admin_link
+		? '<a href="' . $admin_url . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
+			. esc_html__( 'Review submission', 'xpressui-bridge' )
+			. '</a>'
+		: '';
+
 	// ── Template ─────────────────────────────────────────────────────────────
 	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
 		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;">'
@@ -544,9 +614,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload ) {
 
 		// CTA footer
 		. '<tr><td style="padding:24px 28px;background:#f9fafb;border-top:1px solid #f0f0f0;">'
-		. '<a href="' . $admin_url . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#ffffff;text-decoration:none;border-radius:4px;font-size:13px;font-weight:600;">'
-		. esc_html__( 'Review submission', 'xpressui-bridge' )
-		. '</a>'
+		. $cta_button
 		. '<p style="margin:14px 0 0;font-size:11px;color:#d1d5db;">'
 		. esc_html( sprintf(
 			/* translators: %s: site name */
