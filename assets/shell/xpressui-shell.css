@@ -414,6 +414,11 @@
     .template-toggle-input:checked + .template-toggle-ui { background: var(--template-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 16%, transparent); }
     .template-toggle-input:checked + .template-toggle-ui::after { transform: translateX(18px); }
     .template-toggle-input:focus-visible + .template-toggle-ui { outline: 2px solid color-mix(in srgb, var(--template-primary) 55%, transparent); outline-offset: 3px; }
+    /* Checkbox field type renders as an actual square checkbox (the switch UI is for type="switch"). */
+    .template-field[data-field-type="checkbox"] .template-toggle-ui { width: 22px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--template-surface) 96%, white); border: 2px solid color-mix(in srgb, var(--template-border) 90%, transparent); }
+    .template-field[data-field-type="checkbox"] .template-toggle-ui::after { content: ''; top: 2px; left: 6px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; border-radius: 0; background: none; box-shadow: none; transform: rotate(45deg) scale(0); transition: transform 120ms ease; }
+    .template-field[data-field-type="checkbox"] .template-toggle-input:checked + .template-toggle-ui { background: var(--template-primary); border-color: var(--template-primary); box-shadow: none; }
+    .template-field[data-field-type="checkbox"] .template-toggle-input:checked + .template-toggle-ui::after { transform: rotate(45deg) scale(1); }
     .template-upload-box { display: grid; gap: 6px; place-items: center; padding: 16px 18px; border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); text-align: center; }
     .template-field[data-field-type='payment-proof'] { gap: 12px; }
     .template-field[data-field-type='payment-proof'] > .template-field-label-row { margin-bottom: 2px; }
