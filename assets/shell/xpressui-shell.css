@@ -1570,3 +1570,92 @@
 .xpressui-resume-locked .template-field-label {
   color: color-mix(in srgb, var(--template-text) 70%, transparent);
 }
+
+/* ---------------------------------------------------------------------------
+ * Step timeline layout (data-step-layout="timeline") — a clickable step
+ * sidebar that replaces the inline progress bar for multi-step forms.
+ * ------------------------------------------------------------------------- */
+.template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: start;
+}
+/* The sidebar conveys progress, so hide the inline progress bar in timeline mode. */
+.template-runtime-shell[data-step-layout="timeline"] .template-step-status { display: none; }
+.template-step-layout-main { min-width: 0; display: grid; gap: 16px; }
+.template-step-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 16px;
+  margin: 0;
+  padding: 0;
+}
+.template-step-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--template-muted-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: default;
+  transition: background 120ms ease, color 120ms ease;
+}
+.template-step-timeline-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--template-border) 45%, transparent);
+  color: var(--template-text);
+  font-size: 13px;
+  font-weight: 800;
+}
+.template-step-timeline-label { line-height: 1.25; }
+.template-step-timeline-item.is-complete { color: var(--template-text); }
+.template-step-timeline-item.is-complete .template-step-timeline-index {
+  background: color-mix(in srgb, var(--template-primary) 20%, transparent);
+  color: var(--template-primary);
+}
+.template-step-timeline-item.is-active {
+  color: var(--template-text);
+  background: color-mix(in srgb, var(--template-primary) 9%, transparent);
+}
+.template-step-timeline-item.is-active .template-step-timeline-index {
+  background: var(--template-primary);
+  color: #fff;
+}
+.template-step-timeline-item.is-clickable { cursor: pointer; }
+.template-step-timeline-item.is-clickable:hover {
+  background: color-mix(in srgb, var(--template-primary) 7%, transparent);
+}
+.template-step-timeline-item[disabled] { cursor: default; }
+
+@media (max-width: 760px) {
+  .template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .template-step-timeline {
+    position: static;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+  .template-step-timeline-item { width: auto; flex: 0 0 auto; padding: 8px 10px; }
+  .template-step-timeline-label { display: none; }
+}

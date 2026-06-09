@@ -16,6 +16,7 @@
     "label_position": "stacked",
     "background_style": "panel",
     "field_columns": 1,
+    "step_layout": "default",
     "colors": {
       "page_background": "#edf3fb",
       "surface": "#ffffff",
@@ -1158,6 +1159,29 @@
     },
     "submit_label": "Submit intake",
     "has_sections": true,
+    "step_layout": "default",
+    "step_descriptors": [
+      {
+        "index": 0,
+        "name": "section1",
+        "label": "Step 1: Contact"
+      },
+      {
+        "index": 1,
+        "name": "requestStep",
+        "label": "Step 2: Request"
+      },
+      {
+        "index": 2,
+        "name": "filesStep",
+        "label": "Step 3: Files"
+      },
+      {
+        "index": 3,
+        "name": "reviewStep",
+        "label": "Step 4: Review"
+      }
+    ],
     "step_status": {
       "enabled": true,
       "current_index": 1,
