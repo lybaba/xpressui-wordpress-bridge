@@ -6,13 +6,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
     throw new RuntimeException('Missing template context array.');
 }
-?><form
+?><?php $xpressui_ctx['is_step_timeline'] = xpressui_bridge_template_and_value(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_layout'), "timeline"), xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled')); ?>
+<form
   class="template-runtime-shell"
   data-template-zone="rendered_form"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'product_catalog'), 'product_items')))): ?>
 data-product-form-gated="true" hidden<?php endif; ?>
   data-field-columns="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'field_columns'))); ?>"
   data-label-position="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'theme'), 'label_position'))); ?>"
+  data-step-layout="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_layout'), "default"))); ?>"
   method="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_method'))); ?>"
   action="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_endpoint'))); ?>"
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'runtime'), 'submit_enctype'))): ?>
@@ -39,6 +41,37 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
     <p class="template-form-subtitle"<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_or_value((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_subtitle'))), (!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle')))))): ?> style="display:none"<?php endif; ?>><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'subtitle'))); ?></p>
   </header>
 
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'is_step_timeline'))): ?>
+  <div class="template-step-layout" data-step-layout-grid>
+    <div class="template-step-timeline">
+<?php
+$xpressui_loop_parent_ctx_2 = $xpressui_ctx;
+$xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_descriptors'));
+foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_value_4):
+    $xpressui_ctx = $xpressui_loop_parent_ctx_2;
+    $xpressui_ctx['step'] = $xpressui_loop_value_4;
+    $xpressui_ctx['loop'] = [
+        'index'  => $xpressui_loop_index_3 + 1,
+        'index0' => $xpressui_loop_index_3,
+        'first'  => $xpressui_loop_index_3 === 0,
+        'last'   => ($xpressui_loop_index_3 + 1) === count($xpressui_loop_items_1),
+    ];
+?>
+      <button
+        type="button"
+        class="template-step-timeline-item<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'loop'), 'first'))): ?> is-active<?php endif; ?>"
+        data-step-nav-item="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'step'), 'index'))); ?>"
+<?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'loop'), 'first'))))): ?>
+disabled<?php endif; ?>
+        aria-current="<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'loop'), 'first'))): ?>step<?php else: ?>false<?php endif; ?>"
+      >
+        <span class="template-step-timeline-index"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_add(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'step'), 'index'), 1))); ?></span>
+        <span class="template-step-timeline-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'step'), 'label'))); ?></span>
+      </button>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
+    </div>
+    <div class="template-step-layout-main">
+<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'step_status'), 'enabled'))): ?>
     <section
       class="template-step-status"
@@ -58,21 +91,21 @@ enctype="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_
 <?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'has_sections'))): ?>
 <?php
-$xpressui_loop_parent_ctx_2 = $xpressui_ctx;
-$xpressui_loop_items_1 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'sections'));
-foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_value_4):
-    $xpressui_ctx = $xpressui_loop_parent_ctx_2;
-    $xpressui_ctx['section'] = $xpressui_loop_value_4;
+$xpressui_loop_parent_ctx_6 = $xpressui_ctx;
+$xpressui_loop_items_5 = xpressui_bridge_template_iterable(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'sections'));
+foreach ($xpressui_loop_items_5 as $xpressui_loop_index_7 => $xpressui_loop_value_8):
+    $xpressui_ctx = $xpressui_loop_parent_ctx_6;
+    $xpressui_ctx['section'] = $xpressui_loop_value_8;
     $xpressui_ctx['loop'] = [
-        'index'  => $xpressui_loop_index_3 + 1,
-        'index0' => $xpressui_loop_index_3,
-        'first'  => $xpressui_loop_index_3 === 0,
-        'last'   => ($xpressui_loop_index_3 + 1) === count($xpressui_loop_items_1),
+        'index'  => $xpressui_loop_index_7 + 1,
+        'index0' => $xpressui_loop_index_7,
+        'first'  => $xpressui_loop_index_7 === 0,
+        'last'   => ($xpressui_loop_index_7 + 1) === count($xpressui_loop_items_5),
     ];
 ?>
 <?php $xpressui_ctx['is_initial_form_section'] = xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'loop'), 'first'); ?>
 <?php xpressui_bridge_template_include_template('section.php', $xpressui_ctx); ?>
-<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_2; ?>
+<?php endforeach; $xpressui_ctx = $xpressui_loop_parent_ctx_6; ?>
 <?php else: ?>
     <section class="template-section" data-template-zone="empty_form">
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'rendered_form'), 'show_section_headers'))): ?>
@@ -84,4 +117,8 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
     </section>
 <?php endif; ?>
 <?php xpressui_bridge_template_include_template('actions.php', $xpressui_ctx); ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_context_get($xpressui_ctx, 'is_step_timeline'))): ?>
+    </div>
+  </div>
+<?php endif; ?>
 </form>

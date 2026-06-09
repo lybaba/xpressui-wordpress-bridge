@@ -208,7 +208,7 @@ export class FormUploadRuntime {
     const body = buildFormDataBody(values, submitConfig, fieldMap);
     const headers = { ...(submitConfig.headers || {}) };
     const method = submitConfig.method || "POST";
-    const endpoint = resolveSubmitRequestUrl(submitConfig.endpoint, submitConfig.baseUrl);
+    const endpoint = resolveSubmitRequestUrl(submitConfig.endpoint || "", submitConfig.baseUrl);
 
     this.emitUploadEvent("xpressui:upload-start", values, submitConfig, createUploadState(fileFieldNames, "uploading", 0));
 

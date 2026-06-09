@@ -43,6 +43,10 @@ export default defineConfig(() => {
               fileURLToPath(new URL('.', import.meta.url)),
               'src/ui/form-ui.mobile-capture-runtime.light.ts',
             ),
+            './ui/form-ui.choice-catalog-runtime': path.resolve(
+              fileURLToPath(new URL('.', import.meta.url)),
+              'src/ui/form-ui.choice-catalog-runtime.light.ts',
+            ),
           }
         : undefined,
     },

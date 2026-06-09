@@ -6,6 +6,7 @@ export const LIGHT_UNSUPPORTED_COMPONENTS = new Set([
   "product-list",
   "select-product",
   "select-image",
+  "smart-catalog",
   "select-multiple",
   "quiz",
   "section-select",

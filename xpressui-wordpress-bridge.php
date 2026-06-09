@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       XPressUI Bridge
  * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your site with a shortcode and review submissions in wp-admin.
- * Version:           1.0.86
+ * Version:           1.0.90
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            IAKPress
@@ -17,7 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'XPRESSUI_BRIDGE_VERSION', '1.0.86' );
+if ( ( isset( $_GET['xpressui_clear_cache'] ) || isset( $_GET['nocache'] ) ) && function_exists( 'opcache_reset' ) ) {
+	opcache_reset();
+}
+
+register_activation_hook( __FILE__, function() {
+	if ( function_exists( 'opcache_reset' ) ) {
+		opcache_reset();
+	}
+} );
+
+define( 'XPRESSUI_BRIDGE_VERSION', '1.0.90' );
 define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.16' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );

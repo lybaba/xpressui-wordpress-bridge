@@ -1,6 +1,6 @@
 {
   "name": "@lybaba/xpressui",
-  "version": "1.0.14",
+  "version": "1.0.16",
   "repository": "https://github.com/lybaba/xpressui",
   "description": "Schema-driven web components for forms and post UIs",
   "main": "./lib/index.js",
@@ -32,7 +32,7 @@
     "/dist"
   ],
   "scripts": {
-    "build:dist:light": "XPRESSUI_RUNTIME_TIER=light vite build --sourcemap",
+    "build:dist:light": "node -e \"process.env.XPRESSUI_RUNTIME_TIER='light'; require('child_process').execSync('vite build --sourcemap', {stdio: 'inherit'})\"",
     "build": "npm run build:dist:light",
     "check": "tsc --noEmit",
     "test": "vitest run"
