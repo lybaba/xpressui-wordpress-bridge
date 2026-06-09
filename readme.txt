@@ -1,6 +1,6 @@
-=== XPressUI Bridge ===
+=== Multi-Step Forms & Client Document Intake – XPressUI Bridge ===
 Contributors: iakpressteam
-Tags: form, submission, workflow, document intake, multi-step
+Tags: document collection, client portal, file upload, intake form, multi-step form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
@@ -8,7 +8,7 @@ Stable tag: 1.0.86
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Embed any XPressUI workflow on your WordPress site with a shortcode and review incoming submissions straight from wp-admin.
+Natively collect files, documents, and client intake form submissions directly in WordPress. Inline rendering, team inbox, and workflow tracking included.
 
 == Description ==
 
@@ -34,6 +34,13 @@ If you need advanced field types, direct Console Sync, or local workflow customi
 = Who is this for? =
 
 Businesses and developers who use the XPressUI console to build document-intake or multi-step application forms and want to manage the collected data inside their existing WordPress environment without an external SaaS inbox.
+
+= The Ultimate Alternative for Team Intake =
+
+Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), XPressUI Bridge is built specifically for **client intake** and **document collection**. 
+* **No paywall on team inbox:** Assign submissions to specific WordPress users without upgrading to expensive Enterprise plans (unlike JotForm or Typeform).
+* **No bloated iframes:** Forms render natively in clean, fast HTML/JS, inheriting your active theme's styling.
+* **100% GDPR-compliant:** Your submissions and uploaded files are stored entirely in your local database. No data is stored on third-party servers.
 
 == Installation ==
 
