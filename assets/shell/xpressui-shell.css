@@ -73,6 +73,7 @@
     .form-frame {
       width: min(100%, 900px);
       background: color-mix(in srgb, var(--template-surface) 92%, white);
+      border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
       border-radius: var(--template-card-radius);
       padding: 28px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.08);
@@ -142,7 +143,9 @@
     .template-step-status[data-step-feedback-state='success'] { background: color-mix(in srgb, #22c55e 8%, var(--template-surface)); border-color: color-mix(in srgb, #22c55e 20%, transparent); }
     .template-step-status-title { font-size: 12px; font-weight: 800; color: var(--template-primary); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; align-self: start; background: color-mix(in srgb, var(--template-primary) 8%, transparent); padding: 6px 12px; border-radius: 999px; }
     .template-step-status-message { display: none; /* Cleaner to hide this and rely on Section labels */ }
-    .template-section { display: grid; gap: 14px; padding: 18px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
+    /* Sections render as plain content inside the single .form-frame card (like
+     * the hosted link), so step navigation/submit buttons sit inside the frame. */
+    .template-section { display: grid; gap: 14px; padding: 0; border: 0; background: none; }
     .template-section-header { display: grid; gap: 4px; }
     .template-section-label { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0; color: var(--template-text); }
     .template-section-desc { margin: 0 0 4px 0; color: var(--template-muted-text); font-size: 14px; line-height: 1.5; }
@@ -596,7 +599,7 @@
       .hosted-link-presentation { padding: 16px; }
       .hosted-link-title { font-size: 21px; }
       #xpressui-root .template-form-title { font-size: 28px; }
-      .template-section { padding: 16px; }
+      .template-section { padding: 0; }
       .template-section-label { font-size: 21px; }
       .template-runtime-shell[data-field-columns='2'] .template-fields,
       .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: 1fr; }
