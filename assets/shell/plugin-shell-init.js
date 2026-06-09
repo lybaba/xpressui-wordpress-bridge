@@ -430,24 +430,47 @@ function applyResumeMode(mountNode, form, resumeData, token) {
   };
   const setFieldInteractivity = (input, enabled) => {
     if (!(input instanceof HTMLElement)) return;
-    if (
-      input instanceof HTMLInputElement
+    const isFormControl = input instanceof HTMLInputElement
       || input instanceof HTMLTextAreaElement
       || input instanceof HTMLSelectElement
-      || input instanceof HTMLButtonElement
-    ) {
-      input.disabled = !enabled;
+      || input instanceof HTMLButtonElement;
+    if (!isFormControl) return;
+
+    const isFile = input instanceof HTMLInputElement && input.type === 'file';
+
+    if (enabled) {
+      input.disabled = false;
       if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-        input.readOnly = !enabled;
+        input.readOnly = false;
       }
-      if (enabled) {
-        input.removeAttribute('tabindex');
-        input.removeAttribute('aria-disabled');
-      } else {
-        input.setAttribute('tabindex', '-1');
-        input.setAttribute('aria-disabled', 'true');
+      input.removeAttribute('tabindex');
+      input.removeAttribute('aria-disabled');
+      return;
+    }
+
+    // LOCK a non-flagged field. Do NOT use `disabled` on data controls: a disabled
+    // control is dropped from FormData, so the runtime's per-step validation would
+    // treat a locked *required* field (e.g. the prefilled name/email on step 1 of a
+    // resume) as empty and silently refuse to advance to the next step. Instead keep
+    // it enabled — so its prefilled value is submitted and passes validation — and
+    // block editing via readOnly (text) + tabindex + pointer-events (set on the
+    // .xpressui-resume-locked container in CSS).
+    // File inputs are the exception: the original upload is preserved server-side and
+    // must be excluded from this submission, so they stay `disabled`.
+    if (isFile) {
+      input.disabled = true;
+    } else {
+      input.disabled = false;
+      const isTextLike = (input instanceof HTMLInputElement
+          && input.type !== 'checkbox'
+          && input.type !== 'radio')
+        || input instanceof HTMLTextAreaElement;
+      if (isTextLike) {
+        input.readOnly = true;
       }
     }
+    input.setAttribute('tabindex', '-1');
+    input.setAttribute('aria-disabled', 'true');
   };
   const escapeFieldName = (value) => {
     if (typeof window.CSS?.escape === 'function') {

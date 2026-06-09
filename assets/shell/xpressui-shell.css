@@ -1563,6 +1563,9 @@
 }
 .xpressui-resume-locked {
   opacity: 0.92;
+  /* Locked controls stay enabled (so their value is submitted/validated); block
+   * all interaction here instead of via the `disabled` attribute. */
+  pointer-events: none;
 }
 .xpressui-resume-locked .template-field-label {
   color: color-mix(in srgb, var(--template-text) 70%, transparent);
