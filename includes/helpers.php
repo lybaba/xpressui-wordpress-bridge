@@ -2051,6 +2051,90 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				$field['photo_placeholder_slots'] = array_fill( 0, $max_files, null );
 			} elseif ( $type === 'camera-photo' ) {
 				$field['max_files'] = isset( $field['maxFiles'] ) ? (int) $field['maxFiles'] : null;
+			} elseif ( $type === 'repeater' ) {
+				$subfields = [];
+				if ( is_array( $field['fields'] ?? null ) ) {
+					$repeater_supported_types = [
+						'text', 'textarea', 'email', 'tel', 'date', 'time',
+						'number', 'checkbox', 'checkboxes', 'radio-buttons', 'select-one'
+					];
+					$subfield_input_type_map = [
+						'email'  => 'email',
+						'tel'    => 'tel',
+						'date'   => 'date',
+						'time'   => 'time',
+						'number' => 'number',
+					];
+					foreach ( $field['fields'] as $subfield ) {
+						if ( ! is_array( $subfield ) ) {
+							continue;
+						}
+						$subfield_type = trim( (string) ( $subfield['type'] ?? 'text' ) );
+						if ( ! in_array( $subfield_type, $repeater_supported_types, true ) ) {
+							$subfield_type = 'text';
+						}
+						$subfield_name = trim( (string) ( $subfield['name'] ?? '' ) );
+						if ( '' === $subfield_name ) {
+							$subfield_name = preg_replace( '/[^a-zA-Z0-9_]+/', '_', strtolower( (string) ( $subfield['label'] ?? 'value' ) ) );
+							$subfield_name = trim( $subfield_name, '_' ) ?: 'value';
+						}
+						$choices = [];
+						if ( is_array( $subfield['choices'] ?? null ) ) {
+							foreach ( $subfield['choices'] as $choice ) {
+								if ( is_array( $choice ) ) {
+									$choices[] = [
+										'label' => (string) ( $choice['label'] ?? $choice['name'] ?? $choice['value'] ?? 'Choice' ),
+										'value' => (string) ( $choice['value'] ?? $choice['id'] ?? $choice['name'] ?? $choice['label'] ?? '' ),
+									];
+								}
+							}
+						}
+						$subfields[] = [
+							'name'        => $subfield_name,
+							'label'       => (string) ( $subfield['label'] ?? $subfield['adminLabel'] ?? $subfield_name ),
+							'type'        => $subfield_type,
+							'placeholder' => (string) ( $subfield['placeholder'] ?? '' ),
+							'required'    => ! empty( $subfield['required'] ),
+							'choices'     => $choices,
+							'input_type'  => $subfield_input_type_map[ $subfield_type ] ?? 'text',
+						];
+					}
+				}
+				if ( empty( $subfields ) ) {
+					$subfields[] = [
+						'name'        => 'value',
+						'label'       => 'Value',
+						'type'        => 'text',
+						'placeholder' => '',
+						'required'    => false,
+						'choices'     => [],
+						'input_type'  => 'text',
+					];
+				}
+				$min_rows = isset( $field['minRows'] ) ? (int) $field['minRows'] : 1;
+				if ( $min_rows < 0 || $min_rows > 50 ) {
+					$min_rows = 1;
+				}
+				$max_rows = isset( $field['maxRows'] ) ? (int) $field['maxRows'] : max( $min_rows, 5 );
+				if ( $max_rows < $min_rows || $max_rows > 50 ) {
+					$max_rows = max( $min_rows, 5 );
+				}
+				$initial_row_count = max( 1, $min_rows );
+				$initial_rows = [];
+				for ( $i = 0; $i < $initial_row_count; $i++ ) {
+					$initial_rows[] = [
+						'index'  => $i,
+						'number' => $i + 1,
+					];
+				}
+				$field['repeater_fields']   = $subfields;
+				$field['min_rows']          = $min_rows;
+				$field['max_rows']          = $max_rows;
+				$field['initial_row_count'] = $initial_row_count;
+				$field['initial_rows']      = $initial_rows;
+				$field['item_label']        = (string) ( $field['itemLabel'] ?? 'Row' );
+				$field['add_label']         = (string) ( $field['addLabel'] ?? 'Add row' );
+				$field['remove_label']      = (string) ( $field['removeLabel'] ?? 'Remove' );
 			}
 			$fields[]             = $field;
 		}
