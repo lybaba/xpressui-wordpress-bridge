@@ -542,23 +542,23 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "}\n";
 
 	// ── Step timeline layout (data-step-layout="timeline") ──────────────────────
-	// The timeline is ALWAYS a left column (never stacked above the form) and is its
-	// own panel, outside the white form card. Forced with !important so the WP theme
-	// and the generic .form-frame card rules above can't override it.
+	// The timeline is a LEFT column INSIDE the single main .form-frame card (never
+	// stacked above the form, never its own card outside). Forced with !important so
+	// the WP theme can't collapse the grid.
 	$inline_css .= "\n/* Step timeline layout */\n";
-	// Outer frame becomes a transparent 2-column container (timeline | form).
-	$inline_css .= "{$scope} .form-frame:has([data-step-layout='timeline']) { background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; width: min(100%, 1100px) !important; max-width: 1100px !important; }\n";
-	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { display: grid !important; grid-template-columns: 250px minmax(0, 1fr) !important; gap: 24px !important; align-items: start !important; }\n";
+	// Widen the (still white) form card in timeline mode so the form keeps room next
+	// to the ~230px sidebar.
+	$inline_css .= "{$scope} .form-frame:has([data-step-layout='timeline']) { width: min(100%, 1120px) !important; max-width: 1120px !important; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { display: grid !important; grid-template-columns: 230px minmax(0, 1fr) !important; gap: 28px !important; align-items: start !important; }\n";
 	// The timeline sidebar replaces the inline progress bar.
 	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-status { display: none !important; }\n";
-	// Timeline sidebar = its own card.
-	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 14px !important; background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; box-shadow: 0 16px 44px rgba(15, 23, 42, 0.10) !important; }\n";
-	// Form column = the white card.
-	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-layout-main { display: grid; gap: 16px; min-width: 0; padding: 24px !important; background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; box-shadow: 0 16px 44px rgba(15, 23, 42, 0.10) !important; }\n";
+	// Timeline = a plain left column (sticky), with a subtle separator — no own card.
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0 22px 0 0; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }\n";
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-layout-main { display: grid; gap: 16px; min-width: 0; }\n";
 	// On phones the sidebar can't sit beside the form — stack it, but keep it first.
 	$inline_css .= "@media (max-width: 820px) {\n";
 	$inline_css .= "  {$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { grid-template-columns: 1fr !important; }\n";
-	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline { position: static; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline { position: static; padding: 0 0 12px; border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }\n";
 	$inline_css .= "}\n";
 
 	return $inline_css;
