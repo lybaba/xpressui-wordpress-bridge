@@ -416,6 +416,8 @@ function xpressui_get_shell_allowed_html() {
 		'td'       => array_merge( $global_attrs, [ 'colspan' => true, 'rowspan' => true ] ),
 		'template' => array_merge( $global_attrs, [ 'type' => true ] ),
 		'dialog'   => array_merge( $global_attrs, [ 'open' => true ] ),
+		'article'  => $global_attrs,
+		'canvas'   => array_merge( $global_attrs, [ 'width' => true, 'height' => true ] ),
 	];
 }
 
