@@ -504,9 +504,10 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
 	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
 	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";
-	// Sections are flat content inside the single .form-frame card — no inner card
-	// chrome, no extra padding (the frame already pads), so nav/submit sit inside.
-	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 0; border: 0; background: none; }\n";
+	// Sections render as an inner card inside the outer .form-frame (like the hosted
+	// link): outer frame + inner section frame. Forced with !important so the host
+	// theme can't strip the inner card.
+	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 20px 18px; background: color-mix(in srgb, var(--template-surface) 84%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)) !important; border-radius: max(calc(var(--template-card-radius) - 6px), 18px) !important; }\n";
 	$inline_css .= "{$scope} .template-fields { gap: 12px; }\n";
 	$inline_css .= "{$scope} .template-field { gap: 6px; }\n";
 	$inline_css .= "{$scope} .template-field-label { font-size: 13px; }\n";
@@ -536,7 +537,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "@media (max-width: 720px) {\n";
 	$inline_css .= "  {$scope} .form-frame { padding: 16px !important; }\n";
 	$inline_css .= "  {$scope} .template-form-title { font-size: clamp(20px, 7vw, 26px); }\n";
-	$inline_css .= "  {$scope} .template-section { padding: 0; }\n";
+	$inline_css .= "  {$scope} .template-section { padding: 16px; }\n";
 	$inline_css .= "  {$scope} .template-input,\n  {$scope} .template-textarea { font-size: 13px; }\n";
 	$inline_css .= "}\n";
 
