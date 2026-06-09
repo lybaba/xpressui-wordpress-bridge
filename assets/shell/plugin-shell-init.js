@@ -92,6 +92,17 @@ function _localSetFeedbackState(mountNode, state, message, title) {
 // Resume / partial-resubmission mode
 // ---------------------------------------------------------------------------
 
+// Field types whose value is an uploaded file (kept server-side across a resume).
+const RESUME_FILE_FIELD_TYPES = new Set([
+  'file',
+  'upload-image',
+  'camera-photo',
+  'camera-photo-list',
+  'qr-scan',
+  'document-scan',
+  'payment-proof',
+]);
+
 function resolveResumeEndpoint(token) {
   const apiRootLink = document.querySelector('link[rel="https://api.w.org/"]');
   const apiRootHref = apiRootLink instanceof HTMLLinkElement ? apiRootLink.href : '';
@@ -170,6 +181,31 @@ function pruneResumeFormConfig(formConfig, resumeData) {
     sections: { ...(formConfig.sections || {}) },
   };
   const sections = nextConfig.sections;
+
+  // A required file field that is NOT being re-requested must become optional: the
+  // original upload is preserved server-side, so we must never force a re-upload
+  // (which would block the step on an empty file input). Only flagged or
+  // additional-document file fields stay required.
+  const resumeAllowList = buildResumeFieldAllowList(resumeData);
+  Object.keys(sections).forEach((sectionKey) => {
+    if (sectionKey === 'custom') return;
+    const sectionFields = sections[sectionKey];
+    if (!Array.isArray(sectionFields)) return;
+    sections[sectionKey] = sectionFields.map((field) => {
+      const fieldName = typeof field?.name === 'string' ? field.name : '';
+      if (
+        field
+        && field.required
+        && RESUME_FILE_FIELD_TYPES.has(field.type)
+        && fieldName
+        && !resumeAllowList.has(fieldName)
+      ) {
+        return { ...field, required: false };
+      }
+      return field;
+    });
+  });
+
   const keptCustomSections = Array.isArray(sections.custom) ? [...sections.custom] : [];
 
   const additionalFileFields = buildResumeAdditionalFileFields(resumeData);
@@ -617,8 +653,18 @@ function applyResumeMode(mountNode, form, resumeData, token) {
       }
     }
 
-    // Non-flagged file field — hide the whole container (server keeps original value)
+    // Non-flagged file field — not re-requested: the original upload is kept
+    // server-side, so make it optional (drop native required + the asterisk) and
+    // lock it. Matches the demotion done in pruneResumeFormConfig at the config level.
     if (!isFlagged) {
+      fileInput.required = false;
+      fileInput.removeAttribute('required');
+      fileInput.removeAttribute('aria-required');
+      const fieldNode = fileInput.closest('[data-field-name]');
+      const requiredMarker = fieldNode && fieldNode.querySelector('.template-required');
+      if (requiredMarker instanceof HTMLElement) {
+        requiredMarker.style.display = 'none';
+      }
       setFieldInteractivity(fileInput, false);
     } else {
       setFieldInteractivity(fileInput, true);
