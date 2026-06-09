@@ -80,6 +80,9 @@
       position: relative;
       z-index: 1;
     }
+    .form-frame.form-frame--timeline {
+      width: min(100%, 1120px);
+    }
     body[data-bg-style="panel"] .form-frame,
     body[data-bg-style="full-bleed"] .form-frame {
       background: color-mix(in srgb, var(--template-surface) 96%, transparent);
@@ -1581,86 +1584,89 @@
  * sidebar that replaces the inline progress bar for multi-step forms.
  * ------------------------------------------------------------------------- */
 .template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  gap: clamp(20px, 3vw, 40px);
-  align-items: start;
+  display: grid !important;
+  grid-template-columns: 232px minmax(0, 1fr) !important;
+  gap: clamp(20px, 3vw, 40px) !important;
+  align-items: start !important;
 }
 /* The sidebar conveys progress, so hide the inline progress bar in timeline mode. */
-.template-runtime-shell[data-step-layout="timeline"] .template-step-status { display: none; }
+.template-runtime-shell[data-step-layout="timeline"] .template-step-status { display: none !important; }
 .template-step-layout-main { min-width: 0; display: grid; gap: 16px; }
 .template-step-timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  position: sticky;
-  top: 16px;
-  margin: 0;
-  padding: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 2px !important;
+  position: sticky !important;
+  top: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 .template-step-timeline-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  padding: 11px 14px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: var(--template-muted-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: default;
-  transition: background 120ms ease, color 120ms ease;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  text-align: left !important;
+  padding: 11px 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--template-muted-text) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: default !important;
+  transition: background 120ms ease, color 120ms ease !important;
 }
 .template-step-timeline-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--template-border) 45%, transparent);
-  color: var(--template-text);
-  font-size: 13px;
-  font-weight: 800;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--template-border) 45%, transparent) !important;
+  color: var(--template-text) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
 }
-.template-step-timeline-label { line-height: 1.25; }
-.template-step-timeline-item.is-complete { color: var(--template-text); }
+.template-step-timeline-label { line-height: 1.25 !important; }
+.template-step-timeline-item.is-complete { color: var(--template-text) !important; }
 .template-step-timeline-item.is-complete .template-step-timeline-index {
-  background: color-mix(in srgb, var(--template-primary) 20%, transparent);
-  color: var(--template-primary);
+  background: color-mix(in srgb, var(--template-primary) 20%, transparent) !important;
+  color: var(--template-primary) !important;
 }
 .template-step-timeline-item.is-active {
-  color: var(--template-text);
-  background: color-mix(in srgb, var(--template-primary) 9%, transparent);
+  color: var(--template-text) !important;
+  background: color-mix(in srgb, var(--template-primary) 9%, transparent) !important;
 }
 .template-step-timeline-item.is-active .template-step-timeline-index {
-  background: var(--template-primary);
-  color: #fff;
+  background: var(--template-primary) !important;
+  color: #fff !important;
 }
-.template-step-timeline-item.is-clickable { cursor: pointer; }
+.template-step-timeline-item.is-clickable { cursor: pointer !important; }
 .template-step-timeline-item.is-clickable:hover {
-  background: color-mix(in srgb, var(--template-primary) 7%, transparent);
+  background: color-mix(in srgb, var(--template-primary) 7%, transparent) !important;
 }
-.template-step-timeline-item[disabled] { cursor: default; }
+.template-step-timeline-item[disabled] { cursor: default !important; }
 
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   .template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   .template-step-timeline {
-    position: static;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 6px;
+    position: static !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important;
   }
-  .template-step-timeline-item { width: auto; flex: 0 0 auto; padding: 8px 10px; }
-  .template-step-timeline-label { display: none; }
+  .template-step-timeline-item { width: auto !important; flex: 0 0 auto !important; padding: 8px 10px !important; }
+  .template-step-timeline-label { display: none !important; }
 }

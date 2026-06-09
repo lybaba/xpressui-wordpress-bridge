@@ -548,17 +548,19 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "\n/* Step timeline layout */\n";
 	// Widen the (still white) form card in timeline mode so the form keeps room next
 	// to the ~230px sidebar.
-	$inline_css .= "{$scope} .form-frame:has([data-step-layout='timeline']) { width: min(100%, 1120px) !important; max-width: 1120px !important; }\n";
+	$inline_css .= "{$scope} .form-frame.form-frame--timeline, {$scope} .form-frame:has([data-step-layout='timeline']) { width: min(100%, 1120px) !important; max-width: 1120px !important; }\n";
 	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { display: grid !important; grid-template-columns: 230px minmax(0, 1fr) !important; gap: 28px !important; align-items: start !important; }\n";
 	// The timeline sidebar replaces the inline progress bar.
 	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-status { display: none !important; }\n";
 	// Timeline = a plain left column (sticky), with a subtle separator — no own card.
-	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0 22px 0 0; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }\n";
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky !important; top: 16px !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; margin: 0 !important; padding: 0 22px 0 0 !important; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; border-bottom: 0 !important; }\n";
 	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-layout-main { display: grid; gap: 16px; min-width: 0; }\n";
 	// On phones the sidebar can't sit beside the form — stack it, but keep it first.
-	$inline_css .= "@media (max-width: 820px) {\n";
+	$inline_css .= "@media (max-width: 640px) {\n";
 	$inline_css .= "  {$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { grid-template-columns: 1fr !important; }\n";
-	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline { position: static; padding: 0 0 12px; border-right: 0; border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent); }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline { position: static !important; display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; overflow-x: auto !important; gap: 8px !important; padding: 0 0 12px !important; border-right: 0 !important; border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline-item { width: auto !important; flex: 0 0 auto !important; padding: 8px 10px !important; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline-label { display: none !important; }\n";
 	$inline_css .= "}\n";
 
 	return $inline_css;
