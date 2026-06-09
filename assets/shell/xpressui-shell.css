@@ -1509,3 +1509,55 @@
       max-width: 100% !important;
       width: 100% !important;
     }
+
+/* ---------------------------------------------------------------------------
+ * Resume / correction mode (partial resubmission) — mirrors the hosted link:
+ * a "what to correct" summary at the top, flagged fields highlighted, the rest
+ * shown read-only for context.
+ * ------------------------------------------------------------------------- */
+.xpressui-resume-banner {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 10px;
+  color: #713f12;
+}
+.xpressui-resume-banner-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.xpressui-resume-banner [data-resume-banner-note] {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.xpressui-resume-banner-fields {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.xpressui-resume-banner-fields li {
+  font-size: 13px;
+  font-weight: 600;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 4px 12px;
+  color: #92400e;
+}
+.xpressui-resume-flagged {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.xpressui-resume-locked {
+  opacity: 0.55;
+}

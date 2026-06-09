@@ -469,28 +469,75 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     }
   };
 
-  // Resume mode is always presented as a single-step correction form.
-  hideResumeStepUi();
-
+  // SaaS-style correction: keep the full multi-step form visible and prefilled,
+  // and enable + highlight only the fields the operator flagged; everything else
+  // stays visible but read-only. (Prefill + per-input interactivity below.)
   if (!showAllFields) {
-    form.querySelectorAll('[data-template-zone="section"]').forEach((section) => {
-      setResumeNodeVisibility(section, false);
-    });
     form.querySelectorAll('[data-field-name]').forEach((fieldNode) => {
-      setResumeNodeVisibility(fieldNode, false);
-      fieldNode
-        .querySelectorAll('input, textarea, select, button')
-        .forEach((element) => setFieldInteractivity(element, false));
+      if (!(fieldNode instanceof HTMLElement)) return;
+      const fieldName = fieldNode.getAttribute('data-field-name') || '';
+      const flagged = allowedFieldNames.has(fieldName);
+      setResumeNodeVisibility(fieldNode, true);
+      fieldNode.classList.toggle('xpressui-resume-flagged', flagged);
+      fieldNode.classList.toggle('xpressui-resume-locked', !flagged);
     });
-    allowedFieldNames.forEach((fieldName) => revealField(fieldName));
+    form.querySelectorAll('[data-template-zone="section"]').forEach((section) => {
+      setResumeNodeVisibility(section, true);
+    });
   }
 
-  // Banner — show pre-rendered element and fill in the operator note
-  if (note && note.trim()) {
-    const banner = form.querySelector('[data-resume-banner]');
-    const noteEl = banner?.querySelector('[data-resume-banner-note]');
-    if (banner && noteEl) {
-      noteEl.textContent = note;
+  // Banner — "what to correct" summary at the top of the form (like the hosted
+  // link): a title, the operator note, and chips listing the fields to fix.
+  const banner = form.querySelector('[data-resume-banner]');
+  if (banner) {
+    let show = false;
+
+    if (!banner.querySelector('[data-resume-banner-title]')) {
+      const title = document.createElement('p');
+      title.setAttribute('data-resume-banner-title', '');
+      title.className = 'xpressui-resume-banner-title';
+      title.textContent = t('resume.title', 'Some information needs to be corrected');
+      banner.insertBefore(title, banner.firstChild);
+    }
+
+    const noteEl = banner.querySelector('[data-resume-banner-note]');
+    if (noteEl) {
+      if (note && note.trim()) {
+        noteEl.textContent = note;
+        noteEl.style.display = '';
+        show = true;
+      } else {
+        noteEl.style.display = 'none';
+      }
+    }
+
+    if (!showAllFields) {
+      const labels = [];
+      allowedFieldNames.forEach((fieldName) => {
+        const fieldNode = form.querySelector(`[data-field-name="${escapeFieldName(fieldName)}"]`);
+        const labelEl = fieldNode && fieldNode.querySelector('.template-field-label');
+        const label = ((labelEl && labelEl.textContent) || fieldName).replace(/\s*\*\s*$/, '').trim();
+        if (label) labels.push(label);
+      });
+      if (labels.length) {
+        let list = banner.querySelector('[data-resume-banner-fields]');
+        if (!list) {
+          list = document.createElement('ul');
+          list.setAttribute('data-resume-banner-fields', '');
+          list.className = 'xpressui-resume-banner-fields';
+          banner.appendChild(list);
+        }
+        list.textContent = '';
+        labels.forEach((label) => {
+          const li = document.createElement('li');
+          li.textContent = label;
+          list.appendChild(li);
+        });
+        show = true;
+      }
+    }
+
+    if (show) {
       banner.style.display = '';
     }
   }
@@ -570,17 +617,8 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     }
   });
 
-  // Section visibility — hide sections that contain no flagged fields.
-  // (In resume mode the runtime is single-step so all sections are initially visible.)
-  if (!showAllFields) {
-    form.querySelectorAll('[data-template-zone="section"]:not([data-afile-slot])').forEach((section) => {
-      const hasVisibleField = Array.from(section.querySelectorAll('[data-field-name]')).some((field) => {
-        const name = field.getAttribute('data-field-name') || '';
-        return allowedFieldNames.has(name);
-      });
-      setResumeNodeVisibility(section, hasVisibleField);
-    });
-  }
+  // Every section stays visible: the full multi-step form is shown so the
+  // submitter keeps context; only flagged fields are editable/highlighted.
 
   // Additional file slots — show and configure each active slot.
   additionalFiles.forEach((additionalFile) => {
