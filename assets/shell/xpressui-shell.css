@@ -1388,7 +1388,14 @@
     .template-upload-box.xpui-capture-only .template-field-help,
     .template-upload-box.xpui-capture-only .template-upload-pills,
     .template-upload-box.xpui-capture-only input[type="file"] { display: none !important; }
-    .template-upload-box.xpui-capture-only { justify-items: center; }
+    .template-upload-box.xpui-capture-only {
+      justify-items: start;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      margin-bottom: 8px;
+    }
     .xpui-photo-grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .xpui-photo-thumb { position: relative; width: 96px; height: 96px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: flex; }
     .xpui-photo-thumb--placeholder { flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); cursor: pointer; text-decoration: none; transition: border-color 0.15s, background 0.15s; padding: 6px; box-sizing: border-box; }
