@@ -156,34 +156,21 @@ function pruneResumeFormConfig(formConfig, resumeData) {
     return formConfig;
   }
 
-  const allowedFieldNames = buildResumeFieldAllowList(resumeData);
-  if (allowedFieldNames.size === 0) {
-    return formConfig;
-  }
-
+  // SaaS-style correction re-displays the FULL multi-step form: keep every section
+  // and field so the runtime stays in multi-step mode (its step model matches the
+  // rendered DOM) and validates each step against the prefilled values. Locking and
+  // highlighting of non-flagged fields happens in applyResumeMode at the DOM level.
+  //
+  // We must NOT prune non-flagged sections/fields here: doing so collapsed the config
+  // to a single section, so the runtime's step model had one step while the DOM had
+  // four — goToStep() then ran out of range and the "Continue" button did nothing.
+  // We only ADD any operator-requested additional-file fields.
   const nextConfig = {
     ...formConfig,
     sections: { ...(formConfig.sections || {}) },
   };
   const sections = nextConfig.sections;
-  const customSections = Array.isArray(sections.custom) ? sections.custom : [];
-  const keptCustomSections = [];
-
-  customSections.forEach((section) => {
-    const sectionName = typeof section?.name === 'string' ? section.name : '';
-    const sectionFields = Array.isArray(sections[sectionName]) ? sections[sectionName] : [];
-    const keptFields = sectionFields.filter((field) => {
-      const fieldName = typeof field?.name === 'string' ? field.name : '';
-      return fieldName !== '' && allowedFieldNames.has(fieldName);
-    });
-
-    if (keptFields.length > 0) {
-      keptCustomSections.push(section);
-      sections[sectionName] = keptFields;
-    } else if (sectionName) {
-      delete sections[sectionName];
-    }
-  });
+  const keptCustomSections = Array.isArray(sections.custom) ? [...sections.custom] : [];
 
   const additionalFileFields = buildResumeAdditionalFileFields(resumeData);
   if (additionalFileFields.length > 0) {
