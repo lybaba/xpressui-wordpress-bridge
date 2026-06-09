@@ -396,6 +396,22 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload, $i
 
 	// Helper: format a single choice value as its human label when a map is available.
 	$format_choice = static function ( $slug, $choice_map ) {
+		if ( is_array( $slug ) ) {
+			foreach ( [ 'label', 'name', 'title' ] as $k ) {
+				if ( isset( $slug[ $k ] ) && is_scalar( $slug[ $k ] ) && (string) $slug[ $k ] !== '' ) {
+					return esc_html( (string) $slug[ $k ] );
+				}
+			}
+			$resolved = '';
+			foreach ( [ 'value', 'id' ] as $k ) {
+				if ( isset( $slug[ $k ] ) && is_scalar( $slug[ $k ] ) && (string) $slug[ $k ] !== '' ) {
+					$resolved = (string) $slug[ $k ];
+					break;
+				}
+			}
+			$slug = $resolved !== '' ? $resolved : (string) reset( $slug );
+		}
+
 		$s     = (string) $slug;
 		$lbl   = isset( $choice_map[ $s ] ) ? (string) $choice_map[ $s ] : '';
 		if ( $lbl !== '' ) {
@@ -478,7 +494,10 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload, $i
 			return $html;
 		};
 
-		if ( is_array( $value ) ) {
+		$type = (string) ( $field_meta['type'] ?? '' );
+		if ( in_array( $type, [ 'repeater', 'quiz', 'product-list', 'select-image' ], true ) ) {
+			$display = xpressui_format_submission_value( $value, $field_meta );
+		} elseif ( is_array( $value ) ) {
 			if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
 				$display = $render_file_list( [ $value ] );
 			} elseif ( isset( $value[0] ) && is_array( $value[0] ) && ( $value[0]['kind'] ?? '' ) === 'uploaded-file' ) {

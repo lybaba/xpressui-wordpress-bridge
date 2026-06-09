@@ -1599,6 +1599,7 @@ function xpressui_build_config_field_index( $config ) {
 				'type'          => (string) ( $field['type'] ?? '' ),
 				'choices'       => xpressui_build_field_choice_map( $field ),
 				'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
+				'field_config'  => $field,
 			];
 		}
 	}
@@ -1624,6 +1625,7 @@ function xpressui_build_config_field_index( $config ) {
 					'type'          => (string) ( $field['type'] ?? '' ),
 					'choices'       => xpressui_build_field_choice_map( $field ),
 					'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
+					'field_config'  => $field,
 				];
 			}
 		}
@@ -2635,7 +2637,117 @@ function xpressui_render_file_list_html( array $files ): string {
 	return $html;
 }
 
+function xpressui_render_repeater_value( $value, $field_meta = [] ) {
+	if ( is_string( $value ) && $value !== '' ) {
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+			$value = $decoded;
+		}
+	}
+
+	if ( ! is_array( $value ) || empty( $value ) ) {
+		return '<span class="xpressui-empty">' . esc_html__( 'Empty', 'xpressui-bridge' ) . '</span>';
+	}
+
+	// 1. Gather all subfield definitions from config if available.
+	$subfields_config = [];
+	$config_source = $field_meta['field_config'] ?? [];
+	$raw_subfields = $config_source['repeater_fields'] ?? $config_source['repeaterFields'] ?? [];
+	if ( is_array( $raw_subfields ) ) {
+		foreach ( $raw_subfields as $sub ) {
+			if ( is_array( $sub ) && isset( $sub['name'] ) ) {
+				$subfields_config[ (string) $sub['name'] ] = [
+					'label'   => (string) ( $sub['label'] ?? $sub['adminLabel'] ?? $sub['title'] ?? $sub['name'] ),
+					'type'    => (string) ( $sub['type'] ?? '' ),
+					'choices' => xpressui_build_field_choice_map( $sub ),
+				];
+			}
+		}
+	}
+
+	// 2. Identify the active columns/keys based on the payload data.
+	// We preserve the order defined in config if available, then append any extra keys found in data.
+	$all_data_keys = [];
+	foreach ( $value as $row ) {
+		if ( is_array( $row ) ) {
+			foreach ( array_keys( $row ) as $k ) {
+				$all_data_keys[ (string) $k ] = true;
+			}
+		}
+	}
+
+	$columns = []; // key => label
+	foreach ( $subfields_config as $k => $info ) {
+		if ( isset( $all_data_keys[ $k ] ) ) {
+			$columns[ $k ] = $info['label'];
+			unset( $all_data_keys[ $k ] );
+		}
+	}
+	foreach ( array_keys( $all_data_keys ) as $k ) {
+		$columns[ $k ] = ucwords( str_replace( [ '_', '-' ], ' ', $k ) );
+	}
+
+	if ( empty( $columns ) ) {
+		return '<span class="xpressui-empty">' . esc_html__( 'Empty', 'xpressui-bridge' ) . '</span>';
+	}
+
+	// 3. Render HTML Table
+	$html  = '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;font-size:12px;margin:4px 0;">';
+	$html .= '<thead style="background-color:#f9fafb;border-bottom:2px solid #e5e7eb;"><tr>';
+	foreach ( $columns as $key => $label ) {
+		$html .= '<th style="padding:8px 10px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">' . esc_html( $label ) . '</th>';
+	}
+	$html .= '</tr></thead>';
+
+	$html .= '<tbody>';
+	$row_idx = 0;
+	foreach ( $value as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$bg = $row_idx % 2 === 0 ? '#ffffff' : '#f9fafb';
+		$html .= '<tr style="background-color:' . $bg . ';">';
+		foreach ( $columns as $key => $label ) {
+			$cell_val = $row[ $key ] ?? '';
+			$formatted_cell = '';
+			if ( is_array( $cell_val ) ) {
+				if ( ( $cell_val['kind'] ?? '' ) === 'uploaded-file' ) {
+					$file_name = esc_html( (string) ( $cell_val['originalName'] ?? 'file' ) );
+					$file_url  = esc_url( (string) ( $cell_val['url'] ?? '' ) );
+					$formatted_cell = $file_url !== '' ? '<a href="' . $file_url . '" target="_blank" rel="noreferrer" style="color:#2563eb;">' . $file_name . '</a>' : $file_name;
+				} else {
+					$formatted_cell = '<code>' . esc_html( wp_json_encode( $cell_val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . '</code>';
+				}
+			} elseif ( is_bool( $cell_val ) ) {
+				$formatted_cell = esc_html( $cell_val ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) );
+			} else {
+				$sub_info = $subfields_config[ $key ] ?? [];
+				$choice_map = $sub_info['choices'] ?? [];
+				$s_val = (string) $cell_val;
+				if ( ! empty( $choice_map ) && isset( $choice_map[ $s_val ] ) ) {
+					$formatted_cell = esc_html( $choice_map[ $s_val ] );
+				} else {
+					$formatted_cell = nl2br( esc_html( $s_val ) );
+				}
+			}
+			$html .= '<td style="padding:8px 10px;color:#4b5563;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;word-break:break-word;vertical-align:top;">' . $formatted_cell . '</td>';
+		}
+		$html .= '</tr>';
+		$row_idx++;
+	}
+	$html .= '</tbody></table>';
+
+	return $html;
+}
+
 function xpressui_format_submission_value( $value, $field_meta = [] ) {
+	if ( is_string( $value ) && $value !== '' ) {
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() === JSON_ERROR_NONE && ( is_array( $decoded ) || is_object( $decoded ) ) ) {
+			$value = $decoded;
+		}
+	}
+
 	$field_type = (string) ( $field_meta['type'] ?? '' );
 	$choice_map = is_array( $field_meta['choices'] ?? null ) ? $field_meta['choices'] : [];
 
@@ -2651,6 +2763,9 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 	}
 	if ( $field_type === 'select-image' ) {
 		return xpressui_render_image_gallery_value( $value, $field_meta );
+	}
+	if ( $field_type === 'repeater' ) {
+		return xpressui_render_repeater_value( $value, $field_meta );
 	}
 	if ( is_array( $value ) ) {
 		if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {
