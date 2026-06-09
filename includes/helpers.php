@@ -2700,7 +2700,7 @@ function xpressui_render_repeater_value( $value, $field_meta = [] ) {
 	$columns = []; // key => label
 	foreach ( $subfields_config as $k => $info ) {
 		if ( isset( $all_data_keys[ $k ] ) ) {
-			$columns[ $k ] = xpressui_clean_field_label( $info['label'] );
+			$columns[ $k ] = $info['label'];
 			unset( $all_data_keys[ $k ] );
 		}
 	}
@@ -2882,11 +2882,4 @@ function xpressui_build_structured_item_summary( $item, $choice_map = [] ) {
 	return empty( $parts )
 		? wp_json_encode( $item, JSON_UNESCAPED_SLASHES )
 		: implode( ' · ', $parts );
-}
-
-function xpressui_clean_field_label( $label ) {
-	if ( ! is_string( $label ) ) {
-		return $label;
-	}
-	return preg_replace( '/\s*\(.*?\)\s*$/', '', $label );
 }
