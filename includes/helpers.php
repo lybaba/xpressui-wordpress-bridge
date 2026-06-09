@@ -568,6 +568,11 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline-label { display: none !important; }\n";
 	$inline_css .= "}\n";
 
+	$inline_css .= "\n/* Hide timeline layout on submit success */\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-workflow-state='submitted'] .template-step-layout { display: block !important; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-workflow-state='submitted'] .template-step-timeline { display: none !important; }\n";
+	$inline_css .= "{$scope} .form-frame:has([data-workflow-state='submitted']) { max-width: 680px !important; }\n";
+
 	return $inline_css;
 }
 

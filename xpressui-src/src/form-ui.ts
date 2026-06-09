@@ -3847,14 +3847,19 @@ export class HydratedFormHost extends HTMLElement {
       el.removeAttribute("hidden");
     });
 
-    // 3. Always hide step UI controls (progress bar, navigation buttons)
+    // 3. Always hide step UI controls (progress bar, navigation buttons, timeline)
     Array.from(
       formElem.querySelectorAll<HTMLElement>(
-        "[data-form-step-progress-container], [data-form-step-actions]",
+        "[data-form-step-progress-container], [data-form-step-actions], .template-step-timeline",
       ),
     ).forEach((el) => {
       el.style.display = "none";
     });
+
+    const stepLayout = formElem.querySelector<HTMLElement>(".template-step-layout");
+    if (stepLayout) {
+      stepLayout.style.display = "block";
+    }
 
     // 4. Hide elements explicitly tagged for hiding on submit
     const explicitHide = Array.from(

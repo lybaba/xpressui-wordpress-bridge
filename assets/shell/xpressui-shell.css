@@ -1706,3 +1706,14 @@
   .template-step-timeline-item::after { display: none !important; }
   .template-step-timeline-label { display: none !important; }
 }
+
+/* Hide timeline layout on submit success */
+.template-runtime-shell[data-workflow-state="submitted"] .template-step-layout {
+  display: block !important;
+}
+.template-runtime-shell[data-workflow-state="submitted"] .template-step-timeline {
+  display: none !important;
+}
+.form-frame:has([data-workflow-state="submitted"]) {
+  max-width: 680px !important;
+}
