@@ -265,7 +265,24 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
 
     return Object.fromEntries(
       Object.entries(sections as Record<string, any>).map(([sectionName, sectionValue]) => {
-        if (sectionName === "custom" || !Array.isArray(sectionValue)) {
+        if (sectionName === "custom") {
+          if (!Array.isArray(sectionValue)) {
+            return [sectionName, sectionValue];
+          }
+          // Entries in the "custom" section are step/group headers ({name,label}).
+          // The schema requires a `type`; legacy/seed configs sometimes omit it.
+          // Default the missing type to "section" so valid layouts still hydrate.
+          return [
+            sectionName,
+            sectionValue.map((entry) => (
+              entry && typeof entry === "object" && !(entry as Record<string, any>).type
+                ? { ...entry, type: "section" }
+                : entry
+            )),
+          ];
+        }
+
+        if (!Array.isArray(sectionValue)) {
           return [sectionName, sectionValue];
         }
 

@@ -1292,6 +1292,9 @@ export class HydratedFormHost extends HTMLElement {
     if (renderAs === "radio_buttons" || renderAs === "radio-buttons" || renderAs === "radiobuttons") {
       return RADIO_BUTTONS_TYPE;
     }
+    if (renderAs === "select" || renderAs === "select-one" || renderAs === "select_one" || renderAs === "selectone") {
+      return SELECT_ONE_TYPE;
+    }
     if (renderAs === "select_product" || renderAs === "select-product" || renderAs === "selectproduct") {
       return SELECT_PRODUCT_TYPE;
     }
