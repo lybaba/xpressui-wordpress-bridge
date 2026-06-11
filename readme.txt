@@ -8,7 +8,7 @@ Stable tag: 1.0.91
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Natively collect files, documents, and client intake form submissions directly in WordPress. Inline rendering, team inbox, and workflow tracking included.
+Collect files, documents, and client intake form submissions directly in WordPress. Inline rendering, team inbox, and workflow tracking included.
 
 == Description ==
 
