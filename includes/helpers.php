@@ -513,7 +513,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// .template-section is a plain wrapper, the inner card is on .template-fields.
 	// Forced with !important so the host theme can't strip the inner card.
 	$inline_css .= "{$scope} .template-section { gap: 12px; }\n";
-	$inline_css .= "{$scope} .template-fields { gap: 12px; padding: 20px 18px; background: color-mix(in srgb, var(--template-surface) 84%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)) !important; border-radius: max(calc(var(--template-card-radius) - 6px), 18px) !important; }\n";
+	$inline_css .= "{$scope} .template-fields { gap: 12px; padding: 0 !important; background: transparent !important; border: none !important; border-radius: 0 !important; }\n";
 	$inline_css .= "{$scope} .template-field { gap: 6px; }\n";
 	$inline_css .= "{$scope} .template-field-label { font-size: 13px; }\n";
 	$inline_css .= "{$scope} .template-field-help { font-size: 12px; line-height: 1.4; }\n";
@@ -542,7 +542,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "@media (max-width: 720px) {\n";
 	$inline_css .= "  {$scope} .form-frame { padding: 16px !important; }\n";
 	$inline_css .= "  {$scope} .template-form-title { font-size: clamp(20px, 7vw, 26px); }\n";
-	$inline_css .= "  {$scope} .template-fields { padding: 16px; }\n";
+	$inline_css .= "  {$scope} .template-fields { padding: 0 !important; }\n";
 	$inline_css .= "  {$scope} .template-input,\n  {$scope} .template-textarea { font-size: 13px; }\n";
 	$inline_css .= "}\n";
 
