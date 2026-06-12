@@ -1,0 +1,3 @@
+# Shell scripts must stay LF even on Windows checkouts (core.autocrlf=true),
+# otherwise CRLF breaks `set -o pipefail`, shebangs, and version-file reads.
+*.sh text eol=lf
