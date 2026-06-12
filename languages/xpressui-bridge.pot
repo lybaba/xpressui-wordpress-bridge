@@ -247,7 +247,7 @@ msgstr ""
 msgid "Error message"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:136
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:137
 msgid "Error."
 msgstr ""
 
@@ -350,7 +350,7 @@ msgstr ""
 msgid "My Queue"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:137
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:138
 msgid "Network error."
 msgstr ""
 
@@ -651,11 +651,11 @@ msgstr ""
 msgid "Save settings"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:135
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:136
 msgid "Saved."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:134
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:135
 msgid "Saving…"
 msgstr ""
 
@@ -1007,7 +1007,7 @@ msgstr ""
 msgid "Tier"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:138
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:139
 msgid "Toggle section"
 msgstr ""
 
