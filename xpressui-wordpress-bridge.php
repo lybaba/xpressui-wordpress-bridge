@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       XPressUI Bridge
+ * Plugin Name:       Multi-Step Forms & Client Document Intake – XPressUI Bridge
  * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your site with a shortcode and review submissions in wp-admin.
  * Version:           1.0.92
  * Requires at least: 6.0
@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only isset() presence check; triggers an idempotent opcache_reset only. No form data is read, sanitized, or stored, and this runs at plugin load before pluggable functions exist (so a capability check is not possible here).
 if ( ( isset( $_GET['xpressui_clear_cache'] ) || isset( $_GET['nocache'] ) ) && function_exists( 'opcache_reset' ) ) {
 	opcache_reset();
 }
