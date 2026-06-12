@@ -53,11 +53,11 @@ foreach ($xpressui_loop_items_1 as $xpressui_loop_index_3 => $xpressui_loop_valu
       <article class="template-repeater-row" data-repeater-row>
         <div class="template-repeater-row-header">
           <div class="template-repeater-row-title" data-repeater-row-title>
-            <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'item_label'))); ?> <span data-repeater-row-number><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'row'), 'number'))); ?></span>
+            <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'item_label'), xpressui_bridge_template_wp_text("Row", 'xpressui-bridge')))); ?> <span data-repeater-row-number><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'row'), 'number'))); ?></span>
           </div>
 <?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_rows'), 1)))): ?>
             <button type="button" class="template-field-pill template-repeater-remove" data-repeater-remove="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>">
-              <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'remove_label'))); ?>
+              <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'remove_label'), xpressui_bridge_template_wp_text("Remove", 'xpressui-bridge')))); ?>
             </button>
 <?php endif; ?>
         </div>
@@ -100,11 +100,11 @@ foreach ($xpressui_loop_items_5 as $xpressui_loop_index_7 => $xpressui_loop_valu
     <article class="template-repeater-row" data-repeater-row>
       <div class="template-repeater-row-header">
         <div class="template-repeater-row-title" data-repeater-row-title>
-          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'item_label'))); ?> <span data-repeater-row-number>__NUMBER__</span>
+          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'item_label'), xpressui_bridge_template_wp_text("Row", 'xpressui-bridge')))); ?> <span data-repeater-row-number>__NUMBER__</span>
         </div>
 <?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_rows'), 1)))): ?>
           <button type="button" class="template-field-pill template-repeater-remove" data-repeater-remove="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>">
-            <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'remove_label'))); ?>
+            <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'remove_label'), xpressui_bridge_template_wp_text("Remove", 'xpressui-bridge')))); ?>
           </button>
 <?php endif; ?>
       </div>
@@ -144,7 +144,7 @@ foreach ($xpressui_loop_items_9 as $xpressui_loop_index_11 => $xpressui_loop_val
 <?php if (xpressui_bridge_template_truthy((!xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'max_rows'), 1)))): ?>
     <div class="template-repeater-actions">
       <button type="button" class="template-field-pill template-repeater-add" data-repeater-add="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'name'))); ?>">
-        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'add_label'))); ?>
+        <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'field'), 'add_label'), xpressui_bridge_template_wp_text("Add row", 'xpressui-bridge')))); ?>
       </button>
     </div>
 <?php endif; ?>

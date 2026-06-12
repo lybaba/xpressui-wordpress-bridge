@@ -23,6 +23,7 @@ export function createCommerceRuntime(host: TCommerceRuntimeHost) {
   return {
     updateProductListInlineTotal: (_fieldConfig: any, _value: any) => undefined,
     getProductCartEntries: () => [],
+    renderProductCheckoutSummary() { return; },
     renderProductListGlobalCart() {
       host.querySelector("[data-product-cart-trigger]")?.remove();
       host.querySelector("[data-product-cart-overlay]")?.remove();
@@ -31,7 +32,7 @@ export function createCommerceRuntime(host: TCommerceRuntimeHost) {
       return;
     },
     openMediaGallery: (_name: string, _photos: string[]) => undefined,
-    openProductListGallery(product: { name: string }) {
+    openProductListGallery(product: { name: string }, _fieldConfig?: any) {
       emitUnsupported(product as any, "product-list");
     },
     openImageGalleryItem(item: { name: string }) {

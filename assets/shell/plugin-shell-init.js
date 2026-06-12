@@ -92,6 +92,17 @@ function _localSetFeedbackState(mountNode, state, message, title) {
 // Resume / partial-resubmission mode
 // ---------------------------------------------------------------------------
 
+// Field types whose value is an uploaded file (kept server-side across a resume).
+const RESUME_FILE_FIELD_TYPES = new Set([
+  'file',
+  'upload-image',
+  'camera-photo',
+  'camera-photo-list',
+  'qr-scan',
+  'document-scan',
+  'payment-proof',
+]);
+
 function resolveResumeEndpoint(token) {
   const apiRootLink = document.querySelector('link[rel="https://api.w.org/"]');
   const apiRootHref = apiRootLink instanceof HTMLLinkElement ? apiRootLink.href : '';
@@ -156,34 +167,46 @@ function pruneResumeFormConfig(formConfig, resumeData) {
     return formConfig;
   }
 
-  const allowedFieldNames = buildResumeFieldAllowList(resumeData);
-  if (allowedFieldNames.size === 0) {
-    return formConfig;
-  }
-
+  // SaaS-style correction re-displays the FULL multi-step form: keep every section
+  // and field so the runtime stays in multi-step mode (its step model matches the
+  // rendered DOM) and validates each step against the prefilled values. Locking and
+  // highlighting of non-flagged fields happens in applyResumeMode at the DOM level.
+  //
+  // We must NOT prune non-flagged sections/fields here: doing so collapsed the config
+  // to a single section, so the runtime's step model had one step while the DOM had
+  // four — goToStep() then ran out of range and the "Continue" button did nothing.
+  // We only ADD any operator-requested additional-file fields.
   const nextConfig = {
     ...formConfig,
     sections: { ...(formConfig.sections || {}) },
   };
   const sections = nextConfig.sections;
-  const customSections = Array.isArray(sections.custom) ? sections.custom : [];
-  const keptCustomSections = [];
 
-  customSections.forEach((section) => {
-    const sectionName = typeof section?.name === 'string' ? section.name : '';
-    const sectionFields = Array.isArray(sections[sectionName]) ? sections[sectionName] : [];
-    const keptFields = sectionFields.filter((field) => {
+  // A required file field that is NOT being re-requested must become optional: the
+  // original upload is preserved server-side, so we must never force a re-upload
+  // (which would block the step on an empty file input). Only flagged or
+  // additional-document file fields stay required.
+  const resumeAllowList = buildResumeFieldAllowList(resumeData);
+  Object.keys(sections).forEach((sectionKey) => {
+    if (sectionKey === 'custom') return;
+    const sectionFields = sections[sectionKey];
+    if (!Array.isArray(sectionFields)) return;
+    sections[sectionKey] = sectionFields.map((field) => {
       const fieldName = typeof field?.name === 'string' ? field.name : '';
-      return fieldName !== '' && allowedFieldNames.has(fieldName);
+      if (
+        field
+        && field.required
+        && RESUME_FILE_FIELD_TYPES.has(field.type)
+        && fieldName
+        && !resumeAllowList.has(fieldName)
+      ) {
+        return { ...field, required: false };
+      }
+      return field;
     });
-
-    if (keptFields.length > 0) {
-      keptCustomSections.push(section);
-      sections[sectionName] = keptFields;
-    } else if (sectionName) {
-      delete sections[sectionName];
-    }
   });
+
+  const keptCustomSections = Array.isArray(sections.custom) ? [...sections.custom] : [];
 
   const additionalFileFields = buildResumeAdditionalFileFields(resumeData);
   if (additionalFileFields.length > 0) {
@@ -430,24 +453,47 @@ function applyResumeMode(mountNode, form, resumeData, token) {
   };
   const setFieldInteractivity = (input, enabled) => {
     if (!(input instanceof HTMLElement)) return;
-    if (
-      input instanceof HTMLInputElement
+    const isFormControl = input instanceof HTMLInputElement
       || input instanceof HTMLTextAreaElement
       || input instanceof HTMLSelectElement
-      || input instanceof HTMLButtonElement
-    ) {
-      input.disabled = !enabled;
+      || input instanceof HTMLButtonElement;
+    if (!isFormControl) return;
+
+    const isFile = input instanceof HTMLInputElement && input.type === 'file';
+
+    if (enabled) {
+      input.disabled = false;
       if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
-        input.readOnly = !enabled;
+        input.readOnly = false;
       }
-      if (enabled) {
-        input.removeAttribute('tabindex');
-        input.removeAttribute('aria-disabled');
-      } else {
-        input.setAttribute('tabindex', '-1');
-        input.setAttribute('aria-disabled', 'true');
+      input.removeAttribute('tabindex');
+      input.removeAttribute('aria-disabled');
+      return;
+    }
+
+    // LOCK a non-flagged field. Do NOT use `disabled` on data controls: a disabled
+    // control is dropped from FormData, so the runtime's per-step validation would
+    // treat a locked *required* field (e.g. the prefilled name/email on step 1 of a
+    // resume) as empty and silently refuse to advance to the next step. Instead keep
+    // it enabled — so its prefilled value is submitted and passes validation — and
+    // block editing via readOnly (text) + tabindex + pointer-events (set on the
+    // .xpressui-resume-locked container in CSS).
+    // File inputs are the exception: the original upload is preserved server-side and
+    // must be excluded from this submission, so they stay `disabled`.
+    if (isFile) {
+      input.disabled = true;
+    } else {
+      input.disabled = false;
+      const isTextLike = (input instanceof HTMLInputElement
+          && input.type !== 'checkbox'
+          && input.type !== 'radio')
+        || input instanceof HTMLTextAreaElement;
+      if (isTextLike) {
+        input.readOnly = true;
       }
     }
+    input.setAttribute('tabindex', '-1');
+    input.setAttribute('aria-disabled', 'true');
   };
   const escapeFieldName = (value) => {
     if (typeof window.CSS?.escape === 'function') {
@@ -469,28 +515,73 @@ function applyResumeMode(mountNode, form, resumeData, token) {
     }
   };
 
-  // Resume mode is always presented as a single-step correction form.
-  hideResumeStepUi();
-
+  // SaaS-style correction: keep the full multi-step form (let the runtime manage
+  // which step/section is visible — do NOT force section visibility, or the
+  // multi-step navigation breaks and every step shows at once). Here we only
+  // mark each field: flagged fields are highlighted + editable, the rest stay
+  // read-only. (Prefill + per-input interactivity happen below.)
   if (!showAllFields) {
-    form.querySelectorAll('[data-template-zone="section"]').forEach((section) => {
-      setResumeNodeVisibility(section, false);
-    });
     form.querySelectorAll('[data-field-name]').forEach((fieldNode) => {
-      setResumeNodeVisibility(fieldNode, false);
-      fieldNode
-        .querySelectorAll('input, textarea, select, button')
-        .forEach((element) => setFieldInteractivity(element, false));
+      if (!(fieldNode instanceof HTMLElement)) return;
+      const fieldName = fieldNode.getAttribute('data-field-name') || '';
+      const flagged = allowedFieldNames.has(fieldName);
+      fieldNode.classList.toggle('xpressui-resume-flagged', flagged);
+      fieldNode.classList.toggle('xpressui-resume-locked', !flagged);
     });
-    allowedFieldNames.forEach((fieldName) => revealField(fieldName));
   }
 
-  // Banner — show pre-rendered element and fill in the operator note
-  if (note && note.trim()) {
-    const banner = form.querySelector('[data-resume-banner]');
-    const noteEl = banner?.querySelector('[data-resume-banner-note]');
-    if (banner && noteEl) {
-      noteEl.textContent = note;
+  // Banner — "what to correct" summary at the top of the form (like the hosted
+  // link): a title, the operator note, and chips listing the fields to fix.
+  const banner = form.querySelector('[data-resume-banner]');
+  if (banner) {
+    let show = false;
+
+    if (!banner.querySelector('[data-resume-banner-title]')) {
+      const title = document.createElement('p');
+      title.setAttribute('data-resume-banner-title', '');
+      title.className = 'xpressui-resume-banner-title';
+      title.textContent = t('resume.title', 'Some information needs to be corrected');
+      banner.insertBefore(title, banner.firstChild);
+    }
+
+    const noteEl = banner.querySelector('[data-resume-banner-note]');
+    if (noteEl) {
+      if (note && note.trim()) {
+        noteEl.textContent = note;
+        noteEl.style.display = '';
+        show = true;
+      } else {
+        noteEl.style.display = 'none';
+      }
+    }
+
+    if (!showAllFields) {
+      const labels = [];
+      allowedFieldNames.forEach((fieldName) => {
+        const fieldNode = form.querySelector(`[data-field-name="${escapeFieldName(fieldName)}"]`);
+        const labelEl = fieldNode && fieldNode.querySelector('.template-field-label');
+        const label = ((labelEl && labelEl.textContent) || fieldName).replace(/\s*\*\s*$/, '').trim();
+        if (label) labels.push(label);
+      });
+      if (labels.length) {
+        let list = banner.querySelector('[data-resume-banner-fields]');
+        if (!list) {
+          list = document.createElement('ul');
+          list.setAttribute('data-resume-banner-fields', '');
+          list.className = 'xpressui-resume-banner-fields';
+          banner.appendChild(list);
+        }
+        list.textContent = '';
+        labels.forEach((label) => {
+          const li = document.createElement('li');
+          li.textContent = label;
+          list.appendChild(li);
+        });
+        show = true;
+      }
+    }
+
+    if (show) {
       banner.style.display = '';
     }
   }
@@ -562,25 +653,26 @@ function applyResumeMode(mountNode, form, resumeData, token) {
       }
     }
 
-    // Non-flagged file field — hide the whole container (server keeps original value)
+    // Non-flagged file field — not re-requested: the original upload is kept
+    // server-side, so make it optional (drop native required + the asterisk) and
+    // lock it. Matches the demotion done in pruneResumeFormConfig at the config level.
     if (!isFlagged) {
+      fileInput.required = false;
+      fileInput.removeAttribute('required');
+      fileInput.removeAttribute('aria-required');
+      const fieldNode = fileInput.closest('[data-field-name]');
+      const requiredMarker = fieldNode && fieldNode.querySelector('.template-required');
+      if (requiredMarker instanceof HTMLElement) {
+        requiredMarker.style.display = 'none';
+      }
       setFieldInteractivity(fileInput, false);
     } else {
       setFieldInteractivity(fileInput, true);
     }
   });
 
-  // Section visibility — hide sections that contain no flagged fields.
-  // (In resume mode the runtime is single-step so all sections are initially visible.)
-  if (!showAllFields) {
-    form.querySelectorAll('[data-template-zone="section"]:not([data-afile-slot])').forEach((section) => {
-      const hasVisibleField = Array.from(section.querySelectorAll('[data-field-name]')).some((field) => {
-        const name = field.getAttribute('data-field-name') || '';
-        return allowedFieldNames.has(name);
-      });
-      setResumeNodeVisibility(section, hasVisibleField);
-    });
-  }
+  // Every section stays visible: the full multi-step form is shown so the
+  // submitter keeps context; only flagged fields are editable/highlighted.
 
   // Additional file slots — show and configure each active slot.
   additionalFiles.forEach((additionalFile) => {
@@ -979,11 +1071,11 @@ async function initXPressUI() {
     if (resumeData) {
       formConfig = pruneResumeFormConfig(formConfig, resumeData);
     }
-    // Resume mode: collapse multi-step to single-step so the runtime hides nav/progress
-    // and shows the submit button immediately. Section visibility is handled by applyResumeMode.
-    if (resumeData && formConfig.mode === 'form-multi-step') {
-      formConfig = { ...formConfig, mode: 'form' };
-    }
+    // Resume mode keeps the original multi-step mode: we re-display the full
+    // multi-step form (like the SaaS correction flow) and let the runtime own step
+    // navigation/visibility. Downgrading to single-step here would make the runtime
+    // ignore [data-step-action] clicks (isMultiStepMode() === false), so the "Continue"
+    // button — still rendered by the template — would do nothing.
 
     // Silently prefill DOM inputs from payload BEFORE hydration so the runtime reads
     // prefilled values as initialValues. Without this, hydrateForm captures empty

@@ -380,7 +380,9 @@ function xpressui_get_shell_allowed_html() {
 		'style'    => array_merge( $global_attrs, [ 'type' => true ] ),
 		'script'   => array_merge( $global_attrs, [ 'type' => true, 'src' => true, 'defer' => true, 'async' => true ] ),
 		'body'     => $global_attrs,
+		'header'   => $global_attrs,
 		'main'     => $global_attrs,
+		'nav'      => $global_attrs,
 		'section'  => $global_attrs,
 		'div'      => $global_attrs,
 		'span'     => $global_attrs,
@@ -390,10 +392,11 @@ function xpressui_get_shell_allowed_html() {
 		'h3'       => $global_attrs,
 		'h4'       => $global_attrs,
 		'form'     => array_merge( $global_attrs, [ 'action' => true, 'method' => true, 'enctype' => true, 'novalidate' => true ] ),
+		'footer'   => $global_attrs,
 		'fieldset' => $global_attrs,
 		'legend'   => $global_attrs,
 		'label'    => array_merge( $global_attrs, [ 'for' => true ] ),
-		'input'    => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'placeholder' => true, 'required' => true, 'checked' => true, 'disabled' => true, 'readonly' => true, 'min' => true, 'max' => true, 'step' => true, 'accept' => true, 'autocomplete' => true ] ),
+		'input'    => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'placeholder' => true, 'required' => true, 'checked' => true, 'disabled' => true, 'readonly' => true, 'min' => true, 'max' => true, 'step' => true, 'accept' => true, 'autocomplete' => true, 'multiple' => true, 'capture' => true ] ),
 		'textarea' => array_merge( $global_attrs, [ 'name' => true, 'placeholder' => true, 'required' => true, 'disabled' => true, 'readonly' => true, 'rows' => true, 'cols' => true ] ),
 		'select'   => array_merge( $global_attrs, [ 'name' => true, 'required' => true, 'disabled' => true, 'multiple' => true ] ),
 		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
@@ -413,6 +416,8 @@ function xpressui_get_shell_allowed_html() {
 		'td'       => array_merge( $global_attrs, [ 'colspan' => true, 'rowspan' => true ] ),
 		'template' => array_merge( $global_attrs, [ 'type' => true ] ),
 		'dialog'   => array_merge( $global_attrs, [ 'open' => true ] ),
+		'article'  => $global_attrs,
+		'canvas'   => array_merge( $global_attrs, [ 'width' => true, 'height' => true ] ),
 	];
 }
 
@@ -473,7 +478,11 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "\n/* Resume mode */\n";
 	$inline_css .= "{$scope}[data-resume-loading] .template-runtime-shell { display: none !important; }\n";
 	$inline_css .= "{$scope}[data-resume-loading] [data-resume-loader] { display: grid !important; }\n";
-	$inline_css .= "{$scope} .xpressui-resume-banner { background: #fffaf0; border: 1px solid #f6cc87; border-radius: 4px; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.5; }\n";
+	$inline_css .= "{$scope} .xpressui-resume-banner { margin: 0 0 12px; background: #fffbeb; border: 1px solid #fcd34d; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 16px 18px; font-size: 14px; color: #713f12; line-height: 1.5; }\n";
+	// Locked (read-only) fields: frozen-data look — readable value on a muted grey
+	// surface, not-allowed cursor. !important + -webkit-text-fill-color override the
+	// forced input theming above and the browser's ghosted-disabled rendering.
+	$inline_css .= "{$scope} .xpressui-resume-locked .template-input,\n{$scope} .xpressui-resume-locked .template-textarea { background-color: #f3f4f6 !important; color: color-mix(in srgb, var(--template-text) 80%, transparent) !important; -webkit-text-fill-color: color-mix(in srgb, var(--template-text) 80%, transparent); cursor: not-allowed !important; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-block,\n{$scope} .xpressui-afile-ref-block { padding: 10px 14px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-link,\n{$scope} .xpressui-afile-ref-link { font-size: 13px; font-weight: 600; color: #1d4ed8; text-decoration: underline; display: block; margin-bottom: 6px; }\n";
 	$inline_css .= "{$scope} .xpressui-ref-file-hint,\n{$scope} .xpressui-afile-ref-hint { margin: 0; font-size: 12px; color: #374151; line-height: 1.5; }\n";
@@ -492,17 +501,27 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 		$inline_css .= "{$scope}.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }\n";
 	}
 	$box_shadow = $has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)';
-	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : '';
-	$inline_css .= "{$scope} .form-frame { padding: 20px; box-shadow: {$box_shadow};{$extra_fw} }\n";
+	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : ' max-width: 900px !important; width: 100% !important; margin: 0 auto !important;';
+	// Single framed card (like the hosted link). Forced with !important so the
+	// surrounding WordPress theme can't strip the border/background/radius — the
+	// unscoped shell rule loses specificity to most themes.
+	$inline_css .= "{$scope} .form-frame { background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; padding: 24px !important; box-shadow: {$box_shadow} !important;{$extra_fw} }\n";
 	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
 	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
 	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";
-	$inline_css .= "{$scope} .template-section { gap: 18px; padding: 20px 18px; }\n";
-	$inline_css .= "{$scope} .template-fields { gap: 12px; }\n";
+	// The section label sits OUTSIDE the inner card (like the hosted link): the
+	// .template-section is a plain wrapper, the inner card is on .template-fields.
+	// Forced with !important so the host theme can't strip the inner card.
+	$inline_css .= "{$scope} .template-section { gap: 12px; }\n";
+	$inline_css .= "{$scope} .template-fields { gap: 12px; padding: 0 !important; background: transparent !important; border: none !important; border-radius: 0 !important; }\n";
 	$inline_css .= "{$scope} .template-field { gap: 6px; }\n";
 	$inline_css .= "{$scope} .template-field-label { font-size: 13px; }\n";
 	$inline_css .= "{$scope} .template-field-help { font-size: 12px; line-height: 1.4; }\n";
-	$inline_css .= "{$scope} .template-input,\n{$scope} .template-textarea { font-size: 14px; line-height: 1.4; padding: 11px 13px; }\n";
+	// Force input/textarea theming with !important too — same reason as the card:
+	// some WordPress themes style bare inputs dark and beat the unscoped shell rule.
+	$inline_css .= "{$scope} .template-input,\n{$scope} .template-textarea { background-color: color-mix(in srgb, var(--template-surface) 96%, white) !important; color: var(--template-text) !important; border-color: var(--template-border) !important; font-size: 14px; line-height: 1.4; padding: 11px 13px; }\n";
+	$inline_css .= "{$scope} .template-input:focus,\n{$scope} .template-textarea:focus { border-color: var(--template-primary) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 15%, transparent) !important; outline: none !important; }\n";
+	$inline_css .= "{$scope} .template-input::placeholder,\n{$scope} .template-textarea::placeholder { color: var(--template-muted-text) !important; }\n";
 	$inline_css .= "{$scope} .template-textarea { min-height: 124px; }\n";
 	$inline_css .= "{$scope} .template-choice-card { padding: 9px 12px; gap: 3px; }\n";
 	$inline_css .= "{$scope} .template-choice-title { font-size: 12px; line-height: 1.2; font-weight: 600; }\n";
@@ -521,11 +540,38 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	$inline_css .= "@keyframes xpressui-step-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }\n";
 	$inline_css .= "{$scope} .template-section[data-template-zone=\"section\"] { animation: xpressui-step-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; }\n";
 	$inline_css .= "@media (max-width: 720px) {\n";
-	$inline_css .= "  {$scope} .form-frame { padding: 16px; }\n";
+	$inline_css .= "  {$scope} .form-frame { padding: 16px !important; }\n";
 	$inline_css .= "  {$scope} .template-form-title { font-size: clamp(20px, 7vw, 26px); }\n";
-	$inline_css .= "  {$scope} .template-section { padding: 16px 14px; }\n";
+	$inline_css .= "  {$scope} .template-fields { padding: 0 !important; }\n";
 	$inline_css .= "  {$scope} .template-input,\n  {$scope} .template-textarea { font-size: 13px; }\n";
 	$inline_css .= "}\n";
+
+	// ── Step timeline layout (data-step-layout="timeline") ──────────────────────
+	// The timeline is a LEFT column INSIDE the single main .form-frame card (never
+	// stacked above the form, never its own card outside). Forced with !important so
+	// the WP theme can't collapse the grid.
+	$inline_css .= "\n/* Step timeline layout */\n";
+	// Widen the (still white) form card in timeline mode so the form keeps room next
+	// to the ~230px sidebar.
+	$inline_css .= "{$scope} .form-frame.form-frame--timeline, {$scope} .form-frame:has([data-step-layout='timeline']) { width: min(100%, 1120px) !important; max-width: 1120px !important; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { display: grid !important; grid-template-columns: 230px minmax(0, 1fr) !important; gap: 28px !important; align-items: start !important; }\n";
+	// The timeline sidebar replaces the inline progress bar.
+	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-status { display: none !important; }\n";
+	// Timeline = a plain left column (sticky), with a subtle separator — no own card.
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky !important; top: 16px !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; margin: 0 !important; padding: 0 22px 0 0 !important; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; border-bottom: 0 !important; }\n";
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-layout-main { display: grid; gap: 16px; min-width: 0; }\n";
+	// On phones the sidebar can't sit beside the form — stack it, but keep it first.
+	$inline_css .= "@media (max-width: 640px) {\n";
+	$inline_css .= "  {$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-layout { grid-template-columns: 1fr !important; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline { position: static !important; display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; overflow-x: auto !important; gap: 8px !important; padding: 0 0 12px !important; border-right: 0 !important; border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline-item { width: auto !important; flex: 0 0 auto !important; padding: 8px 10px !important; }\n";
+	$inline_css .= "  {$scope} [data-step-layout='timeline'] .template-step-timeline-label { display: none !important; }\n";
+	$inline_css .= "}\n";
+
+	$inline_css .= "\n/* Hide timeline layout on submit success */\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-workflow-state='submitted'] .template-step-layout { display: block !important; }\n";
+	$inline_css .= "{$scope} .template-runtime-shell[data-workflow-state='submitted'] .template-step-timeline { display: none !important; }\n";
+	$inline_css .= "{$scope} .form-frame:has([data-workflow-state='submitted']) { max-width: 680px !important; }\n";
 
 	return $inline_css;
 }
@@ -1558,6 +1604,7 @@ function xpressui_build_config_field_index( $config ) {
 				'type'          => (string) ( $field['type'] ?? '' ),
 				'choices'       => xpressui_build_field_choice_map( $field ),
 				'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
+				'field_config'  => $field,
 			];
 		}
 	}
@@ -1583,6 +1630,7 @@ function xpressui_build_config_field_index( $config ) {
 					'type'          => (string) ( $field['type'] ?? '' ),
 					'choices'       => xpressui_build_field_choice_map( $field ),
 					'choiceCatalog' => is_array( $field['choices'] ?? null ) ? array_values( $field['choices'] ) : [],
+					'field_config'  => $field,
 				];
 			}
 		}
@@ -2010,6 +2058,90 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				$field['photo_placeholder_slots'] = array_fill( 0, $max_files, null );
 			} elseif ( $type === 'camera-photo' ) {
 				$field['max_files'] = isset( $field['maxFiles'] ) ? (int) $field['maxFiles'] : null;
+			} elseif ( $type === 'repeater' ) {
+				$subfields = [];
+				if ( is_array( $field['fields'] ?? null ) ) {
+					$repeater_supported_types = [
+						'text', 'textarea', 'email', 'tel', 'date', 'time',
+						'number', 'checkbox', 'checkboxes', 'radio-buttons', 'select-one'
+					];
+					$subfield_input_type_map = [
+						'email'  => 'email',
+						'tel'    => 'tel',
+						'date'   => 'date',
+						'time'   => 'time',
+						'number' => 'number',
+					];
+					foreach ( $field['fields'] as $subfield ) {
+						if ( ! is_array( $subfield ) ) {
+							continue;
+						}
+						$subfield_type = trim( (string) ( $subfield['type'] ?? 'text' ) );
+						if ( ! in_array( $subfield_type, $repeater_supported_types, true ) ) {
+							$subfield_type = 'text';
+						}
+						$subfield_name = trim( (string) ( $subfield['name'] ?? '' ) );
+						if ( '' === $subfield_name ) {
+							$subfield_name = preg_replace( '/[^a-zA-Z0-9_]+/', '_', strtolower( (string) ( $subfield['label'] ?? 'value' ) ) );
+							$subfield_name = trim( $subfield_name, '_' ) ?: 'value';
+						}
+						$choices = [];
+						if ( is_array( $subfield['choices'] ?? null ) ) {
+							foreach ( $subfield['choices'] as $choice ) {
+								if ( is_array( $choice ) ) {
+									$choices[] = [
+										'label' => (string) ( $choice['label'] ?? $choice['name'] ?? $choice['value'] ?? 'Choice' ),
+										'value' => (string) ( $choice['value'] ?? $choice['id'] ?? $choice['name'] ?? $choice['label'] ?? '' ),
+									];
+								}
+							}
+						}
+						$subfields[] = [
+							'name'        => $subfield_name,
+							'label'       => (string) ( $subfield['label'] ?? $subfield['adminLabel'] ?? $subfield_name ),
+							'type'        => $subfield_type,
+							'placeholder' => (string) ( $subfield['placeholder'] ?? '' ),
+							'required'    => ! empty( $subfield['required'] ),
+							'choices'     => $choices,
+							'input_type'  => $subfield_input_type_map[ $subfield_type ] ?? 'text',
+						];
+					}
+				}
+				if ( empty( $subfields ) ) {
+					$subfields[] = [
+						'name'        => 'value',
+						'label'       => 'Value',
+						'type'        => 'text',
+						'placeholder' => '',
+						'required'    => false,
+						'choices'     => [],
+						'input_type'  => 'text',
+					];
+				}
+				$min_rows = isset( $field['minRows'] ) ? (int) $field['minRows'] : 1;
+				if ( $min_rows < 0 || $min_rows > 50 ) {
+					$min_rows = 1;
+				}
+				$max_rows = isset( $field['maxRows'] ) ? (int) $field['maxRows'] : max( $min_rows, 5 );
+				if ( $max_rows < $min_rows || $max_rows > 50 ) {
+					$max_rows = max( $min_rows, 5 );
+				}
+				$initial_row_count = max( 1, $min_rows );
+				$initial_rows = [];
+				for ( $i = 0; $i < $initial_row_count; $i++ ) {
+					$initial_rows[] = [
+						'index'  => $i,
+						'number' => $i + 1,
+					];
+				}
+				$field['repeater_fields']   = $subfields;
+				$field['min_rows']          = $min_rows;
+				$field['max_rows']          = $max_rows;
+				$field['initial_row_count'] = $initial_row_count;
+				$field['initial_rows']      = $initial_rows;
+				$field['item_label']        = (string) ( $field['itemLabel'] ?? 'Row' );
+				$field['add_label']         = (string) ( $field['addLabel'] ?? 'Add row' );
+				$field['remove_label']      = (string) ( $field['removeLabel'] ?? 'Remove' );
 			}
 			$fields[]             = $field;
 		}
@@ -2365,7 +2497,15 @@ function xpressui_render_quiz_value( $value, $field_meta = [] ) {
 		if ( ! is_array( $entry ) ) {
 			continue;
 		}
-		$entry_id      = (string) ( $entry['id'] ?? $entry['value'] ?? ( 'answer_' . ( $pos + 1 ) ) );
+		$entry_id = '';
+		if ( isset( $entry['id'] ) && (string) $entry['id'] !== '' ) {
+			$entry_id = (string) $entry['id'];
+		} elseif ( isset( $entry['value'] ) && (string) $entry['value'] !== '' ) {
+			$entry_id = (string) $entry['value'];
+		}
+		if ( $entry_id === '' ) {
+			continue;
+		}
 		$catalog_entry = $catalog_index[ $entry_id ] ?? [];
 		$items[]       = [
 			'name' => (string) ( $entry['name'] ?? $entry['label'] ?? $catalog_entry['name'] ?? $catalog_entry['label'] ?? $entry_id ),
@@ -2403,7 +2543,15 @@ function xpressui_render_image_gallery_value( $value, $field_meta = [] ) {
 		if ( ! is_array( $entry ) ) {
 			continue;
 		}
-		$entry_id      = (string) ( $entry['id'] ?? $entry['value'] ?? ( 'image_' . ( $pos + 1 ) ) );
+		$entry_id = '';
+		if ( isset( $entry['id'] ) && (string) $entry['id'] !== '' ) {
+			$entry_id = (string) $entry['id'];
+		} elseif ( isset( $entry['value'] ) && (string) $entry['value'] !== '' ) {
+			$entry_id = (string) $entry['value'];
+		}
+		if ( $entry_id === '' ) {
+			continue;
+		}
 		$catalog_entry = $catalog_index[ $entry_id ] ?? [];
 		$thumbnail     = (string) ( $entry['image_thumbnail'] ?? $catalog_entry['image_thumbnail'] ?? $catalog_entry['imageThumbnail'] ?? '' );
 		$full_url      = (string) ( $entry['image_medium'] ?? $catalog_entry['image_medium'] ?? $catalog_entry['imageMedium'] ?? $thumbnail );
@@ -2510,7 +2658,117 @@ function xpressui_render_file_list_html( array $files ): string {
 	return $html;
 }
 
+function xpressui_render_repeater_value( $value, $field_meta = [] ) {
+	if ( is_string( $value ) && $value !== '' ) {
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+			$value = $decoded;
+		}
+	}
+
+	if ( ! is_array( $value ) || empty( $value ) ) {
+		return '<span class="xpressui-empty">' . esc_html__( 'Empty', 'xpressui-bridge' ) . '</span>';
+	}
+
+	// 1. Gather all subfield definitions from config if available.
+	$subfields_config = [];
+	$config_source = $field_meta['field_config'] ?? [];
+	$raw_subfields = $config_source['repeater_fields'] ?? $config_source['repeaterFields'] ?? [];
+	if ( is_array( $raw_subfields ) ) {
+		foreach ( $raw_subfields as $sub ) {
+			if ( is_array( $sub ) && isset( $sub['name'] ) ) {
+				$subfields_config[ (string) $sub['name'] ] = [
+					'label'   => (string) ( $sub['label'] ?? $sub['adminLabel'] ?? $sub['title'] ?? $sub['name'] ),
+					'type'    => (string) ( $sub['type'] ?? '' ),
+					'choices' => xpressui_build_field_choice_map( $sub ),
+				];
+			}
+		}
+	}
+
+	// 2. Identify the active columns/keys based on the payload data.
+	// We preserve the order defined in config if available, then append any extra keys found in data.
+	$all_data_keys = [];
+	foreach ( $value as $row ) {
+		if ( is_array( $row ) ) {
+			foreach ( array_keys( $row ) as $k ) {
+				$all_data_keys[ (string) $k ] = true;
+			}
+		}
+	}
+
+	$columns = []; // key => label
+	foreach ( $subfields_config as $k => $info ) {
+		if ( isset( $all_data_keys[ $k ] ) ) {
+			$columns[ $k ] = $info['label'];
+			unset( $all_data_keys[ $k ] );
+		}
+	}
+	foreach ( array_keys( $all_data_keys ) as $k ) {
+		$columns[ $k ] = ucwords( str_replace( [ '_', '-' ], ' ', $k ) );
+	}
+
+	if ( empty( $columns ) ) {
+		return '<span class="xpressui-empty">' . esc_html__( 'Empty', 'xpressui-bridge' ) . '</span>';
+	}
+
+	// 3. Render HTML Table
+	$html  = '<table cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;font-size:12px;margin:4px 0;">';
+	$html .= '<thead style="background-color:#f9fafb;border-bottom:2px solid #e5e7eb;"><tr>';
+	foreach ( $columns as $key => $label ) {
+		$html .= '<th style="padding:8px 10px;text-align:left;font-weight:600;color:#374151;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">' . esc_html( $label ) . '</th>';
+	}
+	$html .= '</tr></thead>';
+
+	$html .= '<tbody>';
+	$row_idx = 0;
+	foreach ( $value as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$bg = $row_idx % 2 === 0 ? '#ffffff' : '#f9fafb';
+		$html .= '<tr style="background-color:' . $bg . ';">';
+		foreach ( $columns as $key => $label ) {
+			$cell_val = $row[ $key ] ?? '';
+			$formatted_cell = '';
+			if ( is_array( $cell_val ) ) {
+				if ( ( $cell_val['kind'] ?? '' ) === 'uploaded-file' ) {
+					$file_name = esc_html( (string) ( $cell_val['originalName'] ?? 'file' ) );
+					$file_url  = esc_url( (string) ( $cell_val['url'] ?? '' ) );
+					$formatted_cell = $file_url !== '' ? '<a href="' . $file_url . '" target="_blank" rel="noreferrer" style="color:#2563eb;">' . $file_name . '</a>' : $file_name;
+				} else {
+					$formatted_cell = '<code>' . esc_html( wp_json_encode( $cell_val, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) ) . '</code>';
+				}
+			} elseif ( is_bool( $cell_val ) ) {
+				$formatted_cell = esc_html( $cell_val ? __( 'Yes', 'xpressui-bridge' ) : __( 'No', 'xpressui-bridge' ) );
+			} else {
+				$sub_info = $subfields_config[ $key ] ?? [];
+				$choice_map = $sub_info['choices'] ?? [];
+				$s_val = (string) $cell_val;
+				if ( ! empty( $choice_map ) && isset( $choice_map[ $s_val ] ) ) {
+					$formatted_cell = esc_html( $choice_map[ $s_val ] );
+				} else {
+					$formatted_cell = nl2br( esc_html( $s_val ) );
+				}
+			}
+			$html .= '<td style="padding:8px 10px;color:#4b5563;border-bottom:1px solid #e5e7eb;border-right:1px solid #e5e7eb;word-break:break-word;vertical-align:top;">' . $formatted_cell . '</td>';
+		}
+		$html .= '</tr>';
+		$row_idx++;
+	}
+	$html .= '</tbody></table>';
+
+	return $html;
+}
+
 function xpressui_format_submission_value( $value, $field_meta = [] ) {
+	if ( is_string( $value ) && $value !== '' ) {
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() === JSON_ERROR_NONE && ( is_array( $decoded ) || is_object( $decoded ) ) ) {
+			$value = $decoded;
+		}
+	}
+
 	$field_type = (string) ( $field_meta['type'] ?? '' );
 	$choice_map = is_array( $field_meta['choices'] ?? null ) ? $field_meta['choices'] : [];
 
@@ -2526,6 +2784,9 @@ function xpressui_format_submission_value( $value, $field_meta = [] ) {
 	}
 	if ( $field_type === 'select-image' ) {
 		return xpressui_render_image_gallery_value( $value, $field_meta );
+	}
+	if ( $field_type === 'repeater' ) {
+		return xpressui_render_repeater_value( $value, $field_meta );
 	}
 	if ( is_array( $value ) ) {
 		if ( ( $value['kind'] ?? '' ) === 'uploaded-file' ) {

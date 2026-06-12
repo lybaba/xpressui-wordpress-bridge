@@ -149,13 +149,6 @@ export function bindSimpleFieldEvents(options: {
     input instanceof HTMLInputElement &&
     (input.type === "date" || input.type === "time" || input.type === "datetime-local")
   ) {
-    input.addEventListener("click", () => {
-      try {
-        (input as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
-      } catch {
-        // showPicker not supported or not triggered by user gesture — ignore
-      }
-    });
     input.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
   }
 }
@@ -174,10 +167,12 @@ export function bindSelectionFieldEvents(options: {
   getCurrentValue: () => any;
   onChangeValue: (value: any) => void;
   onAfterChange: () => void;
-  getNextProductCartItems: (action: "add" | "inc" | "dec" | "remove", productId: string) => any;
+  getNextProductCartItems: (action: "add" | "inc" | "dec" | "remove" | "set", productId: string, quantity?: number) => any;
   getNextImageGallerySelectionItems: (action: "toggle" | "remove", imageId: string) => any;
   getNextQuizSelectionItems: (answerId: string) => any;
   getNextChoiceSelectionValue: (choiceValue: string) => any;
+  getNextChoiceMonthSelectionValue: (monthKey: string) => any;
+  getNextChoiceYearSelectionValue: (year: string) => any;
   openProductGallery: (productId: string) => void;
   openImageGallery: (imageId: string) => void;
   startQrCamera: () => void;
@@ -213,6 +208,18 @@ export function bindSelectionFieldEvents(options: {
       return;
     }
 
+    const choiceMonthToggle = target?.closest("[data-date-range-month-toggle]") as HTMLElement | null;
+    if (options.isChoiceListField && choiceMonthToggle) {
+      event.preventDefault();
+      event.stopPropagation();
+      const monthKey = choiceMonthToggle.getAttribute("data-choice-date-month");
+      if (monthKey) {
+        options.onChangeValue(options.getNextChoiceMonthSelectionValue(monthKey));
+        options.onAfterChange();
+      }
+      return;
+    }
+
     const choiceCard = target?.closest("[data-choice-option-action]") as HTMLElement | null;
     if (options.isChoiceListField && choiceCard) {
       event.preventDefault();
@@ -223,6 +230,18 @@ export function bindSelectionFieldEvents(options: {
         || choiceCard.getAttribute("tabindex") === "-1";
       if (choiceValue && !disabled) {
         options.onChangeValue(options.getNextChoiceSelectionValue(choiceValue));
+        options.onAfterChange();
+      }
+      return;
+    }
+
+    const choiceYearToggle = target?.closest("[data-month-range-year-toggle]") as HTMLElement | null;
+    if (options.isChoiceListField && choiceYearToggle) {
+      event.preventDefault();
+      event.stopPropagation();
+      const year = choiceYearToggle.getAttribute("data-choice-year");
+      if (year) {
+        options.onChangeValue(options.getNextChoiceYearSelectionValue(year));
         options.onAfterChange();
       }
       return;
@@ -242,11 +261,17 @@ export function bindSelectionFieldEvents(options: {
     }
 
     const imageGalleryActionButton = target?.closest("[data-image-gallery-action]") as HTMLElement | null;
-    if (options.isImageGalleryField && imageGalleryActionButton) {
+    const compactImageChoiceCard = target?.closest(
+      '[data-image-choice-mode="choice-list"] [data-image-card]',
+    ) as HTMLElement | null;
+    if (options.isImageGalleryField && (imageGalleryActionButton || compactImageChoiceCard)) {
       event.preventDefault();
       event.stopPropagation();
-      const action = imageGalleryActionButton.getAttribute("data-image-gallery-action");
-      const imageId = imageGalleryActionButton.getAttribute("data-image-id");
+      const action = imageGalleryActionButton?.getAttribute("data-image-gallery-action") || "toggle";
+      const imageId =
+        imageGalleryActionButton?.getAttribute("data-image-id")
+        || compactImageChoiceCard?.getAttribute("data-image-id")
+        || compactImageChoiceCard?.getAttribute("data-image-card");
       if ((action === "toggle" || action === "remove") && imageId) {
         options.onChangeValue(options.getNextImageGallerySelectionItems(action, imageId));
         options.onAfterChange();
@@ -325,6 +350,63 @@ export function bindSelectionFieldEvents(options: {
 
     options.removeSelectedFile(fileIndex);
   });
+
+  if (options.isProductListField) {
+    selectionElement.addEventListener("change", (event) => {
+      const target = event.target as HTMLElement | null;
+      const quantityInput = target?.closest("[data-product-quantity-input]") as HTMLInputElement | null;
+      if (!quantityInput) {
+        return;
+      }
+      const productId = quantityInput.getAttribute("data-product-quantity-input");
+      if (!productId) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      options.onChangeValue(options.getNextProductCartItems("set", productId, Number(quantityInput.value)));
+      options.onAfterChange();
+    });
+  }
+
+  if (options.isChoiceListField) {
+    selectionElement.addEventListener("change", (event) => {
+      const target = event.target as HTMLElement | null;
+      const yearSelect = target?.closest("[data-month-range-year-select]") as HTMLSelectElement | null;
+      if (yearSelect) {
+        event.preventDefault();
+        event.stopPropagation();
+        const year = yearSelect.value;
+        const grid = (selectionElement.matches("[data-choice-month-range]")
+          ? selectionElement
+          : selectionElement.querySelector("[data-choice-month-range]")) as HTMLElement | null;
+        if (grid) {
+          grid.dataset.activeYear = year;
+          grid.querySelectorAll<HTMLElement>("[data-choice-year-group]").forEach((section) => {
+            const active = section.getAttribute("data-choice-year-group") === year;
+            section.hidden = !active;
+            section.setAttribute("data-active", active ? "true" : "false");
+          });
+          grid.querySelectorAll<HTMLSelectElement>("[data-month-range-year-select]").forEach((select) => {
+            select.value = year;
+          });
+        }
+        return;
+      }
+
+      const yearCheckbox = target?.closest("[data-month-range-year-checkbox]") as HTMLInputElement | null;
+      if (!yearCheckbox) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      const year = yearCheckbox.getAttribute("data-choice-year");
+      if (year) {
+        options.onChangeValue(options.getNextChoiceYearSelectionValue(year));
+        options.onAfterChange();
+      }
+    });
+  }
 
   if (options.isQuizField && options.isOpenQuizField) {
     selectionElement.addEventListener("input", (event) => {

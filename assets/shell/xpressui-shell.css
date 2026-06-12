@@ -73,17 +73,31 @@
     .form-frame {
       width: min(100%, 900px);
       background: color-mix(in srgb, var(--template-surface) 92%, white);
+      border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
       border-radius: var(--template-card-radius);
       padding: 28px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.08);
       position: relative;
       z-index: 1;
     }
+    .form-frame.form-frame--timeline {
+      width: min(100%, 1120px);
+    }
     body[data-bg-style="panel"] .form-frame,
     body[data-bg-style="full-bleed"] .form-frame {
       background: color-mix(in srgb, var(--template-surface) 96%, transparent);
       box-shadow: 0 28px 80px -38px rgba(0,0,0,0.42);
       backdrop-filter: blur(18px) saturate(1.08);
+    }
+    /* Plain frame: drop the card chrome so the form inherits the host theme's
+       container (prevents a card-on-card look). Placed after the bg-style rules
+       so it wins on equal specificity. Border kept transparent (not removed) to
+       avoid a 1px layout shift; padding is preserved for breathing room. */
+    body[data-frame-style="plain"] .form-frame {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
     }
     .form-frame--commerce-landing {
       width: min(100%, 1480px);
@@ -142,11 +156,13 @@
     .template-step-status[data-step-feedback-state='success'] { background: color-mix(in srgb, #22c55e 8%, var(--template-surface)); border-color: color-mix(in srgb, #22c55e 20%, transparent); }
     .template-step-status-title { font-size: 12px; font-weight: 800; color: var(--template-primary); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; align-self: start; background: color-mix(in srgb, var(--template-primary) 8%, transparent); padding: 6px 12px; border-radius: 999px; }
     .template-step-status-message { display: none; /* Cleaner to hide this and rely on Section labels */ }
-    .template-section { display: grid; gap: 14px; padding: 18px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
+    /* The section label sits OUTSIDE the inner card (like the hosted link): the
+     * .template-section is a plain wrapper, the inner card is on .template-fields. */
+    .template-section { display: grid; gap: 12px; }
     .template-section-header { display: grid; gap: 4px; }
     .template-section-label { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 0; color: var(--template-text); }
     .template-section-desc { margin: 0 0 4px 0; color: var(--template-muted-text); font-size: 14px; line-height: 1.5; }
-    .template-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; width: 100%; }
+    .template-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; width: 100%; box-sizing: border-box; padding: 18px; border-radius: max(calc(var(--template-card-radius) - 6px), 18px); border: 1px solid color-mix(in srgb, var(--template-border) 72%, rgba(15,23,42,0.08)); background: color-mix(in srgb, var(--template-surface) 84%, white); }
     .template-runtime-shell[data-field-columns='2'] .template-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .template-field { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
@@ -411,11 +427,16 @@
     .template-toggle-input:checked + .template-toggle-ui { background: var(--template-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--template-primary) 16%, transparent); }
     .template-toggle-input:checked + .template-toggle-ui::after { transform: translateX(18px); }
     .template-toggle-input:focus-visible + .template-toggle-ui { outline: 2px solid color-mix(in srgb, var(--template-primary) 55%, transparent); outline-offset: 3px; }
-    .template-upload-box { display: grid; gap: 6px; place-items: center; padding: 16px 18px; border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); text-align: center; }
+    /* Checkbox field type renders as an actual square checkbox (the switch UI is for type="switch"). */
+    .template-field[data-field-type="checkbox"] .template-toggle-ui { width: 22px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--template-surface) 96%, white); border: 2px solid color-mix(in srgb, var(--template-border) 90%, transparent); }
+    .template-field[data-field-type="checkbox"] .template-toggle-ui::after { content: ''; top: 2px; left: 6px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; border-radius: 0; background: none; box-shadow: none; transform: rotate(45deg) scale(0); transition: transform 120ms ease; }
+    .template-field[data-field-type="checkbox"] .template-toggle-input:checked + .template-toggle-ui { background: var(--template-primary); border-color: var(--template-primary); box-shadow: none; }
+    .template-field[data-field-type="checkbox"] .template-toggle-input:checked + .template-toggle-ui::after { transform: rotate(45deg) scale(1); }
+    .template-upload-box { display: grid; gap: 6px; place-items: center; padding: 16px 18px; border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); text-align: center; box-sizing: border-box !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
     .template-field[data-field-type='payment-proof'] { gap: 12px; }
     .template-field[data-field-type='payment-proof'] > .template-field-label-row { margin-bottom: 2px; }
     .template-field[data-field-type='payment-proof'] > .template-upload-selection { margin-top: 2px; }
-    .template-upload-box[data-payment-proof='true'] { justify-items: stretch; gap: 14px; padding: 16px 18px; text-align: left; }
+    .template-upload-box[data-payment-proof='true'] { justify-items: stretch; gap: 14px; padding: 16px 18px; text-align: left; box-sizing: border-box !important; width: 100% !important; max-width: 100% !important; min-width: 0 !important; }
     .template-upload-box[data-payment-proof='true'] .template-upload-icon { display: none; }
     .template-upload-box[data-payment-proof='true'] > .template-field-label,
     .template-upload-box[data-payment-proof='true'] > .template-field-help { display: none; }
@@ -435,7 +456,7 @@
     .template-upload-box .template-field-label { font-size: 13px; }
     .template-upload-box .template-field-help { max-width: 520px; }
     .template-upload-box .template-input { margin-top: 4px; padding-top: 10px; padding-bottom: 10px; }
-    .template-upload-dropzone { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; box-sizing: border-box; padding: 18px 16px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--template-primary) 32%, var(--template-border)); background: color-mix(in srgb, var(--template-primary) 4%, var(--template-surface)); color: var(--template-muted-text); text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .template-upload-dropzone { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; padding: 18px 16px; border-radius: 14px; border: 1.5px dashed color-mix(in srgb, var(--template-primary) 32%, var(--template-border)); background: color-mix(in srgb, var(--template-primary) 4%, var(--template-surface)); color: var(--template-muted-text); text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .template-upload-dropzone:hover { border-color: var(--template-primary); background: color-mix(in srgb, var(--template-primary) 8%, var(--template-surface)); }
     .template-upload-dropzone-icon { color: var(--template-primary); }
     .template-upload-dropzone-title { font-size: 14px; font-weight: 800; color: var(--template-text); }
@@ -596,7 +617,7 @@
       .hosted-link-presentation { padding: 16px; }
       .hosted-link-title { font-size: 21px; }
       #xpressui-root .template-form-title { font-size: 28px; }
-      .template-section { padding: 16px; }
+      .template-fields { padding: 16px; }
       .template-section-label { font-size: 21px; }
       .template-runtime-shell[data-field-columns='2'] .template-fields,
       .template-runtime-shell[data-field-columns='3'] .template-fields { grid-template-columns: 1fr; }
@@ -1377,7 +1398,14 @@
     .template-upload-box.xpui-capture-only .template-field-help,
     .template-upload-box.xpui-capture-only .template-upload-pills,
     .template-upload-box.xpui-capture-only input[type="file"] { display: none !important; }
-    .template-upload-box.xpui-capture-only { justify-items: center; }
+    .template-upload-box.xpui-capture-only {
+      justify-items: start;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      margin-bottom: 8px;
+    }
     .xpui-photo-grid { display: flex; flex-wrap: wrap; gap: 10px; }
     .xpui-photo-thumb { position: relative; width: 96px; height: 96px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: flex; }
     .xpui-photo-thumb--placeholder { flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px dashed color-mix(in srgb, var(--template-border) 80%, transparent); background: color-mix(in srgb, var(--template-surface) 94%, transparent); cursor: pointer; text-decoration: none; transition: border-color 0.15s, background 0.15s; padding: 6px; box-sizing: border-box; }
@@ -1509,3 +1537,193 @@
       max-width: 100% !important;
       width: 100% !important;
     }
+
+/* ---------------------------------------------------------------------------
+ * Resume / correction mode (partial resubmission) — mirrors the hosted link:
+ * a "what to correct" summary at the top, flagged fields highlighted, the rest
+ * shown read-only for context.
+ * ------------------------------------------------------------------------- */
+.xpressui-resume-banner {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 10px;
+  color: #713f12;
+}
+.xpressui-resume-banner-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.xpressui-resume-banner [data-resume-banner-note] {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.xpressui-resume-banner-fields {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.xpressui-resume-banner-fields li {
+  font-size: 13px;
+  font-weight: 600;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 4px 12px;
+  color: #92400e;
+}
+.xpressui-resume-flagged {
+  background: #fffbeb;
+  border-left: 3px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.xpressui-resume-locked {
+  opacity: 0.92;
+  /* Locked controls stay enabled (so their value is submitted/validated); block
+   * all interaction here instead of via the `disabled` attribute. */
+  pointer-events: none;
+}
+.xpressui-resume-locked .template-field-label {
+  color: color-mix(in srgb, var(--template-text) 70%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Step timeline layout (data-step-layout="timeline") — a clickable step
+ * sidebar that replaces the inline progress bar for multi-step forms.
+ * ------------------------------------------------------------------------- */
+.template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
+  display: grid !important;
+  grid-template-columns: 232px minmax(0, 1fr) !important;
+  gap: clamp(20px, 3vw, 40px) !important;
+  align-items: start !important;
+}
+/* The sidebar conveys progress, so hide the inline progress bar in timeline mode. */
+.template-runtime-shell[data-step-layout="timeline"] .template-step-status { display: none !important; }
+.template-step-layout-main { min-width: 0; display: grid; gap: 16px; }
+.template-step-timeline {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-wrap: nowrap !important;
+  gap: 2px !important;
+  position: sticky !important;
+  top: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.template-step-timeline-item {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  text-align: left !important;
+  padding: 11px 14px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--template-muted-text) !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: default !important;
+  transition: background 120ms ease, color 120ms ease !important;
+}
+.template-step-timeline-item:not(:last-child)::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 28px !important; /* 14px left padding + 14px (half of 28px circle) */
+  top: 39px !important; /* 11px top padding + 28px circle height */
+  height: 26px !important; /* Spans to the next circle */
+  width: 2px !important;
+  background: color-mix(in srgb, var(--template-border) 45%, transparent) !important;
+  z-index: 1 !important;
+  transition: background 150ms ease !important;
+}
+.template-step-timeline-item.is-complete:not(:last-child)::after {
+  background: var(--template-primary) !important;
+}
+.template-step-timeline-index {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--template-border) 45%, transparent) !important;
+  color: var(--template-text) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease !important;
+}
+.template-step-timeline-label { line-height: 1.25 !important; }
+.template-step-timeline-item.is-complete { color: var(--template-text) !important; }
+.template-step-timeline-item.is-complete .template-step-timeline-index {
+  font-size: 0 !important;
+  background: color-mix(in srgb, var(--template-primary) 15%, transparent) !important;
+  color: var(--template-primary) !important;
+}
+.template-step-timeline-item.is-complete .template-step-timeline-index::before {
+  content: "✓" !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+.template-step-timeline-item.is-active {
+  color: var(--template-text) !important;
+  background: color-mix(in srgb, var(--template-primary) 9%, transparent) !important;
+}
+.template-step-timeline-item.is-active .template-step-timeline-index {
+  background: var(--template-primary) !important;
+  color: #fff !important;
+}
+.template-step-timeline-item.is-clickable { cursor: pointer !important; }
+.template-step-timeline-item.is-clickable:hover {
+  background: color-mix(in srgb, var(--template-primary) 7%, transparent) !important;
+  color: var(--template-primary) !important;
+}
+.template-step-timeline-item.is-clickable:hover .template-step-timeline-index {
+  transform: scale(1.05) !important;
+  background: color-mix(in srgb, var(--template-primary) 22%, transparent) !important;
+  color: var(--template-primary) !important;
+}
+.template-step-timeline-item[disabled] { cursor: default !important; }
+
+@media (max-width: 640px) {
+  .template-runtime-shell[data-step-layout="timeline"] .template-step-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .template-step-timeline {
+    position: static !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 8px !important;
+    padding-bottom: 6px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important;
+  }
+  .template-step-timeline-item { width: auto !important; flex: 0 0 auto !important; padding: 8px 10px !important; }
+  .template-step-timeline-item::after { display: none !important; }
+  .template-step-timeline-label { display: none !important; }
+}
+
+/* Hide timeline layout on submit success */
+.template-runtime-shell[data-workflow-state="submitted"] .template-step-layout {
+  display: block !important;
+}
+.template-runtime-shell[data-workflow-state="submitted"] .template-step-timeline {
+  display: none !important;
+}
+.form-frame:has([data-workflow-state="submitted"]) {
+  max-width: 680px !important;
+}

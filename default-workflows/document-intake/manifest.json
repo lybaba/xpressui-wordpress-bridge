@@ -19,7 +19,7 @@
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
-      "wordpress/README.md": "b4835645b8b5e18a",
+      "wordpress/README.md": "777bbc4fd541edec",
       "form.config.json": "196cce3b5419fe54"
     }
   },
