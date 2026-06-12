@@ -13,6 +13,7 @@ $xpressui_bridge_radius   = $xpressui_bridge_theme['radius']         ?? [];
 $xpressui_bridge_project  = $xpressui_ctx['project'] ?? [];
 $xpressui_bridge_bg_url   = $xpressui_bridge_project['background_image_url'] ?? '';
 $xpressui_bridge_bg_style = $xpressui_bridge_theme['background_style']        ?? 'none';
+$xpressui_bridge_frame_style = $xpressui_bridge_theme['frame_style']          ?? 'card';
 $xpressui_bridge_font     = ! empty( $xpressui_bridge_theme['font_family'] ) ? $xpressui_bridge_theme['font_family'] : 'Inter, system-ui, sans-serif';
 
 $xpressui_bridge_data_bg_style = ( $xpressui_bridge_bg_url && 'none' !== $xpressui_bridge_bg_style ) ? $xpressui_bridge_bg_style : 'none';
@@ -32,7 +33,7 @@ $xpressui_bridge_vars = implode( '; ', [
 ?><!doctype html>
 <html lang="en" style="<?php echo esc_attr( $xpressui_bridge_vars ); ?>; --template-background-image:<?php echo $xpressui_bridge_bg_url ? 'url(' . esc_url( $xpressui_bridge_bg_url ) . ')' : 'none'; ?>">
 <?php xpressui_bridge_template_include_template( 'head.php', $xpressui_ctx ); ?>
-<body data-bg-style="<?php echo esc_attr( $xpressui_bridge_data_bg_style ); ?>">
+<body data-bg-style="<?php echo esc_attr( $xpressui_bridge_data_bg_style ); ?>" data-frame-style="<?php echo esc_attr( $xpressui_bridge_frame_style ); ?>">
   <div id="xpressui-root" class="page-shell" data-template-zone="page_shell">
 <?php xpressui_bridge_template_include_template( 'header.php', $xpressui_ctx ); ?>
 <?php xpressui_bridge_template_include_template( 'form-frame.php', $xpressui_ctx ); ?>

@@ -89,6 +89,16 @@
       box-shadow: 0 28px 80px -38px rgba(0,0,0,0.42);
       backdrop-filter: blur(18px) saturate(1.08);
     }
+    /* Plain frame: drop the card chrome so the form inherits the host theme's
+       container (prevents a card-on-card look). Placed after the bg-style rules
+       so it wins on equal specificity. Border kept transparent (not removed) to
+       avoid a 1px layout shift; padding is preserved for breathing room. */
+    body[data-frame-style="plain"] .form-frame {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
     .form-frame--commerce-landing {
       width: min(100%, 1480px);
       padding: clamp(20px, 2.6vw, 40px);
