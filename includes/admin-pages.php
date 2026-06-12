@@ -148,14 +148,31 @@ function xpressui_render_project_inbox_page() {
 		return;
 	}
 
+	$status_filter_url = static function ( $status ) {
+		$args = array( 'post_type' => 'xpressui_submission' );
+		if ( '' !== $status ) {
+			$args['xpressui_status'] = $status;
+		}
+		return wp_nonce_url( add_query_arg( $args, admin_url( 'edit.php' ) ), 'xpressui_filter_submissions', 'xpressui_filter_nonce' );
+	};
+	$stat_tile = static function ( $value, $label, $modifier, $url ) {
+		$zero  = 0 === (int) $value ? ' is-zero' : '';
+		$inner = '<span class="xpressui-inbox-stat__value">' . esc_html( (string) $value ) . '</span>'
+			. '<span class="xpressui-inbox-stat__label">' . esc_html( $label ) . '</span>';
+		if ( '' === $url ) {
+			return '<div class="xpressui-inbox-stat' . esc_attr( $modifier . $zero ) . '">' . $inner . '</div>';
+		}
+		return '<a class="xpressui-inbox-stat xpressui-inbox-stat--link' . esc_attr( $modifier . $zero ) . '" href="' . esc_url( $url ) . '">' . $inner . '</a>';
+	};
+
 	echo '<div class="xpressui-inbox-overview">';
-	echo '<div class="xpressui-inbox-stat"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_projects ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Projects', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_submissions ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--new"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_new ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'New', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--review"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_in_review ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'In review', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--pending-info"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_pending_info ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Pending info', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--done"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_done ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Done', 'xpressui-bridge' ) . '</span></div>';
-	echo '<div class="xpressui-inbox-stat xpressui-inbox-stat--rejected"><span class="xpressui-inbox-stat__value">' . esc_html( (string) $total_rejected ) . '</span><span class="xpressui-inbox-stat__label">' . esc_html__( 'Rejected', 'xpressui-bridge' ) . '</span></div>';
+	echo $stat_tile( $total_projects, __( 'Projects', 'xpressui-bridge' ), '', '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside helper
+	echo $stat_tile( $total_submissions, __( 'Submissions', 'xpressui-bridge' ), '', $status_filter_url( '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_new, __( 'New', 'xpressui-bridge' ), ' xpressui-inbox-stat--new', $status_filter_url( 'new' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_in_review, __( 'In review', 'xpressui-bridge' ), ' xpressui-inbox-stat--review', $status_filter_url( 'in-review' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_pending_info, __( 'Pending info', 'xpressui-bridge' ), ' xpressui-inbox-stat--pending-info', $status_filter_url( 'pending_info' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_done, __( 'Done', 'xpressui-bridge' ), ' xpressui-inbox-stat--done', $status_filter_url( 'done' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_rejected, __( 'Rejected', 'xpressui-bridge' ), ' xpressui-inbox-stat--rejected', $status_filter_url( 'rejected' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo '</div>';
 
 	echo '<div class="card xpressui-admin-card xpressui-admin-card--project-inbox">';
@@ -330,7 +347,7 @@ function xpressui_render_workflows_page() {
 	if ( ! empty( $runtime_health['pro']['available'] ) ) {
 		echo '<td><code>' . esc_html( (string) ( $runtime_health['pro']['url'] ?? '' ) ) . '</code></td>';
 	} else {
-		echo '<td><a class="button button-secondary" href="' . esc_url( 'https://iakpress.com/pro/' ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'GET IT NOW', 'xpressui-bridge' ) . '</a></td>';
+		echo '<td><a class="button button-secondary" href="' . esc_url( 'https://intakeflow.dev/pro/' ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'GET IT NOW', 'xpressui-bridge' ) . '</a></td>';
 	}
 	echo '</tr>';
 	echo '</tbody></table>';

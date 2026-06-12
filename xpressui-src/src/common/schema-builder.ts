@@ -12,6 +12,8 @@ import {
     IMAGE_GALLERY_TYPE,
     QUIZ_TYPE,
     SETTING_TYPE,
+    SMART_CATALOG_TYPE,
+    SELECT_PRODUCT_TYPE,
     SELECT_ONE_TYPE,
     SLUG_TYPE,
     SWITCH_TYPE,
@@ -40,6 +42,29 @@ const getNonEmptyString = (value: unknown): string | undefined => {
     return normalized ? normalized : undefined;
 };
 
+const getSmartCatalogEffectiveType = (fieldConfig: TFieldConfig): string => {
+    const renderAs = String(fieldConfig.renderAs || "checkboxes").trim().toLowerCase();
+    if (renderAs === "radio_buttons" || renderAs === "radio-buttons" || renderAs === "radiobuttons") {
+        return RADIO_BUTTONS_TYPE;
+    }
+    if (renderAs === "select_product" || renderAs === "select-product" || renderAs === "selectproduct") {
+        return SELECT_PRODUCT_TYPE;
+    }
+    if (
+        renderAs === "select_product_list"
+        || renderAs === "select-product-list"
+        || renderAs === "product_list"
+        || renderAs === "product-list"
+        || renderAs === "productlist"
+    ) {
+        return PRODUCT_LIST_TYPE;
+    }
+    if (renderAs === "select_image" || renderAs === "select-image" || renderAs === "selectimage") {
+        return IMAGE_GALLERY_TYPE;
+    }
+    return CHECKBOXES_TYPE;
+};
+
 // ─── Field → AJV schema ───────────────────────────────────────────────────────
 
 /**
@@ -60,6 +85,13 @@ function toAjvFieldType(fieldConfig: TFieldConfig): object | null {
             { type: "string", ...(fieldConfig.required ? { minLength: 1 } : {}) },
         ];
         return res;
+    }
+
+    if (fieldConfig.type === SMART_CATALOG_TYPE) {
+        return toAjvFieldType({
+            ...fieldConfig,
+            type: getSmartCatalogEffectiveType(fieldConfig),
+        });
     }
 
     switch (fieldConfig.type) {
@@ -132,7 +164,9 @@ function toAjvFieldType(fieldConfig: TFieldConfig): object | null {
             break;
 
         case PRODUCT_LIST_TYPE:
-        case IMAGE_GALLERY_TYPE: {
+        case SELECT_PRODUCT_TYPE:
+        case IMAGE_GALLERY_TYPE:
+        case "image-gallery": {
             const catalogSize = fieldConfig.choices?.length || 0;
             const requestedMaxItems =
                 Number.isFinite(Number(fieldConfig.maxNumOfChoices)) && Number(fieldConfig.maxNumOfChoices) > 0

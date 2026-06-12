@@ -303,6 +303,12 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	}
 	$mark_timing( 'validated' );
 
+	// Submission gate: allows add-ons (e.g. Pro license) to block submission.
+	$submission_gate = apply_filters( 'xpressui_submission_gate', null, $project_slug, $payload, $request );
+	if ( is_wp_error( $submission_gate ) ) {
+		return $submission_gate;
+	}
+
 	$post_id = wp_insert_post( [
 		'post_type'   => 'xpressui_submission',
 		'post_status' => 'private',
@@ -343,6 +349,8 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 
 	// Fire notification after payload is stored.
 	xpressui_maybe_send_notification( $post_id, $project_slug, $payload_with_files );
+	// Optionally email the submitter a copy of the admin-style notification (no admin button).
+	xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload_with_files );
 	$mark_timing( 'notification_sent' );
 
 	// Send confirmation email to the submitter on first submit.
@@ -813,6 +821,16 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 
 function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 	$stored_files = [];
+
+	// Performance: the operator inbox only ever uses the 'thumbnail' size
+	// (see xpressui_get_file_thumb_url). Generating the full WordPress size set
+	// (medium, medium_large, large, 1536/2048 and theme sizes) for every
+	// submission upload is the slow part of a file submission, so restrict
+	// intermediate-size generation to 'thumbnail' while we store the files.
+	$xpressui_limit_sizes = static function ( $sizes ) {
+		return is_array( $sizes ) ? array_intersect_key( $sizes, [ 'thumbnail' => true ] ) : $sizes;
+	};
+	add_filter( 'intermediate_image_sizes_advanced', $xpressui_limit_sizes, 99 );
 		$debug        = [
 			'requestFileKeys'   => [],
 			'normalizedFiles'   => [],
@@ -890,6 +908,8 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 			'url'          => wp_get_attachment_url( $attachment ),
 		];
 	}
+
+	remove_filter( 'intermediate_image_sizes_advanced', $xpressui_limit_sizes, 99 );
 
 	update_post_meta( $post_id, '_xpressui_uploaded_files', wp_json_encode( $stored_files ) );
 	update_post_meta( $post_id, '_xpressui_upload_debug', wp_json_encode( $debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );

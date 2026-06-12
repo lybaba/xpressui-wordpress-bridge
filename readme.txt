@@ -1,18 +1,18 @@
-=== XPressUI Bridge ===
+=== Multi-Step Forms & Client Document Intake – XPressUI Bridge ===
 Contributors: iakpressteam
-Tags: form, submission, workflow, document intake, multi-step
+Tags: document collection, client portal, file upload, intake form, multi-step form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.86
+Stable tag: 1.0.93
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Embed any XPressUI workflow on your WordPress site with a shortcode and review incoming submissions straight from wp-admin.
+Collect files, documents, and client intake form submissions directly in WordPress. Inline rendering, team inbox, and workflow tracking included.
 
 == Description ==
 
-**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://iakpress.com/) directly in your WordPress pages.
+**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://intakeflow.dev/) directly in your WordPress pages.
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
@@ -35,9 +35,16 @@ If you need advanced field types, direct Console Sync, or local workflow customi
 
 Businesses and developers who use the XPressUI console to build document-intake or multi-step application forms and want to manage the collected data inside their existing WordPress environment without an external SaaS inbox.
 
+= The Ultimate Alternative for Team Intake =
+
+Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), XPressUI Bridge is built specifically for **client intake** and **document collection**. 
+* **No paywall on team inbox:** Assign submissions to specific WordPress users without upgrading to expensive Enterprise plans (unlike JotForm or Typeform).
+* **No bloated iframes:** Forms render natively in clean, fast HTML/JS, inheriting your active theme's styling.
+* **100% GDPR-compliant:** Your submissions and uploaded files are stored entirely in your local database. No data is stored on third-party servers.
+
 == Installation ==
 
-1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://iakpress.com/).
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [intakeflow.dev](https://intakeflow.dev/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
 4. In the XPressUI console, export your workflow as a package (`.zip`).
@@ -48,7 +55,7 @@ Businesses and developers who use the XPressUI console to build document-intake 
 
 = Where do I get the workflow package (.zip) to upload? =
 
-The recommended way is to design and export it from the XPressUI console at [iakpress.com](https://iakpress.com/). You can also create a minimal package by hand — see the next question.
+The recommended way is to design and export it from the XPressUI console at [intakeflow.dev](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
 
 = Can I create a workflow package without the XPressUI console? =
 
@@ -117,11 +124,11 @@ Workflow packs can be reinstalled without deleting submissions. If you delete an
 
 = Does the plugin call any external API at runtime? =
 
-No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at intakeflow.dev is only used to design and export packages — it is not contacted during form rendering or submission processing.
 
 == External Services ==
 
-This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at intakeflow.dev) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
 
 The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
@@ -164,6 +171,11 @@ To rebuild the runtime from those sources:
 
 == Changelog ==
 
+= 1.0.93 =
+* Frame style: new appearance option (Card / Plain) to drop the form's card frame and inherit the host theme's container, avoiding a double frame on themes that already wrap content in a card.
+* Use the full plugin name "Multi-Step Forms & Client Document Intake – XPressUI Bridge" consistently with the header, description and wordpress.org listing.
+* Packaging: exclude .gitattributes from the distributed ZIP (hidden files are not permitted on WordPress.org).
+
 = 1.0.86 =
 * Keep the plugin name "XPressUI Bridge" consistent across the plugin header, description and admin UI (menu, labels) to match the wordpress.org listing and slug.
 
@@ -183,7 +195,7 @@ To rebuild the runtime from those sources:
 * Fix xpressui-src/package.json build scripts: remove prebuild/build:css steps that required dev-only files; npm run build now correctly builds the light runtime only.
 
 = 1.0.80 =
-* Update plugin site URL to https://iakpress.com/.
+* Update plugin site URL to https://intakeflow.dev/.
 
 = 1.0.79 =
 * Sanitize uploaded file MIME types with sanitize_mime_type() in addition to sanitize_file_name() for file names.

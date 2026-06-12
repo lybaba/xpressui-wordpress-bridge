@@ -31,6 +31,9 @@ const PUBLIC_FORM_SCHEMA = {
         method: { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"] },
         mode: { type: "string", enum: ["json", "form-data"] },
         action: { type: "string", minLength: 1 },
+        documentEndpoint: { type: "string", minLength: 1 },
+        documentReadyMessage: { type: "string" },
+        documentDownloadLabel: { type: "string" },
         presignEndpoint: { type: "string", minLength: 1 },
         presignMethod: { type: "string", enum: ["POST", "PUT", "PATCH"] },
         presignUploadUrlKey: { type: "string", minLength: 1 },
@@ -231,7 +234,10 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
   const config = cloneObject(input) as Record<string, any>;
 
   const normalizeFieldType = (fieldType: unknown) => {
-    if (fieldType === "image-gallery" || fieldType === "imagegallery" || fieldType === "selectimage") {
+    if (fieldType === "image-gallery" || fieldType === "imagegallery") {
+      return "image-gallery";
+    }
+    if (fieldType === "selectimage") {
       return "select-image";
     }
     if (fieldType === "selectproduct") {
@@ -259,7 +265,24 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
 
     return Object.fromEntries(
       Object.entries(sections as Record<string, any>).map(([sectionName, sectionValue]) => {
-        if (sectionName === "custom" || !Array.isArray(sectionValue)) {
+        if (sectionName === "custom") {
+          if (!Array.isArray(sectionValue)) {
+            return [sectionName, sectionValue];
+          }
+          // Entries in the "custom" section are step/group headers ({name,label}).
+          // The schema requires a `type`; legacy/seed configs sometimes omit it.
+          // Default the missing type to "section" so valid layouts still hydrate.
+          return [
+            sectionName,
+            sectionValue.map((entry) => (
+              entry && typeof entry === "object" && !(entry as Record<string, any>).type
+                ? { ...entry, type: "section" }
+                : entry
+            )),
+          ];
+        }
+
+        if (!Array.isArray(sectionValue)) {
           return [sectionName, sectionValue];
         }
 

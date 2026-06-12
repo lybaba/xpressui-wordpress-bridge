@@ -145,6 +145,31 @@
 	border-color: #fcc;
 }
 
+/* Clickable KPI tiles jump to the matching filtered queue (like the Cloud inbox). */
+.xpressui-inbox-stat--link {
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+	transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.xpressui-inbox-stat--link:hover,
+.xpressui-inbox-stat--link:focus {
+	transform: translateY(-1px);
+	box-shadow: 0 14px 28px -18px rgba(15, 23, 42, 0.4);
+	border-color: #94b8e6;
+	outline: none;
+}
+
+/* De-emphasise empty buckets so the actionable counts stand out. */
+.xpressui-inbox-stat.is-zero {
+	opacity: 0.6;
+}
+
+.xpressui-inbox-stat.is-zero .xpressui-inbox-stat__value {
+	color: #64748b;
+}
+
 /* ---------------------------------------------------------------------------
  * Admin cards
  * ------------------------------------------------------------------------- */
@@ -421,6 +446,15 @@
 .xpressui-table--project-inbox tbody td {
 	padding-top: 16px;
 	padding-bottom: 16px;
+}
+
+/* Row hover highlight for a more inbox-like feel. */
+.xpressui-table--project-inbox tbody tr {
+	transition: background 0.12s ease;
+}
+
+.xpressui-table--project-inbox tbody tr:hover td {
+	background: #eef5ff !important;
 }
 
 .xpressui-table--project-inbox .xpressui-cell-project strong {
