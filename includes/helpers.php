@@ -501,7 +501,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 		$inline_css .= "{$scope}.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: 0 !important; display: block !important; background: transparent !important; }\n";
 	}
 	$box_shadow = $has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)';
-	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : '';
+	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : ' max-width: 900px !important; width: 100% !important; margin: 0 auto !important;';
 	// Single framed card (like the hosted link). Forced with !important so the
 	// surrounding WordPress theme can't strip the border/background/radius — the
 	// unscoped shell rule loses specificity to most themes.
