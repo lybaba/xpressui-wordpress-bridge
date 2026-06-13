@@ -12,7 +12,7 @@ Collect files, documents, and client intake form submissions directly in WordPre
 
 == Description ==
 
-**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://iakpress.com/) directly in your WordPress pages.
+**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://intakeflow.dev/) directly in your WordPress pages.
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
@@ -44,7 +44,7 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 
 == Installation ==
 
-1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://iakpress.com/).
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://intakeflow.dev/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
 4. In the XPressUI console, export your workflow as a package (`.zip`).
@@ -55,7 +55,7 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 
 = Where do I get the workflow package (.zip) to upload? =
 
-The recommended way is to design and export it from the XPressUI console at [iakpress.com](https://iakpress.com/). You can also create a minimal package by hand — see the next question.
+The recommended way is to design and export it from the XPressUI console at [iakpress.com](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
 
 = Can I create a workflow package without the XPressUI console? =
 
@@ -195,7 +195,7 @@ To rebuild the runtime from those sources:
 * Fix xpressui-src/package.json build scripts: remove prebuild/build:css steps that required dev-only files; npm run build now correctly builds the light runtime only.
 
 = 1.0.80 =
-* Update plugin site URL to https://iakpress.com/.
+* Update plugin site URL to https://intakeflow.dev/.
 
 = 1.0.79 =
 * Sanitize uploaded file MIME types with sanitize_mime_type() in addition to sanitize_file_name() for file names.

@@ -347,7 +347,7 @@ function xpressui_render_workflows_page() {
 	if ( ! empty( $runtime_health['pro']['available'] ) ) {
 		echo '<td><code>' . esc_html( (string) ( $runtime_health['pro']['url'] ?? '' ) ) . '</code></td>';
 	} else {
-		echo '<td><a class="button button-secondary" href="' . esc_url( 'https://iakpress.com/pro/' ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'GET IT NOW', 'xpressui-bridge' ) . '</a></td>';
+		echo '<td><a class="button button-secondary" href="' . esc_url( 'https://intakeflow.dev/pro/' ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'GET IT NOW', 'xpressui-bridge' ) . '</a></td>';
 	}
 	echo '</tr>';
 	echo '</tbody></table>';

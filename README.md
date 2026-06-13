@@ -140,7 +140,7 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 
 ## Links
 
-- Product page: [XpressUI](https://iakpress.com/document-intake/xpressui)
-- Demo : [Document-Intake](https://iakpress.com/document-intake/)
+- Product page: [XpressUI](https://intakeflow.dev/document-intake/xpressui)
+- Demo : [Document-Intake](https://intakeflow.dev/document-intake/)
 - Pro add-on: [XPressUI WordPress Bridge PRO](https://github.com/lybaba/xpressui-wordpress-bridge-pro)
-- Support: [Contact](https://iakpress.com/document-intake/contact)
+- Support: [Contact](https://intakeflow.dev/document-intake/contact)
