@@ -44,7 +44,7 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 
 == Installation ==
 
-1. Download the plugin `.zip` from the WordPress Plugin Directory or from [iakpress.com](https://intakeflow.dev/).
+1. Download the plugin `.zip` from the WordPress Plugin Directory or from [intakeflow.dev](https://intakeflow.dev/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
 4. In the XPressUI console, export your workflow as a package (`.zip`).
@@ -55,7 +55,7 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 
 = Where do I get the workflow package (.zip) to upload? =
 
-The recommended way is to design and export it from the XPressUI console at [iakpress.com](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
+The recommended way is to design and export it from the XPressUI console at [intakeflow.dev](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
 
 = Can I create a workflow package without the XPressUI console? =
 
@@ -124,11 +124,11 @@ Workflow packs can be reinstalled without deleting submissions. If you delete an
 
 = Does the plugin call any external API at runtime? =
 
-No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at iakpress.com is only used to design and export packages — it is not contacted during form rendering or submission processing.
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at intakeflow.dev is only used to design and export packages — it is not contacted during form rendering or submission processing.
 
 == External Services ==
 
-This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at iakpress.com) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at intakeflow.dev) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
 
 The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
