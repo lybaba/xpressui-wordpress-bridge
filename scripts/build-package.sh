@@ -26,13 +26,13 @@ rm -f "${OUTPUT_PATH}"
 # in runtime/ (CI installs it from the published npm package via
 # ci-install-runtime.py, so the local vite build is both redundant and
 # unavailable there — xpressui-src deps are not installed in CI).
-if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && ! ls "${PLUGIN_DIR}"/runtime/xpressui-light-*.umd.js >/dev/null 2>&1; then
+if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && ! ls "${PLUGIN_DIR}"/runtime/xpressui-*.umd.js >/dev/null 2>&1; then
   npm --prefix "${RUNTIME_SRC_DIR}" run build
   mkdir -p "${PLUGIN_DIR}/runtime"
-  rm -f "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js \
-        "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js.map
-  cp "${RUNTIME_DIST_DIR}"/xpressui-light-*.umd.js "${PLUGIN_DIR}/runtime/"
-  cp "${RUNTIME_DIST_DIR}"/xpressui-light-*.umd.js.map "${PLUGIN_DIR}/runtime/"
+  rm -f "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js \
+        "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js.map
+  cp "${RUNTIME_DIST_DIR}"/xpressui-*.umd.js "${PLUGIN_DIR}/runtime/"
+  cp "${RUNTIME_DIST_DIR}"/xpressui-*.umd.js.map "${PLUGIN_DIR}/runtime/"
 fi
 
 cp -R "${PLUGIN_DIR}" "${STAGE_DIR}/${DIST_SLUG}"

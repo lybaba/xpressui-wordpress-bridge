@@ -26,7 +26,7 @@ builder/export pipeline is also intended to produce standalone packages for
 non-WordPress hosts.
 
 Need advanced field types, direct Console sync, or local workflow customization?
-Those live in the separate `xpressui-wordpress-bridge-pro` add-on.
+Connect your site to the SaaS Console using your API Token to sync and build complex workflows.
 
 ---
 
@@ -142,5 +142,4 @@ GPL-2.0-or-later — see [LICENSE](LICENSE).
 
 - Product page: [XpressUI](https://intakeflow.dev/document-intake/xpressui)
 - Demo : [Document-Intake](https://intakeflow.dev/document-intake/)
-- Pro add-on: [XPressUI WordPress Bridge PRO](https://github.com/lybaba/xpressui-wordpress-bridge-pro)
 - Support: [Contact](https://intakeflow.dev/document-intake/contact)

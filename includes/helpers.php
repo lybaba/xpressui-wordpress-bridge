@@ -301,7 +301,7 @@ function xpressui_describe_runtime_source( $runtime_url, $slug ) {
 	$bridge_runtime_url = '';
 	if ( defined( 'XPRESSUI_BRIDGE_RUNTIME_VERSION' ) ) {
 		$bridge_runtime_url = esc_url_raw(
-			XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
+			XPRESSUI_BRIDGE_URL . 'runtime/xpressui-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
 		);
 	}
 	if ( '' !== $bridge_runtime_url && $runtime_url === $bridge_runtime_url ) {
@@ -309,10 +309,10 @@ function xpressui_describe_runtime_source( $runtime_url, $slug ) {
 	}
 
 	$pro_runtime_url = '';
-	if ( defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && defined( 'XPRESSUI_PRO_DIR' ) ) {
+	if ( defined( 'XPRESSUI_PRO_RUNTIME_VERSION' ) && ( defined( 'XPRESSUI_PRO_URL' ) || defined( 'XPRESSUI_PRO_DIR' ) ) ) {
+		$pro_runtime_base_url = defined( 'XPRESSUI_PRO_URL' ) ? XPRESSUI_PRO_URL : plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' );
 		$pro_runtime_url = esc_url_raw(
-			plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' )
-			. 'runtime/xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js'
+			$pro_runtime_base_url . 'runtime/xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js'
 		);
 	}
 	if ( '' !== $pro_runtime_url && $runtime_url === $pro_runtime_url ) {
@@ -625,7 +625,7 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 
 	$wordpress_artifacts = is_array( $manifest['artifacts']['wordpress'] ?? null ) ? $manifest['artifacts']['wordpress'] : [];
 	$runtime_relative    = is_string( $wordpress_artifacts['runtime'] ?? null ) ? ltrim( (string) $wordpress_artifacts['runtime'], '/' ) : '';
-	$runtime_url         = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
+	$runtime_url         = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
 	if ( '' !== $runtime_relative && file_exists( xpressui_get_workflow_package_dir( $slug ) . $runtime_relative ) ) {
 		$runtime_url = xpressui_get_workflow_package_url( $slug ) . $runtime_relative;
 	} else {
@@ -1286,7 +1286,7 @@ function xpressui_runtime_supports_workflow( $required_tier = 'light' ) {
 
 function xpressui_get_runtime_health_summary() {
 	$bridge_runtime_name = defined( 'XPRESSUI_BRIDGE_RUNTIME_VERSION' )
-		? 'xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
+		? 'xpressui-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js'
 		: '';
 	$bridge_runtime_path = $bridge_runtime_name !== ''
 		? XPRESSUI_BRIDGE_DIR . 'runtime/' . $bridge_runtime_name
@@ -1301,8 +1301,8 @@ function xpressui_get_runtime_health_summary() {
 	$pro_runtime_path = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
 		? XPRESSUI_PRO_DIR . 'runtime/' . $pro_runtime_name
 		: '';
-	$pro_runtime_url  = ( $pro_runtime_name !== '' && defined( 'XPRESSUI_PRO_DIR' ) )
-		? plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' ) . 'runtime/' . $pro_runtime_name
+	$pro_runtime_url  = ( $pro_runtime_name !== '' && ( defined( 'XPRESSUI_PRO_URL' ) || defined( 'XPRESSUI_PRO_DIR' ) ) )
+		? ( defined( 'XPRESSUI_PRO_URL' ) ? XPRESSUI_PRO_URL : plugin_dir_url( XPRESSUI_PRO_DIR . 'xpressui-wordpress-bridge-pro.php' ) ) . 'runtime/' . $pro_runtime_name
 		: '';
 
 	$current_tier          = xpressui_get_current_runtime_tier();

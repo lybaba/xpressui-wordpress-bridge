@@ -32,8 +32,8 @@
     "/dist"
   ],
   "scripts": {
-    "build:dist:light": "node -e \"process.env.XPRESSUI_RUNTIME_TIER='light'; require('child_process').execSync('vite build --sourcemap', {stdio: 'inherit'})\"",
-    "build": "npm run build:dist:light",
+    "build:dist:standard": "vite build --sourcemap",
+    "build": "npm run build:dist:standard",
     "check": "tsc --noEmit",
     "test": "vitest run"
   },

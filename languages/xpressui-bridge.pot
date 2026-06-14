@@ -31,7 +31,7 @@ msgstr ""
 msgid "* Required fields"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:657
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:642
 msgid "A page using this workflow shortcode already exists."
 msgstr ""
 
@@ -40,7 +40,7 @@ msgid "A required submission identifier is missing."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:200
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:405
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:390
 msgid "Actions"
 msgstr ""
 
@@ -115,19 +115,19 @@ msgstr ""
 msgid "Booking URL"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:334
-msgid "Bridge light runtime"
-msgstr ""
-
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:480
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:465
 msgid "Bundled"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:509
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:334
+msgid "Bundled standard runtime"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:494
 msgid "Bundled starter workflows cannot be deleted."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:590
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:575
 msgid "Bundled starter workflows cannot be deleted. Use Reinstall to restore the original."
 msgstr ""
 
@@ -145,15 +145,15 @@ msgstr ""
 msgid "Contact"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:499
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:484
 msgid "Create page"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:388
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:373
 msgid "Create starter page"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:522
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:507
 msgid "Custom Workflow Packs (ZIP upload)"
 msgstr ""
 
@@ -169,8 +169,8 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:509
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:511
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:494
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:496
 msgid "Delete"
 msgstr ""
 
@@ -208,11 +208,11 @@ msgstr ""
 msgid "Done at"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:502
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:487
 msgid "Edit page"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:382
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:367
 msgid "Edit starter page"
 msgstr ""
 
@@ -247,7 +247,7 @@ msgstr ""
 msgid "Error message"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:137
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:160
 msgid "Error."
 msgstr ""
 
@@ -255,7 +255,7 @@ msgstr ""
 msgid "Estimated total: %s"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:708
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:693
 msgid "Failed to save the uploaded file."
 msgstr ""
 
@@ -267,16 +267,12 @@ msgstr ""
 msgid "Files"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:500
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:485
 msgid "Find pages"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:230
 msgid "Form title"
-msgstr ""
-
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:350
-msgid "GET IT NOW"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:508
@@ -293,11 +289,11 @@ msgstr ""
 msgid "Incoming submissions will appear here once visitors complete one of your installed workflows."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:532
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:517
 msgid "Install workflow"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:540
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:525
 msgid "Installed Workflows"
 msgstr ""
 
@@ -342,7 +338,6 @@ msgid "Mark %s"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:335
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:341
 msgid "Missing"
 msgstr ""
 
@@ -350,7 +345,7 @@ msgstr ""
 msgid "My Queue"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:138
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:161
 msgid "Network error."
 msgstr ""
 
@@ -410,7 +405,7 @@ msgstr ""
 msgid "No webhook configured."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:542
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:527
 msgid "No workflows installed yet."
 msgstr ""
 
@@ -418,7 +413,7 @@ msgstr ""
 msgid "Notification email"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:403
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:388
 msgid "Notify email"
 msgstr ""
 
@@ -438,7 +433,7 @@ msgstr ""
 msgid "One of the uploaded files is invalid."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:695
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:680
 msgid "Only .zip files are allowed."
 msgstr ""
 
@@ -490,7 +485,7 @@ msgstr ""
 msgid "PDF only validates the form and prepares a temporary document link without storing the submission in WordPress."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:528
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:513
 msgid "Package File (.zip)"
 msgstr ""
 
@@ -508,7 +503,7 @@ msgstr ""
 msgid "Phone"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:688
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:673
 msgid "Please select a file."
 msgstr ""
 
@@ -517,20 +512,15 @@ msgid "Post-submit redirect"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:335
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:341
 msgid "Present"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:384
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:369
 msgid "Preview starter page"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:250
 msgid "Print / download PDF only"
-msgstr ""
-
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:339
-msgid "Pro runtime"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:192
@@ -569,7 +559,7 @@ msgstr ""
 msgid "Qty"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:375
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:360
 msgid "Quick Start"
 msgstr ""
 
@@ -585,7 +575,7 @@ msgstr ""
 msgid "Recent events"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:404
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:389
 msgid "Redirect URL"
 msgstr ""
 
@@ -593,7 +583,7 @@ msgstr ""
 msgid "Redirect after a successful submission. Leave empty to show the success message."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:508
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:493
 msgid "Reinstall"
 msgstr ""
 
@@ -651,11 +641,11 @@ msgstr ""
 msgid "Save settings"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:136
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:159
 msgid "Saved."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:135
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:158
 msgid "Saving…"
 msgstr ""
 
@@ -663,7 +653,7 @@ msgstr ""
 msgid "Section labels"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:680
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:665
 msgid "Security check failed. Please try again."
 msgstr ""
 
@@ -697,7 +687,7 @@ msgstr ""
 msgid "Settings saved."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:402
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:387
 msgid "Shortcode"
 msgstr ""
 
@@ -714,11 +704,11 @@ msgstr ""
 msgid "Signature"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:401
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:386
 msgid "Source"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:381
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:366
 msgid "Starter page:"
 msgstr ""
 
@@ -866,15 +856,15 @@ msgstr ""
 msgid "Thank you for your submission for %s. We have received it and will review it shortly."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:376
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:361
 msgid "The Document Intake workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:779
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:764
 msgid "The ZIP extension is required to extract workflow packages."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:868
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:853
 msgid "The ZIP extension is required to inspect workflow packages."
 msgstr ""
 
@@ -886,7 +876,7 @@ msgstr ""
 msgid "The bundled workflow could not be installed."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:572
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:557
 msgid "The bundled workflow was reinstalled successfully."
 msgstr ""
 
@@ -910,7 +900,7 @@ msgstr ""
 msgid "The submitter has provided the requested corrections or files."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:726
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:711
 msgid "The uploads directory is not available."
 msgstr ""
 
@@ -918,7 +908,7 @@ msgstr ""
 msgid "The webhook URL is not valid."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:646
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:631
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:1009
 msgid "The workflow could not be found."
 msgstr ""
@@ -927,51 +917,51 @@ msgstr ""
 msgid "The workflow directory could not be deleted."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:968
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:953
 msgid "The workflow manifest must be valid JSON."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:1022
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:1007
 msgid "The workflow manifest project slug must match the package folder name."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:947
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:932
 msgid "The workflow package contains a blocked file type."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:954
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:959
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:939
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:944
 msgid "The workflow package contains a file type that is not allowed."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:916
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:901
 msgid "The workflow package contains an invalid file path."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:784
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:873
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:769
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:858
 msgid "The workflow package could not be opened."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:927
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:912
 msgid "The workflow package folder name must be a valid slug."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:976
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:961
 msgid "The workflow package is empty."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:764
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:999
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:749
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:984
 msgid "The workflow package is missing a required artifact: %s"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:753
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:981
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:738
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:966
 msgid "The workflow package must contain a top-level manifest.json file."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:934
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:919
 msgid "The workflow package must contain exactly one top-level folder."
 msgstr ""
 
@@ -979,7 +969,7 @@ msgstr ""
 msgid "The workflow template could not be rendered. Please reinstall the workflow package."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:597
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:582
 msgid "The workflow was deleted successfully."
 msgstr ""
 
@@ -999,15 +989,15 @@ msgstr ""
 msgid "This submission is not awaiting corrections."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:1017
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:1002
 msgid "This workflow manifest schema is not supported."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:400
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:385
 msgid "Tier"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:139
+#: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:162
 msgid "Toggle section"
 msgstr ""
 
@@ -1044,10 +1034,6 @@ msgstr ""
 msgid "Unassigned"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:342
-msgid "Unavailable"
-msgstr ""
-
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:2462
 msgid "Unit"
 msgstr ""
@@ -1062,27 +1048,27 @@ msgstr ""
 msgid "Unknown workflow."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:381
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:366
 msgid "Untitled page"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:508
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:493
 msgid "Update"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:485
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:470
 msgid "Update available"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:542
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:527
 msgid "Upload a workflow package below to get started, or use the bundled starter workflow already included with the plugin."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:523
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:508
 msgid "Upload the .zip file generated by the XPressUI console. The package will be extracted into your uploads directory."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:482
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:467
 msgid "Uploaded"
 msgstr ""
 
@@ -1090,7 +1076,7 @@ msgstr ""
 msgid "Uploaded Files"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:714
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:699
 msgid "Uploaded ZIP file could not be located."
 msgstr ""
 
@@ -1122,7 +1108,7 @@ msgstr ""
 msgid "Use these shortcuts to open your current workload in the standard WordPress submission list."
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:505
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:490
 msgid "View page"
 msgstr ""
 
@@ -1139,7 +1125,7 @@ msgstr ""
 msgid "Webhook destination"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:399
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:384
 msgid "Workflow"
 msgstr ""
 
@@ -1160,7 +1146,7 @@ msgstr ""
 msgid "Workflow unavailable"
 msgstr ""
 
-#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:377
+#: libs/xpressui-wordpress-bridge/includes/admin-pages.php:362
 msgid "Workflow:"
 msgstr ""
 
