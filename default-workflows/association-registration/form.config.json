@@ -1,0 +1,266 @@
+{
+  "id": "association-registration-starter",
+  "uid": "association-registration-starter",
+  "timestamp": 1780740645,
+  "type": "form",
+  "name": "association-registration",
+  "title": "Association Registration",
+  "showProjectTitle": true,
+  "sectionLabelVisibility": "auto",
+  "sections": {
+    "global": [],
+    "custom": [
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 1: Member",
+        "name": "section1"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 2: Registration",
+        "name": "registrationStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 3: Documents",
+        "name": "documentsStep"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "Step 4: Payment",
+        "name": "paymentStep"
+      }
+    ],
+    "section1": [
+      {
+        "type": "text",
+        "label": "Member name",
+        "name": "memberName",
+        "required": true,
+        "minLen": 2,
+        "maxLen": 120,
+        "choices": null
+      },
+      {
+        "type": "email",
+        "label": "Member email",
+        "name": "memberEmail",
+        "canDelete": false,
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "tel",
+        "label": "Member phone",
+        "name": "memberPhone",
+        "canDelete": false,
+        "choices": null
+      },
+      {
+        "type": "date",
+        "label": "Birth date",
+        "name": "birthDate",
+        "choices": null
+      }
+    ],
+    "registrationStep": [
+      {
+        "type": "radio-buttons",
+        "label": "Registration type",
+        "name": "registrationType",
+        "required": true,
+        "choices": [
+          {
+            "label": "New member",
+            "value": "new_member"
+          },
+          {
+            "label": "Renewal",
+            "value": "renewal"
+          },
+          {
+            "label": "Program registration",
+            "value": "program"
+          }
+        ],
+        "minNumOfChoices": 1,
+        "maxNumOfChoices": 1
+      },
+      {
+        "type": "textarea",
+        "label": "Registration notes",
+        "name": "registrationNotes",
+        "canDelete": false,
+        "maxLen": 1000,
+        "choices": null
+      }
+    ],
+    "documentsStep": [
+      {
+        "type": "file",
+        "label": "Identity document",
+        "name": "identityDocument",
+        "required": true,
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Supporting document",
+        "name": "supportingDocument",
+        "choices": null
+      }
+    ],
+    "paymentStep": [
+      {
+        "type": "payment-proof",
+        "label": "Payment proof",
+        "name": "paymentProof",
+        "required": true,
+        "paymentAmountSource": "cart_total",
+        "paymentCurrency": "EUR",
+        "paymentInstructions": "Pay the membership or registration fee, then upload the receipt.",
+        "mobileMoneyProvider": "wave",
+        "mobileMoney": {
+          "merchantName": "Association Wave account",
+          "merchantPhone": "",
+          "merchantQrCode": "",
+          "paymentInstructions": "Pay the membership or registration fee, then upload the receipt.",
+          "paymentIban": "",
+          "paymentBic": "",
+          "paymentReferencePrefix": "REG"
+        },
+        "choices": null
+      }
+    ],
+    "btngroup": [
+      {
+        "type": "submit",
+        "name": "prevbtn",
+        "label": "Back",
+        "adminLabel": "Back"
+      },
+      {
+        "type": "submit",
+        "name": "nextbtn",
+        "label": "Continue",
+        "adminLabel": "Continue"
+      },
+      {
+        "type": "submit",
+        "name": "submitbtn",
+        "label": "Submit registration",
+        "adminLabel": "Submit registration"
+      }
+    ]
+  },
+  "workflowConfig": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "hosted-saas",
+    "resumeSupport": "optional",
+    "documentHandling": "attachments",
+    "submissionEndpoint": "",
+    "successMessage": "Your registration and payment proof have been submitted.",
+    "errorMessage": "Unable to submit this registration right now. Please try again."
+  },
+  "themeConfig": {
+    "presetId": "midnight-ink",
+    "layout": "centered",
+    "density": "comfortable",
+    "labelPosition": "stacked",
+    "submitWidth": "auto",
+    "backgroundStyle": "panel",
+    "fieldColumns": 1,
+    "colors": {
+      "pageBackground": "#0f172a",
+      "surface": "#ffffff",
+      "text": "#0f172a",
+      "mutedText": "#334155",
+      "primary": "#0f766e",
+      "border": "#cbd5e1"
+    },
+    "radius": {
+      "card": 24,
+      "input": 12,
+      "button": 12
+    }
+  },
+  "mode": "form-multi-step",
+  "navigationLabels": {
+    "submitLabel": "Submit registration",
+    "nextLabel": "Continue",
+    "prevLabel": "Back"
+  },
+  "stepUi": {
+    "progressPlacement": "top",
+    "navigationPlacement": "bottom",
+    "backBehavior": "always"
+  },
+  "submitterInfo": {
+    "fields": {
+      "name": "memberName",
+      "email": "memberEmail",
+      "phone": "memberPhone"
+    }
+  },
+  "paymentProof": {
+    "enabled": true,
+    "required": true,
+    "amountSource": "cart_total",
+    "fixedAmount": "",
+    "currency": "EUR",
+    "submitterLabel": "Payment proof",
+    "instructions": "Pay the membership or registration fee, then upload the receipt.",
+    "providers": [
+      {
+        "id": "wave",
+        "enabled": true,
+        "merchantName": "Association Wave account",
+        "merchantPhone": "",
+        "merchantQrCode": "",
+        "paymentReferencePrefix": "REG"
+      },
+      {
+        "id": "cash",
+        "enabled": false,
+        "merchantName": "",
+        "paymentReferencePrefix": "REG"
+      }
+    ]
+  },
+  "lockedFields": [
+    "memberName",
+    "memberEmail",
+    "memberPhone",
+    "birthDate",
+    "registrationType",
+    "registrationNotes",
+    "identityDocument",
+    "supportingDocument",
+    "paymentProof"
+  ],
+  "submit": {
+    "endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
+    "method": "POST",
+    "mode": "form-data",
+    "includeDocumentData": true,
+    "metadata": {
+      "projectId": "association-registration-starter",
+      "projectSlug": "association-registration",
+      "projectConfigVersion": "association-registration-starter:2026-06-14T12:54:00.742984+00:00"
+    }
+  },
+  "submitFeedback": {
+    "title": "Submission status",
+    "idle_message": "Submission feedback will appear here after the runtime handles the form.",
+    "loading_message": "Submitting...",
+    "success_title": "Submission received",
+    "success_message": "Your registration and payment proof have been submitted.",
+    "document_download_label": "T\u00e9l\u00e9charger le document",
+    "error_title": "Submission failed",
+    "error_message": "Unable to submit this registration right now. Please try again."
+  }
+}

@@ -1,13 +1,13 @@
 {
   "schemaVersion": "console.export/v2",
-  "exportId": "api-document-intake-starter",
-  "projectId": "document-intake-starter",
-  "projectSlug": "document-intake",
-  "projectName": "Document Intake",
-  "generatedAt": "2026-03-26T00:00:00+00:00",
+  "exportId": "api-demande-carte-grise-starter",
+  "projectId": "demande-carte-grise-starter",
+  "projectSlug": "demande-carte-grise",
+  "projectName": "Fabrication Carte Grise",
+  "generatedAt": "2026-06-14T12:54:00.735729+00:00",
   "xpressui": {
-    "version": "1.0.0",
-    "target": "wordpress"
+    "version": "1.0.79",
+    "target": "form"
   },
   "artifacts": {
     "config": "form.config.json",
@@ -19,51 +19,56 @@
   "checksums": {
     "algorithm": "fnv1a-64",
     "files": {
-      "wordpress/README.md": "777bbc4fd541edec",
-      "form.config.json": "196cce3b5419fe54"
+      "wordpress/README.md": "1955595c07d1a76a",
+      "form.config.json": "502603647bfd1483"
     }
   },
   "workflow": {
     "submissionMode": "multi-step-submit",
     "providerMode": "wordpress-bridge",
-    "resumeSupport": "disabled",
-    "documentHandling": "basic-upload",
+    "resumeSupport": "optional",
+    "documentHandling": "attachments",
     "submissionEndpoint": "rest_url('xpressui/v1/submit')"
   },
   "runtimeRequirements": {
-    "tier": "light",
+    "tier": "pro",
     "minimumPluginVersion": "1.0.0",
-    "minimumRuntimeVersion": "1.0.0"
+    "minimumRuntimeVersion": "1.0.79"
   },
   "capabilities": {
     "components": [
+      "checkbox",
       "email",
       "file",
-      "price",
       "select-one",
+      "signature",
       "tel",
       "text",
       "textarea"
     ],
     "features": [
+      "advanced-document-handling",
       "basic-upload",
       "email-notifications",
       "multi-step",
+      "resume-support",
       "submission-storage"
     ],
     "themeFeatures": [
       "basic-colors",
       "basic-radius",
       "basic-sections",
-      "basic-typography"
+      "basic-typography",
+      "premium-layout-presets"
     ]
   },
   "wordpressCompatibility": {
     "bridgeMode": "plugin-shell",
     "fallbackBridgeMode": "none",
     "shortcodeMode": "config-driven",
+    "templateProfile": "pro",
     "supportsBundledDemo": false,
-    "requiresLicense": false
+    "requiresLicense": true
   },
   "integrationTargets": {
     "wordpress": {
@@ -86,9 +91,9 @@
   "meta": {
     "contractVersion": 2,
     "projectSchemaVersion": "console.project/v1",
-    "projectStatus": "published",
+    "projectStatus": "draft",
     "assetCount": 0,
     "stepCount": 4,
-    "fieldCount": 10
+    "fieldCount": 17
   }
 }

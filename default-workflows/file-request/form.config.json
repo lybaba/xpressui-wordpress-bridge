@@ -1,47 +1,44 @@
 {
-  "mode": "form-multi-step",
-  "navigationLabels": {
-    "prevLabel": "Back",
-    "nextLabel": "Continue",
-    "submitLabel": "Submit intake"
-  },
-  "workflowConfig": {
-    "submissionMode": "multi-step-submit",
-    "providerMode": "wordpress-bridge",
-    "resumeSupport": "disabled",
-    "documentHandling": "basic-upload",
-    "submissionEndpoint": "/wp-json/xpressui/v1/submit",
-    "successMessage": "Your intake was sent successfully.",
-    "errorMessage": "Unable to send this intake to WordPress right now. Please try again."
+  "id": "file-request-starter",
+  "uid": "file-request-starter",
+  "timestamp": 1780740645,
+  "type": "form",
+  "name": "file-request",
+  "title": "File Request",
+  "showProjectTitle": true,
+  "sectionLabelVisibility": "auto",
+  "submitterInfo": {
+    "fields": {
+      "name": "firstname",
+      "email": "email",
+      "phone": "phone"
+    }
   },
   "sections": {
+    "global": [],
     "custom": [
       {
         "type": "section",
         "subType": "section",
         "label": "Step 1: Contact",
-        "adminLabel": "Step 1: Contact",
         "name": "section1"
       },
       {
         "type": "section",
         "subType": "section",
         "label": "Step 2: Request",
-        "adminLabel": "Step 2: Request",
         "name": "requestStep"
       },
       {
         "type": "section",
         "subType": "section",
         "label": "Step 3: Files",
-        "adminLabel": "Step 3: Files",
         "name": "filesStep"
       },
       {
         "type": "section",
         "subType": "section",
         "label": "Step 4: Review",
-        "adminLabel": "Step 4: Review",
         "name": "reviewStep"
       }
     ],
@@ -50,27 +47,44 @@
         "type": "text",
         "label": "First name",
         "name": "firstname",
+        "canDelete": false,
         "required": true,
+        "minLen": 2,
+        "maxLen": 80,
+        "errorMsg": "Enter the client first name.",
         "choices": null
       },
       {
         "type": "text",
         "label": "Last name",
         "name": "lastname",
+        "canDelete": false,
         "required": true,
+        "minLen": 2,
+        "maxLen": 80,
+        "errorMsg": "Enter the client last name.",
         "choices": null
       },
       {
         "type": "email",
         "label": "Email",
         "name": "email",
+        "canDelete": false,
         "required": true,
+        "maxLen": 120,
+        "errorMsg": "Enter a valid email address.",
         "choices": null
       },
       {
         "type": "tel",
         "label": "Phone number",
         "name": "phone",
+        "canDelete": false,
+        "required": true,
+        "minLen": 7,
+        "maxLen": 20,
+        "placeholder": "+33 6 12 34 56 78",
+        "errorMsg": "Enter a reachable phone number.",
         "choices": null
       }
     ],
@@ -79,6 +93,8 @@
         "type": "select-one",
         "label": "Request type",
         "name": "requestType",
+        "required": true,
+        "errorMsg": "Choose the intake type.",
         "choices": [
           {
             "label": "Application file",
@@ -100,6 +116,11 @@
         "type": "textarea",
         "label": "Case summary",
         "name": "caseSummary",
+        "canDelete": false,
+        "maxLen": 2000,
+        "required": true,
+        "minLen": 30,
+        "errorMsg": "Add a short summary of the request.",
         "choices": null
       },
       {
@@ -115,14 +136,13 @@
         "label": "Primary document",
         "name": "primaryDocument",
         "required": true,
-        "accept": ".pdf,application/pdf,image/*",
+        "errorMsg": "Upload the main client document.",
         "choices": null
       },
       {
         "type": "file",
         "label": "Supporting file",
         "name": "supportingFile",
-        "accept": ".pdf,.doc,.docx,.odt,.rtf,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,text/plain,application/rtf",
         "choices": null
       }
     ],
@@ -131,6 +151,8 @@
         "type": "textarea",
         "label": "Additional notes",
         "name": "additionalNotes",
+        "canDelete": false,
+        "maxLen": 1200,
         "choices": null
       }
     ],
@@ -155,16 +177,69 @@
       }
     ]
   },
-  "showProjectTitle": true,
+  "workflowConfig": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "wordpress-bridge",
+    "resumeSupport": "optional",
+    "documentHandling": "attachments",
+    "submissionEndpoint": "",
+    "successMessage": "Your intake was sent successfully.",
+    "errorMessage": "Unable to send this intake to WordPress right now. Please try again."
+  },
+  "themeConfig": {
+    "presetId": "midnight-ink",
+    "layout": "centered",
+    "density": "comfortable",
+    "labelPosition": "stacked",
+    "submitWidth": "auto",
+    "backgroundStyle": "panel",
+    "fieldColumns": 1,
+    "colors": {
+      "pageBackground": "#0f172a",
+      "surface": "#ffffff",
+      "text": "#0f172a",
+      "mutedText": "#334155",
+      "primary": "#0f766e",
+      "border": "#cbd5e1"
+    },
+    "radius": {
+      "card": 24,
+      "input": 12,
+      "button": 12
+    }
+  },
+  "mode": "form-multi-step",
+  "navigationLabels": {
+    "submitLabel": "Submit intake",
+    "nextLabel": "Continue",
+    "prevLabel": "Back"
+  },
+  "stepUi": {
+    "progressPlacement": "top",
+    "navigationPlacement": "bottom",
+    "backBehavior": "always"
+  },
+  "lockedFields": [
+    "firstname",
+    "lastname",
+    "email",
+    "phone",
+    "requestType",
+    "caseSummary",
+    "estimatedBudget",
+    "primaryDocument",
+    "supportingFile",
+    "additionalNotes"
+  ],
   "submit": {
     "endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
     "method": "POST",
     "mode": "form-data",
     "includeDocumentData": true,
     "metadata": {
-      "projectId": "document-intake-starter",
-      "projectSlug": "document-intake",
-      "projectConfigVersion": "document-intake-starter:2026-03-13T00:00:00+00:00"
+      "projectId": "file-request-starter",
+      "projectSlug": "file-request",
+      "projectConfigVersion": "file-request-starter:2026-06-14T12:54:00.731158+00:00"
     }
   },
   "submitFeedback": {
@@ -173,6 +248,7 @@
     "loading_message": "Submitting...",
     "success_title": "Submission received",
     "success_message": "Your intake was sent successfully.",
+    "document_download_label": "T\u00e9l\u00e9charger le document",
     "error_title": "Submission failed",
     "error_message": "Unable to send this intake to WordPress right now. Please try again."
   }

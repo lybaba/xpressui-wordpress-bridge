@@ -63,12 +63,12 @@ Connect your site to the SaaS Console using your API Token to sync and build com
 2. In wp-admin go to **Plugins › Add New › Upload Plugin**, select the zip, click **Install Now**.
 3. Activate the plugin.
 
-### Use the bundled starter
+### Use a bundled starter
 
-The plugin ships with the `Document Intake` workflow ready to use — no upload required.
+The plugin ships with the `File Request` workflow ready to use — no upload required.
 
 1. Go to **Submissions › Workflows** in wp-admin.
-2. Copy the shortcode for `document-intake` and paste it into any page or post.
+2. Copy the shortcode for `file-request` and paste it into any page or post.
 
 ### Install a custom workflow package
 

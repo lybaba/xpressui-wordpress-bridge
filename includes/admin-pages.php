@@ -341,7 +341,7 @@ function xpressui_render_workflows_page() {
 	$installed_slugs = xpressui_get_installed_workflow_slugs();
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
-	$starter_slug    = 'document-intake';
+	$starter_slug    = 'file-request';
 	$starter_page_id = xpressui_get_workflow_primary_page_id( $starter_slug );
 	if ( xpressui_is_installed_workflow( $starter_slug ) ) {
 		$starter_create_url = wp_nonce_url(
@@ -358,8 +358,8 @@ function xpressui_render_workflows_page() {
 		);
 		echo '<div class="card xpressui-admin-card">';
 		echo '<h2>' . esc_html__( 'Quick Start', 'xpressui-bridge' ) . '</h2>';
-		echo '<p>' . esc_html__( 'The Document Intake workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click.', 'xpressui-bridge' ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Workflow:', 'xpressui-bridge' ) . '</strong> <code>[xpressui id="document-intake"]</code></p>';
+		echo '<p>' . esc_html__( 'The File Request workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click.', 'xpressui-bridge' ) . '</p>';
+		echo '<p><strong>' . esc_html__( 'Workflow:', 'xpressui-bridge' ) . '</strong> <code>[xpressui id="file-request"]</code></p>';
 		if ( $starter_page_id > 0 ) {
 			$edit_url = get_edit_post_link( $starter_page_id, '' );
 			$view_url = get_permalink( $starter_page_id );

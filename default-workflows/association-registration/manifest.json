@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "console.export/v2",
+  "exportId": "api-association-registration-starter",
+  "projectId": "association-registration-starter",
+  "projectSlug": "association-registration",
+  "projectName": "Association Registration",
+  "generatedAt": "2026-06-14T12:54:00.742984+00:00",
+  "xpressui": {
+    "version": "1.0.79",
+    "target": "form"
+  },
+  "artifacts": {
+    "config": "form.config.json",
+    "templateContext": "template.context.json",
+    "wordpress": {
+      "readme": "wordpress/README.md"
+    }
+  },
+  "checksums": {
+    "algorithm": "fnv1a-64",
+    "files": {
+      "wordpress/README.md": "fe7edf82a7e434a2",
+      "form.config.json": "a2decb4e89a8b94d"
+    }
+  },
+  "workflow": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "hosted-saas",
+    "resumeSupport": "optional",
+    "documentHandling": "attachments",
+    "submissionEndpoint": "rest_url('xpressui/v1/submit')"
+  },
+  "runtimeRequirements": {
+    "tier": "pro",
+    "minimumPluginVersion": "1.0.0",
+    "minimumRuntimeVersion": "1.0.79"
+  },
+  "capabilities": {
+    "components": [
+      "date",
+      "email",
+      "file",
+      "payment-proof",
+      "radio-buttons",
+      "tel",
+      "text",
+      "textarea"
+    ],
+    "features": [
+      "advanced-document-handling",
+      "basic-upload",
+      "multi-step",
+      "resume-support",
+      "webhooks"
+    ],
+    "themeFeatures": [
+      "basic-colors",
+      "basic-radius",
+      "basic-sections",
+      "basic-typography",
+      "premium-layout-presets"
+    ]
+  },
+  "wordpressCompatibility": {
+    "bridgeMode": "plugin-shell",
+    "fallbackBridgeMode": "none",
+    "shortcodeMode": "config-driven",
+    "templateProfile": "pro",
+    "supportsBundledDemo": false,
+    "requiresLicense": true
+  },
+  "integrationTargets": {
+    "wordpress": {
+      "bridgeMode": "shared-site-plugin",
+      "preferredShellMode": "plugin-hosted",
+      "fallbackShellMode": "none",
+      "runtimeProvider": "site-plugin",
+      "endpoint": "rest_url('xpressui/v1/submit')",
+      "method": "POST",
+      "uploadStrategy": "wordpress-media",
+      "visualAssetStrategy": "external-public-assets",
+      "expectedRoute": "xpressui/v1/submit",
+      "projectIdentityFields": [
+        "projectId",
+        "projectSlug",
+        "submissionId"
+      ]
+    }
+  },
+  "meta": {
+    "contractVersion": 2,
+    "projectSchemaVersion": "console.project/v1",
+    "projectStatus": "draft",
+    "assetCount": 0,
+    "stepCount": 4,
+    "fieldCount": 9
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "id": "demande-carte-grise-starter",
+  "uid": "demande-carte-grise-starter",
+  "timestamp": 1780740645,
+  "type": "form",
+  "name": "demande-carte-grise",
+  "title": "Fabrication Carte Grise",
+  "showProjectTitle": true,
+  "sectionLabelVisibility": "auto",
+  "submitterInfo": {
+    "fields": {
+      "name": "firstname",
+      "email": "email",
+      "phone": "phone"
+    }
+  },
+  "sections": {
+    "global": [],
+    "custom": [
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "\u00c9tape 1 : Coordonn\u00e9es du titulaire",
+        "name": "sectionContact"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "\u00c9tape 2 : Informations du v\u00e9hicule",
+        "name": "sectionVehicule"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "\u00c9tape 3 : Documents \u00e0 fournir",
+        "name": "sectionFichiers"
+      },
+      {
+        "type": "section",
+        "subType": "section",
+        "label": "\u00c9tape 4 : Mandat de signature",
+        "name": "sectionSignature"
+      }
+    ],
+    "sectionContact": [
+      {
+        "type": "text",
+        "label": "Pr\u00e9nom du titulaire",
+        "name": "firstname",
+        "required": true,
+        "minLen": 2,
+        "maxLen": 80,
+        "errorMsg": "Veuillez saisir le pr\u00e9nom du titulaire.",
+        "choices": null
+      },
+      {
+        "type": "text",
+        "label": "Nom du titulaire",
+        "name": "lastname",
+        "required": true,
+        "minLen": 2,
+        "maxLen": 80,
+        "errorMsg": "Veuillez saisir le nom du titulaire.",
+        "choices": null
+      },
+      {
+        "type": "email",
+        "label": "Adresse email",
+        "name": "email",
+        "required": true,
+        "maxLen": 120,
+        "errorMsg": "Veuillez saisir une adresse email valide.",
+        "choices": null
+      },
+      {
+        "type": "tel",
+        "label": "Num\u00e9ro de t\u00e9l\u00e9phone",
+        "name": "phone",
+        "required": true,
+        "minLen": 7,
+        "maxLen": 20,
+        "placeholder": "06 12 34 56 78",
+        "errorMsg": "Veuillez saisir un num\u00e9ro de t\u00e9l\u00e9phone joignable.",
+        "choices": null
+      },
+      {
+        "type": "textarea",
+        "label": "Adresse postale compl\u00e8te (Justificatif requis \u00e0 l'\u00e9tape 3)",
+        "name": "address",
+        "required": true,
+        "maxLen": 500,
+        "errorMsg": "Veuillez pr\u00e9ciser votre adresse de r\u00e9sidence principale.",
+        "choices": null
+      }
+    ],
+    "sectionVehicule": [
+      {
+        "type": "select-one",
+        "label": "Type de d\u00e9marche d'immatriculation",
+        "name": "typeDemarche",
+        "required": true,
+        "errorMsg": "Veuillez choisir un type de d\u00e9marche.",
+        "choices": [
+          {
+            "label": "Changement de titulaire (Achat d'un v\u00e9hicule d'occasion)",
+            "value": "changement_titulaire"
+          },
+          {
+            "label": "Changement d'adresse de r\u00e9sidence",
+            "value": "changement_adresse"
+          },
+          {
+            "label": "Demande de duplicata (perte, vol ou d\u00e9t\u00e9rioration)",
+            "value": "duplicata"
+          },
+          {
+            "label": "D\u00e9claration de cession d'un v\u00e9hicule vendu",
+            "value": "cession"
+          }
+        ],
+        "minNumOfChoices": 1,
+        "maxNumOfChoices": 1
+      },
+      {
+        "type": "text",
+        "label": "Num\u00e9ro d'immatriculation (Plaque)",
+        "name": "immatriculation",
+        "required": true,
+        "placeholder": "AB-123-CD",
+        "errorMsg": "Veuillez renseigner le num\u00e9ro d'immatriculation actuel.",
+        "choices": null
+      },
+      {
+        "type": "text",
+        "label": "Marque et Mod\u00e8le du v\u00e9hicule",
+        "name": "marqueModele",
+        "required": true,
+        "placeholder": "Peugeot 208",
+        "errorMsg": "Veuillez indiquer la marque et le mod\u00e8le.",
+        "choices": null
+      }
+    ],
+    "sectionFichiers": [
+      {
+        "type": "file",
+        "label": "Ancienne carte grise barr\u00e9e, sign\u00e9e et dat\u00e9e",
+        "name": "ancienneCarteGrise",
+        "required": true,
+        "errorMsg": "Veuillez t\u00e9l\u00e9verser la photo ou le scan de l'ancienne carte grise.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Certificat de cession (Cerfa n\u00b0 15776*02 d\u00fbment rempli)",
+        "name": "certificatCession",
+        "required": true,
+        "errorMsg": "Veuillez fournir le certificat de cession sign\u00e9 par le vendeur et vous-m\u00eame.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Justificatif de domicile de moins de 6 mois",
+        "name": "justificatifDomicile",
+        "required": true,
+        "errorMsg": "Veuillez fournir une facture d'\u00e9lectricit\u00e9, de gaz, de t\u00e9l\u00e9phone ou avis d'imposition.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Pi\u00e8ce d'identit\u00e9 en cours de validit\u00e9 (CNI / Passeport)",
+        "name": "pieceIdentite",
+        "required": true,
+        "errorMsg": "Veuillez fournir votre pi\u00e8ce d'identit\u00e9.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Permis de conduire du titulaire",
+        "name": "permisConduire",
+        "required": true,
+        "errorMsg": "Veuillez fournir la copie de votre permis de conduire.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Attestation d'assurance du v\u00e9hicule (Carte verte)",
+        "name": "attestationAssurance",
+        "required": true,
+        "errorMsg": "Veuillez fournir le justificatif d'assurance du v\u00e9hicule.",
+        "choices": null
+      },
+      {
+        "type": "file",
+        "label": "Rapport de Contr\u00f4le technique de moins de 6 mois (si v\u00e9hicule de plus de 4 ans)",
+        "name": "controleTechnique",
+        "required": false,
+        "choices": null
+      }
+    ],
+    "sectionSignature": [
+      {
+        "type": "checkbox",
+        "label": "Je certifie sur l'honneur l'exactitude des pi\u00e8ces et donne mandat pour effectuer les d\u00e9marches d'immatriculation.",
+        "name": "mandatAcceptation",
+        "required": true,
+        "errorMsg": "Vous devez accepter le mandat pour envoyer votre demande.",
+        "choices": null
+      },
+      {
+        "type": "signature",
+        "label": "Signature du demandeur (Mandat Cerfa n\u00b0 13757*03)",
+        "name": "signatureTitulaire",
+        "required": true,
+        "errorMsg": "Veuillez signer \u00e9lectroniquement dans le cadre ci-dessous.",
+        "choices": null
+      }
+    ],
+    "btngroup": [
+      {
+        "type": "submit",
+        "name": "prevbtn",
+        "label": "Retour",
+        "adminLabel": "Retour"
+      },
+      {
+        "type": "submit",
+        "name": "nextbtn",
+        "label": "Continuer",
+        "adminLabel": "Continuer"
+      },
+      {
+        "type": "submit",
+        "name": "submitbtn",
+        "label": "Envoyer le dossier",
+        "adminLabel": "Envoyer le dossier"
+      }
+    ]
+  },
+  "workflowConfig": {
+    "submissionMode": "multi-step-submit",
+    "providerMode": "wordpress-bridge",
+    "resumeSupport": "optional",
+    "documentHandling": "attachments",
+    "submissionEndpoint": "",
+    "successMessage": "Votre dossier de carte grise a \u00e9t\u00e9 soumis avec succ\u00e8s. Notre \u00e9quipe va proc\u00e9der \u00e0 la v\u00e9rification des pi\u00e8ces sous 24h.",
+    "errorMessage": "Impossible de soumettre le dossier actuellement. Veuillez v\u00e9rifier vos fichiers et r\u00e9essayer."
+  },
+  "themeConfig": {
+    "presetId": "midnight-ink",
+    "layout": "centered",
+    "density": "comfortable",
+    "labelPosition": "stacked",
+    "submitWidth": "auto",
+    "backgroundStyle": "panel",
+    "fieldColumns": 1,
+    "colors": {
+      "pageBackground": "#0f172a",
+      "surface": "#ffffff",
+      "text": "#0f172a",
+      "mutedText": "#334155",
+      "primary": "#0f766e",
+      "border": "#cbd5e1"
+    },
+    "radius": {
+      "card": 24,
+      "input": 12,
+      "button": 12
+    }
+  },
+  "mode": "form-multi-step",
+  "navigationLabels": {
+    "submitLabel": "Envoyer le dossier",
+    "nextLabel": "Continuer",
+    "prevLabel": "Retour"
+  },
+  "stepUi": {
+    "progressPlacement": "top",
+    "navigationPlacement": "bottom",
+    "backBehavior": "always"
+  },
+  "lockedFields": [
+    "firstname",
+    "lastname",
+    "email",
+    "phone",
+    "address",
+    "typeDemarche",
+    "immatriculation",
+    "marqueModele",
+    "ancienneCarteGrise",
+    "certificatCession",
+    "justificatifDomicile",
+    "pieceIdentite",
+    "permisConduire",
+    "attestationAssurance",
+    "controleTechnique",
+    "mandatAcceptation",
+    "signatureTitulaire"
+  ],
+  "submit": {
+    "endpoint": "__XPRESSUI_WORDPRESS_REST_URL__",
+    "method": "POST",
+    "mode": "form-data",
+    "includeDocumentData": true,
+    "metadata": {
+      "projectId": "demande-carte-grise-starter",
+      "projectSlug": "demande-carte-grise",
+      "projectConfigVersion": "demande-carte-grise-starter:2026-06-14T12:54:00.735729+00:00"
+    }
+  },
+  "submitFeedback": {
+    "title": "Submission status",
+    "idle_message": "Submission feedback will appear here after the runtime handles the form.",
+    "loading_message": "Submitting...",
+    "success_title": "Submission received",
+    "success_message": "Votre dossier de carte grise a \u00e9t\u00e9 soumis avec succ\u00e8s. Notre \u00e9quipe va proc\u00e9der \u00e0 la v\u00e9rification des pi\u00e8ces sous 24h.",
+    "document_download_label": "T\u00e9l\u00e9charger le document",
+    "error_title": "Submission failed",
+    "error_message": "Impossible de soumettre le dossier actuellement. Veuillez v\u00e9rifier vos fichiers et r\u00e9essayer."
+  }
+}
