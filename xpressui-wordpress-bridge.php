@@ -48,7 +48,30 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/notifications.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhooks.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
-require_once XPRESSUI_BRIDGE_DIR . 'includes/light-runtime.php';
+
+// --- SaaS / PRO Connection loading ---
+require_once XPRESSUI_BRIDGE_DIR . 'includes/license-handler.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/console-sync.php';
+
+define( 'XPRESSUI_PRO_VERSION', XPRESSUI_BRIDGE_VERSION );
+define( 'XPRESSUI_PRO_RUNTIME_VERSION', XPRESSUI_BRIDGE_RUNTIME_VERSION );
+define( 'XPRESSUI_PRO_DIR', XPRESSUI_BRIDGE_DIR );
+define( 'XPRESSUI_PRO_URL', XPRESSUI_BRIDGE_URL );
+define( 'XPRESSUI_PRO_BUNDLED_WORKFLOWS_DIR', XPRESSUI_BRIDGE_BUNDLED_WORKFLOWS_DIR );
+
+function xpressui_pro_get_runtime_file(): string {
+	return XPRESSUI_PRO_DIR . 'runtime/xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js';
+}
+
+function xpressui_pro_has_bundled_runtime(): bool {
+	return true;
+}
+
+function xpressui_pro_get_runtime_asset_url(): string {
+	return XPRESSUI_PRO_URL . 'runtime/xpressui-' . XPRESSUI_PRO_RUNTIME_VERSION . '.umd.js';
+}
+
+require_once XPRESSUI_BRIDGE_DIR . 'includes/pro-runtime.php';
 
 // --- Post type ---
 add_action( 'init', 'xpressui_register_submission_post_type' );

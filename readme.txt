@@ -16,7 +16,7 @@ Collect files, documents, and client intake form submissions directly in WordPre
 
 Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
-If you need advanced field types, direct Console Sync, or local workflow customization, those are available through the separate commercial add-on **XPressUI Bridge PRO**.
+If you need advanced field types, direct Console Sync, or cloud workflow management, those are available by connecting the plugin to your IntakeFlow SaaS account at intakeflow.dev.
 
 = Key features =
 
@@ -29,7 +29,7 @@ If you need advanced field types, direct Console Sync, or local workflow customi
 * **Post-submit redirect** — optionally redirect the visitor to a thank-you page after a successful submission. Configured per project from wp-admin.
 * **File uploads** — uploaded files are stored as WordPress media attachments and linked back to their submission.
 * **REST API endpoint** — submissions are received via a standard WordPress REST route (`POST /wp-json/xpressui/v1/submit`). No extra server configuration required.
-* **Bundled runtime** — the XPressUI light runtime is bundled inside the plugin. No JavaScript is loaded from the uploads directory or external CDNs.
+* **Bundled runtime** — the XPressUI standard runtime is bundled inside the plugin. No JavaScript is loaded from the uploads directory or external CDNs.
 
 = Who is this for? =
 
@@ -128,9 +128,16 @@ No. Once a workflow package is installed, the plugin operates entirely within yo
 
 == External Services ==
 
-This plugin does **not** make any outbound HTTP requests at runtime. The XPressUI console (hosted at intakeflow.dev) is a separate design tool used to export workflow packages. It is not contacted by this plugin during normal operation on your site.
+This plugin can optionally connect to the IntakeFlow SaaS platform (hosted at intakeflow.dev) to enable real-time cloud synchronization, advanced field types, and centralized workflow management.
 
-The bundled XPressUI light runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
+When connected to IntakeFlow:
+* The plugin makes outbound HTTP requests to `https://api.intakeflow.dev` (or your custom console URL) to sync project schemas, download workflows, and verify subscription status.
+* Outbound sync requests include an API Token (`X-Api-Token`) generated from your IntakeFlow dashboard.
+* No visitor or submission data is transmitted to the IntakeFlow console unless specifically configured by the administrator for cloud backup or webhook routing.
+
+A connection is entirely optional. The plugin functions fully offline for standard local workflow file uploads.
+
+The bundled XPressUI standard runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
 == Privacy ==
 
@@ -145,21 +152,16 @@ For full details on what data is collected and how to manage it, refer to your s
 The full source code for this plugin is available at:
 https://github.com/lybaba/xpressui-wordpress-bridge
 
-The commercial Pro add-on is documented here:
-https://github.com/lybaba/xpressui-wordpress-bridge-pro
-
 = Bundled JavaScript runtime =
 
-The file `runtime/xpressui-light-*.umd.js` is the compiled output of the XPressUI library
-(free tier). The unminified TypeScript source files used to produce this bundle are included
-in the `xpressui-src/` directory of this plugin.
+The file `runtime/xpressui-*.umd.js` is the compiled output of the XPressUI library. The unminified TypeScript source files used to produce this bundle are included in the `xpressui-src/` directory of this plugin.
 
 To rebuild the runtime from those sources:
 
 1. Navigate to the source directory: `cd xpressui-src`
 2. Install dependencies: `npm install`
-3. Build the light runtime: `npm run build`
-4. The output file is produced in `xpressui-src/dist/xpressui-light-*.umd.js`.
+3. Build the runtime: `npm run build`
+4. The output file is produced in `xpressui-src/dist/xpressui-*.umd.js`.
 
 
 == Screenshots ==

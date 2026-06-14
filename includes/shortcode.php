@@ -221,9 +221,9 @@ function xpressui_render_shortcode( $atts ) {
 	// Enqueue the bundled XPressUI light runtime.
 	// Served from plugin/runtime/, never from uploads.
 	// -----------------------------------------------------------------
-	$runtime_handle    = 'xpressui-light-runtime';
-	$runtime_url       = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
-	$runtime_file_path = XPRESSUI_BRIDGE_DIR . 'runtime/xpressui-light-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
+	$runtime_handle    = 'xpressui-runtime';
+	$runtime_url       = XPRESSUI_BRIDGE_URL . 'runtime/xpressui-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
+	$runtime_file_path = XPRESSUI_BRIDGE_DIR . 'runtime/xpressui-' . XPRESSUI_BRIDGE_RUNTIME_VERSION . '.umd.js';
 
 	// Allow extensions (e.g. the pro plugin) to override the runtime URL and file path.
 	$runtime_url       = (string) apply_filters( 'xpressui_runtime_url', $runtime_url, $slug );

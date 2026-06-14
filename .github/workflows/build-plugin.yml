@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-      - name: Fetch xpressui light runtime
+      - name: Fetch xpressui runtime
         run: npm install @lybaba/xpressui@${{ steps.xpressui.outputs.version }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
