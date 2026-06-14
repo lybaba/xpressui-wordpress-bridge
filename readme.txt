@@ -4,7 +4,7 @@ Tags: document collection, client portal, file upload, intake form, multi-step f
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.93
+Stable tag: 1.0.94
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -172,6 +172,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.94 =
+* SaaS migration to unified standalone wordpress plugin with API token connection.
 
 = 1.0.93 =
 * Frame style: new appearance option (Card / Plain) to drop the form's card frame and inherit the host theme's container, avoiding a double frame on themes that already wrap content in a card.
