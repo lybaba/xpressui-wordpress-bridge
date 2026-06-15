@@ -59,6 +59,7 @@ type TFieldConfig = {
     paymentIban?: string;
     paymentBic?: string;
     paymentReferencePrefix?: string;
+    paymentRib?: string;
     mobileMoneyProvider?: string;
     mobileMoney?: {
         merchantPhone?: string;
@@ -71,6 +72,7 @@ type TFieldConfig = {
         paymentIban?: string;
         paymentBic?: string;
         paymentReferencePrefix?: string;
+        paymentRib?: string;
         paymentAmount?: number | string;
         paymentInstructions?: string;
         merchantName?: string;

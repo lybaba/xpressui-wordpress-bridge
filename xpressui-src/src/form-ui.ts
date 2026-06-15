@@ -2442,6 +2442,7 @@ export class HydratedFormHost extends HTMLElement {
           paymentIban: "data-payment-iban",
           paymentBic: "data-payment-bic",
           paymentReferencePrefix: "data-payment-reference-prefix",
+          paymentRib: "data-payment-rib",
         };
         Object.entries(copy).forEach(([dsKey, attr]) => {
           const val = selectedOption?.getAttribute(attr) ?? source.getAttribute(attr);

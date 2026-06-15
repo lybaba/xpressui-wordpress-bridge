@@ -78,6 +78,8 @@ data-payment-iban="<?php echo esc_attr(xpressui_bridge_template_stringify(xpress
 data-payment-bic="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_bic'))); ?>"<?php endif; ?>
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_reference_prefix'))): ?>
 data-payment-reference-prefix="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_reference_prefix'))); ?>"<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_rib'))): ?>
+data-payment-rib="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_rib'))); ?>"<?php endif; ?>
               >
                 <span class="template-payment-proof-pill-media">
                   <span class="template-payment-proof-pill-icon" aria-hidden="true"><?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider'), "cash"))): ?><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg><?php elseif (xpressui_bridge_template_truthy(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider'), "bank-transfer"))): ?><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg><?php else: ?><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></svg><?php endif; ?></span>
@@ -179,7 +181,7 @@ style="display:none"<?php endif; ?>
 <?php endif; ?>
                 </div>
 <?php endif; ?>
-<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider'), "bank-transfer"), xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_iban'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_bic'))))): ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_and_value(xpressui_bridge_template_equals(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'provider'), "bank-transfer"), xpressui_bridge_template_or_value(xpressui_bridge_template_or_value(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_iban'), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_bic')), xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_rib'))))): ?>
                 <div class="template-payment-proof-bank-block">
 <?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_iban'))): ?>
                     <div class="template-payment-proof-summary-item">
@@ -196,6 +198,17 @@ style="display:none"<?php endif; ?>
                       <div class="template-payment-proof-copy-row">
                         <span class="template-payment-proof-bank-value"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_bic'))); ?></span>
                         <button type="button" class="template-payment-proof-copy-btn" data-copy-value="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_bic'))); ?>" aria-label="<?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Copy BIC", 'xpressui-bridge'))); ?>"><svg class="tpp-copy-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="tpp-check-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></button>
+                      </div>
+                    </div>
+<?php endif; ?>
+<?php if (xpressui_bridge_template_truthy(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_rib'))): ?>
+                    <div class="template-payment-proof-summary-item">
+                      <span class="template-payment-proof-summary-label"><?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("RIB", 'xpressui-bridge'))); ?></span>
+                      <div style="display: flex; align-items: center; min-height: 28px;">
+                        <a href="<?php echo esc_url(xpressui_bridge_template_stringify(xpressui_bridge_template_attr(xpressui_bridge_template_context_get($xpressui_ctx, 'prov'), 'payment_rib'))); ?>" target="_blank" download style="display: inline-flex; align-items: center; font-size: 13px; font-weight: 800; color: var(--template-primary); text-decoration: none; border: 1px solid var(--template-primary); border-radius: 8px; padding: 4px 10px; background: transparent; transition: background 0.15s, color 0.15s;">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                          <?php echo esc_attr(xpressui_bridge_template_stringify(xpressui_bridge_template_wp_text("Télécharger le RIB", 'xpressui-bridge'))); ?>
+                        </a>
                       </div>
                     </div>
 <?php endif; ?>
