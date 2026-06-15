@@ -120,10 +120,10 @@ function xpressui_pro_license_soft_notice() {
 
 	printf(
 		'<div class="notice notice-warning is-dismissible"><p><strong>%1$s</strong> %2$s <a href="%3$s">%4$s</a></p></div>',
-		esc_html__( 'XPressUI Bridge PRO:', 'xpressui-bridge-pro' ),
-		esc_html__( 'To use Pro workflows, please configure your Console Connection (API Token). Pro forms keep accepting submissions, but connecting ensures you stay supported and receive updates.', 'xpressui-bridge-pro' ),
+		esc_html__( 'XPressUI Bridge PRO:', 'xpressui-bridge' ),
+		esc_html__( 'To use Pro workflows, please configure your Console Connection (API Token). Pro forms keep accepting submissions, but connecting ensures you stay supported and receive updates.', 'xpressui-bridge' ),
 		esc_url( $connect_url ),
-		esc_html__( 'Configure Console Connection', 'xpressui-bridge-pro' )
+		esc_html__( 'Configure Console Connection', 'xpressui-bridge' )
 	);
 }
 add_action( 'admin_notices', 'xpressui_pro_license_soft_notice' );

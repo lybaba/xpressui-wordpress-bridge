@@ -21,8 +21,8 @@ add_action( 'xpressui_workflow_settings_extra_save', 'xpressui_pro_extra_workflo
 function xpressui_pro_register_console_link(): void {
 	add_submenu_page(
 		'edit.php?post_type=xpressui_submission',
-		__( 'IntakeFlow Console', 'xpressui-bridge-pro' ),
-		__( '↗ Console', 'xpressui-bridge-pro' ),
+		__( 'IntakeFlow Console', 'xpressui-bridge' ),
+		__( '↗ Console', 'xpressui-bridge' ),
 		'manage_options',
 		'xpressui-console-redirect',
 		'xpressui_pro_redirect_to_console'
@@ -129,7 +129,7 @@ function xpressui_pro_collect_overlay_int(
 	if ( ! preg_match( '/^\d+$/', $raw ) ) {
 		$warnings[]       = sprintf(
 			/* translators: 1: field label, 2: validation label. */
-			__( 'The value for "%1$s" (%2$s) was not saved because it must be a whole number.', 'xpressui-bridge-pro' ),
+			__( 'The value for "%1$s" (%2$s) was not saved because it must be a whole number.', 'xpressui-bridge' ),
 			$field_name,
 			$label
 		);
@@ -163,7 +163,7 @@ function xpressui_pro_collect_overlay_number(
 	if ( ! is_numeric( $raw ) ) {
 		$warnings[]       = sprintf(
 			/* translators: 1: field label, 2: validation label. */
-			__( 'The value for "%1$s" (%2$s) was not saved because it must be numeric.', 'xpressui-bridge-pro' ),
+			__( 'The value for "%1$s" (%2$s) was not saved because it must be numeric.', 'xpressui-bridge' ),
 			$field_name,
 			$label
 		);
@@ -230,64 +230,64 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 	$customized = $summary_stats['has_theme'] ? '1' : '0';
 	$open       = $summary_stats['has_theme'] ? ' open' : '';
 	echo '<details class="xpressui-admin-card"' . $open . ' data-xpressui-card-type="appearance" data-xpressui-customized="' . esc_attr( $customized ) . '" data-xpressui-search-text="appearance design tokens colors primary background surface text border radius" data-xpressui-reset-scope="appearance" id="xpressui-pro-card-appearance">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Appearance & Design Tokens', 'xpressui-bridge-pro' ) . '</h2><span class="xpressui-card-meta">';
+	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Appearance & Design Tokens', 'xpressui-bridge' ) . '</h2><span class="xpressui-card-meta">';
 	if ( $summary_stats['has_theme'] ) {
-		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge-pro' ) . '</span>';
-		echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="appearance">' . esc_html__( 'Restore block', 'xpressui-bridge-pro' ) . '</button>';
+		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
+		echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="appearance">' . esc_html__( 'Restore block', 'xpressui-bridge' ) . '</button>';
 	}
 	echo '</span></summary>';
 	echo '<div class="xpressui-card-body"><table class="form-table"><tbody>';
 
 	$bg_styles = [
-		'none'       => __( 'None (Clean)', 'xpressui-bridge-pro' ),
-		'panel'      => __( 'Panel Focus', 'xpressui-bridge-pro' ),
-		'full-bleed' => __( 'Full Bleed', 'xpressui-bridge-pro' ),
+		'none'       => __( 'None (Clean)', 'xpressui-bridge' ),
+		'panel'      => __( 'Panel Focus', 'xpressui-bridge' ),
+		'full-bleed' => __( 'Full Bleed', 'xpressui-bridge' ),
 	];
 	$pack_bg_style = (string) ( $pack_theme['background_style'] ?? 'none' );
 	$ov_bg_style   = (string) ( $ov_theme['background_style'] ?? '' );
 	
 	$html  = '<select name="xpressui_overlay_theme[background_style]">';
-	$html .= '<option value="">' . esc_html__( 'Pack default', 'xpressui-bridge-pro' ) . ' (' . esc_html( $bg_styles[ $pack_bg_style ] ?? $pack_bg_style ) . ')</option>';
+	$html .= '<option value="">' . esc_html__( 'Pack default', 'xpressui-bridge' ) . ' (' . esc_html( $bg_styles[ $pack_bg_style ] ?? $pack_bg_style ) . ')</option>';
 	foreach ( $bg_styles as $val => $label ) {
 		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $ov_bg_style, $val, false ) . '>' . esc_html( $label ) . '</option>';
 	}
 	$html .= '</select>';
-	xpressui_pro_row( '', __( 'Background Style', 'xpressui-bridge-pro' ), $html );
+	xpressui_pro_row( '', __( 'Background Style', 'xpressui-bridge' ), $html );
 
 	$frame_styles = [
-		'card'  => __( 'Card (framed)', 'xpressui-bridge-pro' ),
-		'plain' => __( 'Plain (transparent)', 'xpressui-bridge-pro' ),
+		'card'  => __( 'Card (framed)', 'xpressui-bridge' ),
+		'plain' => __( 'Plain (transparent)', 'xpressui-bridge' ),
 	];
 	$pack_frame_style = (string) ( $pack_theme['frame_style'] ?? 'card' );
 	$ov_frame_style   = (string) ( $ov_theme['frame_style'] ?? '' );
 
 	$html  = '<select name="xpressui_overlay_theme[frame_style]">';
-	$html .= '<option value="">' . esc_html__( 'Pack default', 'xpressui-bridge-pro' ) . ' (' . esc_html( $frame_styles[ $pack_frame_style ] ?? $pack_frame_style ) . ')</option>';
+	$html .= '<option value="">' . esc_html__( 'Pack default', 'xpressui-bridge' ) . ' (' . esc_html( $frame_styles[ $pack_frame_style ] ?? $pack_frame_style ) . ')</option>';
 	foreach ( $frame_styles as $val => $label ) {
 		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $ov_frame_style, $val, false ) . '>' . esc_html( $label ) . '</option>';
 	}
 	$html .= '</select>';
-	$html .= '<p class="description">' . esc_html__( 'Use “Plain” when your theme already wraps content in a card, to avoid a double frame.', 'xpressui-bridge-pro' ) . '</p>';
-	xpressui_pro_row( '', __( 'Frame Style', 'xpressui-bridge-pro' ), $html );
+	$html .= '<p class="description">' . esc_html__( 'Use “Plain” when your theme already wraps content in a card, to avoid a double frame.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( '', __( 'Frame Style', 'xpressui-bridge' ), $html );
 
 	$html  = '<input type="url" name="xpressui_overlay_project_background_image_url" class="large-text" value="' . esc_attr( $ov_project_bg ) . '" placeholder="' . esc_attr( $pack_project_bg ) . '" />';
-	$html .= '<p class="description">' . esc_html__( 'Enter an image URL from your WordPress Media Library.', 'xpressui-bridge-pro' ) . '</p>';
-	xpressui_pro_row( '', __( 'Background Image URL', 'xpressui-bridge-pro' ), $html );
+	$html .= '<p class="description">' . esc_html__( 'Enter an image URL from your WordPress Media Library.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( '', __( 'Background Image URL', 'xpressui-bridge' ), $html );
 
 	$pack_font = (string) ( $pack_theme['font_family'] ?? 'inherit' );
 	$ov_font   = (string) ( $ov_theme['font_family'] ?? '' );
 	$html  = '<input type="text" name="xpressui_overlay_theme[font_family]" class="regular-text" value="' . esc_attr( $ov_font ) . '" placeholder="' . esc_attr( $pack_font ) . '" />';
-	$html .= '<p class="description">' . esc_html__( 'Leave empty to inherit the WordPress theme font. E.g. "Roboto, sans-serif".', 'xpressui-bridge-pro' ) . '</p>';
-	xpressui_pro_row( '', __( 'Typography (Font Family)', 'xpressui-bridge-pro' ), $html );
+	$html .= '<p class="description">' . esc_html__( 'Leave empty to inherit the WordPress theme font. E.g. "Roboto, sans-serif".', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( '', __( 'Typography (Font Family)', 'xpressui-bridge' ), $html );
 
 	echo '<tr><td colspan="2"><hr style="border:none;border-top:1px solid #eee;margin:4px 0 8px"></td></tr>';
 
 	$colors = [
-		'primary'         => __( 'Primary color', 'xpressui-bridge-pro' ),
-		'surface'         => __( 'Surface color (Cards)', 'xpressui-bridge-pro' ),
-		'page_background' => __( 'Page background', 'xpressui-bridge-pro' ),
-		'text'            => __( 'Text color', 'xpressui-bridge-pro' ),
-		'border'          => __( 'Border color', 'xpressui-bridge-pro' ),
+		'primary'         => __( 'Primary color', 'xpressui-bridge' ),
+		'surface'         => __( 'Surface color (Cards)', 'xpressui-bridge' ),
+		'page_background' => __( 'Page background', 'xpressui-bridge' ),
+		'text'            => __( 'Text color', 'xpressui-bridge' ),
+		'border'          => __( 'Border color', 'xpressui-bridge' ),
 	];
 
 	foreach ( $colors as $key => $label ) {
@@ -300,7 +300,7 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 		$html .= '<input type="text" name="xpressui_overlay_theme[colors][' . esc_attr( $key ) . ']" class="regular-text" style="width:100px;" value="' . esc_attr( $ov_val ) . '" placeholder="' . esc_attr( $pack_val ) . '" oninput="this.previousElementSibling.value=this.value || this.placeholder;" />';
 		$html .= '</div>';
 		if ( $pack_val !== '' ) {
-			$html .= '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge-pro' ) . ' <code style="display:inline-block;width:12px;height:12px;background:' . esc_attr( $pack_val ) . ';border-radius:2px;vertical-align:middle;margin-right:4px;border:1px solid #ccc;"></code>' . esc_html( $pack_val ) . '</p>';
+			$html .= '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge' ) . ' <code style="display:inline-block;width:12px;height:12px;background:' . esc_attr( $pack_val ) . ';border-radius:2px;vertical-align:middle;margin-right:4px;border:1px solid #ccc;"></code>' . esc_html( $pack_val ) . '</p>';
 		}
 		xpressui_pro_row( '', $label, $html );
 	}
@@ -308,9 +308,9 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 	echo '<tr><td colspan="2"><hr style="border:none;border-top:1px solid #eee;margin:4px 0 8px"></td></tr>';
 
 	$radii = [
-		'card'   => __( 'Card radius (px)', 'xpressui-bridge-pro' ),
-		'input'  => __( 'Input radius (px)', 'xpressui-bridge-pro' ),
-		'button' => __( 'Button radius (px)', 'xpressui-bridge-pro' ),
+		'card'   => __( 'Card radius (px)', 'xpressui-bridge' ),
+		'input'  => __( 'Input radius (px)', 'xpressui-bridge' ),
+		'button' => __( 'Button radius (px)', 'xpressui-bridge' ),
 	];
 
 	foreach ( $radii as $key => $label ) {
@@ -318,7 +318,7 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 		$ov_val   = isset( $ov_theme['radius'][ $key ] ) ? (string) $ov_theme['radius'][ $key ] : '';
 
 		$html  = '<input type="number" name="xpressui_overlay_theme[radius][' . esc_attr( $key ) . ']" class="small-text" value="' . esc_attr( $ov_val ) . '" placeholder="' . esc_attr( $pack_val ) . '" min="0" step="1" />';
-		$html .= '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge-pro' ) . ' ' . esc_html( $pack_val ) . 'px</p>';
+		$html .= '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge' ) . ' ' . esc_html( $pack_val ) . 'px</p>';
 		xpressui_pro_row( '', $label, $html );
 	}
 
@@ -332,17 +332,17 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 function xpressui_pro_render_card_navigation( array $ov_navigation, array $pack_nav ): void {
 	$nav_open = ! empty( $ov_navigation ) ? ' open' : '';
 	$nav_fields = [
-		'prev'   => [ __( 'Back button', 'xpressui-bridge-pro' ), (string) ( $pack_nav['prevLabel'] ?? 'Back' ) ],
-		'next'   => [ __( 'Continue button', 'xpressui-bridge-pro' ), (string) ( $pack_nav['nextLabel'] ?? 'Continue' ) ],
-		'submit' => [ __( 'Submit button', 'xpressui-bridge-pro' ), (string) ( $pack_nav['submitLabel'] ?? 'Submit' ) ],
+		'prev'   => [ __( 'Back button', 'xpressui-bridge' ), (string) ( $pack_nav['prevLabel'] ?? 'Back' ) ],
+		'next'   => [ __( 'Continue button', 'xpressui-bridge' ), (string) ( $pack_nav['nextLabel'] ?? 'Continue' ) ],
+		'submit' => [ __( 'Submit button', 'xpressui-bridge' ), (string) ( $pack_nav['submitLabel'] ?? 'Submit' ) ],
 	];
 	echo '<details class="xpressui-admin-card"' . $nav_open . ' data-xpressui-card-type="navigation" data-xpressui-customized="' . ( ! empty( $ov_navigation ) ? '1' : '0' ) . '" data-xpressui-search-text="navigation labels back continue submit buttons" data-xpressui-reset-scope="navigation" id="xpressui-pro-card-navigation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $nav_open is a hardcoded HTML attribute built from a boolean
-	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Navigation Labels', 'xpressui-bridge-pro' ) . '</h2><span class="xpressui-card-meta">';
+	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Navigation Labels', 'xpressui-bridge' ) . '</h2><span class="xpressui-card-meta">';
 	if ( ! empty( $ov_navigation ) ) {
-		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge-pro' ) . '</span>';
-		echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="navigation">' . esc_html__( 'Restore block', 'xpressui-bridge-pro' ) . '</button>';
+		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
+		echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="navigation">' . esc_html__( 'Restore block', 'xpressui-bridge' ) . '</button>';
 	}
-	echo '<span class="xpressui-card-badge">' . esc_html( (string) count( $nav_fields ) ) . ' ' . esc_html__( 'Buttons', 'xpressui-bridge-pro' ) . '</span>';
+	echo '<span class="xpressui-card-badge">' . esc_html( (string) count( $nav_fields ) ) . ' ' . esc_html__( 'Buttons', 'xpressui-bridge' ) . '</span>';
 	echo '</span></summary>';
 	echo '<div class="xpressui-card-body"><table class="form-table"><tbody>';
 
@@ -352,7 +352,7 @@ function xpressui_pro_render_card_navigation( array $ov_navigation, array $pack_
 			'xpressui_overlay_nav_' . $nav_key,
 			$nav_label,
 			'<input type="text" id="xpressui_overlay_nav_' . esc_attr( $nav_key ) . '" name="xpressui_overlay_nav_' . esc_attr( $nav_key ) . '" class="regular-text" value="' . esc_attr( $current_val ) . '" placeholder="' . esc_attr( $nav_default ) . '" />'
-			. '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge-pro' ) . ' <em>' . esc_html( $nav_default ) . '</em></p>'
+			. '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge' ) . ' <em>' . esc_html( $nav_default ) . '</em></p>'
 		);
 	}
 
@@ -403,12 +403,12 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 		echo '<details class="xpressui-admin-card"' . $card_open . ' data-xpressui-card-type="section" data-xpressui-customized="' . ( $section_has_custom ? '1' : '0' ) . '" data-xpressui-search-text="' . esc_attr( $section_search_text ) . '" data-xpressui-reset-scope="section-' . esc_attr( $section_name ) . '" id="xpressui-pro-card-' . esc_attr( $section_name ) . '">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $card_open is a hardcoded HTML attribute built from a boolean
 		echo '<summary class="xpressui-card-summary"><h2>' . esc_html( $section_label ) . '</h2><span class="xpressui-card-meta">';
 		if ( $section_has_custom ) {
-			echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge-pro' ) . '</span>';
-			echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="section-' . esc_attr( $section_name ) . '">' . esc_html__( 'Restore section', 'xpressui-bridge-pro' ) . '</button>';
+			echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
+			echo '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="section-' . esc_attr( $section_name ) . '">' . esc_html__( 'Restore section', 'xpressui-bridge' ) . '</button>';
 		}
-		echo '<span class="xpressui-card-badge">' . esc_html( (string) count( $fields ) ) . ' ' . esc_html__( 'Fields', 'xpressui-bridge-pro' ) . '</span>';
+		echo '<span class="xpressui-card-badge">' . esc_html( (string) count( $fields ) ) . ' ' . esc_html__( 'Fields', 'xpressui-bridge' ) . '</span>';
 		if ( $customized_field_count > 0 ) {
-			echo '<span class="xpressui-card-badge">' . esc_html( (string) $customized_field_count ) . ' ' . esc_html__( 'Overrides', 'xpressui-bridge-pro' ) . '</span>';
+			echo '<span class="xpressui-card-badge">' . esc_html( (string) $customized_field_count ) . ' ' . esc_html__( 'Overrides', 'xpressui-bridge' ) . '</span>';
 		}
 		echo '</span></summary>';
 		echo '<div class="xpressui-card-body"><table class="form-table"><tbody>';
@@ -416,9 +416,9 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 		// Section label row.
 		xpressui_pro_row(
 			'xpressui_overlay_sections[' . esc_attr( $section_name ) . ']',
-			'<strong>' . esc_html__( 'Section label', 'xpressui-bridge-pro' ) . '</strong>',
+			'<strong>' . esc_html__( 'Section label', 'xpressui-bridge' ) . '</strong>',
 			'<input type="text" name="xpressui_overlay_sections[' . esc_attr( $section_name ) . ']" class="regular-text" value="' . esc_attr( $current_section_label ) . '" placeholder="' . esc_attr( $section_label ) . '" />'
-			. '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge-pro' ) . ' <em>' . esc_html( $section_label ) . '</em></p>'
+			. '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge' ) . ' <em>' . esc_html( $section_label ) . '</em></p>'
 		);
 
 		echo '<tr><td colspan="2"><hr style="border:none;border-top:1px solid #eee;margin:4px 0 8px"></td></tr>';
@@ -469,8 +469,8 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			$header      .= '<div><div class="xpressui-field-block-title">' . esc_html( $flabel ) . '</div><div class="xpressui-field-block-type">' . esc_html( $ftype ) . '</div></div>';
 			if ( $field_has_custom ) {
 				$header .= '<div style="display:flex;align-items:center;gap:8px">';
-				$header .= '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge-pro' ) . '</span>';
-				$header .= '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="field-' . esc_attr( $fname ) . '">' . esc_html__( 'Restore this field', 'xpressui-bridge-pro' ) . '</button>';
+				$header .= '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
+				$header .= '<button type="button" class="xpressui-reset-chip" data-xpressui-reset-trigger="field-' . esc_attr( $fname ) . '">' . esc_html__( 'Restore this field', 'xpressui-bridge' ) . '</button>';
 				$header .= '</div>';
 			}
 			$header .= '</div>';
@@ -480,18 +480,18 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 
 			// Label.
 			$html .= '<div class="xpressui-field-control">';
-			$html .= '<label>' . esc_html__( 'Label', 'xpressui-bridge-pro' ) . '</label>';
+			$html .= '<label>' . esc_html__( 'Label', 'xpressui-bridge' ) . '</label>';
 			$html .= '<input type="text" name="' . $field_prefix . '[label]" class="regular-text" value="' . esc_attr( $ov_label ) . '" placeholder="' . esc_attr( $flabel ) . '" />';
 			$html .= '</div>';
 
 			// Required (select, 3 states).
 			$req_options = [
-				''  => __( 'Pack default', 'xpressui-bridge-pro' ) . ' (' . ( $pack_req ? __( 'required', 'xpressui-bridge-pro' ) : __( 'optional', 'xpressui-bridge-pro' ) ) . ')',
-				'1' => __( 'Required', 'xpressui-bridge-pro' ),
-				'0' => __( 'Optional', 'xpressui-bridge-pro' ),
+				''  => __( 'Pack default', 'xpressui-bridge' ) . ' (' . ( $pack_req ? __( 'required', 'xpressui-bridge' ) : __( 'optional', 'xpressui-bridge' ) ) . ')',
+				'1' => __( 'Required', 'xpressui-bridge' ),
+				'0' => __( 'Optional', 'xpressui-bridge' ),
 			];
 			$html .= '<div class="xpressui-field-control">';
-			$html .= '<label>' . esc_html__( 'Required', 'xpressui-bridge-pro' ) . '</label>';
+			$html .= '<label>' . esc_html__( 'Required', 'xpressui-bridge' ) . '</label>';
 			$html .= '<select name="' . $field_prefix . '[required]">';
 			foreach ( $req_options as $opt_val => $opt_label ) {
 				$html .= '<option value="' . esc_attr( (string) $opt_val ) . '"' . selected( $ov_req, (string) $opt_val, false ) . '>' . esc_html( $opt_label ) . '</option>';
@@ -503,40 +503,40 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			$text_types = [ 'text', 'email', 'tel', 'url', 'number', 'price', 'integer', 'age', 'tax', 'date', 'time', 'datetime', 'search', 'slug', 'textarea', 'rich-editor' ];
 			if ( in_array( $ftype, $text_types, true ) ) {
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Placeholder', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Placeholder', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" name="' . $field_prefix . '[placeholder]" class="regular-text" value="' . esc_attr( $ov_ph ) . '" placeholder="' . esc_attr( (string) ( $field['placeholder'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 			}
 
 			// Description.
 			$html .= '<div class="xpressui-field-control is-full">';
-			$html .= '<label>' . esc_html__( 'Help text', 'xpressui-bridge-pro' ) . '</label>';
+			$html .= '<label>' . esc_html__( 'Help text', 'xpressui-bridge' ) . '</label>';
 			$html .= '<textarea name="' . $field_prefix . '[desc]" class="large-text" rows="2">' . esc_textarea( $ov_desc ) . '</textarea>';
 			$html .= '</div>';
 
 			// Error message.
 			$pack_errmsg = (string) ( $field['error_message'] ?? '' );
 			$html .= '<div class="xpressui-field-control is-full">';
-			$html .= '<label>' . esc_html__( 'Error message', 'xpressui-bridge-pro' ) . '</label>';
+			$html .= '<label>' . esc_html__( 'Error message', 'xpressui-bridge' ) . '</label>';
 			$html .= '<input type="text" name="' . $field_prefix . '[error_message]" class="large-text" value="' . esc_attr( $ov_errmsg ) . '" placeholder="' . esc_attr( $pack_errmsg ) . '" />';
 			$html .= '</div>';
 
 			if ( in_array( $ftype, $text_validation_types, true ) ) {
 				$html .= '<div class="xpressui-field-control-row">';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Min length', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Min length', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_len" name="' . $field_prefix . '[min_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_len ) . '" placeholder="" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max length', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Max length', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_len" name="' . $field_prefix . '[max_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_len ) . '" placeholder="" />';
 				$html .= '</div>';
 				$html .= '</div>';
 				if ( in_array( $ftype, $pattern_validation_types, true ) ) {
 					$html .= '<div class="xpressui-field-control is-full">';
-					$html .= '<label>' . esc_html__( 'Pattern', 'xpressui-bridge-pro' ) . '</label>';
+					$html .= '<label>' . esc_html__( 'Pattern', 'xpressui-bridge' ) . '</label>';
 					$html .= '<input type="text" name="' . $field_prefix . '[pattern]" class="large-text" value="' . esc_attr( $ov_pattern ) . '" placeholder="' . esc_attr( (string) ( $field['pattern'] ?? '' ) ) . '" />';
-					$html .= '<p class="description">' . esc_html__( 'Optional regex pattern enforced by the runtime schema. Use ^...$ if you want to match the whole value.', 'xpressui-bridge-pro' ) . '</p>';
+					$html .= '<p class="description">' . esc_html__( 'Optional regex pattern enforced by the runtime schema. Use ^...$ if you want to match the whole value.', 'xpressui-bridge' ) . '</p>';
 					$html .= '</div>';
 				}
 			}
@@ -544,15 +544,15 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			if ( in_array( $ftype, $numeric_validation_types, true ) ) {
 				$html .= '<div class="xpressui-field-control-row">';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Min value', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Min value', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_value" name="' . $field_prefix . '[min_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_value ) . '" placeholder="' . esc_attr( (string) ( $field['min_value'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max value', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Max value', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_value" name="' . $field_prefix . '[max_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_value ) . '" placeholder="' . esc_attr( (string) ( $field['max_value'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Step', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Step', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_step_value" name="' . $field_prefix . '[step_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_step_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_step_value ) . '" placeholder="' . esc_attr( (string) ( $field['step_value'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '</div>';
@@ -561,11 +561,11 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			if ( $supports_choice_limits ) {
 				$html .= '<div class="xpressui-field-control-row">';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Minimum choices', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Minimum choices', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_choices" name="' . $field_prefix . '[min_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_choices ) . '" placeholder="' . esc_attr( (string) ( $field['min_choices'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Maximum choices', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Maximum choices', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_choices" name="' . $field_prefix . '[max_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_choices ) . '" placeholder="' . esc_attr( (string) ( $field['max_choices'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '</div>';
@@ -573,24 +573,24 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 
 			if ( in_array( $ftype, $upload_validation_types, true ) ) {
 				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max file size (MB)', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Max file size (MB)', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_file_size_mb" name="' . $field_prefix . '[max_file_size_mb]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_file_size_mb', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_file_size_mb ) . '" placeholder="' . esc_attr( (string) ( $field['maxFileSizeMb'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'Accepted file types', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Accepted file types', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" name="' . $field_prefix . '[accept]" class="large-text" value="' . esc_attr( $ov_accept ) . '" placeholder="' . esc_attr( (string) ( $field['accept'] ?? '' ) ) . '" />';
-				$html .= '<p class="description">' . esc_html__( 'Example: image/*,application/pdf', 'xpressui-bridge-pro' ) . '</p>';
+				$html .= '<p class="description">' . esc_html__( 'Example: image/*,application/pdf', 'xpressui-bridge' ) . '</p>';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'Accepted file types label', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'Accepted file types label', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" name="' . $field_prefix . '[upload_accept_label]" class="large-text" value="' . esc_attr( $ov_upload_accept_label ) . '" placeholder="' . esc_attr( (string) ( $field['upload_accept_label'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'File type error message', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'File type error message', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" name="' . $field_prefix . '[file_type_error_message]" class="large-text" value="' . esc_attr( $ov_file_type_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileTypeErrorMsg'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'File size error message', 'xpressui-bridge-pro' ) . '</label>';
+				$html .= '<label>' . esc_html__( 'File size error message', 'xpressui-bridge' ) . '</label>';
 				$html .= '<input type="text" name="' . $field_prefix . '[file_size_error_message]" class="large-text" value="' . esc_attr( $ov_file_size_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileSizeErrorMsg'] ?? '' ) ) . '" />';
 				$html .= '</div>';
 			}
@@ -599,7 +599,7 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			if ( $supports_choice_labels ) {
 				$ov_choices = isset( $fo['choices'] ) && is_array( $fo['choices'] ) ? $fo['choices'] : [];
 				$html      .= '<div class="xpressui-field-control is-full"><div class="xpressui-choice-group">';
-				$html      .= '<p class="description" style="margin-bottom:6px">' . esc_html__( 'Choice labels, availability, and order (drag to reorder):', 'xpressui-bridge-pro' ) . '</p>';
+				$html      .= '<p class="description" style="margin-bottom:6px">' . esc_html__( 'Choice labels, availability, and order (drag to reorder):', 'xpressui-bridge' ) . '</p>';
 				$html      .= '<div class="xpressui-sortable-list" data-xpressui-sortable>';
 				
 				// Pre-sort choices based on overlay data to render them in the correct saved order
@@ -631,13 +631,13 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 					$ov_choice      = xpressui_pro_admin_normalize_choice_overlay_entry( $ov_choices[ $cv ] ?? [] );
 					$choice_enabled = null === $ov_choice['enabled'] ? empty( $choice['disabled'] ) : (bool) $ov_choice['enabled'];
 					$html .= '<div class="xpressui-choice-row" draggable="true">';
-					$html .= '<span class="xpressui-drag-handle" aria-hidden="true" title="' . esc_attr__( 'Drag to reorder', 'xpressui-bridge-pro' ) . '">&#x2195;</span>';
+					$html .= '<span class="xpressui-drag-handle" aria-hidden="true" title="' . esc_attr__( 'Drag to reorder', 'xpressui-bridge' ) . '">&#x2195;</span>';
 					$html .= '<span class="xpressui-choice-label">' . esc_html( $cl ) . '</span>';
 					$html .= '<input type="text" name="' . $field_prefix . '[choices][' . esc_attr( $cv ) . '][label]" class="regular-text" style="max-width:260px" value="' . esc_attr( $ov_choice['label'] ) . '" placeholder="' . esc_attr( $cl ) . '" />';
 					$html .= '<label class="xpressui-choice-toggle">';
 					$html .= '<input type="hidden" name="' . $field_prefix . '[choices][' . esc_attr( $cv ) . '][enabled]" value="0" />';
 					$html .= '<input type="checkbox" name="' . $field_prefix . '[choices][' . esc_attr( $cv ) . '][enabled]" value="1"' . checked( $choice_enabled, true, false ) . ' />';
-					$html .= '<span>' . esc_html__( 'Enabled', 'xpressui-bridge-pro' ) . '</span>';
+					$html .= '<span>' . esc_html__( 'Enabled', 'xpressui-bridge' ) . '</span>';
 					$html .= '</label>';
 					$html .= '</div>';
 				}

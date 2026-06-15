@@ -228,7 +228,7 @@ function xpressui_pro_grouped_submission_fields( int $post_id ): array {
 	}
 	if ( ! empty( $extras ) ) {
 		$groups[] = array(
-			'section' => __( 'Other fields', 'xpressui-bridge-pro' ),
+			'section' => __( 'Other fields', 'xpressui-bridge' ),
 			'fields'  => $extras,
 		);
 	}
@@ -244,7 +244,7 @@ add_action( 'add_meta_boxes', 'xpressui_pro_register_resubmission_metabox' );
 function xpressui_pro_register_resubmission_metabox(): void {
 	add_meta_box(
 		'xpressui_pro_resubmission_mb',
-		__( 'Request resubmission', 'xpressui-bridge-pro' ),
+		__( 'Request resubmission', 'xpressui-bridge' ),
 		'xpressui_pro_render_resubmission_metabox',
 		'xpressui_submission',
 		'side',
@@ -265,11 +265,11 @@ function xpressui_pro_render_resubmission_metabox( $post ): void {
 	$groups  = xpressui_pro_grouped_submission_fields( $post_id );
 
 	echo '<p class="description">'
-		. esc_html__( 'Tick the fields the submitter must correct, set status to “Pending info”, then click Update. The submitter gets a resume link to fix only those fields.', 'xpressui-bridge-pro' )
+		. esc_html__( 'Tick the fields the submitter must correct, set status to “Pending info”, then click Update. The submitter gets a resume link to fix only those fields.', 'xpressui-bridge' )
 		. '</p>';
 
 	if ( empty( $groups ) ) {
-		echo '<p>' . esc_html__( 'No fields available for this submission yet.', 'xpressui-bridge-pro' ) . '</p>';
+		echo '<p>' . esc_html__( 'No fields available for this submission yet.', 'xpressui-bridge' ) . '</p>';
 		return;
 	}
 
@@ -290,8 +290,8 @@ function xpressui_pro_render_resubmission_metabox( $post ): void {
 	$resume_url = xpressui_pro_build_resume_url( $post_id );
 	if ( '' !== $resume_url ) {
 		echo '<p class="description" style="margin-top:8px;">'
-			. esc_html__( 'Resume link', 'xpressui-bridge-pro' ) . ': '
-			. '<a href="' . esc_url( $resume_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'open', 'xpressui-bridge-pro' ) . '</a>'
+			. esc_html__( 'Resume link', 'xpressui-bridge' ) . ': '
+			. '<a href="' . esc_url( $resume_url ) . '" target="_blank" rel="noopener noreferrer">' . esc_html__( 'open', 'xpressui-bridge' ) . '</a>'
 			. '</p>';
 	}
 }
