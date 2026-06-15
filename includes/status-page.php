@@ -71,10 +71,10 @@ function xpressui_pro_status_link_email_html( string $html, int $post_id, string
 	return $html
 		. '<div style="margin:24px 0 0;text-align:center;">'
 		. '<a href="' . esc_url( $url ) . '" style="display:inline-block;padding:10px 20px;background:#f0f4ff;color:#1e3a8a;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600;border:1px solid #bfdbfe;">'
-		. esc_html__( 'Track your submission', 'xpressui-bridge-pro' )
+		. esc_html__( 'Track your submission', 'xpressui-bridge' )
 		. '</a>'
 		. '<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">'
-		. esc_html__( 'This link is private and unique to your submission. Bookmark it to follow up at any time.', 'xpressui-bridge-pro' )
+		. esc_html__( 'This link is private and unique to your submission. Bookmark it to follow up at any time.', 'xpressui-bridge' )
 		. '</p>'
 		. '</div>';
 }
@@ -143,39 +143,39 @@ function xpressui_pro_handle_status_route(): void {
 function xpressui_pro_status_display_map(): array {
 	return [
 		'new'          => [
-			'label' => __( 'Received', 'xpressui-bridge-pro' ),
+			'label' => __( 'Received', 'xpressui-bridge' ),
 			'color' => '#374151',
 			'bg'    => '#f3f4f6',
 			'icon'  => '📬',
-			'note'  => __( 'Your file has been received and is waiting for review.', 'xpressui-bridge-pro' ),
+			'note'  => __( 'Your file has been received and is waiting for review.', 'xpressui-bridge' ),
 		],
 		'in-review'    => [
-			'label' => __( 'In Review', 'xpressui-bridge-pro' ),
+			'label' => __( 'In Review', 'xpressui-bridge' ),
 			'color' => '#1e40af',
 			'bg'    => '#dbeafe',
 			'icon'  => '🔍',
-			'note'  => __( 'Our team is currently reviewing your file.', 'xpressui-bridge-pro' ),
+			'note'  => __( 'Our team is currently reviewing your file.', 'xpressui-bridge' ),
 		],
 		'pending_info' => [
-			'label' => __( 'Action Required', 'xpressui-bridge-pro' ),
+			'label' => __( 'Action Required', 'xpressui-bridge' ),
 			'color' => '#92400e',
 			'bg'    => '#fef3c7',
 			'icon'  => '📋',
-			'note'  => __( 'Additional information or documents have been requested. Please check your email.', 'xpressui-bridge-pro' ),
+			'note'  => __( 'Additional information or documents have been requested. Please check your email.', 'xpressui-bridge' ),
 		],
 		'done'         => [
-			'label' => __( 'Completed', 'xpressui-bridge-pro' ),
+			'label' => __( 'Completed', 'xpressui-bridge' ),
 			'color' => '#14532d',
 			'bg'    => '#dcfce7',
 			'icon'  => '✅',
-			'note'  => __( 'Your file has been processed successfully.', 'xpressui-bridge-pro' ),
+			'note'  => __( 'Your file has been processed successfully.', 'xpressui-bridge' ),
 		],
 		'rejected'     => [
-			'label' => __( 'Rejected', 'xpressui-bridge-pro' ),
+			'label' => __( 'Rejected', 'xpressui-bridge' ),
 			'color' => '#7f1d1d',
 			'bg'    => '#fee2e2',
 			'icon'  => '❌',
-			'note'  => __( 'Your file could not be processed. Please check your email for details.', 'xpressui-bridge-pro' ),
+			'note'  => __( 'Your file could not be processed. Please check your email for details.', 'xpressui-bridge' ),
 		],
 	];
 }
@@ -197,7 +197,7 @@ function xpressui_pro_output_status_page( string $site_name, string $workflow_la
 	<title><?php
 	printf(
 		/* translators: %s: site name */
-		esc_html__( 'Submission Status — %s', 'xpressui-bridge-pro' ),
+		esc_html__( 'Submission Status — %s', 'xpressui-bridge' ),
 		esc_html( $site_name )
 	);
 	?></title>
@@ -227,7 +227,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 		<?php
 		printf(
 				/* translators: %s: date of last update */
-				esc_html__( 'Last updated: %s', 'xpressui-bridge-pro' ),
+				esc_html__( 'Last updated: %s', 'xpressui-bridge' ),
 				esc_html( $updated )
 			);
 		?>

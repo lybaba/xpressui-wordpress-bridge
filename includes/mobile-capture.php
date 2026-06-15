@@ -207,13 +207,13 @@ function xpressui_pro_maybe_serve_capture_page(): void {
 
 	$relay_url  = rest_url( 'xpressui/v1/capture/relay/' . rawurlencode( $token ) );
 	$field_labels = [
-		'signature'          => __( 'Draw your signature below', 'xpressui-bridge-pro' ),
-		'camera-photo'       => __( 'Take a photo below', 'xpressui-bridge-pro' ),
-		'camera-photo-list'  => __( 'Take a photo below', 'xpressui-bridge-pro' ),
-		'document-scan'      => __( 'Photograph your document', 'xpressui-bridge-pro' ),
-		'qr-scan'            => __( 'Scan a QR code', 'xpressui-bridge-pro' ),
+		'signature'          => __( 'Draw your signature below', 'xpressui-bridge' ),
+		'camera-photo'       => __( 'Take a photo below', 'xpressui-bridge' ),
+		'camera-photo-list'  => __( 'Take a photo below', 'xpressui-bridge' ),
+		'document-scan'      => __( 'Photograph your document', 'xpressui-bridge' ),
+		'qr-scan'            => __( 'Scan a QR code', 'xpressui-bridge' ),
 	];
-	$field_label = $field_labels[ $field_type ] ?? __( 'Capture on mobile', 'xpressui-bridge-pro' );
+	$field_label = $field_labels[ $field_type ] ?? __( 'Capture on mobile', 'xpressui-bridge' );
 
 	xpressui_pro_output_capture_page( $token, $field_type, $relay_url, $field_label );
 	exit;

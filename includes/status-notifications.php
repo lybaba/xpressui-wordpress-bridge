@@ -161,14 +161,14 @@ function xpressui_pro_build_status_subject( string $status, string $project_slug
 	switch ( $status ) {
 		case 'done':
 			/* translators: 1: site name, 2: workflow slug, 3: submission reference */
-			return sprintf( __( '[%1$s] Your submission for %2$s has been processed%3$s', 'xpressui-bridge-pro' ), $site, $project_slug, $ref );
+			return sprintf( __( '[%1$s] Your submission for %2$s has been processed%3$s', 'xpressui-bridge' ), $site, $project_slug, $ref );
 		case 'rejected':
 			/* translators: 1: site name, 2: workflow slug, 3: submission reference */
-			return sprintf( __( '[%1$s] Update on your submission for %2$s%3$s', 'xpressui-bridge-pro' ), $site, $project_slug, $ref );
+			return sprintf( __( '[%1$s] Update on your submission for %2$s%3$s', 'xpressui-bridge' ), $site, $project_slug, $ref );
 		case 'pending_info':
 		default:
 			/* translators: 1: site name, 2: workflow slug, 3: submission reference */
-			return sprintf( __( '[%1$s] Your submission for %2$s needs additional information%3$s', 'xpressui-bridge-pro' ), $site, $project_slug, $ref );
+			return sprintf( __( '[%1$s] Your submission for %2$s needs additional information%3$s', 'xpressui-bridge' ), $site, $project_slug, $ref );
 	}
 }
 
@@ -197,23 +197,23 @@ function xpressui_pro_build_status_body( int $post_id, string $status, string $p
 
 	switch ( $status ) {
 		case 'done':
-			$header_label = __( 'Your submission has been processed', 'xpressui-bridge-pro' );
+			$header_label = __( 'Your submission has been processed', 'xpressui-bridge' );
 			/* translators: %s: workflow slug */
-			$intro   = sprintf( __( 'Good news — your submission for %s has been processed by our team.', 'xpressui-bridge-pro' ), $project_slug );
-			$closing = __( 'No further action is required on your part.', 'xpressui-bridge-pro' );
+			$intro   = sprintf( __( 'Good news — your submission for %s has been processed by our team.', 'xpressui-bridge' ), $project_slug );
+			$closing = __( 'No further action is required on your part.', 'xpressui-bridge' );
 			break;
 		case 'rejected':
-			$header_label = __( 'Update on your submission', 'xpressui-bridge-pro' );
+			$header_label = __( 'Update on your submission', 'xpressui-bridge' );
 			/* translators: %s: workflow slug */
-			$intro   = sprintf( __( 'After review, your submission for %s could not be accepted.', 'xpressui-bridge-pro' ), $project_slug );
-			$closing = __( 'Please reply to this email if you have any questions.', 'xpressui-bridge-pro' );
+			$intro   = sprintf( __( 'After review, your submission for %s could not be accepted.', 'xpressui-bridge' ), $project_slug );
+			$closing = __( 'Please reply to this email if you have any questions.', 'xpressui-bridge' );
 			break;
 		case 'pending_info':
 		default:
-			$header_label = __( 'Additional information required', 'xpressui-bridge-pro' );
+			$header_label = __( 'Additional information required', 'xpressui-bridge' );
 			/* translators: %s: workflow slug */
-			$intro   = sprintf( __( 'Thank you for your submission for %s. After review, our team needs some additional information before we can proceed.', 'xpressui-bridge-pro' ), $project_slug );
-			$closing = __( 'Use the button below to complete the requested corrections, or reply to this email.', 'xpressui-bridge-pro' );
+			$intro   = sprintf( __( 'Thank you for your submission for %s. After review, our team needs some additional information before we can proceed.', 'xpressui-bridge' ), $project_slug );
+			$closing = __( 'Use the button below to complete the requested corrections, or reply to this email.', 'xpressui-bridge' );
 			break;
 	}
 
@@ -236,7 +236,7 @@ function xpressui_pro_build_status_body( int $post_id, string $status, string $p
 			if ( $file_url ) {
 				$file_html = '<p style="margin:20px 0 0;"><a href="' . esc_url( $file_url )
 					. '" style="display:inline-block;padding:10px 18px;background:#1d2327;color:#ffffff;border-radius:6px;font-size:13px;text-decoration:none;">'
-					. esc_html__( 'Download your document', 'xpressui-bridge-pro' ) . '</a></p>';
+					. esc_html__( 'Download your document', 'xpressui-bridge' ) . '</a></p>';
 			}
 		}
 	}
@@ -249,12 +249,12 @@ function xpressui_pro_build_status_body( int $post_id, string $status, string $p
 		if ( '' !== $resume_url ) {
 			$cta_html = '<p style="margin:20px 0 0;"><a href="' . esc_url( $resume_url )
 				. '" style="display:inline-block;padding:11px 20px;background:#c2562a;color:#ffffff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">'
-				. esc_html__( 'Complete my submission', 'xpressui-bridge-pro' ) . '</a></p>';
+				. esc_html__( 'Complete my submission', 'xpressui-bridge' ) . '</a></p>';
 		}
 	}
 
 	/* translators: %s: site name */
-	$footer_note = esc_html( sprintf( __( 'Sent by %s.', 'xpressui-bridge-pro' ), get_bloginfo( 'name' ) ) );
+	$footer_note = esc_html( sprintf( __( 'Sent by %s.', 'xpressui-bridge' ), get_bloginfo( 'name' ) ) );
 
 	return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;">'
 		. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px;"><tr><td align="center">'
