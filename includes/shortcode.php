@@ -22,21 +22,92 @@ if ( ! defined( 'ABSPATH' ) ) {
 function xpressui_render_shortcode( $atts ) {
 	$atts = shortcode_atts(
 		[
-			'id'    => '',
-			'title' => __( 'XPressUI Form', 'xpressui-bridge' ),
+			'id'      => '',
+			'link'    => '',
+			'link_id' => '',
+			'title'   => __( 'XPressUI Form', 'xpressui-bridge' ),
 		],
 		$atts,
 		'xpressui'
 	);
 
-	$slug = sanitize_title( (string) $atts['id'] );
+	$link_attr = isset( $atts['link'] ) && '' !== $atts['link']
+		? sanitize_file_name( (string) $atts['link'] )
+		: ( isset( $atts['link_id'] ) && '' !== $atts['link_id'] ? sanitize_file_name( (string) $atts['link_id'] ) : '' );
+
+	$slug = '';
+	$link_config = null;
+
+	if ( $link_attr !== '' ) {
+		$base_dir = xpressui_get_workflows_base_dir();
+		if ( $base_dir !== '' && is_dir( $base_dir ) ) {
+			$subdirs = glob( trailingslashit( $base_dir ) . '*', GLOB_ONLYDIR );
+			if ( is_array( $subdirs ) ) {
+				foreach ( $subdirs as $subdir ) {
+					$potential_slug = basename( $subdir );
+					$config_file = trailingslashit( $subdir ) . 'hosted-links/' . $link_attr . '/link.config.json';
+					if ( file_exists( $config_file ) ) {
+						$slug = $potential_slug;
+						$link_config_raw = file_get_contents( $config_file );
+						if ( is_string( $link_config_raw ) ) {
+							$link_config = json_decode( $link_config_raw, true );
+						}
+						break;
+					}
+				}
+			}
+		}
+	} else {
+		$slug = sanitize_title( (string) $atts['id'] );
+	}
 
 	if ( $slug === '' ) {
 		return wp_kses_post(
 			'<p class="xpressui-embed-error">'
-			. esc_html__( '[xpressui] error: the "id" attribute is required.', 'xpressui-bridge' )
+			. esc_html__( '[xpressui] error: the "id" or "link" attribute is required.', 'xpressui-bridge' )
 			. '</p>'
 		);
+	}
+
+	if ( is_array( $link_config ) ) {
+		$link_status = $link_config['status'] ?? 'active';
+
+		$expires_at = ! empty( $link_config['expiresAt'] ) ? strtotime( $link_config['expiresAt'] ) : null;
+		if ( $expires_at && $expires_at <= time() ) {
+			$link_status = 'expired';
+		}
+
+		$max_subs = isset( $link_config['maxSubmissions'] ) ? (int) $link_config['maxSubmissions'] : 0;
+		$sub_count = isset( $link_config['submissionCount'] ) ? (int) $link_config['submissionCount'] : 0;
+		if ( $max_subs > 0 && $sub_count >= $max_subs ) {
+			$link_status = 'used_up';
+		}
+
+		if ( 'active' !== $link_status ) {
+			$close_message = '';
+			if ( 'paused' === $link_status ) {
+				$close_msg = (string) ( $link_config['payload']['closeMessage'] ?? '' );
+				$close_message = $close_msg !== '' ? $close_msg : __( 'This form is currently paused.', 'xpressui-bridge' );
+			} elseif ( 'maintenance' === $link_status ) {
+				$maintenance_msg = (string) ( $link_config['payload']['maintenanceMessage'] ?? '' );
+				$close_message = $maintenance_msg !== '' ? $maintenance_msg : __( 'This form is under maintenance.', 'xpressui-bridge' );
+			} elseif ( 'expired' === $link_status ) {
+				$close_message = __( 'This link has expired.', 'xpressui-bridge' );
+			} elseif ( 'used_up' === $link_status ) {
+				$close_message = __( 'This link has already reached its maximum submission limit.', 'xpressui-bridge' );
+			} else {
+				$close_message = __( 'This form is currently unavailable.', 'xpressui-bridge' );
+			}
+			return wp_kses_post(
+				'<div class="xpressui-embed-wrapper xpressui-inline-embed xpressui-link-closed">'
+				. '<div class="xpressui-closed-card">'
+				. '<p style="text-align:center;padding:24px;background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;font-weight:500;">'
+				. esc_html( $close_message )
+				. '</p>'
+				. '</div>'
+				. '</div>'
+			);
+		}
 	}
 
 	$base_dir = xpressui_get_workflows_base_dir();
@@ -101,6 +172,56 @@ function xpressui_render_shortcode( $atts ) {
 
 	if ( is_array( $form_config ) ) {
 		$form_config = xpressui_normalize_form_config( $form_config, $slug );
+
+		if ( is_array( $link_config ) ) {
+			$presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
+			$payload_data = is_array( $link_config['payload'] ?? null ) ? $link_config['payload'] : [];
+
+			if ( ! is_array( $form_config['workflowConfig'] ?? null ) ) {
+				$form_config['workflowConfig'] = [];
+			}
+
+			if ( ! empty( $presentation['successMessage'] ) ) {
+				$form_config['workflowConfig']['successMessage'] = $presentation['successMessage'];
+			}
+			if ( ! empty( $presentation['successRedirectUrl'] ) ) {
+				$form_config['workflowConfig']['redirectUrl'] = $presentation['successRedirectUrl'];
+			}
+			if ( ! empty( $presentation['bookingUrl'] ) ) {
+				$form_config['workflowConfig']['bookingUrl'] = $presentation['bookingUrl'];
+			}
+			if ( ! empty( $presentation['bookingButtonLabel'] ) ) {
+				$form_config['workflowConfig']['bookingButtonLabel'] = $presentation['bookingButtonLabel'];
+			}
+			if ( ! empty( $payload_data['notifyEmails'] ) ) {
+				$form_config['workflowConfig']['notifyEmail'] = implode( ',', (array) $payload_data['notifyEmails'] );
+			}
+			if ( ! empty( $payload_data['webhookUrl'] ) ) {
+				$form_config['workflowConfig']['webhookUrl'] = $payload_data['webhookUrl'];
+			}
+			if ( ! is_array( $form_config['submit'] ?? null ) ) {
+				$form_config['submit'] = [];
+			}
+			if ( ! is_array( $form_config['submit']['metadata'] ?? null ) ) {
+				$form_config['submit']['metadata'] = [];
+			}
+			$form_config['submit']['metadata']['hostedLinkId'] = $link_config['id'];
+
+			// Override properties in template context
+			if ( ! empty( $link_config['label'] ) ) {
+				$template_context['project']['name'] = $link_config['label'];
+			}
+			if ( ! empty( $presentation['backgroundImageUrl'] ) ) {
+				$template_context['project']['background_image_url'] = $presentation['backgroundImageUrl'];
+			}
+			if ( ! empty( $presentation['accentColor'] ) ) {
+				$template_context['theme']['colors']['primary'] = $presentation['accentColor'];
+			}
+			if ( ! empty( $presentation['pageTemplate'] ) ) {
+				$template_context['theme']['frame_style'] = $presentation['pageTemplate'] === 'panel' ? 'panel' : 'card';
+			}
+		}
+
 		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );
 		// Refresh rendered_form sections from the live form config so shortcode output
 		// stays aligned with the current runtime even when template.context.json is stale.
@@ -205,8 +326,17 @@ function xpressui_render_shortcode( $atts ) {
 	$template_context['_mount_node_id'] = $mount_node_id;
 	if ( is_array( $template_context['runtime'] ?? null ) ) {
 		$template_context['runtime']['mount_node_id']        = 'xpressui-mount-' . $slug;
-		$template_context['runtime']['booking_url']          = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		
+		$booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingUrl'] ) ) {
+			$booking_url = $link_config['presentation']['bookingUrl'];
+		}
+		$template_context['runtime']['booking_url'] = $booking_url;
+
 		$_booking_btn = xpressui_get_project_setting( $slug, 'bookingButtonLabel' );
+		if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingButtonLabel'] ) ) {
+			$_booking_btn = $link_config['presentation']['bookingButtonLabel'];
+		}
 		$template_context['runtime']['booking_button_label'] = '' !== $_booking_btn ? $_booking_btn : __( 'Book an appointment', 'xpressui-bridge' );
 	}
 
@@ -250,13 +380,18 @@ function xpressui_render_shortcode( $atts ) {
 	);
 
 	// Inject REST endpoint, translations, and shell metadata before init runs.
+	$booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+	if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingUrl'] ) ) {
+		$booking_url = $link_config['presentation']['bookingUrl'];
+	}
+
 	$shell_meta = [
 		'mountNodeId'   => $mount_node_id,
 		'configId'      => $config_script_id,
 		'slug'          => $slug,
 		'runtimeSource' => 'plugin-bundled',
 		'runtimeUrl'    => $runtime_url,
-		'bookingUrl'    => xpressui_get_project_setting( $slug, 'bookingUrl' ),
+		'bookingUrl'    => $booking_url,
 	];
 
 	$inline_before  = 'window.XPRESSUI_WORDPRESS_REST_URL = ' . wp_json_encode( rest_url( 'xpressui/v1/submit' ) ) . ';';

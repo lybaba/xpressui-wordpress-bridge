@@ -215,11 +215,50 @@ function xpressui_ajax_console_sync_project(): void {
 		wp_send_json_error( [ 'message' => $unzip_result->get_error_message() ] );
 	}
 
-		wp_send_json_success( [
-			'slug'    => $slug,
-			/* translators: %s: installed workflow slug */
-			'message' => sprintf( __( 'Synced! Embed with: [xpressui id="%s"]', 'xpressui-bridge' ), $slug ),
-		] );
+	// Fetch and save hosted link configurations
+	$configs_response = wp_remote_get(
+		trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $slug ) . '/hosted-links/configs',
+		[
+			'headers' => [
+				'X-Api-Token' => $conn['apiToken'],
+				'Accept'      => 'application/json',
+			],
+			'timeout' => 20,
+		]
+	);
+
+	if ( ! is_wp_error( $configs_response ) && 200 === wp_remote_retrieve_response_code( $configs_response ) ) {
+		$configs = json_decode( wp_remote_retrieve_body( $configs_response ), true );
+		if ( is_array( $configs ) ) {
+			$hosted_links_dir = $slug_dir . 'hosted-links/';
+			if ( ! file_exists( $hosted_links_dir ) ) {
+				wp_mkdir_p( $hosted_links_dir );
+			}
+			foreach ( $configs as $config ) {
+				// Only retrieve and synchronize hosted links of type default (pas les relances)
+				$payload_data = is_array( $config['payload'] ?? null ) ? $config['payload'] : [];
+				$follow_up    = $payload_data['followUp'] ?? $payload_data['follow_up'] ?? [];
+				if ( is_array( $follow_up ) && ( ! empty( $follow_up['parentSubmissionId'] ) || ! empty( $follow_up['parent_submission_id'] ) ) ) {
+					continue;
+				}
+
+				$link_id = sanitize_file_name( (string) ( $config['id'] ?? '' ) );
+				if ( '' !== $link_id ) {
+					$link_dir = $hosted_links_dir . $link_id . '/';
+					if ( ! file_exists( $link_dir ) ) {
+						wp_mkdir_p( $link_dir );
+					}
+					$wp_filesystem->put_contents( $link_dir . 'link.config.json', wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), FS_CHMOD_FILE );
+				}
+			}
+		}
+	}
+
+	wp_send_json_success( [
+		'slug'    => $slug,
+		/* translators: %s: installed workflow slug */
+		'message' => sprintf( __( 'Synced! Embed with: [xpressui id="%s"]', 'xpressui-bridge' ), $slug ),
+	] );
 }
 
 // ---------------------------------------------------------------------------

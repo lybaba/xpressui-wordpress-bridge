@@ -40,7 +40,6 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/post-type.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/filters.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/metaboxes.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-pages.php';
-require_once XPRESSUI_BRIDGE_DIR . 'includes/workflow-settings-page.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/instrumentation.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/rest-endpoint.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shortcode.php';
@@ -52,6 +51,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
 // --- SaaS / PRO Connection loading ---
 require_once XPRESSUI_BRIDGE_DIR . 'includes/license-handler.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/console-sync.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-sync.php';
 
 define( 'XPRESSUI_PRO_VERSION', XPRESSUI_BRIDGE_VERSION );
 define( 'XPRESSUI_PRO_RUNTIME_VERSION', XPRESSUI_BRIDGE_RUNTIME_VERSION );
