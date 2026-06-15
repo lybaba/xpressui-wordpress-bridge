@@ -316,7 +316,7 @@ function xpressui_render_workflows_page() {
 	}
 
 	echo '<div class="wrap xpressui-wrap">';
-	echo '<h1>' . esc_html__( 'IntakeFlow Workflows', 'xpressui-bridge' ) . '</h1>';
+	echo '<h1>' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</h1>';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-project settings.', 'xpressui-bridge' ) . '</p>';
 
 	$runtime_health = xpressui_get_runtime_health_summary();
