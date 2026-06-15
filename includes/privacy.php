@@ -14,16 +14,16 @@ function xpressui_register_privacy_content() {
 		return;
 	}
 
-	$content  = '<p>' . esc_html__( 'XPressUI Bridge stores form submissions sent by embedded XPressUI workflows.', 'xpressui-bridge' ) . '</p>';
+	$content  = '<p>' . esc_html__( 'IntakeFlow stores form submissions sent by embedded IntakeFlow workflows.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'Depending on the form you publish, submissions may include names, email addresses, phone numbers, free-form answers, uploaded files, project identifiers, operator review notes, and workflow status history.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'Uploaded files are stored in the WordPress media library and linked to the related submission. Notification emails may be sent to the address configured for a workflow project.', 'xpressui-bridge' ) . '</p>';
 	$content .= '<p>' . esc_html__( 'The plugin also keeps workflow package metadata and project settings such as notification email addresses and post-submit redirect URLs.', 'xpressui-bridge' ) . '</p>';
-	wp_add_privacy_policy_content( __( 'XPressUI Bridge', 'xpressui-bridge' ), wp_kses_post( $content ) );
+	wp_add_privacy_policy_content( __( 'IntakeFlow', 'xpressui-bridge' ), wp_kses_post( $content ) );
 }
 
 function xpressui_register_personal_data_exporter( $exporters ) {
 	$exporters['xpressui-bridge'] = [
-		'exporter_friendly_name' => __( 'XPressUI submissions', 'xpressui-bridge' ),
+		'exporter_friendly_name' => __( 'IntakeFlow submissions', 'xpressui-bridge' ),
 		'callback'               => 'xpressui_personal_data_exporter',
 	];
 	return $exporters;
@@ -31,7 +31,7 @@ function xpressui_register_personal_data_exporter( $exporters ) {
 
 function xpressui_register_personal_data_eraser( $erasers ) {
 	$erasers['xpressui-bridge'] = [
-		'eraser_friendly_name' => __( 'XPressUI submissions', 'xpressui-bridge' ),
+		'eraser_friendly_name' => __( 'IntakeFlow submissions', 'xpressui-bridge' ),
 		'callback'             => 'xpressui_personal_data_eraser',
 	];
 	return $erasers;
@@ -109,7 +109,7 @@ function xpressui_personal_data_exporter( $email_address, $page = 1 ) {
 
 		$data_to_export[] = [
 			'group_id'    => 'xpressui-bridge',
-			'group_label' => __( 'XPressUI submissions', 'xpressui-bridge' ),
+			'group_label' => __( 'IntakeFlow submissions', 'xpressui-bridge' ),
 			'item_id'     => 'xpressui-submission-' . $submission_id,
 			'data'        => $items,
 		];

@@ -618,7 +618,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload, $i
 		. '<p style="margin:14px 0 0;font-size:11px;color:#d1d5db;">'
 		. esc_html( sprintf(
 			/* translators: %s: site name */
-			__( 'Sent by XPressUI Bridge on %s.', 'xpressui-bridge' ),
+			__( 'Sent by IntakeFlow on %s.', 'xpressui-bridge' ),
 			get_bloginfo( 'name' )
 		) )
 		. '</p></td></tr>'
