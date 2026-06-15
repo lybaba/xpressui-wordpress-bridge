@@ -47,46 +47,15 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), I
 1. Download the plugin `.zip` from the WordPress Plugin Directory or from [intakeflow.dev](https://intakeflow.dev/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
-4. In the IntakeFlow console, export your workflow as a package (`.zip`).
-5. In wp-admin, go to **Submissions › Workflows** and upload the workflow package.
+4. In your WordPress dashboard, go to **Submissions › Workflows** and enter your API Token in the **Console Sync** section (generate it in your Console under Profile → API Tokens).
+5. Click **Load from Console** and then **Sync** next to the workflow you want to import.
 6. Insert `[xpressui id="your-project-slug"]` in any page or post to embed the form.
 
 == Frequently Asked Questions ==
 
-= Where do I get the workflow package (.zip) to upload? =
+= How do I import my workflows from the Console? =
 
-The recommended way is to design and export it from the IntakeFlow console at [intakeflow.dev](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
-
-= Can I create a workflow package without the IntakeFlow console? =
-
-Yes. A minimal package only needs two files:
-
-* `manifest.json` — declares the project slug and schema version.
-* `form.config.json` — declares the form sections and fields.
-
-The plugin automatically fills in the technical defaults (submission endpoint, provider mode, metadata) that the console normally generates. Example `manifest.json`:
-
-  {
-    "$schema": "console.export/v2",
-    "projectSlug": "my-form",
-    "projectName": "My Form"
-  }
-
-Example `form.config.json` (single-step, two fields):
-
-  {
-    "sections": {
-      "custom": [
-        { "type": "section", "name": "main", "label": "Contact" }
-      ],
-      "main": [
-        { "type": "text",  "name": "name",  "label": "Full name",  "required": true },
-        { "type": "email", "name": "email", "label": "Email",      "required": true }
-      ]
-    }
-  }
-
-Zip both files inside a folder named after the project slug (`my-form/manifest.json`, `my-form/form.config.json`), then upload the zip in **Submissions › Workflows**.
+Connect your WordPress site to the IntakeFlow Console using your API Token in the **Console Sync** section of the Workflows admin page. You can then sync all your custom workflows with a single click.
 
 = What does the [xpressui] shortcode accept? =
 
@@ -120,7 +89,7 @@ Uploaded files are stored as WordPress media attachments. When a submission is p
 
 = What happens if I reinstall or delete the plugin? =
 
-Workflow packs can be reinstalled without deleting submissions. If you delete and reinstall the plugin itself, submissions are preserved by default. To permanently remove submission data during uninstall, define the `XPRESSUI_BRIDGE_DELETE_SUBMISSIONS_ON_UNINSTALL` constant and set it to `true` before deleting the plugin.
+Workflow packs can be re-synced without deleting submissions. If you delete and reinstall the plugin itself, submissions are preserved by default. To permanently remove submission data during uninstall, define the `XPRESSUI_BRIDGE_DELETE_SUBMISSIONS_ON_UNINSTALL` constant and set it to `true` before deleting the plugin.
 
 = Does the plugin call any external API at runtime? =
 
@@ -135,7 +104,7 @@ When connected to IntakeFlow:
 * Outbound sync requests include an API Token (`X-Api-Token`) generated from your IntakeFlow dashboard.
 * No visitor or submission data is transmitted to the IntakeFlow console unless specifically configured by the administrator for cloud backup or webhook routing.
 
-A connection is entirely optional. The plugin functions fully offline for standard local workflow file uploads.
+A connection is required to sync custom workflows. The bundled starter workflow functions fully offline without a connection.
 
 The bundled XPressUI standard runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 
