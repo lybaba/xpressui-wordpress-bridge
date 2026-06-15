@@ -27,19 +27,28 @@ rm -f "${OUTPUT_PATH}"
 RUNTIME_VERSION="$(tr -d '[:space:]' < "${PLUGIN_DIR}/xpressui-version.txt")"
 EXPECTED_RUNTIME="${PLUGIN_DIR}/runtime/xpressui-${RUNTIME_VERSION}.umd.js"
 
-# (Re)build from xpressui-src only when the EXACT expected file is missing — a
-# stale or light-tier file already in runtime/ must not be reused (it would 404
-# at runtime). CI installs it from the published npm package via
-# ci-install-runtime.py, so the local vite build is skipped there.
-if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && [[ ! -f "${EXPECTED_RUNTIME}" ]]; then
-  # Force the standard tier so an ambient XPRESSUI_RUNTIME_TIER=light in the
-  # shell cannot make this produce the light bundle.
-  ( cd "${RUNTIME_SRC_DIR}" && XPRESSUI_RUNTIME_TIER=standard npm run build )
+# Provide the exact expected runtime when it is not already present. A stale or
+# light-tier file in runtime/ must not be reused (it would 404 at runtime).
+# Preference: (1) the monorepo's already-built standard runtime
+# (libs/xpressui/dist) — it bundles every dependency (qrcode, etc.); else
+# (2) build from the shipped xpressui-src sources, installing deps first and
+# forcing the standard tier. CI installs it from the published npm package via
+# ci-install-runtime.py before calling this, so both branches are skipped there.
+MONOREPO_RUNTIME="${LIBS_DIR}/xpressui/dist/xpressui-${RUNTIME_VERSION}.umd.js"
+if [[ ! -f "${EXPECTED_RUNTIME}" ]]; then
   mkdir -p "${PLUGIN_DIR}/runtime"
   rm -f "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js.map
-  cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js" "${PLUGIN_DIR}/runtime/"
-  [[ -f "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" ]] \
-    && cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" "${PLUGIN_DIR}/runtime/"
+  if [[ -f "${MONOREPO_RUNTIME}" ]]; then
+    cp "${MONOREPO_RUNTIME}" "${EXPECTED_RUNTIME}"
+    [[ -f "${MONOREPO_RUNTIME}.map" ]] && cp "${MONOREPO_RUNTIME}.map" "${EXPECTED_RUNTIME}.map"
+  elif [[ -f "${RUNTIME_SRC_DIR}/package.json" ]]; then
+    # Install deps (qrcode, etc.) so the full build resolves, and force the
+    # standard tier so an ambient XPRESSUI_RUNTIME_TIER=light cannot make it light.
+    ( cd "${RUNTIME_SRC_DIR}" && npm install --no-audit --no-fund && XPRESSUI_RUNTIME_TIER=standard npm run build )
+    cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js" "${EXPECTED_RUNTIME}"
+    [[ -f "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" ]] \
+      && cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" "${EXPECTED_RUNTIME}.map"
+  fi
 fi
 
 # Never ship the light runtime in the unified plugin.
@@ -48,7 +57,8 @@ rm -f "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js "${PLUGIN_DIR}/runtime"/xp
 # Fail loudly instead of shipping a zip whose form will 404 on the runtime.
 if [[ ! -f "${EXPECTED_RUNTIME}" ]]; then
   echo "ERROR: bundled runtime missing: runtime/xpressui-${RUNTIME_VERSION}.umd.js" >&2
-  echo "       Install xpressui-src deps and rebuild, or run scripts/ci-install-runtime.py first." >&2
+  echo "       From the monorepo root run 'npm run build:wordpress-runtime' (builds the" >&2
+  echo "       standard runtime and syncs it here), or run scripts/ci-install-runtime.py." >&2
   exit 1
 fi
 
