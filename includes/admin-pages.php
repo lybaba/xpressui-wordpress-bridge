@@ -279,6 +279,24 @@ function xpressui_render_my_queue_page() {
 // Manage Workflows (zip upload + project settings)
 // ---------------------------------------------------------------------------
 
+function xpressui_set_admin_notice( $message, $type = 'success' ) {
+	set_transient( 'xpressui_notice_' . get_current_user_id(), [
+		'message' => $message,
+		'type'    => $type,
+	], 30 );
+}
+
+function xpressui_get_admin_notice() {
+	$user_id   = get_current_user_id();
+	$transient = 'xpressui_notice_' . $user_id;
+	$notice    = get_transient( $transient );
+	if ( $notice ) {
+		delete_transient( $transient );
+		return $notice;
+	}
+	return null;
+}
+
 function xpressui_render_workflows_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
@@ -287,14 +305,10 @@ function xpressui_render_workflows_page() {
 	$notice_class   = '';
 	$notice_message = '';
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
-	if ( isset( $_GET['xpressui_notice'] ) ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
-		$notice_message = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_notice'] ) );
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
-		$notice_class   = ( isset( $_GET['xpressui_notice_type'] ) && sanitize_key( wp_unslash( (string) $_GET['xpressui_notice_type'] ) ) === 'error' )
-			? 'notice-error'
-			: 'notice-success';
+	$notice = xpressui_get_admin_notice();
+	if ( $notice ) {
+		$notice_message = $notice['message'];
+		$notice_class   = ( $notice['type'] === 'error' ) ? 'notice-error' : 'notice-success';
 	}
 
 	// Project settings are now managed per-workflow on the Workflow Settings page (Settings link in each row).
@@ -527,13 +541,12 @@ function xpressui_handle_workflow_admin_actions() {
 		$message = is_wp_error( $result )
 			? $result->get_error_message()
 			: __( 'The bundled workflow was reinstalled successfully.', 'xpressui-bridge' );
+		xpressui_set_admin_notice( $message, $status );
 		wp_safe_redirect(
 			add_query_arg(
 				[
 					'post_type'          => 'xpressui_submission',
 					'page'               => 'xpressui-bridge',
-					'xpressui_notice'    => rawurlencode( $message ),
-					'xpressui_notice_type' => $status,
 				],
 				admin_url( 'edit.php' )
 			)
@@ -552,13 +565,12 @@ function xpressui_handle_workflow_admin_actions() {
 		$message = is_wp_error( $result )
 			? $result->get_error_message()
 			: __( 'The workflow was deleted successfully.', 'xpressui-bridge' );
+		xpressui_set_admin_notice( $message, $status );
 		wp_safe_redirect(
 			add_query_arg(
 				[
 					'post_type'          => 'xpressui_submission',
 					'page'               => 'xpressui-bridge',
-					'xpressui_notice'    => rawurlencode( $message ),
-					'xpressui_notice_type' => $status,
 				],
 				admin_url( 'edit.php' )
 			)
@@ -570,13 +582,12 @@ function xpressui_handle_workflow_admin_actions() {
 		check_admin_referer( 'xpressui_create_workflow_page_' . $slug );
 		$result = xpressui_create_workflow_page( $slug );
 		if ( is_wp_error( $result ) ) {
+			xpressui_set_admin_notice( $result->get_error_message(), 'error' );
 			wp_safe_redirect(
 				add_query_arg(
 					[
 						'post_type'            => 'xpressui_submission',
 						'page'                 => 'xpressui-bridge',
-						'xpressui_notice'      => rawurlencode( $result->get_error_message() ),
-						'xpressui_notice_type' => 'error',
 					],
 					admin_url( 'edit.php' )
 				)
