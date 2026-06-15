@@ -287,8 +287,11 @@ function xpressui_render_workflows_page() {
 	$notice_class   = '';
 	$notice_message = '';
 
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
 	if ( isset( $_GET['xpressui_notice'] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
 		$notice_message = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_notice'] ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Input is read-only from redirect query string to display transient admin notice; no state mutation occurs.
 		$notice_class   = ( isset( $_GET['xpressui_notice_type'] ) && sanitize_key( wp_unslash( (string) $_GET['xpressui_notice_type'] ) ) === 'error' )
 			? 'notice-error'
 			: 'notice-success';
