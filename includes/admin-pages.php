@@ -379,23 +379,17 @@ function xpressui_render_workflows_page() {
 
 	$visible_installed_slugs = $installed_slugs;
 
-	$all_settings = get_option( 'xpressui_project_settings', [] );
-	$render_workflow_table = static function ( array $slugs ) use ( $all_settings ) {
+	$render_workflow_table = static function ( array $slugs ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
 		echo '<th>' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Tier', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
-		echo '<th>' . esc_html__( 'Notify email', 'xpressui-bridge' ) . '</th>';
-		echo '<th>' . esc_html__( 'Redirect URL', 'xpressui-bridge' ) . '</th>';
 		echo '<th>' . esc_html__( 'Actions', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
-			$settings      = $all_settings[ $slug ] ?? [];
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
-			$notify_email  = (string) ( $settings['notifyEmail'] ?? '' );
-			$redirect_url  = (string) ( $settings['redirectUrl'] ?? '' );
 			$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
 			$display_tier  = $runtime_tier !== '' ? $runtime_tier : 'light';
 			$is_bundled    = ! empty( $manifest_meta['isBundled'] ) || xpressui_is_bundled_workflow( $slug );
@@ -473,8 +467,6 @@ function xpressui_render_workflows_page() {
 			}
 			echo '</td>';
 			echo '<td class="xpressui-cell-shortcode"><code class="xpressui-inline-code">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
-			echo '<td class="xpressui-cell-email">' . ( $notify_email !== '' ? '<a href="mailto:' . esc_attr( antispambot( $notify_email ) ) . '">' . esc_html( antispambot( $notify_email ) ) . '</a>' : '—' ) . '</td>';
-			echo '<td class="xpressui-cell-url">' . ( $redirect_url !== '' ? '<a href="' . esc_url( $redirect_url ) . '" target="_blank" rel="noreferrer">' . esc_html( $redirect_url ) . '</a>' : '—' ) . '</td>';
 			echo '<td class="column-actions">';
 			// Allow extensions to inject extra action links (e.g. "Customize" from the pro plugin).
 			$extra_row_actions = apply_filters( 'xpressui_workflow_row_actions', [], $slug );
