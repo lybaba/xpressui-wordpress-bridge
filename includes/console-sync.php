@@ -286,6 +286,9 @@ function xpressui_pro_render_console_sync_section(): void {
 				<button type="button" id="xpressui-load-projects" class="button button-secondary">
 					<?php esc_html_e( 'Load from Console', 'xpressui-bridge' ); ?>
 				</button>
+				<button type="button" id="xpressui-sync-all-projects" class="button button-primary" style="display:none; margin-left: 10px;">
+					<?php esc_html_e( 'Sync All Workflows', 'xpressui-bridge' ); ?>
+				</button>
 			</p>
 			<div id="xpressui-projects-list"></div>
 
@@ -307,9 +310,15 @@ function xpressui_pro_render_console_sync_section(): void {
 		el.innerHTML = '<p style="color:' + (isError ? '#c00' : '#3a3') + '">' + escapeHtml(msg) + '</p>';
 	}
 
+	var loadedProjects = [];
+
 	document.getElementById('xpressui-load-projects').addEventListener('click', function () {
 		var list = document.getElementById('xpressui-projects-list');
 		list.innerHTML = '<p>' + escapeHtml(labels.loading) + '</p>';
+		var syncAllBtn = document.getElementById('xpressui-sync-all-projects');
+		if (syncAllBtn) {
+			syncAllBtn.style.display = 'none';
+		}
 
 		var data = new URLSearchParams();
 		data.set('action', 'xpressui_console_list_projects');
@@ -323,9 +332,14 @@ function xpressui_pro_render_console_sync_section(): void {
 					return;
 				}
 				var projects = res.data.projects;
+				loadedProjects = projects;
 				if (!projects.length) {
 					list.innerHTML = '<p>' + escapeHtml(labels.noProjects) + '</p>';
 					return;
+				}
+				if (syncAllBtn) {
+					syncAllBtn.style.display = 'inline-block';
+					syncAllBtn.disabled = false;
 				}
 				var html = '<table class="widefat striped"><thead><tr>'
 					+ '<th>' + escapeHtml(labels.name) + '</th>'
@@ -352,6 +366,9 @@ function xpressui_pro_render_console_sync_section(): void {
 						var row = document.getElementById('xpressui-row-' + projectId);
 						this.disabled = true;
 						this.textContent = labels.syncing;
+						if (syncAllBtn) {
+							syncAllBtn.disabled = true;
+						}
 
 						var syncData = new URLSearchParams();
 						syncData.set('action', 'xpressui_console_sync_project');
@@ -361,6 +378,9 @@ function xpressui_pro_render_console_sync_section(): void {
 						fetch(ajaxUrl, { method: 'POST', body: syncData, credentials: 'same-origin' })
 							.then(function (r) { return r.json(); })
 							.then(function (res) {
+								if (syncAllBtn) {
+									syncAllBtn.disabled = false;
+								}
 								if (!res.success) {
 									row.querySelector('td:last-child').innerHTML =
 										'<span style="color:#c00">' + escapeHtml(res.data.message) + '</span>';
@@ -372,6 +392,9 @@ function xpressui_pro_render_console_sync_section(): void {
 								}
 							})
 							.catch(function () {
+								if (syncAllBtn) {
+									syncAllBtn.disabled = false;
+								}
 								row.querySelector('td:last-child').innerHTML =
 									'<span style="color:#c00">' + escapeHtml(labels.networkError) + '</span>';
 							});
@@ -382,6 +405,88 @@ function xpressui_pro_render_console_sync_section(): void {
 				setStatus(list, labels.networkConnectionError, true);
 			});
 	});
+
+	var syncAllBtn = document.getElementById('xpressui-sync-all-projects');
+	if (syncAllBtn) {
+		syncAllBtn.addEventListener('click', function () {
+			if (!loadedProjects || !loadedProjects.length) return;
+			var list = document.getElementById('xpressui-projects-list');
+
+			document.getElementById('xpressui-load-projects').disabled = true;
+			syncAllBtn.disabled = true;
+
+			var progressDiv = document.getElementById('xpressui-global-sync-progress');
+			if (!progressDiv) {
+				progressDiv = document.createElement('div');
+				progressDiv.id = 'xpressui-global-sync-progress';
+				progressDiv.style.margin = '15px 0';
+				progressDiv.style.padding = '12px 16px';
+				progressDiv.style.background = '#f0f9ff';
+				progressDiv.style.border = '1px solid #bae6fd';
+				progressDiv.style.color = '#0369a1';
+				progressDiv.style.borderRadius = '6px';
+				progressDiv.style.fontWeight = '500';
+				list.insertBefore(progressDiv, list.firstChild);
+			}
+
+			var index = 0;
+			var total = loadedProjects.length;
+
+			function syncNext() {
+				if (index >= total) {
+					progressDiv.style.background = '#f0fdf4';
+					progressDiv.style.border = '1px solid #bbf7d0';
+					progressDiv.style.color = '#15803d';
+					progressDiv.innerHTML = '<strong>' + escapeHtml(labels.allSynced) + '</strong> ' + escapeHtml(labels.reloading);
+					setTimeout(function () {
+						window.location.reload();
+					}, 1500);
+					return;
+				}
+
+				var p = loadedProjects[index];
+				progressDiv.innerHTML = escapeHtml(labels.syncingAll) + ' <strong>' + (index + 1) + '/' + total + '</strong> (' + escapeHtml(p.name) + ')...';
+
+				var row = document.getElementById('xpressui-row-' + p.id);
+				var rowBtn = row ? row.querySelector('.xpressui-sync-btn') : null;
+				if (rowBtn) {
+					rowBtn.disabled = true;
+					rowBtn.textContent = labels.syncing;
+				}
+
+				var syncData = new URLSearchParams();
+				syncData.set('action', 'xpressui_console_sync_project');
+				syncData.set('nonce', nonce);
+				syncData.set('project_id', p.id);
+
+				fetch(ajaxUrl, { method: 'POST', body: syncData, credentials: 'same-origin' })
+					.then(function (r) { return r.json(); })
+					.then(function (res) {
+						if (row) {
+							if (!res.success) {
+								row.querySelector('td:last-child').innerHTML =
+									'<span style="color:#c00">' + escapeHtml(res.data.message) + '</span>';
+							} else {
+								row.querySelector('td:last-child').innerHTML =
+									'<span style="color:#3a3">' + escapeHtml(labels.syncedPrefix + ' ' + res.data.message) + '</span>';
+							}
+						}
+						index++;
+						syncNext();
+					})
+					.catch(function () {
+						if (row) {
+							row.querySelector('td:last-child').innerHTML =
+								'<span style="color:#c00">' + escapeHtml(labels.networkError) + '</span>';
+						}
+						index++;
+						syncNext();
+					});
+			}
+
+			syncNext();
+		});
+	}
 }());
 JS,
 				wp_json_encode( $nonce ),
@@ -399,6 +504,8 @@ JS,
 						'reloading'              => __( 'Reloading...', 'xpressui-bridge' ),
 						'networkError'           => __( 'Network error.', 'xpressui-bridge' ),
 						'networkConnectionError' => __( 'Network error. Check your connection.', 'xpressui-bridge' ),
+						'syncingAll'             => __( 'Syncing workflows:', 'xpressui-bridge' ),
+						'allSynced'              => __( 'All workflows synchronized!', 'xpressui-bridge' ),
 					]
 				)
 			);
