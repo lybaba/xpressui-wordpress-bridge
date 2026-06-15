@@ -39,6 +39,22 @@ msgstr ""
 msgid "A required submission identifier is missing."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:43
+msgid "API Token"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:580
+msgid "Accepted file types"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:585
+msgid "Accepted file types label"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:160
+msgid "Action Required"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:200
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:390
 msgid "Actions"
@@ -53,6 +69,18 @@ msgstr ""
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:234
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:396
 msgid "Additional fields"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:164
+msgid "Additional information or documents have been requested. Please check your email."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:213
+msgid "Additional information required"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:208
+msgid "After review, your submission for %s could not be accepted."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/post-type.php:22
@@ -79,6 +107,10 @@ msgstr ""
 msgid "Always show"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:233
+msgid "Appearance & Design Tokens"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:112
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:52
 #: libs/xpressui-wordpress-bridge/includes/post-type.php:40
@@ -101,6 +133,22 @@ msgstr ""
 msgid "Auto hides section titles when the workflow only contains one section."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:335
+msgid "Back button"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:275
+msgid "Background Image URL"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:255
+msgid "Background Style"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:39
+msgid "Base URL of your IntakeFlow Console instance."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:781
 #: libs/xpressui-wordpress-bridge/includes/shortcode.php:210
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:288
@@ -113,6 +161,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:283
 msgid "Booking URL"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:290
+msgid "Border color"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:465
@@ -135,14 +187,95 @@ msgstr ""
 msgid "Button label"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:313
+msgid "Button radius (px)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:345
+msgid "Buttons"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:79
 msgid "Capture"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:216
+msgid "Capture on mobile"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:258
+msgid "Card (framed)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:311
+msgid "Card radius (px)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:602
+msgid "Choice labels, availability, and order (drag to reorder):"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:252
+msgid "Complete my submission"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:167
+msgid "Completed"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/submission-gate.php:126
+msgid "Configure Console Connection"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:241
+msgid "Connection"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:34
+msgid "Console API URL"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:117
+msgid "Console API returned status %d. Check your API URL and token."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:236
+msgid "Console Sync"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:138
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:91
+msgid "Console Sync requires an active Console Connection."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:148
+msgid "Console connection not configured."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:96
+msgid "Console connection not configured. Save your API URL and token first."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:370
+msgid "Console connection required."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:74
+msgid "Console connection saved."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:82
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:577
 #: libs/xpressui-wordpress-bridge/includes/post-type.php:39
 msgid "Contact"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:336
+msgid "Continue button"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:175
+msgid "Could not write temporary ZIP file."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:484
@@ -159,6 +292,13 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:308
 msgid "Custom message"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:235
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:342
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:406
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:472
+msgid "Customized"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:572
@@ -208,6 +348,22 @@ msgstr ""
 msgid "Done at"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:168
+msgid "Download failed (status %d)."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:239
+msgid "Download your document"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:634
+msgid "Drag to reorder"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:210
+msgid "Draw your signature below"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:487
 msgid "Edit page"
 msgstr ""
@@ -238,11 +394,20 @@ msgstr ""
 msgid "Enable"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:640
+msgid "Enabled"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:274
+msgid "Enter an image URL from your WordPress Media Library."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:493
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:512
 msgid "Error"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:520
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:268
 msgid "Error message"
 msgstr ""
@@ -255,12 +420,28 @@ msgstr ""
 msgid "Estimated total: %s"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:582
+msgid "Example: image/*,application/pdf"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:693
 msgid "Failed to save the uploaded file."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:490
 msgid "Fallback"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:409
+msgid "Fields"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:593
+msgid "File size error message"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:589
+msgid "File type error message"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/post-type.php:41
@@ -275,8 +456,32 @@ msgstr ""
 msgid "Form title"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:271
+msgid "Frame Style"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:244
+msgid "Full Bleed"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:49
+msgid "Generate a token in the Console under Profile → API Tokens."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:202
+msgid "Good news — your submission for %s has been processed by our team."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:508
 msgid "HTTP code"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:513
+msgid "Help text"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:153
+msgid "In Review"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:172
@@ -289,12 +494,26 @@ msgstr ""
 msgid "Incoming submissions will appear here once visitors complete one of your installed workflows."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:312
+msgid "Input radius (px)"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:517
 msgid "Install workflow"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:525
 msgid "Installed Workflows"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:134
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:69
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:87
+msgid "Insufficient permissions."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:24
+msgid "IntakeFlow Console"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:471
@@ -313,12 +532,32 @@ msgstr ""
 msgid "Item"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:483
+msgid "Label"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:289
 msgid "Label of the booking button. Leave empty to use the default."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:230
+msgid "Last updated: %s"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:199
 msgid "Latest submission"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:280
+msgid "Leave empty to inherit the WordPress theme font. E.g. \"Roboto, sans-serif\"."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:248
+msgid "Load from Console"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:352
+msgid "Loading..."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:484
@@ -337,16 +576,62 @@ msgstr ""
 msgid "Mark %s"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:576
+msgid "Max file size (MB)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:531
+msgid "Max length"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:551
+msgid "Max value"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:568
+msgid "Maximum choices"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:527
+msgid "Min length"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:547
+msgid "Min value"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:564
+msgid "Minimum choices"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:335
 msgid "Missing"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:143
+msgid "Missing project_id."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:268
 msgid "My Queue"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:354
+msgid "Name"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:340
+msgid "Navigation Labels"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:361
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:413
 #: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:161
 msgid "Network error."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:362
+msgid "Network error. Check your connection."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:171
@@ -369,8 +654,20 @@ msgstr ""
 msgid "No contact details"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:272
+msgid "No fields available for this submission yet."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:203
+msgid "No further action is required on your part."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:522
 msgid "No instrumentation events recorded yet."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:353
+msgid "No projects found in your Console."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:316
@@ -407,6 +704,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:527
 msgid "No workflows installed yet."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:242
+msgid "None (Clean)"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:218
@@ -469,6 +770,10 @@ msgstr ""
 msgid "Operator status"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:491
+msgid "Optional"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:270
 msgid "Optional custom error message shown when the submission fails."
 msgstr ""
@@ -481,12 +786,53 @@ msgstr ""
 msgid "Optional message shown at the top of the confirmation email. Leave empty to use the default."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:539
+msgid "Optional regex pattern enforced by the runtime schema. Use ^...$ if you want to match the whole value."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:231
+msgid "Other fields"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:157
+msgid "Our team is currently reviewing your file."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:411
+msgid "Overrides"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:254
 msgid "PDF only validates the form and prepares a temporary document link without storing the submission in WordPress."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:250
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:265
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:489
+msgid "Pack default"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:303
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:321
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:355
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:421
+msgid "Pack default:"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:513
 msgid "Package File (.zip)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:288
+msgid "Page background"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:243
+msgid "Panel Focus"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:537
+msgid "Pattern"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:173
@@ -503,6 +849,26 @@ msgstr ""
 msgid "Phone"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:213
+msgid "Photograph your document"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:506
+msgid "Placeholder"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:259
+msgid "Plain (transparent)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:371
+msgid "Please enter your API token above and save the connection to start syncing workflows."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:209
+msgid "Please reply to this email if you have any questions."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:673
 msgid "Please select a file."
 msgstr ""
@@ -517,6 +883,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:369
 msgid "Preview starter page"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:286
+msgid "Primary color"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:250
@@ -555,6 +925,10 @@ msgstr ""
 msgid "Préparation du document…"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:238
+msgid "Pull workflow packs directly from your IntakeFlow Console — no ZIP download required."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:2461
 msgid "Qty"
 msgstr ""
@@ -569,6 +943,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:220
 msgid "Receive an email on each new submission. Leave empty to disable."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:146
+msgid "Received"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:520
@@ -590,6 +968,7 @@ msgstr ""
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:175
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:198
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:1273
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:174
 msgid "Rejected"
 msgstr ""
 
@@ -597,8 +976,21 @@ msgstr ""
 msgid "Rejected at"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:360
+msgid "Reloading..."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:291
 msgid "Remove"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:247
+msgid "Request resubmission"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:490
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:494
+msgid "Required"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:235
@@ -609,8 +1001,25 @@ msgstr ""
 msgid "Requires the submission to include an email field."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:236
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:343
+msgid "Restore block"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:407
+msgid "Restore section"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:473
+msgid "Restore this field"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:561
 msgid "Resubmitted by submitter"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:293
+msgid "Resume link"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:480
@@ -637,6 +1046,10 @@ msgstr ""
 msgid "Runtime Health"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:54
+msgid "Save Connection"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:208
 msgid "Save settings"
 msgstr ""
@@ -645,8 +1058,21 @@ msgstr ""
 msgid "Saved."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:412
+msgid "Saved. Reloading…"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:410
 #: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:158
 msgid "Saving…"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:214
+msgid "Scan a QR code"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:419
+msgid "Section label"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:240
@@ -671,6 +1097,7 @@ msgid "Sent at"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:791
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:257
 msgid "Sent by %s."
 msgstr ""
 
@@ -704,6 +1131,10 @@ msgstr ""
 msgid "Signature"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:355
+msgid "Slug"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:386
 msgid "Source"
 msgstr ""
@@ -721,6 +1152,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:19
 msgid "Status History"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:555
+msgid "Step"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:218
@@ -750,6 +1185,10 @@ msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:20
 msgid "Submission Preview"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:200
+msgid "Submission Status — %s"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:17
@@ -824,6 +1263,10 @@ msgstr ""
 msgid "Submit Feedback"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:337
+msgid "Submit button"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:459
 msgid "Submit timing"
 msgstr ""
@@ -852,12 +1295,45 @@ msgstr ""
 msgid "Success! The package has been installed. Embed it with: [xpressui id=\"%s\"]"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:287
+msgid "Surface color (Cards)"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:357
+msgid "Sync"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:221
+msgid "Synced! Embed with: [xpressui id=\"%s\"]"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:359
+msgid "Synced:"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:358
+msgid "Syncing..."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:211
+#: libs/xpressui-wordpress-bridge/includes/mobile-capture.php:212
+msgid "Take a photo below"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:289
+msgid "Text color"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:215
+msgid "Thank you for your submission for %s. After review, our team needs some additional information before we can proceed."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:773
 msgid "Thank you for your submission for %s. We have received it and will review it shortly."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:361
-msgid "The Document Intake workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click."
+msgid "The File Request workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:764
@@ -901,7 +1377,16 @@ msgid "The submitter has provided the requested corrections or files."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:711
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:194
 msgid "The uploads directory is not available."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:132
+msgid "The value for \"%1$s\" (%2$s) was not saved because it must be a whole number."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:166
+msgid "The value for \"%1$s\" (%2$s) was not saved because it must be numeric."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/workflow-settings-page.php:158
@@ -977,6 +1462,10 @@ msgstr ""
 msgid "This bundled workflow could not be found."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:77
+msgid "This link is private and unique to your submission. Bookmark it to follow up at any time."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:619
 msgid "This submission has already been received."
 msgstr ""
@@ -993,8 +1482,16 @@ msgstr ""
 msgid "This workflow manifest schema is not supported."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:268
+msgid "Tick the fields the submitter must correct, set status to “Pending info”, then click Update. The submitter gets a resume link to fix only those fields."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:385
 msgid "Tier"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/submission-gate.php:124
+msgid "To use Pro workflows, please configure your Console Connection (API Token). Pro forms keep accepting submissions, but connecting ensures you stay supported and receive updates."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/xpressui-wordpress-bridge.php:162
@@ -1012,6 +1509,14 @@ msgstr ""
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:193
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:2463
 msgid "Total"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:74
+msgid "Track your submission"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:281
+msgid "Typography (Font Family)"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:1728
@@ -1060,6 +1565,14 @@ msgstr ""
 msgid "Update available"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:206
+msgid "Update on your submission"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:356
+msgid "Updated"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:527
 msgid "Upload a workflow package below to get started, or use the bundled starter workflow already included with the plugin."
 msgstr ""
@@ -1104,8 +1617,16 @@ msgstr ""
 msgid "Use Update to save the new status."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:216
+msgid "Use the button below to complete the requested corrections, or reply to this email."
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:271
 msgid "Use these shortcuts to open your current workload in the standard WordPress submission list."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:270
+msgid "Use “Plain” when your theme already wraps content in a card, to avoid a double frame."
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/admin-pages.php:490
@@ -1163,6 +1684,10 @@ msgstr ""
 msgid "XPressUI Bridge"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/submission-gate.php:123
+msgid "XPressUI Bridge PRO:"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/privacy.php:17
 msgid "XPressUI Bridge stores form submissions sent by embedded XPressUI workflows."
 msgstr ""
@@ -1196,8 +1721,28 @@ msgstr ""
 msgid "You do not have sufficient permissions to access this page."
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/console-sync.php:245
+msgid "Your Workflows"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/rest-endpoint.php:566
 msgid "Your corrections have been received. Thank you."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:178
+msgid "Your file could not be processed. Please check your email for details."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:171
+msgid "Your file has been processed successfully."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-page.php:150
+msgid "Your file has been received and is waiting for review."
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:200
+msgid "Your submission has been processed"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/helpers.php:1694
@@ -1235,12 +1780,24 @@ msgstr ""
 msgid "[%1$s] New %2$s submission - %3$s - %4$s"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:167
+msgid "[%1$s] Update on your submission for %2$s%3$s"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:233
 msgid "[%1$s] Your %2$s submission"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/notifications.php:230
 msgid "[%1$s] Your %2$s submission - %3$s"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:164
+msgid "[%1$s] Your submission for %2$s has been processed%3$s"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/status-notifications.php:171
+msgid "[%1$s] Your submission for %2$s needs additional information%3$s"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/shortcode.php:46
@@ -1268,10 +1825,26 @@ msgstr ""
 msgid "not recorded"
 msgstr ""
 
+#: libs/xpressui-wordpress-bridge/includes/resubmission.php:294
+msgid "open"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:489
+msgid "optional"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:489
+msgid "required"
+msgstr ""
+
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:327
 msgid "unknown time"
 msgstr ""
 
 #: libs/xpressui-wordpress-bridge/includes/metaboxes.php:49
 msgid "unknown-project"
+msgstr ""
+
+#: libs/xpressui-wordpress-bridge/includes/overlay-admin.php:25
+msgid "↗ Console"
 msgstr ""
