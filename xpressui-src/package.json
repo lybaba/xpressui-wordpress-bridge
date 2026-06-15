@@ -32,7 +32,7 @@
     "/dist"
   ],
   "scripts": {
-    "build:dist:standard": "vite build --sourcemap",
+    "build:dist:standard": "node -e \"process.env.XPRESSUI_RUNTIME_TIER='standard'; require('child_process').execSync('vite build --sourcemap', {stdio: 'inherit'})\"",
     "build": "npm run build:dist:standard",
     "check": "tsc --noEmit",
     "test": "vitest run"
