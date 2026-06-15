@@ -1,4 +1,4 @@
-=== Multi-Step Forms & Client Document Intake – XPressUI Bridge ===
+=== IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection ===
 Contributors: iakpressteam
 Tags: document collection, client portal, file upload, intake form, multi-step form
 Requires at least: 6.0
@@ -12,15 +12,15 @@ Collect files, documents, and client intake form submissions directly in WordPre
 
 == Description ==
 
-**XPressUI Bridge** lets you embed multi-step forms and document-intake workflows built with the [XPressUI console](https://intakeflow.dev/) directly in your WordPress pages.
+**IntakeFlow** lets you embed multi-step forms and document-intake workflows built with the [IntakeFlow console](https://intakeflow.dev/) directly in your WordPress pages.
 
-Export a workflow package from the XPressUI console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
+Export a workflow package from the IntakeFlow console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
 
 If you need advanced field types, direct Console Sync, or cloud workflow management, those are available by connecting the plugin to your IntakeFlow SaaS account at intakeflow.dev.
 
 = Key features =
 
-* **One-click installation** — upload the exported `.zip` file from the XPressUI console directly inside wp-admin.
+* **One-click installation** — upload the exported `.zip` file from the IntakeFlow console directly inside wp-admin.
 * **Shortcode embed** — `[xpressui id="your-project-slug"]` works in any page, post, or block-editor paragraph block. The form renders inline, inheriting your theme's page layout.
 * **Submission inbox** — all submissions land in a private wp-admin post list with status badges, filtering by project, status, and assignee, and detailed review metaboxes.
 * **Status workflow** — mark submissions *New*, *In review*, or *Done* from the list or the detail view. Every status change is recorded in a per-submission history log.
@@ -33,11 +33,11 @@ If you need advanced field types, direct Console Sync, or cloud workflow managem
 
 = Who is this for? =
 
-Businesses and developers who use the XPressUI console to build document-intake or multi-step application forms and want to manage the collected data inside their existing WordPress environment without an external SaaS inbox.
+Businesses and developers who use the IntakeFlow console to build document-intake or multi-step application forms and want to manage the collected data inside their existing WordPress environment without an external SaaS inbox.
 
 = The Ultimate Alternative for Team Intake =
 
-Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), XPressUI Bridge is built specifically for **client intake** and **document collection**. 
+Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), IntakeFlow is built specifically for **client intake** and **document collection**. 
 * **No paywall on team inbox:** Assign submissions to specific WordPress users without upgrading to expensive Enterprise plans (unlike JotForm or Typeform).
 * **No bloated iframes:** Forms render natively in clean, fast HTML/JS, inheriting your active theme's styling.
 * **100% GDPR-compliant:** Your submissions and uploaded files are stored entirely in your local database. No data is stored on third-party servers.
@@ -47,7 +47,7 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 1. Download the plugin `.zip` from the WordPress Plugin Directory or from [intakeflow.dev](https://intakeflow.dev/).
 2. In your WordPress dashboard, go to **Plugins › Add New › Upload Plugin**, then select the downloaded `.zip` file and click **Install Now**.
 3. Click **Activate Plugin**.
-4. In the XPressUI console, export your workflow as a package (`.zip`).
+4. In the IntakeFlow console, export your workflow as a package (`.zip`).
 5. In wp-admin, go to **Submissions › Workflows** and upload the workflow package.
 6. Insert `[xpressui id="your-project-slug"]` in any page or post to embed the form.
 
@@ -55,9 +55,9 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), X
 
 = Where do I get the workflow package (.zip) to upload? =
 
-The recommended way is to design and export it from the XPressUI console at [intakeflow.dev](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
+The recommended way is to design and export it from the IntakeFlow console at [intakeflow.dev](https://intakeflow.dev/). You can also create a minimal package by hand — see the next question.
 
-= Can I create a workflow package without the XPressUI console? =
+= Can I create a workflow package without the IntakeFlow console? =
 
 Yes. A minimal package only needs two files:
 
@@ -124,7 +124,7 @@ Workflow packs can be reinstalled without deleting submissions. If you delete an
 
 = Does the plugin call any external API at runtime? =
 
-No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The XPressUI console at intakeflow.dev is only used to design and export packages — it is not contacted during form rendering or submission processing.
+No. Once a workflow package is installed, the plugin operates entirely within your WordPress site. The IntakeFlow console at intakeflow.dev is only used to design and export packages — it is not contacted during form rendering or submission processing.
 
 == External Services ==
 

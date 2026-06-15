@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       Multi-Step Forms & Client Document Intake – XPressUI Bridge
- * Description:       Receives and manages submissions from exported XPressUI workflow packages. Embed any XPressUI form on your site with a shortcode and review submissions in wp-admin.
+ * Plugin Name:       IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection
+ * Description:       Receives and manages submissions from exported IntakeFlow workflow packages. Embed any IntakeFlow form on your site with a shortcode and review submissions in wp-admin.
  * Version:           1.0.94
  * Requires at least: 6.0
  * Requires PHP:      8.0

@@ -1,6 +1,6 @@
-# XPressUI Bridge
+# IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection
 
-**Embed XPressUI workflow forms on your WordPress site and manage submissions from wp-admin.**
+**Embed IntakeFlow workflow forms on your WordPress site and manage submissions from wp-admin.**
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 ![WordPress: 6.0+](https://img.shields.io/badge/WordPress-6.0%2B-21759b)
@@ -11,7 +11,7 @@
 
 ## What it does
 
-Build multi-step forms and document-intake workflows in the XPressUI Console,
+Build multi-step forms and document-intake workflows in the IntakeFlow Console,
 export them as a `.zip` package, upload them to WordPress, then embed them
 anywhere with a shortcode.
 
@@ -35,7 +35,7 @@ Connect your site to the SaaS Console using your API Token to sync and build com
 | Feature | Details |
 |---|---|
 | **Bundled starter** | `Document Intake` is ready immediately — no upload needed |
-| **Custom pack install** | Upload `.zip` packages exported from the XPressUI Console |
+| **Custom pack install** | Upload `.zip` packages exported from the IntakeFlow Console |
 | **Shortcode embed** | `[xpressui id="slug"]` — works in pages, posts, and the block editor |
 | **Submission inbox** | Private post list with project / status / assignee filters |
 | **Status workflow** | *New → In review → Done*, with a full history log per submission |
@@ -51,7 +51,7 @@ Connect your site to the SaaS Console using your API Token to sync and build com
 
 - WordPress 6.0 or later
 - PHP 8.0 or later
-- A workflow package exported from the XPressUI Console
+- A workflow package exported from the IntakeFlow Console
 
 ---
 
@@ -72,7 +72,7 @@ The plugin ships with the `File Request` workflow ready to use — no upload req
 
 ### Install a custom workflow package
 
-1. In the XPressUI Console, export your workflow as a package (`.zip`).
+1. In the IntakeFlow Console, export your workflow as a package (`.zip`).
 2. In wp-admin go to **Submissions › Workflows**, upload the package.
 3. Embed the form with `[xpressui id="your-project-slug"]`.
 
