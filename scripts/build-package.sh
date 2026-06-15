@@ -22,17 +22,34 @@ trap cleanup EXIT
 
 rm -f "${OUTPUT_PATH}"
 
-# Build the runtime from xpressui-src only when it has not already been provided
-# in runtime/ (CI installs it from the published npm package via
-# ci-install-runtime.py, so the local vite build is both redundant and
-# unavailable there — xpressui-src deps are not installed in CI).
-if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && ! ls "${PLUGIN_DIR}"/runtime/xpressui-*.umd.js >/dev/null 2>&1; then
-  npm --prefix "${RUNTIME_SRC_DIR}" run build
+# The PHP loads the standard (non-light) runtime named after the runtime version
+# in xpressui-version.txt: runtime/xpressui-<version>.umd.js. Bundle exactly that.
+RUNTIME_VERSION="$(tr -d '[:space:]' < "${PLUGIN_DIR}/xpressui-version.txt")"
+EXPECTED_RUNTIME="${PLUGIN_DIR}/runtime/xpressui-${RUNTIME_VERSION}.umd.js"
+
+# (Re)build from xpressui-src only when the EXACT expected file is missing — a
+# stale or light-tier file already in runtime/ must not be reused (it would 404
+# at runtime). CI installs it from the published npm package via
+# ci-install-runtime.py, so the local vite build is skipped there.
+if [[ -f "${RUNTIME_SRC_DIR}/package.json" ]] && [[ ! -f "${EXPECTED_RUNTIME}" ]]; then
+  # Force the standard tier so an ambient XPRESSUI_RUNTIME_TIER=light in the
+  # shell cannot make this produce the light bundle.
+  ( cd "${RUNTIME_SRC_DIR}" && XPRESSUI_RUNTIME_TIER=standard npm run build )
   mkdir -p "${PLUGIN_DIR}/runtime"
-  rm -f "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js \
-        "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js.map
-  cp "${RUNTIME_DIST_DIR}"/xpressui-*.umd.js "${PLUGIN_DIR}/runtime/"
-  cp "${RUNTIME_DIST_DIR}"/xpressui-*.umd.js.map "${PLUGIN_DIR}/runtime/"
+  rm -f "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js "${PLUGIN_DIR}/runtime"/xpressui-*.umd.js.map
+  cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js" "${PLUGIN_DIR}/runtime/"
+  [[ -f "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" ]] \
+    && cp "${RUNTIME_DIST_DIR}/xpressui-${RUNTIME_VERSION}.umd.js.map" "${PLUGIN_DIR}/runtime/"
+fi
+
+# Never ship the light runtime in the unified plugin.
+rm -f "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js "${PLUGIN_DIR}/runtime"/xpressui-light-*.umd.js.map
+
+# Fail loudly instead of shipping a zip whose form will 404 on the runtime.
+if [[ ! -f "${EXPECTED_RUNTIME}" ]]; then
+  echo "ERROR: bundled runtime missing: runtime/xpressui-${RUNTIME_VERSION}.umd.js" >&2
+  echo "       Install xpressui-src deps and rebuild, or run scripts/ci-install-runtime.py first." >&2
+  exit 1
 fi
 
 cp -R "${PLUGIN_DIR}" "${STAGE_DIR}/${DIST_SLUG}"
