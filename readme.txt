@@ -4,7 +4,7 @@ Tags: document collection, client portal, file upload, intake form, multi-step f
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.95
+Stable tag: 1.0.96
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.96 =
+* Use secure transient database storage for admin notices instead of raw query parameters to pass Plugin Check.
 
 = 1.0.95 =
 * Rename plugin to IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection.
