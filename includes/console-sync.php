@@ -433,11 +433,15 @@ function xpressui_pro_render_console_sync_section(): void {
 			var total = loadedProjects.length;
 
 			function syncNext() {
+				var percent = Math.round((index / total) * 100);
 				if (index >= total) {
 					progressDiv.style.background = '#f0fdf4';
 					progressDiv.style.border = '1px solid #bbf7d0';
 					progressDiv.style.color = '#15803d';
-					progressDiv.innerHTML = '<strong>' + escapeHtml(labels.allSynced) + '</strong> ' + escapeHtml(labels.reloading);
+					progressDiv.innerHTML = '<strong>' + escapeHtml(labels.allSynced) + '</strong> ' + escapeHtml(labels.reloading)
+						+ '<div style="width: 100%; background: #dcfce7; border-radius: 9999px; height: 8px; margin-top: 10px; overflow: hidden;">'
+						+ '  <div style="width: 100%; background: #16a34a; height: 100%; transition: width 0.3s ease-in-out;"></div>'
+						+ '</div>';
 					setTimeout(function () {
 						window.location.reload();
 					}, 1500);
@@ -445,7 +449,10 @@ function xpressui_pro_render_console_sync_section(): void {
 				}
 
 				var p = loadedProjects[index];
-				progressDiv.innerHTML = escapeHtml(labels.syncingAll) + ' <strong>' + (index + 1) + '/' + total + '</strong> (' + escapeHtml(p.name) + ')...';
+				progressDiv.innerHTML = '<div>' + escapeHtml(labels.syncingAll) + ' <strong>' + (index + 1) + '/' + total + '</strong> (' + escapeHtml(p.name) + ')...</div>'
+					+ '<div style="width: 100%; background: #e0f2fe; border-radius: 9999px; height: 8px; margin-top: 10px; overflow: hidden;">'
+					+ '  <div style="width: ' + percent + '%; background: #0284c7; height: 100%; transition: width 0.3s ease-in-out;"></div>'
+					+ '</div>';
 
 				var row = document.getElementById('xpressui-row-' + p.id);
 				var rowBtn = row ? row.querySelector('.xpressui-sync-btn') : null;
