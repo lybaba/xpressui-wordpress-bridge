@@ -46,6 +46,7 @@ type TFieldConfig = {
     accept?: string;
     capture?: 'user' | 'environment';
     multiple?: boolean;
+    disableArchives?: boolean;
     paymentProvider?: string;
     merchantName?: string;
     merchantPhone?: string;

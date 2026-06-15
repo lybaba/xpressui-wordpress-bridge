@@ -496,7 +496,7 @@ function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $pay
 	$merged           = is_array( $existing_payload ) ? $existing_payload : [];
 	$file_params      = xpressui_get_request_file_params( $request );
 
-	$file_validation = xpressui_validate_uploaded_files( $file_params );
+	$file_validation = xpressui_validate_uploaded_files( $file_params, $project_slug );
 	if ( is_wp_error( $file_validation ) ) {
 		xpressui_record_submission_event(
 			$post_id,
@@ -622,7 +622,7 @@ function xpressui_validate_submission_request( WP_REST_Request $request, $projec
 		}
 	}
 
-	$file_validation = xpressui_validate_uploaded_files( xpressui_get_request_file_params( $request ) );
+	$file_validation = xpressui_validate_uploaded_files( xpressui_get_request_file_params( $request ), $project_slug );
 	if ( is_wp_error( $file_validation ) ) {
 		return $file_validation;
 	}
@@ -747,12 +747,31 @@ function xpressui_request_has_uploaded_file( array $file_params, $field_name ) {
 	return false;
 }
 
-function xpressui_validate_uploaded_files( array $file_params ) {
+function xpressui_validate_uploaded_files( array $file_params, $project_slug = '' ) {
 	$files             = xpressui_normalize_uploaded_files( $file_params );
 	$allowed_mime_map  = get_allowed_mime_types();
 	$allowed_exts      = array_keys( $allowed_mime_map );
 	$max_files         = 20;
 	$max_bytes_per_file = 10 * MB_IN_BYTES;
+
+	$field_configs = [];
+	if ( ! empty( $project_slug ) ) {
+		$config_json = xpressui_get_workflow_artifact_contents( $project_slug, 'config', 'form.config.json' );
+		if ( ! empty( $config_json ) ) {
+			$form_config = json_decode( $config_json, true );
+			if ( is_array( $form_config ) && isset( $form_config['sections'] ) && is_array( $form_config['sections'] ) ) {
+				foreach ( $form_config['sections'] as $section_name => $fields ) {
+					if ( is_array( $fields ) ) {
+						foreach ( $fields as $field ) {
+							if ( is_array( $field ) && isset( $field['name'] ) ) {
+								$field_configs[ $field['name'] ] = $field;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 
 	if ( count( $files ) > $max_files ) {
 		return new WP_Error(
@@ -763,8 +782,9 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 	}
 
 	foreach ( $files as $file ) {
-		$name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
-		$size = isset( $file['size'] ) ? (int) $file['size'] : 0;
+		$name       = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : '';
+		$size       = isset( $file['size'] ) ? (int) $file['size'] : 0;
+		$field_name = isset( $file['field'] ) ? $file['field'] : '';
 
 		if ( ( $file['error'] ?? UPLOAD_ERR_NO_FILE ) !== UPLOAD_ERR_OK ) {
 			return new WP_Error(
@@ -813,6 +833,23 @@ function xpressui_validate_uploaded_files( array $file_params ) {
 				__( 'One of the uploaded file types is not allowed.', 'xpressui-bridge' ),
 				[ 'status' => 400 ]
 			);
+		}
+
+		// Check if archives are explicitly disallowed for this field.
+		if ( ! empty( $field_name ) && isset( $field_configs[ $field_name ] ) ) {
+			$field_cfg = $field_configs[ $field_name ];
+			if ( ! empty( $field_cfg['disableArchives'] ) ) {
+				$mime = isset( $file['type'] ) ? strtolower( (string) $file['type'] ) : '';
+				$is_archive = ( $ext === 'zip' ) || ( $ext === 'rar' ) || ( $ext === '7z' ) || ( $ext === 'tar' ) || ( $ext === 'gz' ) || ( $ext === 'tgz' ) ||
+							  ( strpos( $mime, 'zip' ) !== false || strpos( $mime, 'compressed' ) !== false || strpos( $mime, 'archive' ) !== false );
+				if ( $is_archive ) {
+					return new WP_Error(
+						'xpressui_archives_disallowed',
+						__( 'Archives (.zip) are not allowed for this field.', 'xpressui-bridge' ),
+						[ 'status' => 400 ]
+					);
+				}
+			}
 		}
 	}
 

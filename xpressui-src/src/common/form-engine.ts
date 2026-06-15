@@ -262,6 +262,36 @@ export class FormEngineRuntime {
       return null;
     }
 
+    if (fieldConfig.disableArchives) {
+      const archiveFile = files.find((file) => {
+        const ext = file.name.split(".").pop()?.toLowerCase();
+        const mime = (file.type || "").toLowerCase();
+        return (
+          ext === "zip" ||
+          ext === "rar" ||
+          ext === "7z" ||
+          ext === "tar" ||
+          ext === "gz" ||
+          ext === "tgz" ||
+          mime.includes("zip") ||
+          mime.includes("compressed") ||
+          mime.includes("archive")
+        );
+      });
+      if (archiveFile) {
+        return {
+          errorMessage:
+            fieldConfig.fileTypeErrorMsg ||
+            fieldConfig.errorMsg ||
+            "Archives (.zip) are not allowed for this field.",
+          errorData: {
+            type: "file-archive-disabled",
+            fileName: archiveFile.name,
+          },
+        };
+      }
+    }
+
     if (
       typeof fieldConfig.maxFiles === "number" &&
       fieldConfig.maxFiles > 0 &&
