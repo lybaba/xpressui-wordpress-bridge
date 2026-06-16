@@ -39,16 +39,6 @@ function xpressui_filter_pages_by_workflow_slug( $query ) {
 // Menu registration
 // ---------------------------------------------------------------------------
 
-function xpressui_register_submission_admin_pages() {
-	add_submenu_page(
-		'edit.php?post_type=xpressui_submission',
-		__( 'Inbox', 'xpressui-bridge' ),
-		__( 'Inbox', 'xpressui-bridge' ),
-		'edit_posts',
-		'xpressui-project-inbox',
-		'xpressui_render_project_inbox_page'
-	);
-}
 
 function xpressui_register_admin_page() {
 	add_submenu_page(
@@ -114,135 +104,6 @@ function xpressui_get_project_inbox_rows() {
 	return array_values( $rows );
 }
 
-function xpressui_render_project_inbox_page() {
-	if ( ! current_user_can( 'edit_posts' ) ) {
-		return;
-	}
-	$rows = xpressui_get_project_inbox_rows();
-	$total_projects = count( $rows );
-	$total_submissions = 0;
-	$total_new = 0;
-	$total_in_review = 0;
-	$total_pending_info = 0;
-	$total_done = 0;
-	$total_rejected = 0;
-	foreach ( $rows as $row ) {
-		$total_submissions += (int) ( $row['total'] ?? 0 );
-		$total_new += (int) ( $row['new'] ?? 0 );
-		$total_in_review += (int) ( $row['in-review'] ?? 0 );
-		$total_pending_info += (int) ( $row['pending_info'] ?? 0 );
-		$total_done += (int) ( $row['done'] ?? 0 );
-		$total_rejected += (int) ( $row['rejected'] ?? 0 );
-	}
-
-	echo '<div class="wrap xpressui-wrap xpressui-wrap--project-inbox">';
-	echo '<h1>' . esc_html__( 'Inbox', 'xpressui-bridge' ) . '</h1>';
-	echo '<p class="xpressui-page-intro">' . esc_html__( 'Review incoming submissions grouped by workflow, then jump into filtered queues.', 'xpressui-bridge' ) . '</p>';
-
-	if ( empty( $rows ) ) {
-		echo '<div class="card xpressui-admin-card xpressui-admin-card--project-inbox xpressui-empty-state">';
-		echo '<p class="xpressui-empty-state__title">' . esc_html__( 'No submissions recorded yet.', 'xpressui-bridge' ) . '</p>';
-		echo '<p class="xpressui-empty-state__body">' . esc_html__( 'Incoming submissions will appear here once visitors complete one of your installed workflows.', 'xpressui-bridge' ) . '</p>';
-		echo '</div>';
-		echo '</div>';
-		return;
-	}
-
-	$status_filter_url = static function ( $status ) {
-		$args = array( 'post_type' => 'xpressui_submission' );
-		if ( '' !== $status ) {
-			$args['xpressui_status'] = $status;
-		}
-		return wp_nonce_url( add_query_arg( $args, admin_url( 'edit.php' ) ), 'xpressui_filter_submissions', 'xpressui_filter_nonce' );
-	};
-	$stat_tile = static function ( $value, $label, $modifier, $url ) {
-		$zero  = 0 === (int) $value ? ' is-zero' : '';
-		$inner = '<span class="xpressui-inbox-stat__value">' . esc_html( (string) $value ) . '</span>'
-			. '<span class="xpressui-inbox-stat__label">' . esc_html( $label ) . '</span>';
-		if ( '' === $url ) {
-			return '<div class="xpressui-inbox-stat' . esc_attr( $modifier . $zero ) . '">' . $inner . '</div>';
-		}
-		return '<a class="xpressui-inbox-stat xpressui-inbox-stat--link' . esc_attr( $modifier . $zero ) . '" href="' . esc_url( $url ) . '">' . $inner . '</a>';
-	};
-
-	echo '<div class="xpressui-inbox-overview">';
-	echo $stat_tile( $total_projects, __( 'Projects', 'xpressui-bridge' ), '', '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside helper
-	echo $stat_tile( $total_submissions, __( 'Submissions', 'xpressui-bridge' ), '', $status_filter_url( '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo $stat_tile( $total_new, __( 'New', 'xpressui-bridge' ), ' xpressui-inbox-stat--new', $status_filter_url( 'new' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo $stat_tile( $total_in_review, __( 'In review', 'xpressui-bridge' ), ' xpressui-inbox-stat--review', $status_filter_url( 'in-review' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo $stat_tile( $total_pending_info, __( 'Pending info', 'xpressui-bridge' ), ' xpressui-inbox-stat--pending-info', $status_filter_url( 'pending_info' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo $stat_tile( $total_done, __( 'Done', 'xpressui-bridge' ), ' xpressui-inbox-stat--done', $status_filter_url( 'done' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo $stat_tile( $total_rejected, __( 'Rejected', 'xpressui-bridge' ), ' xpressui-inbox-stat--rejected', $status_filter_url( 'rejected' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	echo '</div>';
-
-	echo '<div class="card xpressui-admin-card xpressui-admin-card--project-inbox">';
-	echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--project-inbox">';
-	echo '<colgroup>';
-	echo '<col class="xpressui-col-project" />';
-	echo '<col class="xpressui-col-total" />';
-	echo '<col class="xpressui-col-new" />';
-	echo '<col class="xpressui-col-review" />';
-	echo '<col class="xpressui-col-pending-info" />';
-	echo '<col class="xpressui-col-done" />';
-	echo '<col class="xpressui-col-rejected" />';
-	echo '<col class="xpressui-col-latest" />';
-	echo '<col class="xpressui-col-actions" />';
-	echo '</colgroup>';
-	echo '<thead><tr>';
-	echo '<th>' . esc_html__( 'Project', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Total', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'New', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'In review', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Pending info', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Done', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Rejected', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Latest submission', 'xpressui-bridge' ) . '</th>';
-	echo '<th>' . esc_html__( 'Actions', 'xpressui-bridge' ) . '</th>';
-	echo '</tr></thead><tbody>';
-
-	foreach ( $rows as $row ) {
-		$all_url = wp_nonce_url(
-			add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'] ], admin_url( 'edit.php' ) ),
-			'xpressui_filter_submissions',
-			'xpressui_filter_nonce'
-		);
-		$new_url = wp_nonce_url(
-			add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $row['projectSlug'], 'xpressui_status' => 'new' ], admin_url( 'edit.php' ) ),
-			'xpressui_filter_submissions',
-			'xpressui_filter_nonce'
-		);
-
-		echo '<tr>';
-		$project_title = sanitize_text_field( (string) ( $row['projectTitle'] ?? '' ) );
-		$project_slug  = sanitize_title( (string) ( $row['projectSlug'] ?? '' ) );
-		echo '<td class="xpressui-cell-project"><strong>' . esc_html( $project_title !== '' ? $project_title : $project_slug ) . '</strong>';
-		if ( $project_title !== '' && $project_title !== $project_slug ) {
-			echo '<div class="xpressui-muted">' . esc_html( $project_slug ) . '</div>';
-		}
-		echo '</td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--count">' . esc_html( (string) $row['total'] ) . '</span></td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--status-new">' . esc_html( (string) $row['new'] ) . '</span></td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--status-in-review">' . esc_html( (string) $row['in-review'] ) . '</span></td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--status-pending-info">' . esc_html( (string) $row['pending_info'] ) . '</span></td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--status-done">' . esc_html( (string) $row['done'] ) . '</span></td>';
-		echo '<td><span class="xpressui-badge xpressui-badge--status-rejected">' . esc_html( (string) $row['rejected'] ) . '</span></td>';
-		echo '<td class="xpressui-cell-latest-submission">';
-		if ( $row['latestSubmissionId'] !== '' ) {
-			echo '<code class="xpressui-inline-code">' . esc_html( $row['latestSubmissionId'] ) . '</code>';
-			if ( $row['latestDate'] !== '' ) {
-				echo '<div class="xpressui-muted">' . esc_html( $row['latestDate'] ) . '</div>';
-			}
-		} else {
-			echo '<span class="xpressui-empty">' . esc_html__( 'No submissions yet', 'xpressui-bridge' ) . '</span>';
-		}
-		echo '</td>';
-		echo '<td class="column-actions"><div class="xpressui-row-actions"><a href="' . esc_url( $all_url ) . '">' . esc_html__( 'Open all', 'xpressui-bridge' ) . '</a><span class="xpressui-row-actions__sep">·</span><a href="' . esc_url( $new_url ) . '">' . esc_html__( 'Open new', 'xpressui-bridge' ) . '</a></div></td>';
-		echo '</tr>';
-	}
-	echo '</tbody></table>';
-	echo '</div>';
-	echo '</div>';
-}
 
 // ---------------------------------------------------------------------------
 // My Queue
@@ -311,6 +172,26 @@ function xpressui_render_workflows_page() {
 		}
 	}
 
+	// Fetch Inbox rows for metrics overview and column display
+	$inbox_rows = xpressui_get_project_inbox_rows();
+	$inbox_by_slug = [];
+	$total_projects = count( $inbox_rows );
+	$total_submissions = 0;
+	$total_new = 0;
+	$total_in_review = 0;
+	$total_pending_info = 0;
+	$total_done = 0;
+	$total_rejected = 0;
+	foreach ( $inbox_rows as $row ) {
+		$inbox_by_slug[ $row['projectSlug'] ] = $row;
+		$total_submissions += (int) ( $row['total'] ?? 0 );
+		$total_new += (int) ( $row['new'] ?? 0 );
+		$total_in_review += (int) ( $row['in-review'] ?? 0 );
+		$total_pending_info += (int) ( $row['pending_info'] ?? 0 );
+		$total_done += (int) ( $row['done'] ?? 0 );
+		$total_rejected += (int) ( $row['rejected'] ?? 0 );
+	}
+
 	$notice_class   = '';
 	$notice_message = '';
 
@@ -334,6 +215,34 @@ function xpressui_render_workflows_page() {
 	echo '<hr class="wp-header-end">';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-workflow settings.', 'xpressui-bridge' ) . '</p>';
 
+	// Render Inbox metrics overview tiles
+	$status_filter_url = static function ( $status ) {
+		$args = array( 'post_type' => 'xpressui_submission' );
+		if ( '' !== $status ) {
+			$args['xpressui_status'] = $status;
+		}
+		return wp_nonce_url( add_query_arg( $args, admin_url( 'edit.php' ) ), 'xpressui_filter_submissions', 'xpressui_filter_nonce' );
+	};
+	$stat_tile = static function ( $value, $label, $modifier, $url ) {
+		$zero  = 0 === (int) $value ? ' is-zero' : '';
+		$inner = '<span class="xpressui-inbox-stat__value">' . esc_html( (string) $value ) . '</span>'
+			. '<span class="xpressui-inbox-stat__label">' . esc_html( $label ) . '</span>';
+		if ( '' === $url ) {
+			return '<div class="xpressui-inbox-stat' . esc_attr( $modifier . $zero ) . '">' . $inner . '</div>';
+		}
+		return '<a class="xpressui-inbox-stat xpressui-inbox-stat--link' . esc_attr( $modifier . $zero ) . '" href="' . esc_url( $url ) . '">' . $inner . '</a>';
+	};
+
+	echo '<div class="xpressui-inbox-overview" style="margin-top: 20px; margin-bottom: 25px;">';
+	echo $stat_tile( $total_projects, __( 'Projects', 'xpressui-bridge' ), '', '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_submissions, __( 'Submissions', 'xpressui-bridge' ), '', $status_filter_url( '' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_new, __( 'New', 'xpressui-bridge' ), ' xpressui-inbox-stat--new', $status_filter_url( 'new' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_in_review, __( 'In review', 'xpressui-bridge' ), ' xpressui-inbox-stat--review', $status_filter_url( 'in-review' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_pending_info, __( 'Pending info', 'xpressui-bridge' ), ' xpressui-inbox-stat--pending-info', $status_filter_url( 'pending_info' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_done, __( 'Done', 'xpressui-bridge' ), ' xpressui-inbox-stat--done', $status_filter_url( 'done' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo $stat_tile( $total_rejected, __( 'Rejected', 'xpressui-bridge' ), ' xpressui-inbox-stat--rejected', $status_filter_url( 'rejected' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo '</div>';
+
 	if ( ! xpressui_pro_is_license_active() ) {
 		echo '<div class="notice notice-warning inline" style="margin-top: 15px; max-width: 900px;"><p>';
 		printf(
@@ -349,16 +258,15 @@ function xpressui_render_workflows_page() {
 	$installed_slugs = xpressui_get_installed_workflow_slugs();
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
-
-
 	$visible_installed_slugs = $installed_slugs;
 
-	$render_workflow_table = static function ( array $slugs ) {
+	$render_workflow_table = function ( array $slugs ) use ( $inbox_by_slug ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
 		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 100px;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -387,6 +295,11 @@ function xpressui_render_workflows_page() {
 				],
 				admin_url( 'edit.php' )
 			);
+			$all_submissions_url = wp_nonce_url(
+				add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $slug ], admin_url( 'edit.php' ) ),
+				'xpressui_filter_submissions',
+				'xpressui_filter_nonce'
+			);
 			
 			echo '<tr>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
@@ -413,6 +326,9 @@ function xpressui_render_workflows_page() {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
 			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
+			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
+				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
+			}
 			echo implode( ' | ', $actions_html );
 			echo '</div>';
 			echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Show more details', 'xpressui-bridge' ) . '</span></button>';
@@ -430,6 +346,20 @@ function xpressui_render_workflows_page() {
 				$steps_text  = sprintf( _n( '%d step', '%d steps', $steps, 'xpressui-bridge' ), $steps );
 				$fields_text = sprintf( _n( '%d field', '%d fields', $fields, 'xpressui-bridge' ), $fields );
 				echo esc_html( $steps_text . ', ' . $fields_text );
+			} else {
+				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
+			}
+			echo '</td>';
+
+			// Submissions Column
+			echo '<td style="vertical-align: middle; font-size: 13px;">';
+			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
+				$total = (int) $inbox_by_slug[ $slug ]['total'];
+				$new   = (int) $inbox_by_slug[ $slug ]['new'];
+				echo '<a href="' . esc_url( $all_submissions_url ) . '" style="font-size: 14px; font-weight: 600; text-decoration: none;">' . esc_html( (string) $total ) . '</a>';
+				if ( $new > 0 ) {
+					echo ' <span class="xpressui-badge xpressui-badge--status-new" style="margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle;">' . sprintf( esc_html__( '%d new', 'xpressui-bridge' ), $new ) . '</span>';
+				}
 			} else {
 				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
 			}

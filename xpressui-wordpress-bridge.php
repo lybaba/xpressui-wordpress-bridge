@@ -90,7 +90,6 @@ add_filter( 'post_row_actions', 'xpressui_add_submission_row_actions', 10, 2 );
 add_action( 'admin_init', 'xpressui_handle_submission_status_action' );
 
 // --- Admin pages ---
-add_action( 'admin_menu', 'xpressui_register_submission_admin_pages' );
 add_action( 'admin_menu', 'xpressui_register_admin_page' );
 add_action( 'admin_menu', 'xpressui_register_settings_page' );
 add_action( 'admin_enqueue_scripts', 'xpressui_enqueue_admin_assets' );
