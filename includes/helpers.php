@@ -479,17 +479,6 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 		$inline_css .= "\n" . $shell_css . "\n";
 	}
 
-	// Inline embed: the form flows inside the WordPress page, so neutralise the
-	// full-viewport hosted shell. The standalone hosted page centres the form in a
-	// 100dvh, overflow:hidden `.page-shell` — inside a theme page that pushes the form
-	// off-screen (it looks "hidden"). Scoped to this mount; the id beats `.page-shell`.
-	$inline_css .= "\n/* Inline embed: natural flow, not a full-viewport hero */\n";
-	$inline_css .= "{$scope}, {$scope}.page-shell, {$scope} .page-shell { min-height: 0 !important; height: auto !important; max-height: none !important; place-items: start center !important; overflow: visible !important; padding-left: 0 !important; padding-right: 0 !important; }\n";
-	// Keep the form card and the intro card (above it) the exact same width: both span
-	// the full embed wrapper. Variant widths (e.g. .form-frame--timeline at 1120px, or
-	// the default 900px) would otherwise differ from the intro and look misaligned.
-	$inline_css .= "{$scope} .form-frame { width: 100% !important; max-width: none !important; }\n";
-
 	$has_bg = ! empty( $bg_url )
 		&& isset( $theme['background_style'] )
 		&& $theme['background_style'] !== 'none';
@@ -526,6 +515,9 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// surrounding WordPress theme can't strip the border/background/radius — the
 	// unscoped shell rule loses specificity to most themes.
 	$inline_css .= "{$scope} .form-frame { background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; padding: 24px !important; box-shadow: {$box_shadow} !important;{$extra_fw} }\n";
+	// The intro card (rendered above the form, in the embed wrapper) must be the exact
+	// same width as the form card — apply the identical width treatment + centring.
+	$inline_css .= ".xpressui-embed-wrapper .xpressui-intro { box-sizing: border-box;{$extra_fw} margin-left: auto !important; margin-right: auto !important; }\n";
 	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
 	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
 	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";
