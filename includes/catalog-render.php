@@ -220,7 +220,23 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$mount_id = 'xpressui-root';
 	$shell_id = 'xpressui-catalog-shell';
 
-	// --- Styles. The product card/grid/cart styles live in the shell stylesheet. ---
+	// Page URLs for the headless journey — all on WordPress, nothing sent to the SaaS.
+	$return_url = get_permalink();
+	if ( ! $return_url ) {
+		$return_url = home_url( '/' );
+	}
+	$grid_url     = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], $return_url );
+	$cart_url     = add_query_arg( 'xpui_cart', '1', $grid_url );
+	$checkout_url = add_query_arg( 'xpui_checkout', '1', $grid_url );
+
+	// --- Cart-summary page (headless on WP). The cart lives in localStorage on the WP
+	// origin; rows are rebuilt client-side. Nothing is sent to the SaaS. ---
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
+	if ( ! empty( $_GET['xpui_cart'] ) ) {
+		return xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $checkout_url );
+	}
+
+	// --- Storefront / detail styles. The product card/grid/cart styles live in the shell. ---
 	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
 	$shell_css_ver  = file_exists( $shell_css_path ) ? (string) filemtime( $shell_css_path ) : XPRESSUI_BRIDGE_VERSION;
 	wp_enqueue_style( 'xpressui-shell', XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-shell.css', [], $shell_css_ver );
@@ -232,21 +248,15 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$theme_css = xpressui_build_catalog_embed_css( $mount_id, $shell_id, is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [] );
 	wp_add_inline_style( 'xpressui-shell', $theme_css );
 
-	// --- Cart globals + the self-contained SaaS catalog-init.js (no runtime UMD). ---
-	// Same journey as the SaaS: Buy now / cart → cart-token → cart-summary → checkout form.
-	$checkout_url = (string) ( $catalog['checkout_form_url'] ?? '' );
-	$token_url    = (string) ( $catalog['cart_token_url'] ?? '' );
-	$summary_url  = (string) ( $catalog['cart_summary_url'] ?? '' );
-	$init_url     = (string) ( $catalog['catalog_init_url'] ?? '' );
-	$return_url   = get_permalink();
-	if ( ! $return_url ) {
-		$return_url = home_url( '/' );
-	}
+	// --- Cart globals + catalog-init.js. Everything stays on WordPress: the cart icon and
+	// Buy now navigate to the WP cart-summary page — NO cart-token POST, NO SaaS redirect.
+	// Token URL is left empty so doCheckout takes the no-token path and just navigates. ---
+	$init_url = (string) ( $catalog['catalog_init_url'] ?? '' );
 
-	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $return_url ) . ';';
-	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $checkout_url ) . ';';
-	$globals .= 'window.__xpuiCatalogCartSummaryUrl=' . wp_json_encode( $summary_url ) . ';';
-	$globals .= 'window.__xpuiCatalogTokenUrl=' . wp_json_encode( $token_url ) . ';';
+	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $grid_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $cart_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCartSummaryUrl="";';
+	$globals .= 'window.__xpuiCatalogTokenUrl="";';
 	$globals .= 'window.__xpuiCatalogInitHandlesHeaderCart=true;';
 	$globals .= 'window.__xpuiCatalogGate=null;';
 
@@ -262,10 +272,10 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	// detail card via [data-product-detail-page] exactly as on the SaaS.
 	$active_product = xpressui_get_catalog_active_product( $catalog );
 	if ( is_array( $active_product ) ) {
-		$inner = xpressui_render_product_detail_section( $catalog, $active_product, $return_url );
+		$inner = xpressui_render_product_detail_section( $catalog, $active_product, $grid_url );
 	} else {
 		// Cards link to this same WP page with ?xpui_product=<id> (headless detail).
-		$inner = xpressui_render_product_catalog_grid( $catalog, $return_url );
+		$inner = xpressui_render_product_catalog_grid( $catalog, $grid_url );
 	}
 
 	$shell  = '<form id="' . esc_attr( $shell_id ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
@@ -299,34 +309,41 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
  * @param array  $vars     theme_css_vars from catalog.json (font/colours/radii).
  * @return string CSS (no <style> wrapper; passed to wp_add_inline_style).
  */
-function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
-	$sel  = '#' . $mount_id;
+/**
+ * Emits the --template-* CSS variable declarations for a selector (mirrors head.j2),
+ * so any catalog surface (storefront, detail, cart summary) resolves the shared theme.
+ *
+ * @param string $selector CSS selector to scope the variables to.
+ * @param array  $vars     theme_css_vars from catalog.json.
+ * @param string $extra    Extra declarations appended inside the same rule.
+ * @return string CSS rule text.
+ */
+function xpressui_catalog_theme_vars_css( $selector, $vars, $extra = '' ) {
 	$font = trim( (string) ( $vars['font_family'] ?? '' ) );
-	// Parity with head.j2: on WordPress the font inherits from the theme.
 	$font = '' !== $font ? $font : 'inherit';
-
-	$page_bg     = (string) ( $vars['page_background'] ?? '#edf3fb' );
-	$surface     = (string) ( $vars['surface'] ?? '#ffffff' );
-	$text        = (string) ( $vars['text'] ?? '#0f172a' );
-	$primary     = (string) ( $vars['primary'] ?? '#2563eb' );
-	$border      = (string) ( $vars['border'] ?? '#d7e0ea' );
-	$card_radius = (int) ( $vars['card_radius'] ?? 28 );
-	$input_radius = (int) ( $vars['input_radius'] ?? 14 );
-	$btn_radius  = (int) ( $vars['button_radius'] ?? 14 );
-
-	$css  = $sel . '{';
+	$css  = $selector . '{';
 	$css .= '--template-font-family:' . $font . ';';
-	$css .= '--template-page-background:' . $page_bg . ';';
-	$css .= '--template-surface:' . $surface . ';';
-	$css .= '--template-text:' . $text . ';';
+	$css .= '--template-page-background:' . (string) ( $vars['page_background'] ?? '#edf3fb' ) . ';';
+	$css .= '--template-surface:' . (string) ( $vars['surface'] ?? '#ffffff' ) . ';';
+	$css .= '--template-text:' . (string) ( $vars['text'] ?? '#0f172a' ) . ';';
 	$css .= '--template-muted-text:color-mix(in srgb, var(--template-text) 65%, transparent);';
-	$css .= '--template-primary:' . $primary . ';';
-	$css .= '--template-border:' . $border . ';';
-	$css .= '--template-card-radius:' . $card_radius . 'px;';
-	$css .= '--template-input-radius:' . $input_radius . 'px;';
-	$css .= '--template-button-radius:' . $btn_radius . 'px;';
-	// Page-shell reset (mirrors _hosted_catalog_styles.j2): blend into the WP page.
-	$css .= 'min-height:auto;display:block;place-items:unset;overflow:visible;padding:0;background:transparent;font-family:var(--template-font-family);color:var(--template-text);}';
+	$css .= '--template-primary:' . (string) ( $vars['primary'] ?? '#2563eb' ) . ';';
+	$css .= '--template-border:' . (string) ( $vars['border'] ?? '#d7e0ea' ) . ';';
+	$css .= '--template-card-radius:' . (int) ( $vars['card_radius'] ?? 28 ) . 'px;';
+	$css .= '--template-input-radius:' . (int) ( $vars['input_radius'] ?? 14 ) . 'px;';
+	$css .= '--template-button-radius:' . (int) ( $vars['button_radius'] ?? 14 ) . 'px;';
+	$css .= $extra . '}';
+	return $css;
+}
+
+function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
+	$sel = '#' . $mount_id;
+	// Theme vars + page-shell reset (mirrors _hosted_catalog_styles.j2): blend into WP.
+	$css = xpressui_catalog_theme_vars_css(
+		$sel,
+		$vars,
+		'min-height:auto;display:block;place-items:unset;overflow:visible;padding:0;background:transparent;font-family:var(--template-font-family);color:var(--template-text);'
+	);
 	$css .= $sel . ' .template-product-landing{min-height:auto;gap:18px;}';
 	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
@@ -518,4 +535,94 @@ function xpressui_render_product_detail_section( $catalog, $product, $return_url
 </div>
 	<?php
 	return (string) ob_get_clean();
+}
+
+/**
+ * Builds the client-side cart storage key for a hosted-link catalog.
+ *
+ * Mirrors xpuiCartStorageKey/xpuiCartScopeId in the SaaS product-cart-core
+ * (`xpressui:product-cart:<scope>:<catalogId>`, scope = hosted link id) so the WP
+ * cart-summary reads the exact same localStorage entry catalog-init.js writes.
+ *
+ * @param string $link_id    Hosted link id (the cart scope).
+ * @param string $catalog_id Catalog id.
+ * @return string localStorage key.
+ */
+function xpressui_catalog_cart_storage_key( $link_id, $catalog_id ) {
+	$scope = '' !== (string) $link_id ? (string) $link_id : 'project';
+	$cat   = '' !== (string) $catalog_id ? (string) $catalog_id : 'catalog';
+	return 'xpressui:product-cart:' . $scope . ':' . $cat;
+}
+
+/**
+ * Renders the headless WordPress cart-summary embed (order summary).
+ *
+ * Mirrors the SaaS cart-summary-page.html.j2 DOM/styles, but the rows are built
+ * client-side from the localStorage cart (assets/catalog-cart-summary.js) — nothing
+ * is sent to the SaaS. The checkout CTA navigates to the WP checkout page.
+ *
+ * @param array  $catalog      Decoded catalog.json snapshot.
+ * @param string $link_id      Hosted link id (cart scope).
+ * @param string $grid_url     Storefront (grid) URL — back link + empty-cart redirect.
+ * @param string $checkout_url WP checkout URL the CTA navigates to.
+ * @return string Cart-summary embed HTML.
+ */
+function xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $checkout_url ) {
+	$catalog_id  = (string) ( $catalog['catalog_id'] ?? '' );
+	$storage_key = xpressui_catalog_cart_storage_key( $link_id, $catalog_id );
+	$currency    = (string) ( $catalog['default_currency'] ?? '' );
+	$catalog_name = trim( (string) ( $catalog['catalog_name'] ?? '' ) );
+	$kicker       = '' !== $catalog_name ? $catalog_name : __( 'Catalog', 'xpressui-bridge' );
+
+	// Styles + hydrator. Rows are built client-side from localStorage.
+	$css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
+	$css_ver  = file_exists( $css_path ) ? (string) filemtime( $css_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_style( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.css', [], $css_ver );
+	$vars = is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [];
+	wp_add_inline_style( 'xpressui-cart-summary', xpressui_catalog_theme_vars_css( '.xpressui-cart-summary', $vars ) );
+
+	$js_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.js';
+	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_script( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.js', [], $js_ver, true );
+
+	ob_start();
+	?>
+<div class="xpressui-embed-wrapper xpressui-inline-embed xpressui-cart-summary">
+	<div
+		class="cs-page"
+		data-storage-key="<?php echo esc_attr( $storage_key ); ?>"
+		data-catalog-url="<?php echo esc_url( $grid_url ); ?>"
+		data-checkout-url="<?php echo esc_url( $checkout_url ); ?>"
+		data-currency="<?php echo esc_attr( $currency ); ?>"
+		data-empty-label="<?php esc_attr_e( 'Your cart is empty.', 'xpressui-bridge' ); ?>"
+	>
+		<div class="cs-card">
+			<div class="cs-header">
+				<div class="cs-heading">
+					<a href="<?php echo esc_url( $grid_url ); ?>" class="cs-back" aria-label="<?php esc_attr_e( 'Back to catalog', 'xpressui-bridge' ); ?>">
+						<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+					</a>
+					<div class="cs-header-titles">
+						<p class="cs-kicker"><?php echo esc_html( $kicker ); ?></p>
+						<h1 class="cs-title"><?php esc_html_e( 'Order summary', 'xpressui-bridge' ); ?></h1>
+					</div>
+				</div>
+			</div>
+			<ul class="cs-items" data-cart-items></ul>
+			<div class="cs-totals" data-cart-totals>
+				<div class="cs-totals-row cs-totals-row--total">
+					<span><?php esc_html_e( 'Total', 'xpressui-bridge' ); ?></span>
+					<strong data-cart-total></strong>
+				</div>
+			</div>
+			<div class="cs-footer" data-cart-footer>
+				<a href="<?php echo esc_url( $checkout_url ); ?>" class="cs-cta" data-cart-checkout>
+					<?php esc_html_e( 'Proceed to checkout', 'xpressui-bridge' ); ?>
+				</a>
+			</div>
+		</div>
+	</div>
+</div>
+	<?php
+	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
 }

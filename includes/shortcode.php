@@ -596,11 +596,14 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Headless product catalog: when this hosted link fronts a product catalog and the
 	// snapshot was synced (hosted-links/<id>/catalogs/catalog.json), render the storefront
-	// grid server-side (SEO/LCP) instead of the form. Cart + checkout are wired by the
-	// self-contained SaaS catalog-init.js; checkout completes on the SaaS hosted-link
-	// form. The storefront is not subject to form expiry/submission gating, so this
-	// returns before the link-status checks below. See includes/catalog-render.php.
-	if ( $link_attr !== '' && is_array( $link_config ) ) {
+	// (grid / product detail / cart summary) server-side (SEO/LCP) instead of the form.
+	// The whole journey stays on WordPress. The final checkout step (?xpui_checkout=1)
+	// falls through to the hosted-link FORM below, which collects the order and submits
+	// to WordPress — so it is excluded here. The storefront is not subject to form
+	// expiry/submission gating, so this returns before the link-status checks below.
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
+	$is_catalog_checkout = ! empty( $_GET['xpui_checkout'] );
+	if ( $link_attr !== '' && is_array( $link_config ) && ! $is_catalog_checkout ) {
 		$fc_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$front_catalog   = is_array( $fc_presentation['frontCatalog'] ?? null ) ? $fc_presentation['frontCatalog'] : [];
 		if ( ! empty( $front_catalog['catalogId'] ) ) {
