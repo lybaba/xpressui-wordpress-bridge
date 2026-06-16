@@ -515,6 +515,9 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// surrounding WordPress theme can't strip the border/background/radius — the
 	// unscoped shell rule loses specificity to most themes.
 	$inline_css .= "{$scope} .form-frame { background: color-mix(in srgb, var(--template-surface) 92%, white) !important; border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent) !important; border-radius: var(--template-card-radius) !important; padding: 24px !important; box-shadow: {$box_shadow} !important;{$extra_fw} }\n";
+	// The intro card (rendered above the form, in the embed wrapper) must be the exact
+	// same width as the form card — apply the identical width treatment + centring.
+	$inline_css .= ".xpressui-embed-wrapper .xpressui-intro { box-sizing: border-box;{$extra_fw} margin-left: auto !important; margin-right: auto !important; }\n";
 	$inline_css .= "{$scope} .template-runtime-shell { gap: 16px; }\n";
 	$inline_css .= "{$scope} .template-form-header { gap: 2px; padding-top: 0; }\n";
 	$inline_css .= "{$scope} .template-form-title { font-size: clamp(22px, 2.8vw, 30px); line-height: 1.08; letter-spacing: -0.03em; }\n";

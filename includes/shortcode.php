@@ -295,9 +295,24 @@ function xpressui_resolve_intro_media( $presentation, $page_template = '' ) {
  * @return string CSS appended via wp_add_inline_style().
  */
 function xpressui_gallery_showcase_embed_css() {
+	// The SaaS shell sizes its left column with 52vw (viewport-relative). Inside a
+	// narrower theme content column (e.g. a Bootstrap .col-lg-8) that starves the right
+	// column and squeezes/clips the buy box. On wide screens re-size both columns
+	// relative to the grid container (fr units, container-relative) so they always fit
+	// the available width; the SaaS mobile breakpoint (<=860px) keeps the stacked layout.
 	return '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
+		// The SaaS page ships a global `* { box-sizing: border-box }` reset that is not
+		// loaded in the embed (only hosted-intro.css is). Without it the buy box CTA
+		// (width:100% + padding) overflows its card. Restore border-box for the showcase.
+		. '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::before,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::after{box-sizing:border-box}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px)}';
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px);max-width:none;overflow-x:visible}'
+		// Render the buy-box CTA as a plain text link (accent + arrow), matching the
+		// non-gallery intro CTA, instead of the SaaS filled button.
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta{display:inline-flex;align-items:center;gap:.35rem;width:auto;min-height:0;padding:0;border:0;border-radius:0;background:none!important;color:var(--xpressui-accent,#0f766e)!important;box-shadow:none!important;text-decoration:none!important;font-weight:800;font-size:.95rem;transition:opacity .15s ease}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta::after{content:"\2192";font-weight:700}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta:hover{opacity:.72;transform:none;filter:none;box-shadow:none!important}'
+		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
 }
 
 /**
@@ -448,7 +463,7 @@ function xpressui_render_gallery_showcase( $presentation, $locale = 'en', $mount
  * @param string $style_handle Registered style handle for wp_add_inline_style().
  * @return string HTML (kses-safe: section/h2/div/span/p/strong/em/br).
  */
-function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_handle = '' ) {
+function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_handle = '', $cta_anchor_id = '', $accent_color = '#0f766e' ) {
 	if ( ! is_array( $presentation ) ) {
 		return '';
 	}
@@ -462,13 +477,26 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		return '';
 	}
 
-	$intro_css = '.xpressui-intro{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+	// When a scroll target is provided, render a CTA that jumps to the embedded form.
+	$button_label = '';
+	if ( '' !== $cta_anchor_id ) {
+		$button_label = trim( (string) ( $presentation['introButtonLabel'] ?? '' ) );
+		if ( '' === $button_label ) {
+			$button_label = 'fr' === $locale ? __( 'Accéder au formulaire', 'xpressui-bridge' ) : __( 'Go to the form', 'xpressui-bridge' );
+		}
+	}
+
+	$intro_css = '.xpressui-intro{width:100%;box-sizing:border-box;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
 		. '.xpressui-intro__title{margin:0 0 .6rem;font-size:1.15rem;font-weight:800;line-height:1.3;color:#0f172a}'
 		. '.xpressui-intro__content{color:#334155;font-size:.95rem;line-height:1.55}'
 		. '.xpressui-intro__content p:last-child{margin-bottom:0!important}'
 		. '.xpressui-intro__meta{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.85rem}'
 		. '.xpressui-intro__price{font-weight:800;font-size:1.05rem;color:#0f172a}'
-		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}';
+		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}'
+		. '.xpressui-intro__actions{margin-top:.85rem}'
+		. '.xpressui-intro__cta{display:inline-flex;align-items:center;gap:.35rem;padding:0;background:none;border:0;color:var(--xpressui-accent,#0f766e)!important;font-weight:700;font-size:.95rem;text-decoration:none!important;cursor:pointer;transition:opacity .15s ease}'
+		. '.xpressui-intro__cta::after{content:"\2192";font-weight:700;text-decoration:none}'
+		. '.xpressui-intro__cta:hover{opacity:.72}';
 
 	if ( ! empty( $style_handle ) ) {
 		wp_add_inline_style( $style_handle, $intro_css );
@@ -483,7 +511,7 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		echo '<style>' . $intro_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
-<section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>">
+<section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>" style="--xpressui-accent: <?php echo esc_attr( $accent_color ); ?>;">
 	<?php if ( '' !== $title ) : ?>
 	<h2 class="xpressui-intro__title"><?php echo esc_html( $title ); ?></h2>
 	<?php endif; ?>
@@ -494,6 +522,11 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 	<div class="xpressui-intro__meta">
 		<?php if ( '' !== $price_display ) : ?><span class="xpressui-intro__price"><?php echo esc_html( $price_display ); ?></span><?php endif; ?>
 		<?php if ( '' !== $deadline ) : ?><span class="xpressui-intro__deadline"><?php echo esc_html( $deadline ); ?></span><?php endif; ?>
+	</div>
+	<?php endif; ?>
+	<?php if ( '' !== $button_label ) : ?>
+	<div class="xpressui-intro__actions">
+		<a class="xpressui-intro__cta" href="#<?php echo esc_attr( $cta_anchor_id ); ?>"><?php echo esc_html( $button_label ); ?></a>
 	</div>
 	<?php endif; ?>
 </section>
@@ -662,6 +695,13 @@ function xpressui_render_shortcode( $atts ) {
 		? json_decode( $raw_form_config_json, true )
 		: null;
 
+	// The workflow's authored title visibility (config side). The SaaS default is
+	// "shown" unless the project explicitly disables it; mirror that so a hosted-link
+	// embed respects the config instead of always hiding the title.
+	$config_show_title = ! is_array( $form_config ) || ! array_key_exists( 'showProjectTitle', $form_config )
+		? true
+		: (bool) $form_config['showProjectTitle'];
+
 	if ( is_array( $form_config ) ) {
 		$form_config = xpressui_normalize_form_config( $form_config, $slug );
 
@@ -755,7 +795,7 @@ function xpressui_render_shortcode( $atts ) {
 		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
 			$template_context['runtime'] = [];
 		}
-		$form_config['showProjectTitle']       = $show_project_title;
+		$form_config['showProjectTitle']       = is_array( $link_config ) ? $config_show_title : $show_project_title;
 		$form_config['showRequiredFieldsNote'] = $show_required_note;
 		$form_config['sectionLabelVisibility'] = $section_label_visibility;
 		$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
@@ -763,9 +803,9 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Apply show_* flags to rendered_form (works whether built above or loaded from template context).
 	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
-		// On a synced Hosted Link embed, the WordPress page title is the single source
-		// of truth — hide the workflow form title to avoid duplicating it.
-		$template_context['rendered_form']['show_title']           = is_array( $link_config ) ? false : $show_project_title;
+		// Respect the workflow's authored title visibility on a synced Hosted Link embed
+		// (shown unless disabled in the config); fall back to the local flag otherwise.
+		$template_context['rendered_form']['show_title']           = is_array( $link_config ) ? $config_show_title : $show_project_title;
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 		// Ensure camera-photo-list/camera-photo fields always have the right input_type and
@@ -944,13 +984,18 @@ function xpressui_render_shortcode( $atts ) {
 		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
 		. '</template>';
 
-	// Parity with the SaaS hosted render. A gallery-showcase link renders the full
-	// product-detail intro (hero + gallery + buy box + CTA) OUTSIDE the form card,
-	// reusing the SaaS intro stylesheet/script verbatim. Other links render a simple
-	// intro/welcome block inside the card. The reference-documents block sits above
-	// the form in both cases.
-	$showcase_html = '';
-	$prelude_html  = '';
+	// Parity with the SaaS hosted render. The intro renders OUTSIDE the form card with
+	// a CTA that scrolls to the form: a gallery-showcase link renders the full
+	// product-detail intro (hero + gallery + buy box), reusing the SaaS stylesheet/
+	// script verbatim; other links render the intro/welcome block (title + content +
+	// price/deadline + CTA). The reference-documents block sits above the form, inside
+	// the card.
+	// A gallery-showcase renders full-width OUTSIDE the form card (in the wrapper). The
+	// non-gallery intro/welcome card renders INSIDE the page-shell, just above the form
+	// card, so it shares the form card's container and is always the exact same width.
+	$intro_outside_html = '';
+	$intro_card_html    = '';
+	$prelude_html       = '';
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
@@ -959,13 +1004,8 @@ function xpressui_render_shortcode( $atts ) {
 			$pre_accent = '#0f766e';
 		}
 
-		$showcase_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
-		if ( '' === $showcase_html ) {
-			$prelude_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle );
-		}
-		$prelude_html .= xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
-
-		if ( '' !== $showcase_html ) {
+		$intro_outside_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
+		if ( '' !== $intro_outside_html ) {
 			$intro_css_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.css';
 			$intro_css_ver  = file_exists( $intro_css_path ) ? (string) filemtime( $intro_css_path ) : XPRESSUI_BRIDGE_VERSION;
 			wp_enqueue_style( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.css', [], $intro_css_ver );
@@ -974,6 +1014,23 @@ function xpressui_render_shortcode( $atts ) {
 			$intro_js_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.js';
 			$intro_js_ver  = file_exists( $intro_js_path ) ? (string) filemtime( $intro_js_path ) : XPRESSUI_BRIDGE_VERSION;
 			wp_enqueue_script( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.js', [], $intro_js_ver, true );
+		} else {
+			// Non-gallery link: intro/welcome card above the form, with a CTA to the form.
+			$intro_card_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle, $mount_node_id, $pre_accent );
+		}
+
+		$prelude_html = xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
+	}
+
+	// Inject the intro/welcome card inside the page-shell, right before the form card
+	// (<main class="form-frame">), so both cards share the same container + width.
+	if ( '' !== $intro_card_html ) {
+		$ff_class_pos = strpos( $fragment_html, 'class="form-frame' );
+		$tag_start    = false !== $ff_class_pos ? strrpos( substr( $fragment_html, 0, $ff_class_pos ), '<' ) : false;
+		if ( false !== $tag_start ) {
+			$fragment_html = substr( $fragment_html, 0, $tag_start ) . $intro_card_html . substr( $fragment_html, $tag_start );
+		} else {
+			$fragment_html = $intro_card_html . $fragment_html;
 		}
 	}
 
@@ -987,7 +1044,7 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
-		. $showcase_html
+		. $intro_outside_html
 		. $fragment_html
 		. $config_tag
 		. '</div>';
