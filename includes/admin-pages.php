@@ -302,6 +302,15 @@ function xpressui_render_workflows_page() {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
 	}
 
+	$view = isset( $_GET['xpressui_view'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_view'] ) ) : 'list';
+	if ( 'detail' === $view ) {
+		$slug = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
+		if ( $slug !== '' && xpressui_is_installed_workflow( $slug ) ) {
+			xpressui_render_workflow_detail_page( $slug );
+			return;
+		}
+	}
+
 	$notice_class   = '';
 	$notice_message = '';
 
@@ -379,8 +388,8 @@ function xpressui_render_workflows_page() {
 	$render_workflow_table = static function ( array $slugs ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
-		echo '<th class="column-title column-primary">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
-		echo '<th>' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</th>';
+		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -412,89 +421,33 @@ function xpressui_render_workflows_page() {
 				),
 				'xpressui_delete_workflow_' . $slug
 			);
-			$create_page_url = wp_nonce_url(
-				add_query_arg(
-					[
-						'post_type'        => 'xpressui_submission',
-						'page'             => 'xpressui-bridge',
-						'xpressui_action'  => 'create_workflow_page',
-						'xpressui_slug'    => $slug,
-					],
-					admin_url( 'edit.php' )
-				),
-				'xpressui_create_workflow_page_' . $slug
+			$detail_url = add_query_arg(
+				[
+					'post_type'     => 'xpressui_submission',
+					'page'          => 'xpressui-bridge',
+					'xpressui_view' => 'detail',
+					'xpressui_slug' => $slug,
+				],
+				admin_url( 'edit.php' )
 			);
 			$page_ids        = xpressui_get_workflow_page_ids( $slug );
-			$primary_page_id = ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
-			$edit_page_url   = $primary_page_id > 0 ? get_edit_post_link( $primary_page_id, '' ) : '';
-			$view_page_url   = $primary_page_id > 0 ? get_permalink( $primary_page_id ) : '';
 			
 			echo '<tr>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			$display_name = $project_name !== '' ? $project_name : $slug;
 			
-			// Retrieve local hosted links configuration JSONs
-			$hosted_links = [];
-			$base_dir = xpressui_get_workflows_base_dir();
-			if ( $base_dir !== '' ) {
-				$hosted_links_dir = trailingslashit( $base_dir ) . $slug . '/hosted-links';
-				if ( is_dir( $hosted_links_dir ) ) {
-					$dirs = array_filter( glob( trailingslashit( $hosted_links_dir ) . '*' ), 'is_dir' );
-					foreach ( $dirs as $dir_path ) {
-						$link_id = basename( $dir_path );
-						$config_file = trailingslashit( $dir_path ) . 'link.config.json';
-						if ( file_exists( $config_file ) ) {
-							$content = file_get_contents( $config_file );
-							if ( $content ) {
-								$config_data = json_decode( $content, true );
-								if ( is_array( $config_data ) ) {
-									$hosted_links[] = [
-										'id'    => $link_id,
-										'label' => $config_data['label'] ?? $config_data['id'] ?? $link_id,
-									];
-								}
-							}
-						}
-					}
-				}
-			}
-
 			echo '<td class="column-title column-primary">';
-			echo '<strong><span style="font-size: 14px;">' . esc_html( $display_name ) . '</span></strong>';
+			echo '<strong><a href="' . esc_url( $detail_url ) . '" style="font-size: 14px; text-decoration: none;">' . esc_html( $display_name ) . '</a></strong>';
 			
 			// Update available Badge
 			if ( $update_available ) {
 				echo ' <span class="xpressui-badge xpressui-badge--status-in-review" style="margin-left: 8px; vertical-align: middle;">' . esc_html__( 'Update available', 'xpressui-bridge' ) . '</span>';
 			}
-			
-			// Render synced hosted links if available
-			if ( ! empty( $hosted_links ) ) {
-				echo '<div class="xpressui-hosted-links-list" style="margin-top: 8px; font-size: 12px; line-height: 1.5;">';
-				echo '<strong style="color: #444;">' . esc_html__( 'Hosted Links:', 'xpressui-bridge' ) . '</strong>';
-				echo '<ul style="margin: 4px 0 0 0; padding-left: 16px; list-style-type: disc;">';
-				foreach ( $hosted_links as $link ) {
-					$shortcode = '[xpressui id="' . esc_attr( $slug ) . '" link_id="' . esc_attr( $link['id'] ) . '"]';
-					echo '<li style="margin-bottom: 4px;">';
-					echo '<span style="font-weight: 600; color: #333;">' . esc_html( $link['label'] ) . '</span>';
-					echo '<span style="color: #888; margin: 0 6px;">→</span>';
-					echo '<code class="xpressui-inline-code" style="background: #f4f5f7; padding: 2px 6px; border-radius: 3px; font-size: 11px;">' . esc_html( $shortcode ) . '</code>';
-					echo '</li>';
-				}
-				echo '</ul>';
-				echo '</div>';
-				
-				// Show legacy fallback shortcode at the bottom
-				echo '<div style="margin-top: 8px; font-size: 11px; color: #888; font-style: italic;">';
-				echo esc_html__( 'Legacy shortcode (fallback):', 'xpressui-bridge' ) . ' <code>[xpressui id="' . esc_attr( $slug ) . '"]</code>';
-				echo '</div>';
-			} else {
-				// No hosted links synced yet, display legacy shortcode normally
-				echo '<div style="margin-top: 6px; font-size: 12px; color: #666;">';
-				echo '<code>' . esc_html( $slug ) . '</code>';
-				echo '<span style="color: #ccc; margin: 0 8px;">|</span>';
-				echo '<code>[xpressui id="' . esc_attr( $slug ) . '"]</code>';
-				echo '</div>';
-			}
+
+			// Show slug underneath
+			echo '<div style="margin-top: 4px; font-size: 11px; color: #888;">';
+			echo 'Slug: <code>' . esc_html( $slug ) . '</code>';
+			echo '</div>';
 			
 			// Native WordPress style row actions
 			$extra_row_actions = apply_filters( 'xpressui_workflow_row_actions', [], $slug );
@@ -503,18 +456,11 @@ function xpressui_render_workflows_page() {
 			foreach ( $extra_row_actions as $action_html ) {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
-			if ( $edit_page_url ) {
-				$actions_html[] = '<span class="edit"><a href="' . esc_url( $edit_page_url ) . '">' . esc_html__( 'Edit page', 'xpressui-bridge' ) . '</a></span>';
-			} else {
-				$actions_html[] = '<span class="create"><a href="' . esc_url( $create_page_url ) . '">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a></span>';
-			}
-			if ( $view_page_url ) {
-				$actions_html[] = '<span class="view"><a href="' . esc_url( $view_page_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'View page', 'xpressui-bridge' ) . '</a></span>';
-			}
+			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
 			if ( $is_bundled ) {
 				$actions_html[] = '<span class="reinstall"><a href="' . esc_url( $reinstall_url ) . '">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a></span>';
 			} else {
-				$actions_html[] = '<span class="delete"><a class="submitdelete" href="' . esc_url( $delete_url ) . '">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a></span>';
+				$actions_html[] = '<span class="delete"><a class="submitdelete" href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a></span>';
 			}
 			echo implode( ' | ', $actions_html );
 			echo '</div>';
@@ -749,8 +695,14 @@ function xpressui_handle_workflow_admin_actions() {
 	}
 
 	if ( $action === 'create_workflow_page' ) {
-		check_admin_referer( 'xpressui_create_workflow_page_' . $slug );
-		$result = xpressui_create_workflow_page( $slug );
+		$link_id = isset( $_GET['xpressui_link_id'] ) ? sanitize_file_name( wp_unslash( (string) $_GET['xpressui_link_id'] ) ) : '';
+		if ( $link_id !== '' ) {
+			check_admin_referer( 'xpressui_create_workflow_page_' . $slug . '_' . $link_id );
+			$result = xpressui_create_workflow_page( $slug, $link_id );
+		} else {
+			check_admin_referer( 'xpressui_create_workflow_page_' . $slug );
+			$result = xpressui_create_workflow_page( $slug );
+		}
 		if ( is_wp_error( $result ) ) {
 			xpressui_set_admin_notice( $result->get_error_message(), 'error' );
 			wp_safe_redirect(
@@ -778,7 +730,7 @@ function xpressui_handle_workflow_admin_actions() {
 	}
 }
 
-function xpressui_create_workflow_page( $slug ) {
+function xpressui_create_workflow_page( $slug, $link_id = '' ) {
 	$slug = sanitize_title( (string) $slug );
 	if ( $slug === '' || ! xpressui_is_installed_workflow( $slug ) ) {
 		return new WP_Error( 'missing_workflow', __( 'The workflow could not be found.', 'xpressui-bridge' ) );
@@ -790,7 +742,20 @@ function xpressui_create_workflow_page( $slug ) {
 		$page_title = ucwords( str_replace( '-', ' ', $slug ) );
 	}
 
-	$existing_pages = xpressui_get_workflow_page_ids( $slug );
+	if ( $link_id !== '' ) {
+		$link_config = xpressui_get_hosted_link_config( $slug, $link_id );
+		if ( $link_config && ! empty( $link_config['label'] ) ) {
+			$page_title .= ' - ' . sanitize_text_field( $link_config['label'] );
+		} else {
+			$page_title .= ' - ' . sanitize_text_field( $link_id );
+		}
+		$existing_pages = xpressui_get_workflow_page_ids( $slug, [ 'draft', 'publish', 'pending', 'private' ], $link_id );
+		$shortcode = '[xpressui id="' . $slug . '" link_id="' . esc_attr( $link_id ) . '"]';
+	} else {
+		$existing_pages = xpressui_get_workflow_page_ids( $slug );
+		$shortcode = '[xpressui id="' . $slug . '"]';
+	}
+
 	if ( ! empty( $existing_pages ) ) {
 		return new WP_Error( 'page_exists', __( 'A page using this workflow shortcode already exists.', 'xpressui-bridge' ) );
 	}
@@ -799,7 +764,7 @@ function xpressui_create_workflow_page( $slug ) {
 		'post_type'    => 'page',
 		'post_status'  => 'draft',
 		'post_title'   => $page_title,
-		'post_content' => '[xpressui id="' . $slug . '"]',
+		'post_content' => $shortcode,
 	] );
 
 	if ( is_wp_error( $page_id ) ) {
@@ -1111,6 +1076,217 @@ JS,
 		wp_json_encode( __( 'Network error.', 'xpressui-bridge' ) )
 	);
 	wp_print_inline_script_tag( $connection_form_script );
+
+	echo '</div>'; // .wrap
+}
+
+function xpressui_render_workflow_detail_page( $slug ) {
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+	$project_name  = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
+	$display_name  = $project_name !== '' ? $project_name : $slug;
+	$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
+	$display_tier  = $runtime_tier !== '' ? $runtime_tier : 'light';
+	$is_bundled    = ! empty( $manifest_meta['isBundled'] ) || xpressui_is_bundled_workflow( $slug );
+	$update_available = $is_bundled && xpressui_is_bundled_workflow_update_available( $slug );
+
+	$reinstall_url = wp_nonce_url(
+		add_query_arg(
+			[
+				'post_type'        => 'xpressui_submission',
+				'page'             => 'xpressui-bridge',
+				'xpressui_action'  => 'reinstall_bundled_workflow',
+				'xpressui_slug'    => $slug,
+			],
+			admin_url( 'edit.php' )
+		),
+		'xpressui_reinstall_bundled_workflow_' . $slug
+	);
+	$delete_url = wp_nonce_url(
+		add_query_arg(
+			[
+				'post_type'        => 'xpressui_submission',
+				'page'             => 'xpressui-bridge',
+				'xpressui_action'  => 'delete_workflow',
+				'xpressui_slug'    => $slug,
+			],
+			admin_url( 'edit.php' )
+		),
+		'xpressui_delete_workflow_' . $slug
+	);
+
+	$back_url = add_query_arg(
+		[
+			'post_type' => 'xpressui_submission',
+			'page'      => 'xpressui-bridge',
+		],
+		admin_url( 'edit.php' )
+	);
+
+	echo '<div class="wrap xpressui-wrap">';
+	echo '<h1 class="wp-heading-inline">';
+	echo '<a href="' . esc_url( $back_url ) . '" class="page-title-action" style="margin-right: 15px; font-size: 13px; font-weight: normal; text-decoration: none; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #3c434a; line-height: 1;">&larr; ' . esc_html__( 'Back to Workflows', 'xpressui-bridge' ) . '</a>';
+	echo esc_html( $display_name );
+	echo '</h1>';
+	echo '<hr class="wp-header-end">';
+
+	// Details grid
+	echo '<div class="xpressui-detail-grid" style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">';
+
+	// Details Card
+	echo '<div class="card" style="flex: 1; min-width: 300px; margin: 0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+	echo '<h2 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">' . esc_html__( 'Workflow Details', 'xpressui-bridge' ) . '</h2>';
+	echo '<table class="form-table" style="margin: 0; width: 100%;">';
+	echo '<tr><th style="padding: 10px 0; font-weight: 600; width: 150px;">' . esc_html__( 'Slug / ID', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><code>' . esc_html( $slug ) . '</code></td></tr>';
+	echo '<tr><th style="padding: 10px 0; font-weight: 600;">' . esc_html__( 'Runtime Tier', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><span class="xpressui-badge xpressui-badge--tier-' . esc_attr( $display_tier ) . '" style="text-transform: capitalize;">' . esc_html( $display_tier ) . '</span></td></tr>';
+	echo '<tr><th style="padding: 10px 0; font-weight: 600;">' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;">' . ( $is_bundled ? esc_html__( 'Bundled Starter', 'xpressui-bridge' ) : esc_html__( 'Uploaded Package', 'xpressui-bridge' ) ) . '</td></tr>';
+	echo '</table>';
+
+	echo '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">';
+	if ( $is_bundled ) {
+		echo '<a href="' . esc_url( $reinstall_url ) . '" class="button">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a>';
+	} else {
+		echo '<a href="' . esc_url( $delete_url ) . '" class="button button-link-delete" style="color: #d63638; text-decoration: none; border: 1px solid #d63638; padding: 4px 10px; border-radius: 3px; background: #fff;" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete Workflow', 'xpressui-bridge' ) . '</a>';
+	}
+	echo '</div>';
+	echo '</div>';
+
+	// Shortcode / Fallback card
+	echo '<div class="card" style="flex: 1; min-width: 300px; margin: 0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+	echo '<h2 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">' . esc_html__( 'Legacy Integration', 'xpressui-bridge' ) . '</h2>';
+	echo '<p>' . esc_html__( 'Use this shortcode to embed the default compiled form. Advanced behaviors (branding, notifications, redirections) are not applied without a Hosted Link.', 'xpressui-bridge' ) . '</p>';
+	echo '<div style="background: #f6f7f7; padding: 12px; border-radius: 4px; border: 1px solid #dcdcde; margin: 15px 0;">';
+	echo '<code style="font-size: 14px; font-weight: bold;">[xpressui id="' . esc_attr( $slug ) . '"]</code>';
+	echo '</div>';
+	
+	// Check if there is any page already embedding the legacy shortcode
+	$legacy_pages = xpressui_get_workflow_page_ids( $slug );
+	// Filter to check pages without a link_id
+	$pure_legacy_pages = [];
+	foreach ( $legacy_pages as $p_id ) {
+		$p_post = get_post( $p_id );
+		$p_content = $p_post ? $p_post->post_content : '';
+		if ( false === strpos( $p_content, 'link_id=' ) && false === strpos( $p_content, 'link=' ) ) {
+			$pure_legacy_pages[] = $p_id;
+		}
+	}
+
+	if ( ! empty( $pure_legacy_pages ) ) {
+		echo '<h3>' . esc_html__( 'Linked Pages (Legacy):', 'xpressui-bridge' ) . '</h3>';
+		echo '<ul style="margin: 0; padding-left: 20px;">';
+		foreach ( $pure_legacy_pages as $p_id ) {
+			$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
+			$p_edit = get_edit_post_link( $p_id );
+			echo '<li>';
+			echo '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
+			if ( $p_edit ) {
+				echo ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)';
+			}
+			echo '</li>';
+		}
+		echo '</ul>';
+	} else {
+		$create_legacy_url = wp_nonce_url(
+			add_query_arg(
+				[
+					'post_type'       => 'xpressui_submission',
+					'page'            => 'xpressui-bridge',
+					'xpressui_action' => 'create_workflow_page',
+					'xpressui_slug'   => $slug,
+				],
+				admin_url( 'edit.php' )
+			),
+			'xpressui_create_workflow_page_' . $slug
+		);
+		echo '<div style="margin-top: 15px;"><a href="' . esc_url( $create_legacy_url ) . '" class="button button-secondary">' . esc_html__( 'Create Legacy Page', 'xpressui-bridge' ) . '</a></div>';
+	}
+	echo '</div>';
+
+	echo '</div>'; // .xpressui-detail-grid
+
+	// ---------------------------------------------------------
+	// Synced Hosted Links Sub-table
+	// ---------------------------------------------------------
+	$hosted_links = [];
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $base_dir !== '' ) {
+		$hosted_links_dir = trailingslashit( $base_dir ) . $slug . '/hosted-links';
+		if ( is_dir( $hosted_links_dir ) ) {
+			$dirs = array_filter( glob( trailingslashit( $hosted_links_dir ) . '*' ), 'is_dir' );
+			foreach ( $dirs as $dir_path ) {
+				$link_id = basename( $dir_path );
+				$config_file = trailingslashit( $dir_path ) . 'link.config.json';
+				if ( file_exists( $config_file ) ) {
+					$content = file_get_contents( $config_file );
+					if ( $content ) {
+						$config_data = json_decode( $content, true );
+						if ( is_array( $config_data ) ) {
+							$hosted_links[] = [
+								'id'    => $link_id,
+								'label' => $config_data['label'] ?? $config_data['id'] ?? $link_id,
+							];
+						}
+					}
+				}
+			}
+		}
+	}
+
+	echo '<h2 style="margin-top: 40px; border-bottom: 2px solid #2271b1; padding-bottom: 8px;">' . esc_html__( 'Hosted Links (SaaS)', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description" style="margin-bottom: 20px;">' . esc_html__( 'These links carry consolidated behaviors and styles configured on the IntakeFlow Console. Embed them using their parameterized shortcodes, or build dedicated WordPress pages for them below.', 'xpressui-bridge' ) . '</p>';
+
+	if ( empty( $hosted_links ) ) {
+		echo '<div class="notice notice-info inline" style="margin: 0;"><p>';
+		echo esc_html__( 'No hosted links have been synchronized for this workflow yet. Click "Sync from Console" at the top of the main Workflows list to pull them.', 'xpressui-bridge' );
+		echo '</p></div>';
+	} else {
+		echo '<table class="wp-list-table widefat fixed striped xpressui-table" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden;">';
+		echo '<thead><tr>';
+		echo '<th style="font-weight: 700; width: 250px;">' . esc_html__( 'Hosted Link', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Link ID', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700;">' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</th>';
+		echo '</tr></thead>';
+		echo '<tbody>';
+		foreach ( $hosted_links as $link ) {
+			$shortcode = '[xpressui id="' . esc_attr( $slug ) . '" link_id="' . esc_attr( $link['id'] ) . '"]';
+			$link_pages = xpressui_get_workflow_page_ids( $slug, [ 'draft', 'publish', 'pending', 'private' ], $link['id'] );
+
+			$create_link_page_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'        => 'xpressui_submission',
+						'page'             => 'xpressui-bridge',
+						'xpressui_action'  => 'create_workflow_page',
+						'xpressui_slug'    => $slug,
+						'xpressui_link_id' => $link['id'],
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_create_workflow_page_' . $slug . '_' . $link['id']
+			);
+
+			echo '<tr>';
+			echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
+			echo '<td style="vertical-align: middle;"><code>' . esc_html( $link['id'] ) . '</code></td>';
+			echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
+			echo '<td style="vertical-align: middle;">';
+			if ( ! empty( $link_pages ) ) {
+				$page_links = [];
+				foreach ( $link_pages as $p_id ) {
+					$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
+					$p_edit = get_edit_post_link( $p_id );
+					$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
+				}
+				echo implode( ', ', $page_links );
+			} else {
+				echo '<a href="' . esc_url( $create_link_page_url ) . '" class="button button-small button-primary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
+			}
+			echo '</td>';
+			echo '</tr>';
+		}
+		echo '</tbody>';
+		echo '</table>';
+	}
 
 	echo '</div>'; // .wrap
 }
