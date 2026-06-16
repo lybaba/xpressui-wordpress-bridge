@@ -1122,12 +1122,18 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		admin_url( 'edit.php' )
 	);
 
+	$workflow_version = sanitize_text_field( (string) ( $manifest_meta['runtimeVersion'] ?? '' ) );
+
 	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1 class="wp-heading-inline">';
 	echo '<a href="' . esc_url( $back_url ) . '" class="page-title-action" style="margin-right: 15px; font-size: 13px; font-weight: normal; text-decoration: none; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #3c434a; line-height: 1;">&larr; ' . esc_html__( 'Back to Workflows', 'xpressui-bridge' ) . '</a>';
 	echo esc_html( $display_name );
 	echo '</h1>';
+	if ( xpressui_pro_is_license_active() ) {
+		echo '<button type="button" id="xpressui-single-sync-btn" class="page-title-action button button-primary" style="margin-left: 10px;">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
+	}
 	echo '<hr class="wp-header-end">';
+	echo '<div id="xpressui-single-sync-container"></div>';
 
 	// Details grid
 	echo '<div class="xpressui-detail-grid" style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">';
@@ -1137,8 +1143,9 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '<h2 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">' . esc_html__( 'Workflow Details', 'xpressui-bridge' ) . '</h2>';
 	echo '<table class="form-table" style="margin: 0; width: 100%;">';
 	echo '<tr><th style="padding: 10px 0; font-weight: 600; width: 150px;">' . esc_html__( 'Slug / ID', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><code>' . esc_html( $slug ) . '</code></td></tr>';
-	echo '<tr><th style="padding: 10px 0; font-weight: 600;">' . esc_html__( 'Runtime Tier', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><span class="xpressui-badge xpressui-badge--tier-' . esc_attr( $display_tier ) . '" style="text-transform: capitalize;">' . esc_html( $display_tier ) . '</span></td></tr>';
-	echo '<tr><th style="padding: 10px 0; font-weight: 600;">' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;">' . ( $is_bundled ? esc_html__( 'Bundled Starter', 'xpressui-bridge' ) : esc_html__( 'Uploaded Package', 'xpressui-bridge' ) ) . '</td></tr>';
+	if ( $workflow_version !== '' ) {
+		echo '<tr><th style="padding: 10px 0; font-weight: 600;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><code>' . esc_html( $workflow_version ) . '</code></td></tr>';
+	}
 	echo '</table>';
 
 	echo '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">';
@@ -1289,4 +1296,71 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	}
 
 	echo '</div>'; // .wrap
+
+	if ( xpressui_pro_is_license_active() ) {
+		$single_sync_script = sprintf(
+			<<<'JS'
+(function () {
+	var syncBtn = document.getElementById('xpressui-single-sync-btn');
+	if (!syncBtn) return;
+	
+	syncBtn.addEventListener('click', function () {
+		syncBtn.disabled = true;
+		var container = document.getElementById('xpressui-single-sync-container');
+		if (!container) {
+			container = document.createElement('div');
+			container.id = 'xpressui-single-sync-container';
+			container.style.margin = '15px 0';
+			container.style.padding = '12px 16px';
+			container.style.background = '#f0f9ff';
+			container.style.border = '1px solid #bae6fd';
+			container.style.color = '#0369a1';
+			container.style.borderRadius = '6px';
+			container.style.fontWeight = '500';
+			var wrap = document.querySelector('.xpressui-wrap');
+			wrap.insertBefore(container, wrap.querySelector('.xpressui-detail-grid'));
+		}
+		container.style.background = '#f0f9ff';
+		container.style.border = '1px solid #bae6fd';
+		container.style.color = '#0369a1';
+		container.innerHTML = '<div>Syncing workflow...</div>';
+
+		var data = new URLSearchParams();
+		data.set('action', 'xpressui_console_sync_project');
+		data.set('nonce', %1$s);
+		data.set('project_id', %2$s);
+
+		fetch(%3$s, { method: 'POST', body: data, credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (res) {
+				if (res.success) {
+					container.style.background = '#f0fdf4';
+					container.style.border = '1px solid #bbf7d0';
+					container.style.color = '#15803d';
+					container.innerHTML = '<strong>Synchronized successfully!</strong> Reloading...';
+					setTimeout(function () { window.location.reload(); }, 1000);
+				} else {
+					container.style.background = '#fef2f2';
+					container.style.border = '1px solid #fca5a5';
+					container.style.color = '#991b1b';
+					container.innerHTML = '<strong>Error:</strong> ' + String(res.data.message || 'Sync failed.');
+					syncBtn.disabled = false;
+				}
+			})
+			.catch(function () {
+				container.style.background = '#fef2f2';
+				container.style.border = '1px solid #fca5a5';
+				container.style.color = '#991b1b';
+				container.innerHTML = '<strong>Error:</strong> Network error.';
+				syncBtn.disabled = false;
+			});
+	});
+}());
+JS,
+			wp_json_encode( wp_create_nonce( 'xpressui_console_sync_nonce' ) ),
+			wp_json_encode( $slug ),
+			wp_json_encode( admin_url( 'admin-ajax.php' ) )
+		);
+		wp_print_inline_script_tag( $single_sync_script );
+	}
 }
