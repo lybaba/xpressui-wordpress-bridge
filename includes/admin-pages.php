@@ -349,39 +349,7 @@ function xpressui_render_workflows_page() {
 	$installed_slugs = xpressui_get_installed_workflow_slugs();
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
-	$starter_slug    = 'file-request';
-	$starter_page_id = xpressui_get_workflow_primary_page_id( $starter_slug );
-	if ( xpressui_is_installed_workflow( $starter_slug ) ) {
-		$starter_create_url = wp_nonce_url(
-			add_query_arg(
-				[
-					'post_type'       => 'xpressui_submission',
-					'page'            => 'xpressui-bridge',
-					'xpressui_action' => 'create_workflow_page',
-					'xpressui_slug'   => $starter_slug,
-				],
-				admin_url( 'edit.php' )
-			),
-			'xpressui_create_workflow_page_' . $starter_slug
-		);
-		echo '<div class="card xpressui-admin-card">';
-		echo '<h2>' . esc_html__( 'Quick Start', 'xpressui-bridge' ) . '</h2>';
-		echo '<p>' . esc_html__( 'The File Request workflow is bundled and ready to use. Add it to any page with the shortcode below, or create a dedicated page in one click.', 'xpressui-bridge' ) . '</p>';
-		echo '<p><strong>' . esc_html__( 'Workflow:', 'xpressui-bridge' ) . '</strong> <code>[xpressui id="file-request"]</code></p>';
-		if ( $starter_page_id > 0 ) {
-			$edit_url = get_edit_post_link( $starter_page_id, '' );
-			$view_url = get_permalink( $starter_page_id );
-			echo '<p><strong>' . esc_html__( 'Starter page:', 'xpressui-bridge' ) . '</strong> ' . esc_html( get_the_title( $starter_page_id ) ?: __( 'Untitled page', 'xpressui-bridge' ) ) . '</p>';
-			echo '<p><a class="button button-primary" href="' . esc_url( $edit_url ) . '">' . esc_html__( 'Edit starter page', 'xpressui-bridge' ) . '</a> ';
-			if ( $view_url ) {
-				echo '<a class="button" href="' . esc_url( $view_url ) . '" target="_blank" rel="noreferrer">' . esc_html__( 'Preview starter page', 'xpressui-bridge' ) . '</a>';
-			}
-			echo '</p>';
-		} else {
-			echo '<p><a class="button button-primary" href="' . esc_url( $starter_create_url ) . '">' . esc_html__( 'Create starter page', 'xpressui-bridge' ) . '</a></p>';
-		}
-		echo '</div>';
-	}
+
 
 	$visible_installed_slugs = $installed_slugs;
 
@@ -1136,11 +1104,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	}
 	echo '</table>';
 
-	if ( ! $is_bundled ) {
-		echo '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">';
-		echo '<a href="' . esc_url( $delete_url ) . '" class="button button-link-delete" style="color: #d63638; text-decoration: none; border: 1px solid #d63638; padding: 4px 10px; border-radius: 3px; background: #fff;" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete Workflow', 'xpressui-bridge' ) . '</a>';
-		echo '</div>';
-	}
+
 	echo '</div>';
 
 	// ---------------------------------------------------------
@@ -1177,7 +1141,6 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '<table class="wp-list-table widefat fixed striped xpressui-table" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; margin-top: 15px;">';
 	echo '<thead><tr>';
 	echo '<th style="font-weight: 700; width: 250px;">' . esc_html__( 'Target', 'xpressui-bridge' ) . '</th>';
-	echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Link ID', 'xpressui-bridge' ) . '</th>';
 	echo '<th style="font-weight: 700;">' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
 	echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'WordPress Page', 'xpressui-bridge' ) . '</th>';
 	echo '</tr></thead>';
@@ -1209,7 +1172,6 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 	echo '<tr>';
 	echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $display_name ) . '</td>';
-	echo '<td style="vertical-align: middle; color: #888;">&mdash;</td>';
 	echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
 	echo '<td style="vertical-align: middle;">';
 	if ( ! empty( $pure_legacy_pages ) ) {
@@ -1246,7 +1208,6 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 		echo '<tr>';
 		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
-		echo '<td style="vertical-align: middle;"><code>' . esc_html( $link['id'] ) . '</code></td>';
 		echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
 		echo '<td style="vertical-align: middle;">';
 		if ( ! empty( $link_pages ) ) {
