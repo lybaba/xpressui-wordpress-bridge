@@ -368,6 +368,8 @@ function xpressui_get_shell_allowed_html() {
 		'role'        => true,
 		'aria-label'  => true,
 		'aria-hidden' => true,
+		'aria-modal'  => true,
+		'hidden'      => true,
 		'data-*'      => true,
 	];
 
@@ -401,10 +403,14 @@ function xpressui_get_shell_allowed_html() {
 		'select'   => array_merge( $global_attrs, [ 'name' => true, 'required' => true, 'disabled' => true, 'multiple' => true ] ),
 		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
 		'button'   => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'disabled' => true ] ),
-		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true ] ),
+		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true, 'download' => true ] ),
 		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true, 'hidden' => true ] ),
-		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewBox' => true, 'fill' => true, 'stroke' => true ] ),
+		'details'  => array_merge( $global_attrs, [ 'open' => true ] ),
+		'summary'  => $global_attrs,
+		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewBox' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true, 'aria-hidden' => true, 'width' => true, 'height' => true ] ),
 		'path'     => [ 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
+		'polyline' => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
+		'line'     => [ 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true ],
 		'ul'       => $global_attrs,
 		'ol'       => $global_attrs,
 		'li'       => $global_attrs,
@@ -418,6 +424,9 @@ function xpressui_get_shell_allowed_html() {
 		'dialog'   => array_merge( $global_attrs, [ 'open' => true ] ),
 		'article'  => $global_attrs,
 		'canvas'   => array_merge( $global_attrs, [ 'width' => true, 'height' => true ] ),
+		'strong'   => $global_attrs,
+		'em'       => $global_attrs,
+		'br'       => $global_attrs,
 	];
 }
 
@@ -1405,6 +1414,31 @@ function xpressui_get_hosted_link_config( $slug, $link_id ) {
 	return null;
 }
 
+/**
+ * Resolves the post-submission redirect URL for a submission.
+ *
+ * Single source of truth is the synced Hosted Link presentation
+ * (link.config.json → presentation.successRedirectUrl). Submissions without a
+ * hosted link (or a link with no configured redirect) fall back to the site home.
+ *
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submission payload (carries `hostedLinkId`).
+ * @return string Redirect URL.
+ */
+function xpressui_resolve_redirect_url( $project_slug, $payload ) {
+	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+	if ( $hosted_link_id !== '' ) {
+		$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
+		$presentation = ( is_array( $config ) && is_array( $config['presentation'] ?? null ) ) ? $config['presentation'] : [];
+		$url          = trim( (string) ( $presentation['successRedirectUrl'] ?? '' ) );
+		if ( $url !== '' ) {
+			return $url;
+		}
+	}
+
+	return home_url( '/' );
+}
+
 function xpressui_get_status_label( $status ) {
 	$options = xpressui_get_status_options();
 	return $options[ $status ] ?? $options['new'];
@@ -1688,8 +1722,8 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	$multi_step    = $step_count > 1;
 	$all_settings  = get_option( 'xpressui_project_settings', [] );
 	$project_settings = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
-	$custom_success_message = sanitize_text_field( (string) ( $project_settings['submitSuccessMessage'] ?? '' ) );
-	$custom_error_message   = sanitize_text_field( (string) ( $project_settings['submitErrorMessage'] ?? '' ) );
+	// Success/error messages come from the synced Hosted Link presentation
+	// (applied in shortcode.php) or the defaults below — no local override.
 	$submission_action      = sanitize_key( (string) ( $project_settings['submissionAction'] ?? 'submit' ) );
 	if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
 		$submission_action = 'submit';
@@ -1728,12 +1762,6 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	}
 	if ( empty( $wc['errorMessage'] ) ) {
 		$wc['errorMessage'] = __( 'Unable to submit. Please try again.', 'xpressui-bridge' );
-	}
-	if ( $custom_success_message !== '' ) {
-		$wc['successMessage'] = $custom_success_message;
-	}
-	if ( $custom_error_message !== '' ) {
-		$wc['errorMessage'] = $custom_error_message;
 	}
 	unset( $wc );
 
@@ -1792,7 +1820,8 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	if ( empty( $sf['success_title'] ) ) {
 		$sf['success_title'] = 'print' === $submission_action
 			? __( 'Document prêt', 'xpressui-bridge' )
-			: __( 'Submission received', 'xpressui-bridge' );
+			: ( $form_config['workflowConfig']['successTitle']
+				?? __( 'Submission received', 'xpressui-bridge' ) );
 	}
 	if ( empty( $sf['success_message'] ) ) {
 		$sf['success_message'] = 'print' === $submission_action

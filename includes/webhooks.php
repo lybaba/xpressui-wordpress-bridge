@@ -20,8 +20,29 @@ add_action( 'xpressui_dispatch_webhook_async', 'xpressui_dispatch_webhook_async'
  * @param string $project_slug Workflow project slug.
  * @param mixed  $payload      Submission payload (array or JSON string).
  */
+/**
+ * Resolves the webhook URL for a submission from the synced Hosted Link config.
+ *
+ * Configuration lives on the SaaS Hosted Link and is synced down to
+ * link.config.json; the legacy local `xpressui_project_settings` webhookUrl is no
+ * longer consulted. Submissions without a hosted link have no webhook.
+ *
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submission payload (carries `hostedLinkId`).
+ * @return string Webhook URL, or '' when none is configured.
+ */
+function xpressui_resolve_webhook_url( $project_slug, $payload ) {
+	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+	if ( $hosted_link_id === '' ) {
+		return '';
+	}
+	$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
+	$link_payload = ( is_array( $config ) && is_array( $config['payload'] ?? null ) ) ? $config['payload'] : [];
+	return trim( (string) ( $link_payload['webhookUrl'] ?? '' ) );
+}
+
 function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
-	$webhook_url = xpressui_get_project_setting( $project_slug, 'webhookUrl' );
+	$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
 	if ( $webhook_url === '' ) {
 		return;
 	}
@@ -65,7 +86,7 @@ function xpressui_dispatch_webhook_async( $post_id, $project_slug, $payload ) {
 		return;
 	}
 
-	$webhook_url = xpressui_get_project_setting( $project_slug, 'webhookUrl' );
+	$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
 	if ( $webhook_url === '' ) {
 		return;
 	}

@@ -73,7 +73,12 @@
 }
 
 .xpressui-wrap--workflows {
-	max-width: 900px;
+	max-width: 100%;
+}
+
+.xpressui-wrap--workflows .xpressui-page-intro,
+.xpressui-wrap--workflows .wp-header-end {
+	max-width: 100%;
 }
 
 .xpressui-wrap--project-inbox {

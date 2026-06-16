@@ -118,7 +118,29 @@ function xpressui_ajax_console_list_projects(): void {
 	}
 
 	$body = json_decode( wp_remote_retrieve_body( $response ), true );
-	wp_send_json_success( [ 'projects' => is_array( $body['items'] ?? null ) ? $body['items'] : [] ] );
+	$projects = is_array( $body['items'] ?? null ) ? $body['items'] : [];
+
+	// Detect and delete locally installed workflows that are no longer present in Console API
+	$installed_slugs = xpressui_get_installed_workflow_slugs();
+	$api_slugs       = [];
+	foreach ( $projects as $p ) {
+		if ( ! empty( $p['slug'] ) ) {
+			$api_slugs[] = sanitize_title( (string) $p['slug'] );
+		}
+	}
+	foreach ( $installed_slugs as $slug ) {
+		if ( xpressui_is_bundled_workflow( $slug ) ) {
+			continue;
+		}
+		if ( ! in_array( $slug, $api_slugs, true ) ) {
+			xpressui_delete_workflow( $slug, [
+				'preserve_project_settings' => false,
+				'mark_user_deleted'         => false,
+			] );
+		}
+	}
+
+	wp_send_json_success( [ 'projects' => $projects ] );
 }
 
 // ---------------------------------------------------------------------------
@@ -234,6 +256,7 @@ function xpressui_ajax_console_sync_project(): void {
 			if ( ! file_exists( $hosted_links_dir ) ) {
 				wp_mkdir_p( $hosted_links_dir );
 			}
+			$active_link_ids = [];
 			foreach ( $configs as $config ) {
 				// Only retrieve and synchronize hosted links of type default (pas les relances)
 				$payload_data = is_array( $config['payload'] ?? null ) ? $config['payload'] : [];
@@ -244,11 +267,25 @@ function xpressui_ajax_console_sync_project(): void {
 
 				$link_id = sanitize_file_name( (string) ( $config['id'] ?? '' ) );
 				if ( '' !== $link_id ) {
+					$active_link_ids[] = $link_id;
 					$link_dir = $hosted_links_dir . $link_id . '/';
 					if ( ! file_exists( $link_dir ) ) {
 						wp_mkdir_p( $link_dir );
 					}
 					$wp_filesystem->put_contents( $link_dir . 'link.config.json', wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), FS_CHMOD_FILE );
+				}
+			}
+
+			// Clean up any local hosted links that are no longer active/present on the Console
+			if ( is_dir( $hosted_links_dir ) ) {
+				$local_dirs = glob( trailingslashit( $hosted_links_dir ) . '*', GLOB_ONLYDIR );
+				if ( is_array( $local_dirs ) ) {
+					foreach ( $local_dirs as $local_dir_path ) {
+						$local_link_id = basename( $local_dir_path );
+						if ( ! in_array( $local_link_id, $active_link_ids, true ) ) {
+							$wp_filesystem->delete( $local_dir_path, true );
+						}
+					}
 				}
 			}
 		}

@@ -390,8 +390,8 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		]
 	);
 
-	// Read per-project redirect URL.
-	$redirect_url = xpressui_get_project_setting( $project_slug, 'redirectUrl' );
+	// Redirect URL comes from the synced Hosted Link presentation (or site home).
+	$redirect_url = xpressui_resolve_redirect_url( $project_slug, $payload );
 
 	$response = [
 		'success'      => true,
