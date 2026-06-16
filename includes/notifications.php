@@ -185,6 +185,12 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
  */
 function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 	$notify_email = xpressui_get_project_setting( $project_slug, 'notifyEmail' );
+	if ( $notify_email === '' ) {
+		$hosted_link_id = is_array( $payload ) ? ( $payload['hostedLinkId'] ?? '' ) : '';
+		if ( $hosted_link_id === '' ) {
+			$notify_email = get_option( 'admin_email' );
+		}
+	}
 	if ( $notify_email === '' || ! is_email( $notify_email ) ) {
 		return;
 	}
@@ -248,6 +254,12 @@ function xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload
  */
 function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, $payload ) {
 	$notify_email = xpressui_get_project_setting( $project_slug, 'notifyEmail' );
+	if ( $notify_email === '' ) {
+		$hosted_link_id = is_array( $payload ) ? ( $payload['hostedLinkId'] ?? '' ) : '';
+		if ( $hosted_link_id === '' ) {
+			$notify_email = get_option( 'admin_email' );
+		}
+	}
 	if ( $notify_email === '' || ! is_email( $notify_email ) ) {
 		return;
 	}

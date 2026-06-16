@@ -1216,8 +1216,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		$page_links = [];
 		foreach ( $pure_legacy_pages as $p_id ) {
 			$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
-			$p_edit = get_edit_post_link( $p_id );
-			$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
+			$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
 		}
 		echo implode( ', ', $page_links );
 	} else {
@@ -1254,8 +1253,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 			$page_links = [];
 			foreach ( $link_pages as $p_id ) {
 				$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
-				$p_edit = get_edit_post_link( $p_id );
-				$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
+				$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
 			}
 			echo implode( ', ', $page_links );
 		} else {

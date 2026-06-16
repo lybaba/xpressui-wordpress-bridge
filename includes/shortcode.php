@@ -220,6 +220,14 @@ function xpressui_render_shortcode( $atts ) {
 			if ( ! empty( $presentation['pageTemplate'] ) ) {
 				$template_context['theme']['frame_style'] = $presentation['pageTemplate'] === 'panel' ? 'panel' : 'card';
 			}
+		} else {
+			if ( ! is_array( $form_config['workflowConfig'] ?? null ) ) {
+				$form_config['workflowConfig'] = [];
+			}
+			if ( empty( $form_config['workflowConfig']['redirectUrl'] ) ) {
+				$redirect_url = xpressui_get_project_setting( $slug, 'redirectUrl' );
+				$form_config['workflowConfig']['redirectUrl'] = $redirect_url !== '' ? $redirect_url : home_url( '/' );
+			}
 		}
 
 		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );

@@ -392,6 +392,12 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 
 	// Read per-project redirect URL.
 	$redirect_url = xpressui_get_project_setting( $project_slug, 'redirectUrl' );
+	if ( $redirect_url === '' ) {
+		$hosted_link_id = is_array( $payload ) ? ( $payload['hostedLinkId'] ?? '' ) : '';
+		if ( $hosted_link_id === '' ) {
+			$redirect_url = home_url( '/' );
+		}
+	}
 
 	$response = [
 		'success'      => true,
