@@ -446,7 +446,7 @@ function xpressui_render_workflows_page() {
 
 			// Show slug underneath
 			echo '<div style="margin-top: 4px; font-size: 11px; color: #888;">';
-			echo 'Slug: <code>' . esc_html( $slug ) . '</code>';
+			echo '<code>' . esc_html( $slug ) . '</code>';
 			echo '</div>';
 			
 			// Native WordPress style row actions
