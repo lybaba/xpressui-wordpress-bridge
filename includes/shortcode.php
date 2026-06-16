@@ -129,6 +129,183 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en', $st
 }
 
 /**
+ * Renders the intro/welcome markdown into kses-safe HTML, mirroring the SaaS
+ * `_render_intro_markdown`: paragraphs split on blank lines, **bold** / *italic*
+ * inline, per-block alignment (`::center` / `::right`) and emphasis color (`!!`).
+ *
+ * @param mixed $markdown Raw intro content markdown.
+ * @return string HTML (only <p style>/<strong>/<em>/<br>, user text escaped).
+ */
+function xpressui_render_intro_markdown( $markdown ) {
+	$text = trim( (string) $markdown );
+	if ( '' === $text ) {
+		return '';
+	}
+	$text = str_replace( [ "\r\n", "\r" ], "\n", $text );
+
+	$render_inline = static function ( $value ) {
+		$escaped = esc_html( $value );
+		$escaped = preg_replace( '/\*\*(.+?)\*\*/', '<strong>$1</strong>', $escaped );
+		$escaped = preg_replace( '/\*(.+?)\*/', '<em>$1</em>', $escaped );
+		return $escaped;
+	};
+
+	$html = '';
+	foreach ( preg_split( '/\n\s*\n/', $text ) as $raw_block ) {
+		$block = trim( (string) $raw_block );
+		if ( '' === $block ) {
+			continue;
+		}
+		$lines      = explode( "\n", $block );
+		$first_line = strtolower( trim( $lines[0] ) );
+		$align      = '';
+		if ( in_array( $first_line, [ '::center', '> center', '[center]' ], true ) ) {
+			$align = 'center';
+			$block = trim( implode( "\n", array_slice( $lines, 1 ) ) );
+		} elseif ( in_array( $first_line, [ '::right', '> right', '[right]' ], true ) ) {
+			$align = 'right';
+			$block = trim( implode( "\n", array_slice( $lines, 1 ) ) );
+		}
+		$color = '';
+		if ( 0 === strpos( $block, '!!' ) ) {
+			$color = '#dc2626';
+			$block = trim( substr( $block, 2 ) );
+		}
+		if ( '' === $block ) {
+			continue;
+		}
+		$style_parts = [ 'margin:0 0 12px', 'font-size:16px', 'line-height:1.55' ];
+		if ( '' !== $align ) {
+			$style_parts[] = 'text-align:' . $align;
+		}
+		if ( '' !== $color ) {
+			$style_parts[] = 'color:' . $color;
+			$style_parts[] = 'font-weight:800';
+		}
+		$rendered_lines = array_map(
+			static function ( $line ) use ( $render_inline ) {
+				return $render_inline( trim( $line ) );
+			},
+			explode( "\n", $block )
+		);
+		$html .= '<p style="' . implode( ';', $style_parts ) . '">' . implode( '<br>', $rendered_lines ) . '</p>';
+	}
+
+	return $html;
+}
+
+/**
+ * Formats the intro price + currency for display, mirroring the SaaS
+ * `_format_intro_price_display` (space thousands separator, comma decimals).
+ *
+ * @param mixed $price    Raw price string/number.
+ * @param mixed $currency Currency label.
+ * @return string e.g. "1 200 €" or "1 200,50 €".
+ */
+function xpressui_format_intro_price( $price, $currency ) {
+	$raw_price     = trim( (string) $price );
+	$currency_text = trim( (string) $currency );
+	if ( '' === $raw_price ) {
+		return $currency_text;
+	}
+	$normalized      = str_replace( [ "\xc2\xa0", ' ' ], '', $raw_price );
+	$numeric_display = $raw_price;
+	if ( preg_match( '/^[+-]?\d[\d.,]*$/', $normalized ) ) {
+		$last_dot   = strrpos( $normalized, '.' );
+		$last_comma = strrpos( $normalized, ',' );
+		$decimal_sep = '';
+		if ( false !== $last_dot && false !== $last_comma ) {
+			$decimal_sep = $last_dot > $last_comma ? '.' : ',';
+		} elseif ( false !== $last_comma ) {
+			$trailing    = strlen( $normalized ) - $last_comma - 1;
+			$decimal_sep = in_array( $trailing, [ 1, 2 ], true ) ? ',' : '';
+		} elseif ( false !== $last_dot ) {
+			$trailing    = strlen( $normalized ) - $last_dot - 1;
+			$decimal_sep = in_array( $trailing, [ 1, 2 ], true ) ? '.' : '';
+		}
+		if ( '' !== $decimal_sep ) {
+			$thousands_sep = '.' === $decimal_sep ? ',' : '.';
+			$number_text   = str_replace( $decimal_sep, '.', str_replace( $thousands_sep, '', $normalized ) );
+		} else {
+			$number_text = str_replace( [ ',', '.' ], '', $normalized );
+		}
+		if ( is_numeric( $number_text ) ) {
+			$amount = (float) $number_text;
+			if ( abs( fmod( $amount, 1 ) ) < 0.005 ) {
+				$numeric_display = number_format( $amount, 0, '.', ' ' );
+			} else {
+				$numeric_display = number_format( $amount, 2, ',', ' ' );
+			}
+		}
+	}
+
+	return trim( $numeric_display . ' ' . $currency_text );
+}
+
+/**
+ * Renders the intro/welcome block (title + markdown content + price + deadline)
+ * from a synced Hosted Link presentation, for parity with the SaaS splash intro.
+ * Returns '' when none of the intro fields are set.
+ *
+ * @param array  $presentation Hosted Link presentation (from link.config.json).
+ * @param string $locale       'fr' or 'en'.
+ * @param string $style_handle Registered style handle for wp_add_inline_style().
+ * @return string HTML (kses-safe: section/h2/div/span/p/strong/em/br).
+ */
+function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_handle = '' ) {
+	if ( ! is_array( $presentation ) ) {
+		return '';
+	}
+	$title         = trim( (string) ( $presentation['introTitle'] ?? '' ) );
+	$content_md    = $presentation['introContentMarkdown'] ?? ( $presentation['introDescription'] ?? '' );
+	$content_html  = xpressui_render_intro_markdown( $content_md );
+	$deadline      = trim( (string) ( $presentation['introDeadlineNotice'] ?? '' ) );
+	$price_display = xpressui_format_intro_price( $presentation['introPrice'] ?? '', $presentation['introCurrency'] ?? '' );
+
+	if ( '' === $title && '' === $content_html && '' === $deadline && '' === $price_display ) {
+		return '';
+	}
+
+	$intro_css = '.xpressui-intro{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+		. '.xpressui-intro__title{margin:0 0 .6rem;font-size:1.15rem;font-weight:800;line-height:1.3;color:#0f172a}'
+		. '.xpressui-intro__content{color:#334155;font-size:.95rem;line-height:1.55}'
+		. '.xpressui-intro__content p:last-child{margin-bottom:0!important}'
+		. '.xpressui-intro__meta{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.85rem}'
+		. '.xpressui-intro__price{font-weight:800;font-size:1.05rem;color:#0f172a}'
+		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}';
+
+	if ( ! empty( $style_handle ) ) {
+		wp_add_inline_style( $style_handle, $intro_css );
+	}
+
+	$aria = '' !== $title
+		? $title
+		: ( 'fr' === $locale ? __( 'Introduction', 'xpressui-bridge' ) : __( 'Introduction', 'xpressui-bridge' ) );
+
+	ob_start();
+	if ( empty( $style_handle ) ) {
+		echo '<style>' . $intro_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+	?>
+<section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>">
+	<?php if ( '' !== $title ) : ?>
+	<h2 class="xpressui-intro__title"><?php echo esc_html( $title ); ?></h2>
+	<?php endif; ?>
+	<?php if ( '' !== $content_html ) : ?>
+	<div class="xpressui-intro__content"><?php echo $content_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by xpressui_render_intro_markdown (user text escaped), re-filtered by the final wp_kses. ?></div>
+	<?php endif; ?>
+	<?php if ( '' !== $price_display || '' !== $deadline ) : ?>
+	<div class="xpressui-intro__meta">
+		<?php if ( '' !== $price_display ) : ?><span class="xpressui-intro__price"><?php echo esc_html( $price_display ); ?></span><?php endif; ?>
+		<?php if ( '' !== $deadline ) : ?><span class="xpressui-intro__deadline"><?php echo esc_html( $deadline ); ?></span><?php endif; ?>
+	</div>
+	<?php endif; ?>
+</section>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
  * Renders the [xpressui id="project-slug"] shortcode.
  *
  * Inline rendering: form HTML and CSS are output directly into the page.
@@ -566,21 +743,23 @@ function xpressui_render_shortcode( $atts ) {
 		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
 		. '</template>';
 
-	// Parity with the SaaS hosted render: a collapsible "reference documents" block
-	// above the form, sourced from the synced Hosted Link presentation.
-	$reference_docs_html = '';
+	// Parity with the SaaS hosted render: an intro/welcome block then a collapsible
+	// "reference documents" block above the form, from the synced Hosted Link
+	// presentation. Order matches the SaaS splash: intro, then reference documents.
+	$prelude_html = '';
 	if ( is_array( $link_config ) ) {
-		$ref_presentation    = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
-		$ref_locale          = ( ( $ref_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
-		$reference_docs_html = xpressui_render_reference_documents( $ref_presentation, $ref_locale, $style_handle );
+		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
+		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
+		$prelude_html     = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle )
+			. xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
 	}
 
-	if ( '' !== $reference_docs_html ) {
+	if ( '' !== $prelude_html ) {
 		$form_pos = strpos( $fragment_html, '<form' );
 		if ( false !== $form_pos ) {
-			$fragment_html = substr( $fragment_html, 0, $form_pos ) . $reference_docs_html . substr( $fragment_html, $form_pos );
+			$fragment_html = substr( $fragment_html, 0, $form_pos ) . $prelude_html . substr( $fragment_html, $form_pos );
 		} else {
-			$fragment_html = $reference_docs_html . $fragment_html;
+			$fragment_html = $prelude_html . $fragment_html;
 		}
 	}
 
