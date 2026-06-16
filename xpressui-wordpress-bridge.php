@@ -43,6 +43,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-pages.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/instrumentation.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/rest-endpoint.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shortcode.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/catalog-render.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/notifications.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhooks.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';

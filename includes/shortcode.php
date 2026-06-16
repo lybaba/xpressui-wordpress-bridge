@@ -594,6 +594,26 @@ function xpressui_render_shortcode( $atts ) {
 		);
 	}
 
+	// Headless product catalog: when this hosted link fronts a product catalog and the
+	// snapshot was synced (hosted-links/<id>/catalogs/catalog.json), render the storefront
+	// grid server-side (SEO/LCP) instead of the form. Cart + checkout are wired by the
+	// self-contained SaaS catalog-init.js; checkout completes on the SaaS hosted-link
+	// form. The storefront is not subject to form expiry/submission gating, so this
+	// returns before the link-status checks below. See includes/catalog-render.php.
+	if ( $link_attr !== '' && is_array( $link_config ) ) {
+		$fc_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
+		$front_catalog   = is_array( $fc_presentation['frontCatalog'] ?? null ) ? $fc_presentation['frontCatalog'] : [];
+		if ( ! empty( $front_catalog['catalogId'] ) ) {
+			$catalog_snapshot = xpressui_get_hosted_link_catalog( $slug, $link_attr );
+			if ( is_array( $catalog_snapshot ) ) {
+				$catalog_embed = xpressui_render_hosted_catalog_embed( $catalog_snapshot, $slug, $link_attr );
+				if ( '' !== $catalog_embed ) {
+					return $catalog_embed;
+				}
+			}
+		}
+	}
+
 	if ( is_array( $link_config ) ) {
 		$link_status = $link_config['status'] ?? 'active';
 

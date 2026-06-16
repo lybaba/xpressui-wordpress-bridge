@@ -1,0 +1,263 @@
+<?php
+/**
+ * Headless product-catalog rendering for synced Hosted Links.
+ *
+ * Renders the product grid server-side (SEO / LCP) from the synced
+ * `catalogs/catalog.json` snapshot, mirroring the SaaS Jinja template
+ * `export/_partials/product-catalog/ecommerce-grid.j2` so the XPressUI UMD
+ * runtime hydrates the cart via the same `data-product-*` hooks. The cart
+ * checkout flow targets the SaaS hosted checkout (see catalog cart-init).
+ *
+ * @package XPressUI_Bridge
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Loads the synced product-catalog snapshot for a hosted link.
+ *
+ * @param string $project_slug Workflow slug.
+ * @param string $link_id      Hosted link id.
+ * @return array|null Decoded catalog.json, or null when absent/invalid.
+ */
+function xpressui_get_hosted_link_catalog( $project_slug, $link_id ) {
+	$project_slug = sanitize_file_name( (string) $project_slug );
+	$link_id      = sanitize_file_name( (string) $link_id );
+	if ( '' === $project_slug || '' === $link_id ) {
+		return null;
+	}
+	$uploads = wp_get_upload_dir();
+	$file    = trailingslashit( $uploads['basedir'] ) . 'xpressui/' . $project_slug
+		. '/hosted-links/' . $link_id . '/catalogs/catalog.json';
+	if ( ! is_readable( $file ) ) {
+		return null;
+	}
+	$decoded = json_decode( (string) file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	if ( ! is_array( $decoded ) || empty( $decoded['product_items'] ) || ! is_array( $decoded['product_items'] ) ) {
+		return null;
+	}
+	return $decoded;
+}
+
+/**
+ * Renders the headless product-catalog grid HTML from a catalog snapshot.
+ *
+ * Mirrors export/_partials/product-catalog/ecommerce-grid.j2. The `data-product-*`
+ * hooks match what form-ui.choice-catalog-runtime.ts binds to, so the runtime
+ * hydrates the cart (stepper, count/total, checkout).
+ *
+ * @param array  $catalog       Decoded catalog.json snapshot.
+ * @param string $detail_base   Optional product-detail base URL (for card links).
+ * @return string Catalog grid HTML (kses-safe via the embed allowed-HTML list).
+ */
+function xpressui_render_product_catalog_grid( $catalog, $detail_base = '' ) {
+	if ( ! is_array( $catalog ) ) {
+		return '';
+	}
+	$items = ( isset( $catalog['product_items'] ) && is_array( $catalog['product_items'] ) ) ? $catalog['product_items'] : [];
+	if ( empty( $items ) ) {
+		return '';
+	}
+
+	$cart_enabled    = ! empty( $catalog['cart_enabled'] );
+	$supports_many   = ! empty( $catalog['cart_supports_multiple_items'] );
+	$render_mode     = (string) ( $catalog['render_mode'] ?? 'add-to-cart' );
+	$catalog_id      = (string) ( $catalog['catalog_id'] ?? '' );
+	$template_id     = (string) ( $catalog['template_id'] ?? '' );
+	$cart_max_qty    = (int) ( $catalog['cart_max_quantity'] ?? 0 );
+	$items_per_page  = (int) ( $catalog['items_per_page'] ?? 0 );
+	$grid_columns    = (int) ( $catalog['grid_columns'] ?? 0 );
+	$cta_label       = trim( (string) ( $catalog['cta_label'] ?? '' ) );
+	if ( '' === $cta_label ) {
+		$cta_label = __( 'Buy now', 'xpressui-bridge' );
+	}
+	$cart_label = __( 'Cart', 'xpressui-bridge' );
+
+	ob_start();
+	?>
+<div class="template-product-landing" data-template-zone="workflow_product_landing" data-workflow-product-landing>
+	<div class="template-product-landing-nav" data-product-landing-nav hidden></div>
+	<?php if ( $cart_enabled ) : ?>
+	<div class="xpui-product-cart-toolbar">
+		<button type="button" class="xpui-cart-trigger" data-product-cart-trigger data-empty="true" aria-label="<?php echo esc_attr( $cta_label ); ?>">
+			<span class="xpui-cart-trigger-icon" aria-hidden="true">
+				<svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 6.5h14l-1.6 7.1a2 2 0 0 1-2 1.6H9.2a2 2 0 0 1-2-1.6L5.6 4.8H3"></path><circle cx="9.5" cy="19" r="1.2"></circle><circle cx="17" cy="19" r="1.2"></circle></svg>
+			</span>
+			<span class="xpui-sr-only"><?php echo esc_html( $cart_label ); ?></span>
+			<span class="xpui-cart-trigger-count" data-product-cart-trigger-count>0</span>
+			<span class="xpui-cart-trigger-total" data-product-cart-trigger-total></span>
+		</button>
+	</div>
+	<?php endif; ?>
+	<section
+		class="template-product-catalog-section"
+		data-template-zone="workflow_product_catalog"
+		data-section-name="product_catalog"
+		data-workflow-product-catalog
+		data-product-catalog-id="<?php echo esc_attr( $catalog_id ); ?>"
+		data-product-template-id="<?php echo esc_attr( $template_id ); ?>"
+		data-render-mode="<?php echo esc_attr( $render_mode ); ?>"
+		<?php echo $cart_max_qty ? 'data-cart-max-quantity="' . esc_attr( (string) $cart_max_qty ) . '"' : ''; ?>
+		<?php echo $items_per_page ? 'data-items-per-page="' . esc_attr( (string) $items_per_page ) . '"' : ''; ?>
+	>
+		<div class="template-product-landing-search" data-product-landing-search hidden></div>
+		<div class="template-product-grid" data-workflow-product-grid<?php echo $grid_columns ? ' data-grid-columns="' . esc_attr( (string) $grid_columns ) . '"' : ''; ?>>
+			<?php foreach ( $items as $item ) : ?>
+				<?php
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+				$id            = (string) ( $item['id'] ?? '' );
+				$label         = (string) ( $item['label'] ?? '' );
+				$image         = trim( (string) ( $item['image_thumbnail'] ?? '' ) );
+				$category      = (string) ( $item['category'] ?? '' );
+				$unit          = (string) ( $item['unit'] ?? '' );
+				$description   = (string) ( $item['description'] ?? '' );
+				$price         = ( isset( $item['price'] ) && null !== $item['price'] ) ? (string) $item['price'] : '';
+				$price_display = (string) ( $item['price_display'] ?? '' );
+				$member_price  = ( isset( $item['member_price'] ) && null !== $item['member_price'] ) ? (string) $item['member_price'] : '';
+				$member_disp   = (string) ( $item['member_price_display'] ?? '' );
+				$max_qty       = ( isset( $item['max_quantity'] ) && null !== $item['max_quantity'] ) ? (string) $item['max_quantity'] : '';
+				$detail_link   = ( '' !== $detail_base && '' !== $id ) ? trailingslashit( $detail_base ) . rawurlencode( $id ) : '';
+				?>
+			<article
+				class="template-product-card"
+				data-product-id="<?php echo esc_attr( $id ); ?>"
+				data-product-label="<?php echo esc_attr( $label ); ?>"
+				data-product-sku="<?php echo esc_attr( (string) ( $item['sku'] ?? '' ) ); ?>"
+				data-product-price="<?php echo esc_attr( $price ); ?>"
+				data-product-price-display="<?php echo esc_attr( $price_display ); ?>"
+				data-product-currency="<?php echo esc_attr( (string) ( $item['currency'] ?? '' ) ); ?>"
+				data-product-category="<?php echo esc_attr( $category ); ?>"
+				data-product-unit="<?php echo esc_attr( $unit ); ?>"
+				data-product-description="<?php echo esc_attr( $description ); ?>"
+				data-product-image="<?php echo esc_attr( $image ); ?>"
+				data-product-max-quantity="<?php echo esc_attr( $max_qty ); ?>"
+				data-product-member-price="<?php echo esc_attr( $member_price ); ?>"
+				data-product-member-price-display="<?php echo esc_attr( $member_disp ); ?>"
+				data-has-image="<?php echo $image ? 'true' : 'false'; ?>"
+				data-product-in-cart-label="<?php esc_attr_e( 'In cart', 'xpressui-bridge' ); ?>"
+				data-product-sold-out-label="<?php esc_attr_e( 'Sold out', 'xpressui-bridge' ); ?>"
+			>
+				<?php if ( '' !== $image ) : ?>
+				<?php if ( '' !== $detail_link ) : ?><a class="template-product-media" href="<?php echo esc_url( $detail_link ); ?>" data-product-detail-link><?php endif; ?>
+					<img src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy">
+				<?php if ( '' !== $detail_link ) : ?></a><?php endif; ?>
+				<?php endif; ?>
+				<?php if ( '' !== $category ) : ?>
+				<span class="template-product-category-chip"><?php echo esc_html( $category ); ?></span>
+				<?php endif; ?>
+				<h3 class="template-product-title">
+					<?php if ( '' !== $detail_link ) : ?>
+					<a href="<?php echo esc_url( $detail_link ); ?>" data-product-detail-link><?php echo esc_html( '' !== $label ? $label : $id ); ?></a>
+					<?php else : ?>
+					<?php echo esc_html( '' !== $label ? $label : $id ); ?>
+					<?php endif; ?>
+				</h3>
+				<div class="template-product-meta">
+					<?php if ( '' !== $price_display ) : ?><span class="template-product-price" data-product-price-label><?php echo esc_html( $price_display ); ?></span><?php endif; ?>
+					<?php if ( '' !== $member_disp ) : ?><span class="template-product-price template-product-price--member" data-product-member-price-label style="display:none"><?php echo esc_html( $member_disp ); ?></span><?php endif; ?>
+					<?php if ( '' !== $unit ) : ?><span><?php echo esc_html( $unit ); ?></span><?php endif; ?>
+				</div>
+				<?php if ( '' !== $description ) : ?>
+				<p class="template-product-description"><?php echo esc_html( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $cart_enabled ) : ?>
+				<div class="xpui-product-card-actions">
+					<?php if ( $supports_many ) : ?>
+					<div class="xpui-product-controls">
+						<button type="button" class="xpui-product-action-btn" data-product-decrease aria-label="<?php esc_attr_e( 'Decrease quantity', 'xpressui-bridge' ); ?>">-</button>
+						<span class="xpui-product-qty-label" data-product-quantity>0</span>
+						<button type="button" class="xpui-product-action-btn xpui-product-action-btn--add" data-product-increase aria-label="<?php esc_attr_e( 'Increase quantity', 'xpressui-bridge' ); ?>">+</button>
+					</div>
+					<?php endif; ?>
+					<button type="button" class="xpui-product-buy-now-btn" data-product-card-buy-now><?php echo esc_html( $cta_label ); ?></button>
+				</div>
+				<?php endif; ?>
+				<span class="template-product-sold-out-badge" aria-hidden="true"><?php esc_html_e( 'Sold out', 'xpressui-bridge' ); ?></span>
+			</article>
+			<?php endforeach; ?>
+		</div>
+		<nav class="xpui-product-pagination" data-product-pagination aria-label="<?php esc_attr_e( 'Products pagination', 'xpressui-bridge' ); ?>" hidden>
+			<button type="button" class="xpui-product-pagination-btn" data-product-pagination-prev aria-label="<?php esc_attr_e( 'Previous page', 'xpressui-bridge' ); ?>" disabled>&larr;</button>
+			<span class="xpui-product-pagination-info" data-product-pagination-info></span>
+			<button type="button" class="xpui-product-pagination-btn" data-product-pagination-next aria-label="<?php esc_attr_e( 'Next page', 'xpressui-bridge' ); ?>">&rarr;</button>
+		</nav>
+		<p class="template-field-error" data-workflow-product-error hidden><?php esc_html_e( 'Please select a product before continuing.', 'xpressui-bridge' ); ?></p>
+	</section>
+</div>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
+ * Renders a complete headless product-catalog embed for a hosted link.
+ *
+ * Mirrors the SaaS catalog page (export/catalog-page.html.j2): the product grid
+ * (server-rendered for SEO/LCP) inside a `page-shell` > `form-frame`, plus a hidden
+ * cart-state form shell, the `__xpuiCatalog*` globals, and the SaaS `catalog-init.js`.
+ *
+ * `catalog-init.js` is fully self-contained for cart + checkout (no XPressUI runtime
+ * UMD dependency): it binds the `data-product-*` hooks, persists the cart in the
+ * hidden form shell, and redirects checkout to the SaaS hosted-link form
+ * (`checkout_form_url`) — products render on WordPress, checkout completes on the SaaS.
+ *
+ * @param array  $catalog      Decoded catalog.json snapshot (with checkout/init/token URLs).
+ * @param string $project_slug Workflow slug (for a stable mount id).
+ * @param string $link_id      Hosted link id (for a stable mount id).
+ * @return string Embed HTML, or '' when the snapshot has no product items.
+ */
+function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id ) {
+	if ( ! is_array( $catalog ) || empty( $catalog['product_items'] ) ) {
+		return '';
+	}
+
+	$mount_id = 'xpui-catalog-' . sanitize_html_class( substr( md5( (string) $project_slug . '|' . (string) $link_id ), 0, 12 ) );
+
+	// --- Styles. The product card/grid/cart styles live in the shell stylesheet. ---
+	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
+	$shell_css_ver  = file_exists( $shell_css_path ) ? (string) filemtime( $shell_css_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_style( 'xpressui-shell', XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-shell.css', [], $shell_css_ver );
+
+	// --- Cart globals + the self-contained SaaS catalog-init.js (no runtime UMD). ---
+	$checkout_url = (string) ( $catalog['checkout_form_url'] ?? '' );
+	$token_url    = (string) ( $catalog['cart_token_url'] ?? '' );
+	$init_url     = (string) ( $catalog['catalog_init_url'] ?? '' );
+	$return_url   = get_permalink();
+	if ( ! $return_url ) {
+		$return_url = home_url( '/' );
+	}
+
+	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $return_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $checkout_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCartSummaryUrl="";';
+	$globals .= 'window.__xpuiCatalogTokenUrl=' . wp_json_encode( $token_url ) . ';';
+	$globals .= 'window.__xpuiCatalogInitHandlesHeaderCart=true;';
+	$globals .= 'window.__xpuiCatalogGate=null;';
+
+	if ( '' !== $init_url ) {
+		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [], null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Cross-origin SaaS asset; the SaaS handles its own cache-busting.
+		wp_add_inline_script( 'xpressui-catalog-init', $globals, 'before' );
+	}
+
+	// --- Markup: mount > form-frame > hidden cart shell + product grid. ---
+	$grid = xpressui_render_product_catalog_grid( $catalog );
+
+	$shell  = '<form id="' . esc_attr( $mount_id . '-shell' ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
+	$shell .= '<input type="hidden" name="xpressuiProductCart" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductTotal" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductCurrency" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductCount" value="" />';
+	$shell .= '</form>';
+
+	$html  = '<div class="xpressui-embed-wrapper xpressui-inline-embed">';
+	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell">';
+	$html .= '<div class="form-frame form-frame--commerce-landing">';
+	$html .= $shell;
+	$html .= $grid;
+	$html .= '</div></div></div>';
+
+	return wp_kses( $html, xpressui_get_shell_allowed_html() );
+}

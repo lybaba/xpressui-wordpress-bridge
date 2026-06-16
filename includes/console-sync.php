@@ -273,6 +273,36 @@ function xpressui_ajax_console_sync_project(): void {
 						wp_mkdir_p( $link_dir );
 					}
 					$wp_filesystem->put_contents( $link_dir . 'link.config.json', wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), FS_CHMOD_FILE );
+
+					// Headless catalog (Model B): when the link carries a product front
+					// catalog, pull its JSON snapshot so the plugin can render the product
+					// grid server-side. The catalog folder is dropped when no longer present.
+					$presentation  = is_array( $config['presentation'] ?? null ) ? $config['presentation'] : [];
+					$front_catalog = is_array( $presentation['frontCatalog'] ?? null ) ? $presentation['frontCatalog'] : [];
+					$catalogs_dir  = $link_dir . 'catalogs/';
+					if ( ! empty( $front_catalog['catalogId'] ) ) {
+						$catalog_response = wp_remote_get(
+							trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $slug ) . '/hosted-links/' . rawurlencode( (string) ( $config['id'] ?? '' ) ) . '/catalog.json',
+							[
+								'headers' => [
+									'X-Api-Token' => $conn['apiToken'],
+									'Accept'      => 'application/json',
+								],
+								'timeout' => 20,
+							]
+						);
+						if ( ! is_wp_error( $catalog_response ) && 200 === wp_remote_retrieve_response_code( $catalog_response ) ) {
+							$catalog_json = json_decode( wp_remote_retrieve_body( $catalog_response ), true );
+							if ( is_array( $catalog_json ) ) {
+								if ( ! file_exists( $catalogs_dir ) ) {
+									wp_mkdir_p( $catalogs_dir );
+								}
+								$wp_filesystem->put_contents( $catalogs_dir . 'catalog.json', wp_json_encode( $catalog_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), FS_CHMOD_FILE );
+							}
+						}
+					} elseif ( is_dir( $catalogs_dir ) ) {
+						$wp_filesystem->delete( $catalogs_dir, true );
+					}
 				}
 			}
 
