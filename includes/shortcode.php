@@ -301,6 +301,10 @@ function xpressui_gallery_showcase_embed_css() {
 	// relative to the grid container (fr units, container-relative) so they always fit
 	// the available width; the SaaS mobile breakpoint (<=860px) keeps the stacked layout.
 	return '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
+		// The SaaS page ships a global `* { box-sizing: border-box }` reset that is not
+		// loaded in the embed (only hosted-intro.css is). Without it the buy box CTA
+		// (width:100% + padding) overflows its card. Restore border-box for the showcase.
+		. '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::before,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::after{box-sizing:border-box}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px);max-width:none;overflow-x:visible}'
 		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
@@ -477,16 +481,17 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		}
 	}
 
-	$intro_css = '.xpressui-intro{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+	$intro_css = '.xpressui-intro{width:min(100%,900px);box-sizing:border-box;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 auto 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
 		. '.xpressui-intro__title{margin:0 0 .6rem;font-size:1.15rem;font-weight:800;line-height:1.3;color:#0f172a}'
 		. '.xpressui-intro__content{color:#334155;font-size:.95rem;line-height:1.55}'
 		. '.xpressui-intro__content p:last-child{margin-bottom:0!important}'
 		. '.xpressui-intro__meta{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.85rem}'
 		. '.xpressui-intro__price{font-weight:800;font-size:1.05rem;color:#0f172a}'
 		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}'
-		. '.xpressui-intro__actions{margin-top:1rem}'
-		. '.xpressui-intro__cta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 1.4rem;border-radius:999px;background:var(--xpressui-accent,#0f766e);color:#fff!important;font-weight:800;font-size:.95rem;text-decoration:none!important;box-shadow:0 12px 24px -12px var(--xpressui-accent,#0f766e);transition:transform .15s ease,filter .15s ease}'
-		. '.xpressui-intro__cta:hover{transform:translateY(-1px);filter:brightness(1.05)}';
+		. '.xpressui-intro__actions{margin-top:.85rem}'
+		. '.xpressui-intro__cta{display:inline-flex;align-items:center;gap:.35rem;padding:0;background:none;border:0;color:var(--xpressui-accent,#0f766e)!important;font-weight:700;font-size:.95rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;transition:opacity .15s ease}'
+		. '.xpressui-intro__cta::after{content:"\2192";font-weight:700;text-decoration:none}'
+		. '.xpressui-intro__cta:hover{opacity:.72}';
 
 	if ( ! empty( $style_handle ) ) {
 		wp_add_inline_style( $style_handle, $intro_css );
