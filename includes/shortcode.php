@@ -243,80 +243,194 @@ function xpressui_format_intro_price( $price, $currency ) {
 }
 
 /**
- * Renders the hero / gallery media block from a synced Hosted Link presentation,
- * for parity with the SaaS splash hero + gallery. Combines heroImageUrl with
- * introImageUrls (deduped, https only, capped at 8) into a slideshow; renders a
- * single image when only one is present. Returns '' when there is no media.
+ * Resolves the hero image + ordered gallery list from a synced presentation,
+ * mirroring the SaaS dedup logic (context.py): the hero is excluded from the
+ * gallery; with no gallery + a hero on a non-showcase template the hero becomes
+ * the single gallery image; on a gallery-showcase template with no hero the first
+ * gallery image is promoted to the hero. https/http only, capped at 8.
  *
- * @param array  $presentation Hosted Link presentation (from link.config.json).
- * @param string $locale       'fr' or 'en'.
- * @param string $style_handle Registered style handle for wp_add_inline_style().
- * @return string HTML (kses-safe: div/img/button).
+ * @param array  $presentation  Hosted Link presentation (from link.config.json).
+ * @param string $page_template Resolved page template (e.g. 'gallery-showcase').
+ * @return array{hero:string,gallery:string[]}
  */
-function xpressui_render_intro_media( $presentation, $locale = 'en', $style_handle = '' ) {
+function xpressui_resolve_intro_media( $presentation, $page_template = '' ) {
+	$is_http = static function ( $url ) {
+		return '' !== $url && ( stripos( $url, 'http://' ) === 0 || stripos( $url, 'https://' ) === 0 );
+	};
+	$hero = trim( (string) ( $presentation['heroImageUrl'] ?? '' ) );
+	if ( ! $is_http( $hero ) ) {
+		$hero = '';
+	}
+	$gallery   = [];
+	$raw_items = $presentation['introImageUrls'] ?? [];
+	if ( is_array( $raw_items ) ) {
+		foreach ( $raw_items as $item ) {
+			$url = trim( (string) $item );
+			if ( ! $is_http( $url ) || $url === $hero || in_array( $url, $gallery, true ) ) {
+				continue;
+			}
+			$gallery[] = $url;
+			if ( count( $gallery ) >= 8 ) {
+				break;
+			}
+		}
+	}
+	if ( empty( $gallery ) && '' !== $hero && 'gallery-showcase' !== $page_template ) {
+		$gallery = [ $hero ];
+	}
+	if ( 'gallery-showcase' === $page_template && '' === $hero && ! empty( $gallery ) ) {
+		$hero = array_shift( $gallery );
+	}
+	return [ 'hero' => $hero, 'gallery' => $gallery ];
+}
+
+/**
+ * Embed-context overrides for the reused SaaS gallery-showcase stylesheet.
+ *
+ * The SaaS stylesheet styles the showcase as a full-page splash (fixed/100svh,
+ * negative full-bleed margins, opaque background). In the inline WordPress embed
+ * it flows in the page content, so neutralise those page-level rules while leaving
+ * the component styling (stage, thumbnails, buy box, CTA) untouched for parity.
+ *
+ * @return string CSS appended via wp_add_inline_style().
+ */
+function xpressui_gallery_showcase_embed_css() {
+	return '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px)}';
+}
+
+/**
+ * Renders the gallery-showcase intro (product-detail layout) from a synced Hosted
+ * Link presentation, for pixel parity with the SaaS hosted-link render
+ * (templates/hosted/link-intro-gallery.html.j2). Reuses the SaaS intro stylesheet
+ * (assets/hosted-intro.css) and script (assets/hosted-intro.js), so this only
+ * emits the same markup. Returns '' when the link is not a gallery-showcase.
+ *
+ * Differences from the SaaS render, by request: the public header is omitted (the
+ * WordPress page chrome provides it), the workflow title <h1> is omitted (the
+ * WordPress page title is shown instead), and the CTA targets the embedded form
+ * mount node rather than #xpressui-root.
+ *
+ * @param array  $presentation  Hosted Link presentation (from link.config.json).
+ * @param string $locale        'fr' or 'en'.
+ * @param string $mount_node_id The form mount element id (CTA scroll target).
+ * @param string $accent_color  Accent color for the CTA (--xpressui-accent).
+ * @return string HTML (kses-safe), or '' when not a gallery-showcase link.
+ */
+function xpressui_render_gallery_showcase( $presentation, $locale = 'en', $mount_node_id = 'xpressui-root', $accent_color = '#0f766e' ) {
 	if ( ! is_array( $presentation ) ) {
 		return '';
 	}
-	$images = [];
-	$add    = static function ( $url ) use ( &$images ) {
-		$url = trim( (string) $url );
-		if ( '' === $url || ( stripos( $url, 'http://' ) !== 0 && stripos( $url, 'https://' ) !== 0 ) ) {
-			return;
-		}
-		if ( in_array( $url, $images, true ) || count( $images ) >= 8 ) {
-			return;
-		}
-		$images[] = $url;
-	};
-	$add( $presentation['heroImageUrl'] ?? '' );
-	$raw_gallery = $presentation['introImageUrls'] ?? [];
-	if ( is_array( $raw_gallery ) ) {
-		foreach ( $raw_gallery as $url ) {
-			$add( $url );
-		}
-	}
-	if ( empty( $images ) ) {
+	$page_template = strtolower( trim( (string) ( $presentation['pageTemplate'] ?? '' ) ) );
+	$media         = xpressui_resolve_intro_media( $presentation, $page_template );
+	$hero          = $media['hero'];
+	$gallery       = $media['gallery'];
+
+	// is_gallery_showcase: explicit template, or >= 2 gallery images (matches SaaS).
+	$is_showcase = ( 'gallery-showcase' === $page_template && ( '' !== $hero || ! empty( $gallery ) ) )
+		|| count( $gallery ) >= 2;
+	if ( ! $is_showcase ) {
 		return '';
 	}
 
-	$media_css = '.xpressui-intro-media{position:relative;margin:0 0 1.25rem;border-radius:12px;overflow:hidden;background:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
-		. '.xpressui-intro-media__viewport{position:relative;width:100%;aspect-ratio:16/9}'
-		. '.xpressui-intro-media__slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease}'
-		. '.xpressui-intro-media__slide.is-active{opacity:1}'
-		. '.xpressui-intro-media__nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;border-radius:999px;background:rgba(15,23,42,.55);color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease;z-index:2}'
-		. '.xpressui-intro-media__nav:hover{background:rgba(15,23,42,.85)}'
-		. '.xpressui-intro-media__nav.is-prev{left:.6rem}'
-		. '.xpressui-intro-media__nav.is-next{right:.6rem}'
-		. '.xpressui-intro-media__dots{position:absolute;left:0;right:0;bottom:.6rem;display:flex;justify-content:center;gap:.4rem;z-index:2}'
-		. '.xpressui-intro-media__dot{width:8px;height:8px;border:none;border-radius:999px;background:rgba(255,255,255,.5);cursor:pointer;padding:0}'
-		. '.xpressui-intro-media__dot.is-active{background:#fff}';
-
-	if ( ! empty( $style_handle ) ) {
-		wp_add_inline_style( $style_handle, $media_css );
+	$source_label   = trim( (string) ( $presentation['sourceLabel'] ?? '' ) );
+	$intro_title    = trim( (string) ( $presentation['introTitle'] ?? '' ) );
+	$display_title  = '' !== $intro_title ? $intro_title : $source_label;
+	$content_md     = $presentation['introContentMarkdown'] ?? ( $presentation['introDescription'] ?? '' );
+	$content_html   = xpressui_render_intro_markdown( $content_md );
+	$deadline       = trim( (string) ( $presentation['introDeadlineNotice'] ?? '' ) );
+	$price_display  = xpressui_format_intro_price( $presentation['introPrice'] ?? '', $presentation['introCurrency'] ?? '' );
+	$button_label   = trim( (string) ( $presentation['introButtonLabel'] ?? '' ) );
+	if ( '' === $button_label ) {
+		$button_label = '' !== $display_title
+			? $display_title
+			: ( 'fr' === $locale ? __( 'Ouvrir le formulaire', 'xpressui-bridge' ) : __( 'Open form', 'xpressui-bridge' ) );
 	}
-
-	$prev_label = 'fr' === $locale ? __( 'Image précédente', 'xpressui-bridge' ) : __( 'Previous image', 'xpressui-bridge' );
-	$next_label = 'fr' === $locale ? __( 'Image suivante', 'xpressui-bridge' ) : __( 'Next image', 'xpressui-bridge' );
-	$has_many   = count( $images ) > 1;
+	$theme       = trim( (string) ( $presentation['theme'] ?? 'light' ) );
+	$cta_target  = '#' . sanitize_html_class( $mount_node_id );
+	$has_gallery = ! empty( $gallery );
 
 	ob_start();
-	if ( empty( $style_handle ) ) {
-		echo '<style>' . $media_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	}
 	?>
-<div class="xpressui-intro-media" data-xpressui-intro-media>
-	<div class="xpressui-intro-media__viewport">
-		<?php foreach ( $images as $index => $image_url ) : ?>
-		<img class="xpressui-intro-media__slide<?php echo 0 === $index ? ' is-active' : ''; ?>" src="<?php echo esc_url( $image_url ); ?>" alt=""<?php echo 0 === $index ? '' : ' loading="lazy"'; ?>>
-		<?php endforeach; ?>
+<div
+	id="xpressui-splash"
+	class="xpressui-splash xpressui-splash--gallery-showcase"
+	data-page-template="<?php echo esc_attr( $page_template ?: 'gallery-showcase' ); ?>"
+	data-xpressui-inline-intro="true"
+	data-theme="<?php echo esc_attr( $theme ); ?>"
+	role="region"
+	aria-label="<?php echo esc_attr( $display_title ); ?>"
+	style="--xpressui-accent: <?php echo esc_attr( $accent_color ); ?>;"
+>
+	<?php if ( '' !== $hero ) : ?>
+	<section class="xpressui-gallery-showcase-hero" aria-label="<?php echo esc_attr( $display_title ); ?>">
+		<div class="xpressui-gallery-showcase-hero-frame">
+			<img src="<?php echo esc_url( $hero ); ?>" alt="" loading="eager" decoding="async">
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<div
+		class="xpressui-gallery-showcase-shell<?php echo $has_gallery ? '' : ' has-no-gallery'; ?>"
+		<?php if ( $has_gallery ) : ?>data-xpressui-intro-gallery data-gallery-mode="showcase"<?php endif; ?>
+	>
+		<?php if ( $has_gallery ) : ?>
+		<div class="xpressui-gallery-showcase-media">
+			<div class="xpressui-gallery-showcase-stage" data-xpressui-gallery-stage>
+				<?php foreach ( $gallery as $index => $image_url ) : ?>
+				<img class="xpressui-splash-slide<?php echo 0 === $index ? ' is-active' : ''; ?>" src="<?php echo esc_url( $image_url ); ?>" alt=""<?php echo 0 === $index ? '' : ' loading="lazy"'; ?>>
+				<?php endforeach; ?>
+				<?php if ( count( $gallery ) > 1 ) : ?>
+				<button class="xpressui-splash-gallery-button is-prev" type="button" data-xpressui-gallery-prev aria-label="<?php echo esc_attr( 'fr' === $locale ? __( 'Image précédente', 'xpressui-bridge' ) : __( 'Previous image', 'xpressui-bridge' ) ); ?>">&lsaquo;</button>
+				<button class="xpressui-splash-gallery-button is-next" type="button" data-xpressui-gallery-next aria-label="<?php echo esc_attr( 'fr' === $locale ? __( 'Image suivante', 'xpressui-bridge' ) : __( 'Next image', 'xpressui-bridge' ) ); ?>">&rsaquo;</button>
+				<?php endif; ?>
+			</div>
+			<?php if ( count( $gallery ) > 1 ) : ?>
+			<div class="xpressui-gallery-showcase-thumbs" aria-label="<?php echo esc_attr( __( 'Image thumbnails', 'xpressui-bridge' ) ); ?>">
+				<?php foreach ( $gallery as $index => $image_url ) : ?>
+				<button class="xpressui-gallery-showcase-thumb<?php echo 0 === $index ? ' is-active' : ''; ?>" type="button" data-xpressui-gallery-thumb="<?php echo (int) $index; ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: image number */ __( 'Image %d', 'xpressui-bridge' ), $index + 1 ) ); ?>">
+					<img src="<?php echo esc_url( $image_url ); ?>" alt="" loading="<?php echo 0 === $index ? 'eager' : 'lazy'; ?>">
+				</button>
+				<?php endforeach; ?>
+			</div>
+			<?php endif; ?>
+		</div>
+		<?php endif; ?>
+
+		<div class="xpressui-gallery-showcase-copy template-product-detail-copy">
+			<?php if ( '' !== $source_label && $source_label !== $display_title ) : ?>
+			<p class="xpressui-gallery-showcase-kicker template-product-landing-kicker"><?php echo esc_html( $source_label ); ?></p>
+			<?php endif; ?>
+
+			<div class="xpressui-gallery-showcase-buy-box template-product-detail-buy-box">
+				<?php if ( '' !== $price_display ) : ?>
+				<div class="xpressui-gallery-showcase-price-row template-product-detail-price-row">
+					<strong class="xpressui-gallery-showcase-price template-product-detail-price"><?php echo esc_html( $price_display ); ?></strong>
+				</div>
+				<?php endif; ?>
+				<?php if ( '' !== $deadline ) : ?>
+				<div class="xpressui-splash-deadline xpressui-gallery-showcase-deadline"><?php echo esc_html( $deadline ); ?></div>
+				<?php endif; ?>
+				<div class="xpressui-gallery-showcase-actions xpui-product-view-actions">
+					<a class="xpressui-gallery-showcase-cta xpui-product-detail-checkout-btn" href="<?php echo esc_attr( $cta_target ); ?>"><?php echo esc_html( $button_label ); ?></a>
+				</div>
+			</div>
+
+			<?php if ( '' !== $content_html ) : ?>
+			<div class="xpressui-gallery-showcase-desc template-product-detail-description"><?php echo $content_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by xpressui_render_intro_markdown (user text escaped), re-filtered by the final wp_kses. ?></div>
+			<?php endif; ?>
+		</div>
 	</div>
-	<?php if ( $has_many ) : ?>
-	<button class="xpressui-intro-media__nav is-prev" type="button" data-xpressui-intro-media-prev aria-label="<?php echo esc_attr( $prev_label ); ?>">&lsaquo;</button>
-	<button class="xpressui-intro-media__nav is-next" type="button" data-xpressui-intro-media-next aria-label="<?php echo esc_attr( $next_label ); ?>">&rsaquo;</button>
-	<div class="xpressui-intro-media__dots">
-		<?php foreach ( $images as $index => $image_url ) : ?>
-		<button class="xpressui-intro-media__dot<?php echo 0 === $index ? ' is-active' : ''; ?>" type="button" data-xpressui-intro-media-dot="<?php echo (int) $index; ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: slide number */ __( 'Image %d', 'xpressui-bridge' ), $index + 1 ) ); ?>"></button>
-		<?php endforeach; ?>
+
+	<?php if ( $has_gallery ) : ?>
+	<div class="xpressui-gallery-lightbox" data-xpressui-gallery-lightbox hidden aria-modal="true" role="dialog" aria-label="<?php echo esc_attr( __( 'Image preview', 'xpressui-bridge' ) ); ?>">
+		<button type="button" class="xpressui-gallery-lightbox-close-btn" data-xpressui-gallery-lightbox-close aria-label="<?php echo esc_attr( __( 'Close image preview', 'xpressui-bridge' ) ); ?>">&times;</button>
+		<?php if ( count( $gallery ) > 1 ) : ?>
+		<button type="button" class="xpressui-gallery-lightbox-nav is-prev" data-xpressui-gallery-lightbox-prev aria-label="<?php echo esc_attr( 'fr' === $locale ? __( 'Image précédente', 'xpressui-bridge' ) : __( 'Previous image', 'xpressui-bridge' ) ); ?>">&lsaquo;</button>
+		<button type="button" class="xpressui-gallery-lightbox-nav is-next" data-xpressui-gallery-lightbox-next aria-label="<?php echo esc_attr( 'fr' === $locale ? __( 'Image suivante', 'xpressui-bridge' ) : __( 'Next image', 'xpressui-bridge' ) ); ?>">&rsaquo;</button>
+		<?php endif; ?>
+		<img data-xpressui-gallery-lightbox-image alt="">
 	</div>
 	<?php endif; ?>
 </div>
@@ -649,7 +763,9 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Apply show_* flags to rendered_form (works whether built above or loaded from template context).
 	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
-		$template_context['rendered_form']['show_title']           = $show_project_title;
+		// On a synced Hosted Link embed, the WordPress page title is the single source
+		// of truth — hide the workflow form title to avoid duplicating it.
+		$template_context['rendered_form']['show_title']           = is_array( $link_config ) ? false : $show_project_title;
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 		// Ensure camera-photo-list/camera-photo fields always have the right input_type and
@@ -819,11 +935,6 @@ function xpressui_render_shortcode( $atts ) {
 	$download_script = 'try{document.addEventListener("click",function(e){var btn=e.target.closest(".xpressui-ref-docs__download");if(!btn)return;var url=btn.getAttribute("href");if(!url)return;e.preventDefault();btn.style.opacity="0.5";btn.style.pointerEvents="none";fetch(url).then(function(res){if(!res.ok)throw new Error("Fetch failed");return res.blob();}).then(function(blob){var blobUrl=URL.createObjectURL(blob);var a=document.createElement("a");a.href=blobUrl;a.download=btn.getAttribute("download")||url.substring(url.lastIndexOf("/")+1)||"document";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(blobUrl);}).catch(function(err){console.error("Download failed:",err);window.open(url,"_blank","noopener,noreferrer");}).finally(function(){btn.style.opacity="";btn.style.pointerEvents="";});});}catch(e){}';
 	wp_add_inline_script( 'xpressui-shell-init', $download_script, 'after' );
 
-	// Intro hero/gallery slideshow: cycle slides on prev/next/dot click. No-ops
-	// when a container has fewer than two slides (single hero image).
-	$gallery_script = 'try{document.querySelectorAll("[data-xpressui-intro-media]").forEach(function(box){var slides=box.querySelectorAll(".xpressui-intro-media__slide");if(slides.length<2)return;var dots=box.querySelectorAll("[data-xpressui-intro-media-dot]");var cur=0;function go(n){cur=(n+slides.length)%slides.length;slides.forEach(function(s,i){s.classList.toggle("is-active",i===cur);});dots.forEach(function(d,i){d.classList.toggle("is-active",i===cur);});}var p=box.querySelector("[data-xpressui-intro-media-prev]");var x=box.querySelector("[data-xpressui-intro-media-next]");if(p)p.addEventListener("click",function(){go(cur-1);});if(x)x.addEventListener("click",function(){go(cur+1);});dots.forEach(function(d,i){d.addEventListener("click",function(){go(i);});});});}catch(e){}';
-	wp_add_inline_script( 'xpressui-shell-init', $gallery_script, 'after' );
-
 	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
 
 	// Embed the form config as inert JSON markup read by plugin-shell-init.js.
@@ -833,16 +944,37 @@ function xpressui_render_shortcode( $atts ) {
 		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
 		. '</template>';
 
-	// Parity with the SaaS hosted render: an intro/welcome block then a collapsible
-	// "reference documents" block above the form, from the synced Hosted Link
-	// presentation. Order matches the SaaS splash: intro, then reference documents.
-	$prelude_html = '';
+	// Parity with the SaaS hosted render. A gallery-showcase link renders the full
+	// product-detail intro (hero + gallery + buy box + CTA) OUTSIDE the form card,
+	// reusing the SaaS intro stylesheet/script verbatim. Other links render a simple
+	// intro/welcome block inside the card. The reference-documents block sits above
+	// the form in both cases.
+	$showcase_html = '';
+	$prelude_html  = '';
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
-		$prelude_html     = xpressui_render_intro_media( $pre_presentation, $pre_locale, $style_handle )
-			. xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle )
-			. xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
+		$pre_accent       = trim( (string) ( $pre_presentation['accentColor'] ?? '' ) );
+		if ( '' === $pre_accent ) {
+			$pre_accent = '#0f766e';
+		}
+
+		$showcase_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
+		if ( '' === $showcase_html ) {
+			$prelude_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle );
+		}
+		$prelude_html .= xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
+
+		if ( '' !== $showcase_html ) {
+			$intro_css_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.css';
+			$intro_css_ver  = file_exists( $intro_css_path ) ? (string) filemtime( $intro_css_path ) : XPRESSUI_BRIDGE_VERSION;
+			wp_enqueue_style( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.css', [], $intro_css_ver );
+			wp_add_inline_style( 'xpressui-hosted-intro', xpressui_gallery_showcase_embed_css() );
+
+			$intro_js_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.js';
+			$intro_js_ver  = file_exists( $intro_js_path ) ? (string) filemtime( $intro_js_path ) : XPRESSUI_BRIDGE_VERSION;
+			wp_enqueue_script( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.js', [], $intro_js_ver, true );
+		}
 	}
 
 	if ( '' !== $prelude_html ) {
@@ -855,6 +987,7 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
+		. $showcase_html
 		. $fragment_html
 		. $config_tag
 		. '</div>';

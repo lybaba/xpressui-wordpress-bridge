@@ -1,0 +1,1695 @@
+body.xpressui-hosted-intro-active {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+}
+
+.xpressui-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: clamp(28px, 5vw, 64px) clamp(18px, 4vw, 52px);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(15, 118, 110, .08), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 62%, #eef3f7 100%);
+  color: #0f172a;
+  transition: opacity .35s ease;
+  box-sizing: border-box;
+  overflow: auto;
+  --xpressui-accent: #0f766e;
+}
+
+body.hosted-catalog-page .xpressui-splash {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+
+body.hosted-catalog-page #xpressui-root {
+  scroll-margin-top: 82px;
+}
+
+body.hosted-catalog-page:not(.hosted-link-template-blank) #xpressui-root {
+  scroll-margin-top: 142px;
+}
+
+body.hosted-catalog-page.hosted-link-template-split-hero .xpressui-public-header--split-hero ~ main.page #xpressui-root {
+  scroll-margin-top: 142px;
+}
+
+body.hosted-catalog-page .xpressui-splash-shell {
+  padding-top: clamp(28px, 5vw, 58px);
+  padding-bottom: clamp(22px, 4vw, 42px);
+}
+
+.xpressui-splash[data-theme='dark'] {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.xpressui-splash[data-theme='primary'] {
+  background: #1e3a8a;
+  color: #f8fafc;
+}
+
+.xpressui-splash.has-background-image {
+  background-image:
+    linear-gradient(135deg, rgba(15, 23, 42, .58), rgba(15, 23, 42, .34)),
+    var(--xpressui-intro-background-image);
+  background-size: cover;
+  background-position: center;
+}
+
+.xpressui-splash.has-background-image[data-theme='dark'],
+.xpressui-splash.has-background-image[data-theme='primary'] {
+  background-image:
+    linear-gradient(135deg, rgba(15, 23, 42, .76), rgba(15, 23, 42, .48)),
+    var(--xpressui-intro-background-image);
+}
+
+@media (max-width: 640px) {
+  .xpressui-public-header { transition: transform .25s ease; will-change: transform; }
+  .xpressui-public-header.xpui-header-hidden { transform: translateY(-100%); }
+}
+.xpressui-public-header {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(18px, 4vw, 48px);
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(20px) saturate(1.2);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.01), 0 4px 20px rgba(0, 0, 0, 0.01);
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-header {
+  background: rgba(15, 23, 42, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.xpressui-splash[data-theme='primary'] .xpressui-public-header {
+  background: rgba(30, 58, 138, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2), 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+body:has(> .xpressui-public-header):not(.hosted-catalog-page):not(.xpressui-hosted-embed-launch) {
+  display: block !important;
+  align-items: initial !important;
+  justify-items: initial !important;
+  place-items: initial !important;
+  min-height: 100svh !important;
+}
+
+body:has(> .xpressui-public-header):not(.hosted-catalog-page):not(.xpressui-hosted-embed-launch) > .xpressui-public-header {
+  width: 100%;
+  margin: 0;
+}
+
+body:not(.hosted-catalog-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header + #xpressui-root.page-shell,
+body.hosted-link-template-split-hero:not(.hosted-catalog-page):not(.workspace-hosted-link-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header--split-hero ~ #xpressui-root.page-shell {
+  min-height: calc(100svh - 72px) !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: clamp(24px, 4vh, 48px) clamp(16px, 3vw, 32px) !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+}
+
+body:not(.hosted-catalog-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header.has-catalog-header + #xpressui-root.page-shell,
+body.hosted-link-template-split-hero:not(.hosted-catalog-page):not(.workspace-hosted-link-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header--split-hero.has-catalog-header ~ #xpressui-root.page-shell {
+  min-height: calc(100svh - 136px) !important;
+}
+
+body:not(.hosted-catalog-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header + #xpressui-root.page-shell .form-frame,
+body.hosted-link-template-split-hero:not(.hosted-catalog-page):not(.workspace-hosted-link-page):not(.xpressui-hosted-embed-launch) .xpressui-public-header--split-hero ~ #xpressui-root.page-shell .form-frame {
+  width: min(100%, 900px) !important;
+  margin: 0 auto !important;
+}
+
+body.hosted-catalog-page:not(.hosted-link-template-blank) .xpressui-public-header {
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+
+.xpressui-public-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  /* Left column of the header; balances the cart column so the centred
+     category menu stays optically centred. */
+  flex: 1 1 0;
+  text-decoration: none;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.xpressui-public-brand:hover {
+  opacity: 0.95;
+  transform: translateY(-0.5px);
+}
+
+.xpressui-public-brand-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, #0f172a 30%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-brand-text,
+.xpressui-splash[data-theme='primary'] .xpressui-public-brand-text {
+  background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.xpressui-public-logo,
+.xpressui-public-logo-fallback {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+}
+
+.xpressui-public-logo {
+  object-fit: contain;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.xpressui-public-logo-fallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--xpressui-accent) 0%, color-mix(in srgb, var(--xpressui-accent) 72%, #020617) 100%);
+  color: #fff;
+  font-weight: 850;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 4px 10px -2px rgba(15, 118, 110, 0.2);
+}
+
+.xpressui-public-brand:hover .xpressui-public-logo,
+.xpressui-public-brand:hover .xpressui-public-logo-fallback {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.xpressui-public-brand:hover .xpressui-public-logo-fallback {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 14px -1px rgba(15, 118, 110, 0.3);
+}
+
+.xpressui-public-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.xpressui-public-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--xpressui-accent) 0%, color-mix(in srgb, var(--xpressui-accent) 80%, #000000) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.22);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xpressui-public-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.32);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--xpressui-accent) 92%, #ffffff) 0%, var(--xpressui-accent) 100%);
+}
+
+.xpressui-public-cta:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.18);
+}
+
+.xpressui-public-catalog-bar {
+  /* Let the filters and cart participate directly in the header flex row
+     so the layout is: logo (left) · category menu (centre) · cart (right),
+     all on a single line. */
+  display: contents;
+}
+
+.xpressui-public-catalog-filters {
+  min-width: 0;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Keep visible so the "More" dropdown can overflow the bar. */
+  overflow: visible;
+}
+
+.xpressui-public-catalog-filters .template-product-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  row-gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.xpressui-public-catalog-filters .template-product-filter-btn {
+  flex: 0 0 auto;
+}
+
+/* Self-contained pill + dropdown styling so the catalog menu looks right on
+   every page that injects this header (catalog home, product detail, checkout
+   and summary pages) — even where the main catalog stylesheet is not loaded. */
+.xpressui-public-header .template-product-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(248, 250, 252, 0.8);
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.xpressui-public-header .template-product-filter-btn:hover {
+  color: #0f172a;
+  background: #fff;
+  border-color: rgba(15, 23, 42, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transform: translateY(-0.5px);
+}
+
+.xpressui-public-header .template-product-filter-btn[data-active="true"] {
+  background: var(--xpressui-accent);
+  border-color: var(--xpressui-accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-header .template-product-filter-btn,
+.xpressui-splash[data-theme='primary'] .xpressui-public-header .template-product-filter-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-header .template-product-filter-btn:hover,
+.xpressui-splash[data-theme='primary'] .xpressui-public-header .template-product-filter-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-header .template-product-filter-btn[data-active="true"],
+.xpressui-splash[data-theme='primary'] .xpressui-public-header .template-product-filter-btn[data-active="true"] {
+  background: var(--xpressui-accent);
+  border-color: var(--xpressui-accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+}
+
+.xpressui-public-header .template-product-filter-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.xpressui-public-header .template-product-filter-more > summary {
+  list-style: none;
+  gap: 6px;
+  user-select: none;
+}
+
+.xpressui-public-header .template-product-filter-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.xpressui-public-header .template-product-filter-more-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xpressui-public-header .template-product-filter-more-caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 140ms ease;
+}
+
+.xpressui-public-header .template-product-filter-more[open] .template-product-filter-more-caret {
+  transform: rotate(180deg);
+}
+
+.xpressui-public-header .template-product-filter-more-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  min-width: 210px;
+  max-height: min(62vh, 360px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, .42);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .16);
+}
+
+.xpressui-public-header .template-product-filter-more-item {
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.xpressui-public-header .template-product-filter-more-item:hover {
+  background: rgba(148, 163, 184, .16);
+}
+
+.xpressui-public-header .template-product-filter-more-item[data-active="true"] {
+  background: var(--xpressui-accent);
+  color: #fff;
+}
+
+.xpressui-public-catalog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* Right column; balances the brand column to centre the menu. */
+  flex: 1 1 0;
+}
+
+.xpressui-public-catalog-actions .xpui-product-cart-toolbar {
+  margin: 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 132px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #f8fafc;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger:hover {
+  transform: translateY(-1px);
+  background: #1e293b;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25);
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-catalog-actions .xpui-cart-trigger,
+.xpressui-splash[data-theme='primary'] .xpressui-public-catalog-actions .xpui-cart-trigger {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-public-catalog-actions .xpui-cart-trigger:hover,
+.xpressui-splash[data-theme='primary'] .xpressui-public-catalog-actions .xpui-cart-trigger:hover {
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger[hidden] {
+  display: none !important;
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.xpressui-public-catalog-actions .xpui-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--xpressui-accent);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.xpressui-public-catalog-actions .xpui-cart-trigger-total {
+  display: inline-block;
+  font-size: 13px;
+  min-width: 92px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.xpressui-splash-shell {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.xpressui-splash-card {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(320px, 1.1fr);
+  gap: clamp(24px, 4.5vw, 56px);
+  align-items: center;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: clamp(30px, 4.5vw, 52px);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 34px 96px rgba(15, 23, 42, .14);
+  backdrop-filter: blur(18px) saturate(1.06);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.xpressui-splash-card:not(.has-no-media) {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-splash-card,
+.xpressui-splash[data-theme='primary'] .xpressui-splash-card {
+  background: rgba(255, 255, 255, .1);
+  border-color: rgba(255, 255, 255, .18);
+}
+
+.xpressui-splash-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.xpressui-splash-source {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  opacity: .62;
+  margin: 0 0 12px;
+}
+
+.xpressui-splash-title {
+  max-width: 12ch;
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 900;
+  line-height: 1.04;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+
+.xpressui-splash-description {
+  opacity: .92;
+  margin: 0 0 34px;
+  max-width: 58rem;
+}
+
+.xpressui-splash-description p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.xpressui-splash-deadline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 22px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.25;
+  box-shadow: 0 12px 30px -26px rgba(185, 28, 28, .7);
+}
+
+.xpressui-splash-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.xpressui-splash-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  min-height: 48px;
+  border-radius: 14px;
+  padding: 0 26px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 16px 34px -22px rgba(15, 23, 42, .62);
+  transition: transform .15s ease, box-shadow .15s ease;
+  background: #0f766e;
+  background: var(--xpressui-accent);
+  color: #fff;
+  text-decoration: none;
+}
+
+.xpressui-splash-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px -22px rgba(15, 23, 42, .72);
+}
+
+.xpressui-splash-secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, .14);
+  color: #0f172a;
+  background: rgba(255, 255, 255, .72);
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.xpressui-splash-secondary-button:hover {
+  background: rgba(255, 255, 255, .96);
+}
+
+.xpressui-splash-media {
+  position: relative;
+  display: block;
+  min-height: 350px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--xpressui-accent) 20%, #ffffff), #f8fafc);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .42), 0 24px 60px -42px rgba(15, 23, 42, .62);
+  overflow: hidden;
+}
+
+.xpressui-splash-media img {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  object-fit: cover;
+  display: block;
+}
+
+.xpressui-splash-media[data-xpressui-intro-gallery] {
+  min-height: clamp(360px, 58vh, 620px);
+}
+
+.xpressui-splash-media[data-xpressui-intro-gallery] .xpressui-splash-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.012);
+  transition: opacity .42s ease, transform .42s ease;
+}
+
+.xpressui-splash-media[data-xpressui-intro-gallery] .xpressui-splash-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.xpressui-splash-gallery-button {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, .74);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+  box-shadow: 0 16px 36px -20px rgba(15, 23, 42, .8);
+}
+
+.xpressui-splash-gallery-button.is-prev {
+  left: 14px;
+}
+
+.xpressui-splash-gallery-button.is-next {
+  right: 14px;
+}
+
+.xpressui-splash-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 2;
+  display: inline-flex;
+  gap: 7px;
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .48);
+  transform: translateX(-50%);
+}
+
+.xpressui-splash-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .55);
+  cursor: pointer;
+}
+
+.xpressui-splash-dot.is-active {
+  width: 22px;
+  background: #fff;
+}
+
+.xpressui-splash-thumbnails {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(620px, calc(100vw - 40px));
+  padding: 8px;
+  overflow-x: auto;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, .48);
+  box-shadow: 0 18px 48px -24px rgba(2, 6, 23, .86);
+  backdrop-filter: blur(14px) saturate(1.1);
+  transform: translateX(-50%);
+  scrollbar-width: none;
+}
+
+.xpressui-splash-thumbnails::-webkit-scrollbar {
+  display: none;
+}
+
+.xpressui-splash-thumbnail {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 48px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, .28);
+  border-radius: 11px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .12);
+  cursor: zoom-in;
+  opacity: .72;
+  transition: opacity .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.xpressui-splash-thumbnail:hover,
+.xpressui-splash-thumbnail.is-active {
+  opacity: 1;
+  border-color: #fff;
+  transform: translateY(-1px);
+}
+
+.xpressui-splash-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+}
+
+.xpressui-splash.has-intro-gallery {
+  position: fixed;
+  inset: 0;
+  display: block;
+  min-height: 100svh;
+  padding: 0;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.xpressui-splash.has-intro-gallery::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, .18) 0%, rgba(15, 23, 42, .28) 48%, rgba(15, 23, 42, .66) 100%),
+    linear-gradient(180deg, rgba(15, 23, 42, .2) 0%, rgba(15, 23, 42, .08) 42%, rgba(15, 23, 42, .42) 100%);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  min-height: 100svh;
+  border-radius: 0;
+  background: #0f172a;
+  box-shadow: none;
+  cursor: zoom-in;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-media img,
+.xpressui-splash.has-intro-gallery .xpressui-splash-media[data-xpressui-intro-gallery] {
+  min-height: 100svh;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-slide {
+  object-fit: cover;
+  object-position: center;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-shell {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100svh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: clamp(24px, 5vw, 72px);
+  padding-bottom: clamp(104px, 12vh, 148px);
+  box-sizing: border-box;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-card,
+.xpressui-splash.has-intro-gallery .xpressui-splash-card.is-compact-copy:not(.has-no-media) {
+  display: block;
+  width: min(380px, 100%);
+  max-width: none;
+  margin: 0;
+  padding: clamp(18px, 2vw, 24px);
+  border-radius: 18px;
+  border-color: rgba(255, 255, 255, .74);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 22px 58px rgba(15, 23, 42, .32);
+  backdrop-filter: blur(20px) saturate(1.08);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-copy {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-title,
+.xpressui-splash.has-intro-gallery .xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-title {
+  max-width: 12ch;
+  font-size: clamp(38px, 4vw, 56px);
+  margin-bottom: 18px;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-description {
+  margin-bottom: 24px;
+  max-width: 100%;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-actions {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-button {
+  width: 100%;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-secondary-button {
+  width: 100%;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-gallery-button,
+.xpressui-gallery-showcase-stage .xpressui-splash-gallery-button {
+  z-index: 3;
+  width: 48px;
+  height: 48px;
+  background: rgba(15, 23, 42, .58);
+  backdrop-filter: blur(12px);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-gallery-button:hover,
+.xpressui-gallery-showcase-stage .xpressui-splash-gallery-button:hover {
+  background: rgba(15, 23, 42, .82);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-gallery-button.is-prev,
+.xpressui-gallery-showcase-stage .xpressui-splash-gallery-button.is-prev {
+  left: clamp(16px, 3vw, 42px);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-gallery-button.is-next,
+.xpressui-gallery-showcase-stage .xpressui-splash-gallery-button.is-next {
+  right: clamp(16px, 3vw, 42px);
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-dots {
+  z-index: 3;
+  display: none;
+}
+
+.xpressui-splash.has-intro-gallery .xpressui-splash-thumbnails {
+  bottom: clamp(18px, 3vw, 34px);
+}
+
+.xpressui-gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(4px, 1vw, 8px);
+  background: #000;
+  box-sizing: border-box;
+}
+
+.xpressui-gallery-lightbox.is-open {
+  display: flex;
+}
+
+body.xpressui-gallery-lightbox-open,
+body.xpressui-intro-details-open {
+  overflow: hidden;
+}
+
+
+.xpressui-gallery-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.xpressui-gallery-lightbox button {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, .14);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.xpressui-intro-details-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10021;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(18px, 4vw, 48px);
+  background: rgba(2, 6, 23, .58);
+  box-sizing: border-box;
+}
+
+.xpressui-intro-details-modal.is-open {
+  display: flex;
+}
+
+.xpressui-intro-details-panel {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: min(760px, 88svh);
+  overflow: auto;
+  padding: clamp(26px, 4vw, 42px);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .96);
+  color: #0f172a;
+  box-shadow: 0 34px 90px rgba(2, 6, 23, .35);
+}
+
+.xpressui-intro-details-panel h2 {
+  margin: 0 48px 18px 0;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.05;
+}
+
+.xpressui-intro-details-panel .xpressui-splash-description {
+  margin-bottom: 22px;
+}
+
+.xpressui-intro-details-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  color: #0f172a;
+  background: rgba(15, 23, 42, .08);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.xpressui-splash-card.has-no-media {
+  display: block;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.xpressui-splash-card.has-no-media .xpressui-splash-copy {
+  align-items: center;
+  text-align: center;
+}
+
+.xpressui-splash-card.has-no-media .xpressui-splash-title {
+  max-width: 18ch;
+}
+
+.xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-copy {
+  justify-content: center;
+}
+
+.xpressui-splash-card.is-compact-copy:not(.has-no-media) {
+  grid-template-columns: minmax(240px, .7fr) minmax(420px, 1.3fr);
+  gap: clamp(26px, 4vw, 46px);
+  padding: clamp(28px, 3.4vw, 44px);
+}
+
+.xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-media {
+  min-height: clamp(430px, 58vh, 640px);
+}
+
+.xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-title {
+  max-width: 10ch;
+  font-size: clamp(44px, 5.2vw, 64px);
+}
+
+.xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-title {
+  margin-bottom: 24px;
+}
+
+/* ── Gallery showcase layout (page_template: gallery-showcase) ─────────── */
+
+.xpressui-splash--gallery-showcase {
+  position: relative;
+  inset: auto;
+  overflow: visible;
+  background: #fff;
+  color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* override place-items:center inherited from .xpressui-splash */
+  min-height: min(100svh, 980px);
+  padding-bottom: clamp(28px, 5vw, 64px);
+}
+
+/* Header sits as a natural flex item at the top of the splash — no z-index
+   battles, no sticky/fixed interaction with the body overflow:hidden. */
+.xpressui-splash--gallery-showcase .xpressui-public-header {
+  position: relative;
+  flex-shrink: 0;
+  z-index: auto;
+  margin:
+    calc(-1 * clamp(28px, 5vw, 64px))
+    calc(-1 * clamp(18px, 4vw, 52px))
+    0;
+  width: auto;
+}
+
+.xpressui-gallery-showcase-hero {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0 calc(-1 * clamp(18px, 4vw, 52px));
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.xpressui-gallery-showcase-hero-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: clamp(240px, 38vw, 560px);
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background-color: #fff;
+}
+
+.xpressui-gallery-showcase-hero-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  background: #fff;
+}
+
+.xpressui-gallery-showcase-hero + .xpressui-gallery-showcase-shell {
+  padding-top: clamp(18px, 3vh, 36px);
+}
+
+/* Shell — 2-column product-detail layout used as the inline presentation section */
+.xpressui-gallery-showcase-shell {
+  flex: 0 0 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(380px, min(52vw, 680px)) minmax(340px, 460px);
+  align-items: start;
+  justify-content: center;
+  gap: clamp(42px, 5vw, 78px);
+  padding: clamp(24px, 4vh, 52px) clamp(16px, 3vw, 32px);
+  overflow-y: visible;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.xpressui-gallery-showcase-shell.has-no-gallery {
+  grid-template-columns: minmax(320px, 620px);
+  justify-content: center;
+}
+
+body.hosted-link-template-gallery-showcase:not(.hosted-catalog-page):not(.workspace-hosted-link-page):not(.xpressui-hosted-embed-launch) #xpressui-root.page-shell {
+  scroll-margin-top: 96px;
+  width: 100% !important;
+  max-width: none !important;
+  padding: clamp(30px, 5vh, 64px) clamp(16px, 3vw, 32px) clamp(56px, 7vh, 90px) !important;
+  display: grid !important;
+  place-items: center !important;
+  box-sizing: border-box !important;
+}
+
+body.hosted-link-template-gallery-showcase:not(.hosted-catalog-page):not(.workspace-hosted-link-page):not(.xpressui-hosted-embed-launch) #xpressui-root.page-shell .form-frame {
+  width: min(100%, 900px) !important;
+  margin: 0 auto !important;
+}
+
+/* Left column: stage portrait + horizontal thumbnails below (mirrors product-detail-media) */
+.xpressui-gallery-showcase-media {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 680px;
+}
+
+/* Main image stage — aspect-ratio 4/5 + border-radius matches template-product-detail-media */
+.xpressui-gallery-showcase-stage {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, #e2e8f0 22%, #fff);
+  border: 1px solid #e2e8f0;
+  cursor: zoom-in;
+  border-radius: 14px;
+  aspect-ratio: 4 / 5;
+  min-height: clamp(360px, 48vw, 620px);
+  width: 100%;
+}
+
+.xpressui-gallery-showcase-stage .xpressui-splash-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.012);
+  transition: opacity .38s ease, transform .38s ease;
+}
+
+.xpressui-gallery-showcase-stage .xpressui-splash-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Horizontal thumbnails below the stage */
+.xpressui-gallery-showcase-thumbs {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.xpressui-gallery-showcase-thumbs::-webkit-scrollbar { display: none; }
+
+.xpressui-gallery-showcase-thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 52px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e2e8f0;
+  cursor: pointer;
+  opacity: .72;
+  transition: opacity .15s ease, border-color .15s ease, transform .1s ease;
+}
+
+.xpressui-gallery-showcase-thumb:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+.xpressui-gallery-showcase-thumb.is-active {
+  opacity: 1;
+  border-color: var(--xpressui-accent);
+}
+
+.xpressui-gallery-showcase-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Right: copy column */
+.xpressui-gallery-showcase-copy {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  max-width: 460px;
+  padding-top: clamp(6px, 1.7vw, 24px);
+  position: sticky;
+  top: clamp(18px, 3vh, 36px);
+}
+
+/* Category kicker — like template-product-landing-kicker */
+.xpressui-gallery-showcase-kicker {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--xpressui-accent);
+  margin: 0;
+}
+
+/* Title */
+.xpressui-gallery-showcase-title {
+  font-size: clamp(34px, 3.2vw, 46px);
+  font-weight: 800;
+  line-height: 1.05;
+  margin: 0;
+  text-wrap: balance;
+  color: currentColor;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Description */
+.xpressui-gallery-showcase-desc {
+  font-size: 14px;
+  line-height: 1.58;
+  color: color-mix(in srgb, currentColor 68%, transparent);
+  margin: 4px 0 0;
+  max-width: 56ch;
+}
+
+.xpressui-gallery-showcase-desc p {
+  font-size: 14px !important;
+  line-height: 1.58 !important;
+  margin: 0 0 10px !important;
+}
+
+.xpressui-gallery-showcase-desc p:last-child { margin-bottom: 0; }
+
+.xpressui-gallery-showcase-desc strong {
+  color: currentColor;
+  font-weight: 850;
+}
+
+/* Buy box — bordered card like template-product-detail-buy-box */
+.xpressui-gallery-showcase-buy-box {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 360px);
+  margin: 4px 0 2px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid #dbe3ed;
+  background: #fff;
+  box-shadow: 0 18px 42px -34px rgba(15, 23, 42, .36);
+}
+
+.xpressui-splash[data-theme='dark'] .xpressui-gallery-showcase-buy-box,
+.xpressui-splash[data-theme='primary'] .xpressui-gallery-showcase-buy-box {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 20px 48px -30px rgba(0, 0, 0, 0.5);
+}
+
+/* Price row */
+.xpressui-gallery-showcase-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 0;
+}
+
+.xpressui-gallery-showcase-price {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: currentColor;
+  letter-spacing: 0;
+}
+
+.xpressui-gallery-showcase-currency {
+  font-size: 13px;
+  font-weight: 400;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+}
+
+/* Deadline inside buy box */
+.xpressui-gallery-showcase-deadline {
+  margin: 0;
+}
+
+/* Actions / CTA inside buy box */
+.xpressui-gallery-showcase-actions {
+  display: grid;
+  gap: 10px;
+  padding-top: 0;
+}
+
+/* CTA button — full width, prominent, like Acheter maintenant */
+.xpressui-gallery-showcase-cta {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--xpressui-accent);
+  border-radius: 999px;
+  padding: 0 18px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 850;
+  cursor: pointer;
+  background: var(--xpressui-accent);
+  color: #ffffff !important;
+  text-decoration: none;
+  box-shadow: 0 12px 24px -10px var(--xpressui-accent), 0 4px 12px -5px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.xpressui-gallery-showcase-cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.05);
+  box-shadow: 0 14px 28px -8px var(--xpressui-accent), 0 6px 16px -4px rgba(0, 0, 0, 0.2);
+}
+
+.xpressui-gallery-showcase-cta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Lightbox close button (specific class used in gallery showcase) */
+.xpressui-gallery-lightbox-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, .14);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.xpressui-gallery-lightbox-close-btn:hover {
+  background: rgba(255, 255, 255, .26);
+}
+
+/* Lightbox prev/next navigation buttons.
+   Use .xpressui-gallery-lightbox prefix (spec. 0-2-0) to beat the generic
+   .xpressui-gallery-lightbox button rule (spec. 0-1-1) which sets top:18px/right:18px. */
+.xpressui-gallery-lightbox .xpressui-gallery-lightbox-nav {
+  top: 50%;
+  right: auto;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transform: translateY(-50%);
+  transition: background .15s ease;
+}
+
+.xpressui-gallery-lightbox .xpressui-gallery-lightbox-nav:hover {
+  background: rgba(255, 255, 255, .28);
+}
+
+.xpressui-gallery-lightbox .xpressui-gallery-lightbox-nav.is-prev { left: 20px; }
+.xpressui-gallery-lightbox .xpressui-gallery-lightbox-nav.is-next { right: 20px; }
+
+/* Responsive: single-column on narrow screens */
+@media (max-width: 860px) {
+  .xpressui-splash--gallery-showcase {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .xpressui-gallery-showcase-hero {
+    padding: 0;
+  }
+
+  .xpressui-gallery-showcase-hero-frame {
+    height: clamp(180px, 54vw, 360px);
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .xpressui-gallery-showcase-shell {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
+    overflow-y: visible;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .xpressui-gallery-showcase-hero + .xpressui-gallery-showcase-shell {
+    padding-top: 0;
+  }
+
+  .xpressui-gallery-showcase-media {
+    max-width: none;
+  }
+
+  .xpressui-gallery-showcase-stage {
+    aspect-ratio: 4 / 3;  /* wider on mobile */
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  .xpressui-gallery-showcase-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    overflow: visible;
+    padding: 10px 12px;
+    gap: 8px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .xpressui-gallery-showcase-thumb {
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    aspect-ratio: 72 / 52;
+  }
+
+  .xpressui-gallery-showcase-copy {
+    border-top: 1px solid #e2e8f0;
+    padding: 22px 18px 28px;
+    padding-top: 22px;
+    max-width: none;
+    position: static;
+  }
+
+  .xpressui-gallery-showcase-buy-box {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .xpressui-gallery-lightbox-nav.is-prev { left: 12px; }
+  .xpressui-gallery-lightbox-nav.is-next { right: 12px; }
+
+  .xpressui-splash[data-theme='dark'] .xpressui-gallery-showcase-thumbs,
+  .xpressui-splash[data-theme='primary'] .xpressui-gallery-showcase-thumbs {
+    background: transparent;
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .xpressui-splash[data-theme='dark'] .xpressui-gallery-showcase-copy,
+  .xpressui-splash[data-theme='primary'] .xpressui-gallery-showcase-copy {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ── end gallery showcase ──────────────────────────────────────────────── */
+
+body.xpressui-hosted-embed-launch {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+html.xpressui-hosted-embed-launch {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+body.xpressui-hosted-embed-launch #xpressui-root {
+  display: none !important;
+}
+
+body.xpressui-hosted-embed-launch .xpressui-splash {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  padding: 18px !important;
+  background: transparent !important;
+}
+
+body.xpressui-hosted-embed-launch .xpressui-public-header {
+  display: none;
+}
+
+body.xpressui-hosted-embed-launch .xpressui-splash-shell {
+  padding: 0;
+}
+
+body.xpressui-hosted-embed-launch .xpressui-splash-card {
+  width: 100%;
+  max-width: 760px;
+  padding: 40px 32px;
+  display: block;
+}
+
+body.xpressui-hosted-embed-launch .xpressui-splash-media {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .xpressui-splash-card {
+    grid-template-columns: 1fr;
+    padding: 32px 22px;
+    border-radius: 20px;
+  }
+
+  .xpressui-splash-card.is-compact-copy:not(.has-no-media) {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-copy {
+    align-items: center;
+    text-align: center;
+  }
+
+  .xpressui-splash-media {
+    min-height: 220px;
+    order: -1;
+  }
+
+  .xpressui-splash-media img {
+    min-height: 220px;
+  }
+
+  .xpressui-splash-media[data-xpressui-intro-gallery] {
+    min-height: 260px;
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-shell {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+    padding-bottom: 102px;
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-card,
+  .xpressui-splash.has-intro-gallery .xpressui-splash-card.is-compact-copy:not(.has-no-media) {
+    width: 100%;
+    padding: 22px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, .94);
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-title,
+  .xpressui-splash.has-intro-gallery .xpressui-splash-card.is-compact-copy:not(.has-no-media) .xpressui-splash-title {
+    max-width: none;
+    font-size: 34px;
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-gallery-button {
+    top: 42%;
+    width: 40px;
+    height: 40px;
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-dots {
+    display: none;
+  }
+
+  .xpressui-splash.has-intro-gallery .xpressui-splash-thumbnails {
+    bottom: 18px;
+    max-width: calc(100vw - 28px);
+    gap: 8px;
+    padding: 7px;
+  }
+
+  .xpressui-splash-thumbnail {
+    width: 62px;
+    height: 42px;
+  }
+
+  .xpressui-splash-title {
+    font-size: 32px;
+    max-width: none;
+  }
+
+  .xpressui-splash-description {
+    font-size: 15px;
+  }
+
+  .xpressui-public-header {
+    padding: 12px 16px;
+  }
+
+  .xpressui-public-catalog-bar {
+    gap: 10px;
+  }
+}

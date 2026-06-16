@@ -368,6 +368,8 @@ function xpressui_get_shell_allowed_html() {
 		'role'        => true,
 		'aria-label'  => true,
 		'aria-hidden' => true,
+		'aria-modal'  => true,
+		'hidden'      => true,
 		'data-*'      => true,
 	];
 
