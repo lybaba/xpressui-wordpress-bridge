@@ -307,6 +307,11 @@ function xpressui_gallery_showcase_embed_css() {
 		. '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::before,.xpressui-embed-wrapper .xpressui-splash--gallery-showcase *::after{box-sizing:border-box}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px);max-width:none;overflow-x:visible}'
+		// Render the buy-box CTA as a plain text link (accent + arrow), matching the
+		// non-gallery intro CTA, instead of the SaaS filled button.
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta{display:inline-flex;align-items:center;gap:.35rem;width:auto;min-height:0;padding:0;border:0;border-radius:0;background:none!important;color:var(--xpressui-accent,#0f766e)!important;box-shadow:none!important;text-decoration:none!important;font-weight:800;font-size:.95rem;transition:opacity .15s ease}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta::after{content:"\2192";font-weight:700}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-cta:hover{opacity:.72;transform:none;filter:none;box-shadow:none!important}'
 		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
 }
 
