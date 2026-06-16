@@ -265,7 +265,7 @@ function xpressui_ajax_console_sync_project(): void {
 // UI section — injected into the free plugin's Workflows page
 // ---------------------------------------------------------------------------
 
-add_action( 'xpressui_workflows_page_sections', 'xpressui_pro_render_console_sync_section' );
+// add_action( 'xpressui_workflows_page_sections', 'xpressui_pro_render_console_sync_section' );
 
 function xpressui_pro_render_console_sync_section(): void {
 	$nonce = wp_create_nonce( 'xpressui_console_sync_nonce' );
@@ -570,3 +570,83 @@ JS,
 	</div>
 	<?php
 }
+
+function xpressui_check_console_api_health(): array {
+	$conn = xpressui_get_console_connection();
+	if ( empty( $conn['apiUrl'] ) ) {
+		return [
+			'status'  => 'not_configured',
+			'message' => __( 'Console API URL is not configured.', 'xpressui-bridge' ),
+		];
+	}
+
+	// 1. Check general API reachability
+	$health_url = trailingslashit( $conn['apiUrl'] ) . 'api/health';
+	$response   = wp_remote_get( $health_url, [ 'timeout' => 5 ] );
+
+	if ( is_wp_error( $response ) ) {
+		return [
+			'status'  => 'unreachable',
+			'message' => sprintf( __( 'API unreachable: %s', 'xpressui-bridge' ), $response->get_error_message() ),
+		];
+	}
+
+	$code = wp_remote_retrieve_response_code( $response );
+	if ( 200 !== $code ) {
+		return [
+			'status'  => 'degraded',
+			'message' => sprintf( __( 'API returned HTTP status %d.', 'xpressui-bridge' ), $code ),
+		];
+	}
+
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! is_array( $body ) || ( $body['status'] ?? '' ) !== 'ok' ) {
+		return [
+			'status'  => 'degraded',
+			'message' => __( 'API health check returned unexpected response.', 'xpressui-bridge' ),
+		];
+	}
+
+	// 2. If token is configured, check authentication
+	if ( ! empty( $conn['apiToken'] ) ) {
+		$auth_url      = trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects';
+		$auth_response = wp_remote_get( $auth_url, [
+			'headers' => [
+				'X-Api-Token' => $conn['apiToken'],
+				'Accept'      => 'application/json',
+			],
+			'timeout' => 5,
+		] );
+
+		if ( is_wp_error( $auth_response ) ) {
+			return [
+				'status'  => 'auth_failed',
+				'message' => sprintf( __( 'Authentication check failed: %s', 'xpressui-bridge' ), $auth_response->get_error_message() ),
+			];
+		}
+
+		$auth_code = wp_remote_retrieve_response_code( $auth_response );
+		if ( 401 === $auth_code || 403 === $auth_code ) {
+			return [
+				'status'  => 'invalid_token',
+				'message' => __( 'Invalid or expired API Token.', 'xpressui-bridge' ),
+			];
+		} elseif ( 200 !== $auth_code ) {
+			return [
+				'status'  => 'degraded',
+				'message' => sprintf( __( 'Authenticated check returned HTTP status %d.', 'xpressui-bridge' ), $auth_code ),
+			];
+		}
+
+		return [
+			'status'  => 'connected',
+			'message' => __( 'Connected & authenticated.', 'xpressui-bridge' ),
+		];
+	}
+
+	return [
+		'status'  => 'reachable',
+		'message' => __( 'API reachable (Token missing).', 'xpressui-bridge' ),
+	];
+}
+

@@ -92,6 +92,7 @@ add_action( 'admin_init', 'xpressui_handle_submission_status_action' );
 // --- Admin pages ---
 add_action( 'admin_menu', 'xpressui_register_submission_admin_pages' );
 add_action( 'admin_menu', 'xpressui_register_admin_page' );
+add_action( 'admin_menu', 'xpressui_register_settings_page' );
 add_action( 'admin_enqueue_scripts', 'xpressui_enqueue_admin_assets' );
 add_action( 'admin_init', 'xpressui_maybe_install_bundled_workflows' );
 add_action( 'admin_init', 'xpressui_handle_workflow_admin_actions' );
@@ -140,7 +141,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			true
 		);
 	}
-	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id ) {
+	if ( in_array( $screen->id, [ 'xpressui_submission_page_xpressui-bridge', 'xpressui_submission_page_xpressui-settings' ], true ) ) {
 		wp_enqueue_script(
 			'xpressui-bridge-admin-wf',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-workflows.js',
