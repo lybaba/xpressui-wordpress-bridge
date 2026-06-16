@@ -484,7 +484,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// 100dvh, overflow:hidden `.page-shell` — inside a theme page that pushes the form
 	// off-screen (it looks "hidden"). Scoped to this mount; the id beats `.page-shell`.
 	$inline_css .= "\n/* Inline embed: natural flow, not a full-viewport hero */\n";
-	$inline_css .= "{$scope} { min-height: 0 !important; height: auto !important; place-items: start center !important; overflow: visible !important; }\n";
+	$inline_css .= "{$scope}, {$scope}.page-shell, {$scope} .page-shell { min-height: 0 !important; height: auto !important; max-height: none !important; place-items: start center !important; overflow: visible !important; }\n";
 
 	$has_bg = ! empty( $bg_url )
 		&& isset( $theme['background_style'] )
