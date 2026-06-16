@@ -1011,8 +1011,9 @@ function xpressui_render_workflow_detail_page( $slug ) {
 						$config_data = json_decode( $content, true );
 						if ( is_array( $config_data ) ) {
 							$hosted_links[] = [
-								'id'    => $link_id,
-								'label' => $config_data['label'] ?? $config_data['id'] ?? $link_id,
+								'id'        => $link_id,
+								'label'     => $config_data['label'] ?? $config_data['id'] ?? $link_id,
+								'expiresAt' => $config_data['expiresAt'] ?? '',
 							];
 						}
 					}
@@ -1026,8 +1027,9 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 	echo '<table class="wp-list-table widefat fixed striped xpressui-table" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; margin-top: 15px;">';
 	echo '<thead><tr>';
-	echo '<th style="font-weight: 700; width: 250px;">' . esc_html__( 'Target', 'xpressui-bridge' ) . '</th>';
+	echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'Workflow / Hosted Link', 'xpressui-bridge' ) . '</th>';
 	echo '<th style="font-weight: 700;">' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
+	echo '<th style="font-weight: 700; width: 180px;">' . esc_html__( 'Expiration Date', 'xpressui-bridge' ) . '</th>';
 	echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'WordPress Page', 'xpressui-bridge' ) . '</th>';
 	echo '</tr></thead>';
 	echo '<tbody>';
@@ -1059,6 +1061,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '<tr>';
 	echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $display_name ) . '</td>';
 	echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
+	echo '<td style="vertical-align: middle; font-size: 13px; color: #888;">&mdash;</td>';
 	echo '<td style="vertical-align: middle;">';
 	if ( ! empty( $pure_legacy_pages ) ) {
 		$page_links = [];
@@ -1095,6 +1098,18 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		echo '<tr>';
 		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
 		echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
+		
+		// Expiration Date column
+		$expires_at = ! empty( $link['expiresAt'] ) ? (string) $link['expiresAt'] : '';
+		$expires_html = '&mdash;';
+		if ( $expires_at !== '' ) {
+			$timestamp = strtotime( $expires_at );
+			if ( $timestamp > 0 ) {
+				$expires_html = esc_html( wp_date( get_option( 'date_format' ), $timestamp ) );
+			}
+		}
+		echo '<td style="vertical-align: middle; font-size: 13px;">' . $expires_html . '</td>';
+
 		echo '<td style="vertical-align: middle;">';
 		if ( ! empty( $link_pages ) ) {
 			$page_links = [];
