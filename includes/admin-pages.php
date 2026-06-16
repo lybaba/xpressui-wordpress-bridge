@@ -326,7 +326,7 @@ function xpressui_render_workflows_page() {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
 	}
 
-	echo '<div class="wrap xpressui-wrap">';
+	echo '<div class="wrap xpressui-wrap xpressui-wrap--workflows">';
 	echo '<h1 class="wp-heading-inline">' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</h1>';
 	if ( xpressui_pro_is_license_active() ) {
 		echo '<button type="button" id="xpressui-global-sync-btn" class="page-title-action button button-primary" style="margin-left: 10px;">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
@@ -389,7 +389,9 @@ function xpressui_render_workflows_page() {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
 		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 100px;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 120px;">' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -430,7 +432,6 @@ function xpressui_render_workflows_page() {
 				],
 				admin_url( 'edit.php' )
 			);
-			$page_ids        = xpressui_get_workflow_page_ids( $slug );
 			
 			echo '<tr>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
@@ -467,18 +468,29 @@ function xpressui_render_workflows_page() {
 			echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Show more details', 'xpressui-bridge' ) . '</span></button>';
 			echo '</td>';
 			
-			// Linked pages column
-			echo '<td>';
-			if ( ! empty( $page_ids ) ) {
-				$page_links = [];
-				foreach ( $page_ids as $p_id ) {
-					$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
-					$p_edit_url = get_edit_post_link( $p_id );
-					$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer">' . esc_html( $p_title ) . '</a>' . ( $p_edit_url ? ' (<a href="' . esc_url( $p_edit_url ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
-				}
-				echo implode( ', ', $page_links );
+			// Version Column
+			$version = ! empty( $manifest_meta['runtimeVersion'] ) ? sanitize_text_field( $manifest_meta['runtimeVersion'] ) : '1.0.0';
+			echo '<td style="vertical-align: middle;"><code>' . esc_html( $version ) . '</code></td>';
+			
+			// Steps / Fields Column
+			$steps  = isset( $manifest_meta['stepCount'] ) ? (int) $manifest_meta['stepCount'] : 0;
+			$fields = isset( $manifest_meta['fieldCount'] ) ? (int) $manifest_meta['fieldCount'] : 0;
+			echo '<td style="vertical-align: middle; font-size: 13px;">';
+			if ( $steps > 0 || $fields > 0 ) {
+				$steps_text  = sprintf( _n( '%d step', '%d steps', $steps, 'xpressui-bridge' ), $steps );
+				$fields_text = sprintf( _n( '%d field', '%d fields', $fields, 'xpressui-bridge' ), $fields );
+				echo esc_html( $steps_text . ', ' . $fields_text );
 			} else {
-				echo '<span style="color: #888; font-style: italic;">' . esc_html__( 'No pages linked', 'xpressui-bridge' ) . '</span>';
+				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
+			}
+			echo '</td>';
+			
+			// Source Column
+			echo '<td style="vertical-align: middle;">';
+			if ( $is_bundled ) {
+				echo '<span class="xpressui-badge xpressui-badge--muted">' . esc_html__( 'Bundled', 'xpressui-bridge' ) . '</span>';
+			} else {
+				echo '<span class="xpressui-badge xpressui-badge--success">' . esc_html__( 'Console Sync', 'xpressui-bridge' ) . '</span>';
 			}
 			echo '</td>';
 			
@@ -1219,7 +1231,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	);
 
 	echo '<tr>';
-	echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle; color: #666;"><em>' . esc_html__( 'Default / Legacy Fallback', 'xpressui-bridge' ) . '</em></td>';
+	echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $display_name ) . '</td>';
 	echo '<td style="vertical-align: middle; color: #888;">&mdash;</td>';
 	echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
 	echo '<td style="vertical-align: middle;">';
