@@ -662,6 +662,13 @@ function xpressui_render_shortcode( $atts ) {
 		? json_decode( $raw_form_config_json, true )
 		: null;
 
+	// The workflow's authored title visibility (config side). The SaaS default is
+	// "shown" unless the project explicitly disables it; mirror that so a hosted-link
+	// embed respects the config instead of always hiding the title.
+	$config_show_title = ! is_array( $form_config ) || ! array_key_exists( 'showProjectTitle', $form_config )
+		? true
+		: (bool) $form_config['showProjectTitle'];
+
 	if ( is_array( $form_config ) ) {
 		$form_config = xpressui_normalize_form_config( $form_config, $slug );
 
@@ -755,7 +762,7 @@ function xpressui_render_shortcode( $atts ) {
 		if ( ! is_array( $template_context['runtime'] ?? null ) ) {
 			$template_context['runtime'] = [];
 		}
-		$form_config['showProjectTitle']       = $show_project_title;
+		$form_config['showProjectTitle']       = is_array( $link_config ) ? $config_show_title : $show_project_title;
 		$form_config['showRequiredFieldsNote'] = $show_required_note;
 		$form_config['sectionLabelVisibility'] = $section_label_visibility;
 		$template_context['runtime']['form_config_json'] = wp_json_encode( $form_config );
@@ -763,9 +770,9 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Apply show_* flags to rendered_form (works whether built above or loaded from template context).
 	if ( is_array( $template_context['rendered_form'] ?? null ) ) {
-		// On a synced Hosted Link embed, the WordPress page title is the single source
-		// of truth — hide the workflow form title to avoid duplicating it.
-		$template_context['rendered_form']['show_title']           = is_array( $link_config ) ? false : $show_project_title;
+		// Respect the workflow's authored title visibility on a synced Hosted Link embed
+		// (shown unless disabled in the config); fall back to the local flag otherwise.
+		$template_context['rendered_form']['show_title']           = is_array( $link_config ) ? $config_show_title : $show_project_title;
 		$template_context['rendered_form']['show_subtitle']        = $show_required_note;
 		$template_context['rendered_form']['show_section_headers'] = $show_section_headers;
 		// Ensure camera-photo-list/camera-photo fields always have the right input_type and
