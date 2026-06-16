@@ -479,6 +479,13 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 		$inline_css .= "\n" . $shell_css . "\n";
 	}
 
+	// Inline embed: the form flows inside the WordPress page, so neutralise the
+	// full-viewport hosted shell. The standalone hosted page centres the form in a
+	// 100dvh, overflow:hidden `.page-shell` — inside a theme page that pushes the form
+	// off-screen (it looks "hidden"). Scoped to this mount; the id beats `.page-shell`.
+	$inline_css .= "\n/* Inline embed: natural flow, not a full-viewport hero */\n";
+	$inline_css .= "{$scope} { min-height: 0 !important; height: auto !important; place-items: start center !important; overflow: visible !important; }\n";
+
 	$has_bg = ! empty( $bg_url )
 		&& isset( $theme['background_style'] )
 		&& $theme['background_style'] !== 'none';
