@@ -489,7 +489,7 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		. '.xpressui-intro__price{font-weight:800;font-size:1.05rem;color:#0f172a}'
 		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}'
 		. '.xpressui-intro__actions{margin-top:.85rem}'
-		. '.xpressui-intro__cta{display:inline-flex;align-items:center;gap:.35rem;padding:0;background:none;border:0;color:var(--xpressui-accent,#0f766e)!important;font-weight:700;font-size:.95rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;transition:opacity .15s ease}'
+		. '.xpressui-intro__cta{display:inline-flex;align-items:center;gap:.35rem;padding:0;background:none;border:0;color:var(--xpressui-accent,#0f766e)!important;font-weight:700;font-size:.95rem;text-decoration:none!important;cursor:pointer;transition:opacity .15s ease}'
 		. '.xpressui-intro__cta::after{content:"\2192";font-weight:700;text-decoration:none}'
 		. '.xpressui-intro__cta:hover{opacity:.72}';
 
