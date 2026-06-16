@@ -215,11 +215,19 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	}
 
 	$mount_id = 'xpui-catalog-' . sanitize_html_class( substr( md5( (string) $project_slug . '|' . (string) $link_id ), 0, 12 ) );
+	$shell_id = $mount_id . '-shell';
 
 	// --- Styles. The product card/grid/cart styles live in the shell stylesheet. ---
 	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
 	$shell_css_ver  = file_exists( $shell_css_path ) ? (string) filemtime( $shell_css_path ) : XPRESSUI_BRIDGE_VERSION;
 	wp_enqueue_style( 'xpressui-shell', XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-shell.css', [], $shell_css_ver );
+
+	// Scoped theme CSS variables + page-shell reset, mirroring head.j2 (the --template-*
+	// vars the product-card/button styles depend on) and _hosted_catalog_styles.j2 (the
+	// page-level reset so the storefront blends into the WordPress page, not a full-screen
+	// shell). Without the vars the card chrome collapses and the buy buttons render blank.
+	$theme_css = xpressui_build_catalog_embed_css( $mount_id, $shell_id, is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [] );
+	wp_add_inline_style( 'xpressui-shell', $theme_css );
 
 	// --- Cart globals + the self-contained SaaS catalog-init.js (no runtime UMD). ---
 	$checkout_url = (string) ( $catalog['checkout_form_url'] ?? '' );
@@ -245,7 +253,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	// --- Markup: mount > form-frame > hidden cart shell + product grid. ---
 	$grid = xpressui_render_product_catalog_grid( $catalog );
 
-	$shell  = '<form id="' . esc_attr( $mount_id . '-shell' ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
+	$shell  = '<form id="' . esc_attr( $shell_id ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
 	$shell .= '<input type="hidden" name="xpressuiProductCart" value="" />';
 	$shell .= '<input type="hidden" name="xpressuiProductTotal" value="" />';
 	$shell .= '<input type="hidden" name="xpressuiProductCurrency" value="" />';
@@ -260,4 +268,60 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$html .= '</div></div></div>';
 
 	return wp_kses( $html, xpressui_get_shell_allowed_html() );
+}
+
+/**
+ * Builds the scoped CSS for a headless catalog embed.
+ *
+ * Emits the `--template-*` variables (mirroring `export/_partials/head.j2`) that the
+ * product-card/button styles in the shell stylesheet resolve against, plus the
+ * page-shell reset from `_hosted_catalog_styles.j2` so the storefront blends into the
+ * host WordPress page instead of behaving as a full-viewport shell. Scoped to the
+ * mount id so nothing leaks to the rest of the page.
+ *
+ * @param string $mount_id Mount element id.
+ * @param string $shell_id Hidden cart-shell form id.
+ * @param array  $vars     theme_css_vars from catalog.json (font/colours/radii).
+ * @return string CSS (no <style> wrapper; passed to wp_add_inline_style).
+ */
+function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
+	$sel  = '#' . $mount_id;
+	$font = trim( (string) ( $vars['font_family'] ?? '' ) );
+	// Parity with head.j2: on WordPress the font inherits from the theme.
+	$font = '' !== $font ? $font : 'inherit';
+
+	$page_bg     = (string) ( $vars['page_background'] ?? '#edf3fb' );
+	$surface     = (string) ( $vars['surface'] ?? '#ffffff' );
+	$text        = (string) ( $vars['text'] ?? '#0f172a' );
+	$primary     = (string) ( $vars['primary'] ?? '#2563eb' );
+	$border      = (string) ( $vars['border'] ?? '#d7e0ea' );
+	$card_radius = (int) ( $vars['card_radius'] ?? 28 );
+	$input_radius = (int) ( $vars['input_radius'] ?? 14 );
+	$btn_radius  = (int) ( $vars['button_radius'] ?? 14 );
+
+	$css  = $sel . '{';
+	$css .= '--template-font-family:' . $font . ';';
+	$css .= '--template-page-background:' . $page_bg . ';';
+	$css .= '--template-surface:' . $surface . ';';
+	$css .= '--template-text:' . $text . ';';
+	$css .= '--template-muted-text:color-mix(in srgb, var(--template-text) 65%, transparent);';
+	$css .= '--template-primary:' . $primary . ';';
+	$css .= '--template-border:' . $border . ';';
+	$css .= '--template-card-radius:' . $card_radius . 'px;';
+	$css .= '--template-input-radius:' . $input_radius . 'px;';
+	$css .= '--template-button-radius:' . $btn_radius . 'px;';
+	// Page-shell reset (mirrors _hosted_catalog_styles.j2): blend into the WP page.
+	$css .= 'min-height:auto;display:block;place-items:unset;overflow:visible;padding:0;background:transparent;font-family:var(--template-font-family);color:var(--template-text);}';
+	$css .= $sel . ' .template-product-landing{min-height:auto;gap:18px;}';
+	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
+	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
+	$css .= $sel . ' .template-product-grid{margin-bottom:0;}';
+	// Defuse host-theme spacing bleed on the card content (themes add margins to
+	// article/h3/p inside .entry-content, which breaks the card rhythm).
+	$css .= $sel . ' .template-product-card,' . $sel . ' .template-product-card *{margin-top:0;margin-bottom:0;}';
+	$css .= $sel . ' .template-product-title{margin:0;}';
+	// Hard-hide the cart-state form shell.
+	$css .= $sel . ' #' . $shell_id . ',' . $sel . ' #' . $shell_id . ' *{display:none !important;visibility:hidden !important;width:0 !important;height:0 !important;overflow:hidden !important;pointer-events:none !important;opacity:0 !important;}';
+
+	return $css;
 }
