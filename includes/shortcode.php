@@ -990,7 +990,11 @@ function xpressui_render_shortcode( $atts ) {
 	// script verbatim; other links render the intro/welcome block (title + content +
 	// price/deadline + CTA). The reference-documents block sits above the form, inside
 	// the card.
+	// A gallery-showcase renders full-width OUTSIDE the form card (in the wrapper). The
+	// non-gallery intro/welcome card renders INSIDE the page-shell, just above the form
+	// card, so it shares the form card's container and is always the exact same width.
 	$intro_outside_html = '';
+	$intro_card_html    = '';
 	$prelude_html       = '';
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
@@ -1011,11 +1015,23 @@ function xpressui_render_shortcode( $atts ) {
 			$intro_js_ver  = file_exists( $intro_js_path ) ? (string) filemtime( $intro_js_path ) : XPRESSUI_BRIDGE_VERSION;
 			wp_enqueue_script( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.js', [], $intro_js_ver, true );
 		} else {
-			// Non-gallery link: intro/welcome block outside the card, with a CTA to the form.
-			$intro_outside_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle, $mount_node_id, $pre_accent );
+			// Non-gallery link: intro/welcome card above the form, with a CTA to the form.
+			$intro_card_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle, $mount_node_id, $pre_accent );
 		}
 
 		$prelude_html = xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
+	}
+
+	// Inject the intro/welcome card inside the page-shell, right before the form card
+	// (<main class="form-frame">), so both cards share the same container + width.
+	if ( '' !== $intro_card_html ) {
+		$ff_class_pos = strpos( $fragment_html, 'class="form-frame' );
+		$tag_start    = false !== $ff_class_pos ? strrpos( substr( $fragment_html, 0, $ff_class_pos ), '<' ) : false;
+		if ( false !== $tag_start ) {
+			$fragment_html = substr( $fragment_html, 0, $tag_start ) . $intro_card_html . substr( $fragment_html, $tag_start );
+		} else {
+			$fragment_html = $intro_card_html . $fragment_html;
+		}
 	}
 
 	if ( '' !== $prelude_html ) {
