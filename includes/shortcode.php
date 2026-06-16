@@ -454,7 +454,7 @@ function xpressui_render_gallery_showcase( $presentation, $locale = 'en', $mount
  * @param string $style_handle Registered style handle for wp_add_inline_style().
  * @return string HTML (kses-safe: section/h2/div/span/p/strong/em/br).
  */
-function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_handle = '' ) {
+function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_handle = '', $cta_anchor_id = '', $accent_color = '#0f766e' ) {
 	if ( ! is_array( $presentation ) ) {
 		return '';
 	}
@@ -468,13 +468,25 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		return '';
 	}
 
+	// When a scroll target is provided, render a CTA that jumps to the embedded form.
+	$button_label = '';
+	if ( '' !== $cta_anchor_id ) {
+		$button_label = trim( (string) ( $presentation['introButtonLabel'] ?? '' ) );
+		if ( '' === $button_label ) {
+			$button_label = 'fr' === $locale ? __( 'Accéder au formulaire', 'xpressui-bridge' ) : __( 'Go to the form', 'xpressui-bridge' );
+		}
+	}
+
 	$intro_css = '.xpressui-intro{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
 		. '.xpressui-intro__title{margin:0 0 .6rem;font-size:1.15rem;font-weight:800;line-height:1.3;color:#0f172a}'
 		. '.xpressui-intro__content{color:#334155;font-size:.95rem;line-height:1.55}'
 		. '.xpressui-intro__content p:last-child{margin-bottom:0!important}'
 		. '.xpressui-intro__meta{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.85rem}'
 		. '.xpressui-intro__price{font-weight:800;font-size:1.05rem;color:#0f172a}'
-		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}';
+		. '.xpressui-intro__deadline{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .6rem;border-radius:999px;background:#fef3c7;color:#92400e;font-size:.82rem;font-weight:700;line-height:1.2}'
+		. '.xpressui-intro__actions{margin-top:1rem}'
+		. '.xpressui-intro__cta{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 1.4rem;border-radius:999px;background:var(--xpressui-accent,#0f766e);color:#fff!important;font-weight:800;font-size:.95rem;text-decoration:none!important;box-shadow:0 12px 24px -12px var(--xpressui-accent,#0f766e);transition:transform .15s ease,filter .15s ease}'
+		. '.xpressui-intro__cta:hover{transform:translateY(-1px);filter:brightness(1.05)}';
 
 	if ( ! empty( $style_handle ) ) {
 		wp_add_inline_style( $style_handle, $intro_css );
@@ -489,7 +501,7 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		echo '<style>' . $intro_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 	?>
-<section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>">
+<section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>" style="--xpressui-accent: <?php echo esc_attr( $accent_color ); ?>;">
 	<?php if ( '' !== $title ) : ?>
 	<h2 class="xpressui-intro__title"><?php echo esc_html( $title ); ?></h2>
 	<?php endif; ?>
@@ -500,6 +512,11 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 	<div class="xpressui-intro__meta">
 		<?php if ( '' !== $price_display ) : ?><span class="xpressui-intro__price"><?php echo esc_html( $price_display ); ?></span><?php endif; ?>
 		<?php if ( '' !== $deadline ) : ?><span class="xpressui-intro__deadline"><?php echo esc_html( $deadline ); ?></span><?php endif; ?>
+	</div>
+	<?php endif; ?>
+	<?php if ( '' !== $button_label ) : ?>
+	<div class="xpressui-intro__actions">
+		<a class="xpressui-intro__cta" href="#<?php echo esc_attr( $cta_anchor_id ); ?>"><?php echo esc_html( $button_label ); ?></a>
 	</div>
 	<?php endif; ?>
 </section>
@@ -957,13 +974,14 @@ function xpressui_render_shortcode( $atts ) {
 		. esc_html( wp_json_encode( json_decode( $form_config_json, true ) ) )
 		. '</template>';
 
-	// Parity with the SaaS hosted render. A gallery-showcase link renders the full
-	// product-detail intro (hero + gallery + buy box + CTA) OUTSIDE the form card,
-	// reusing the SaaS intro stylesheet/script verbatim. Other links render a simple
-	// intro/welcome block inside the card. The reference-documents block sits above
-	// the form in both cases.
-	$showcase_html = '';
-	$prelude_html  = '';
+	// Parity with the SaaS hosted render. The intro renders OUTSIDE the form card with
+	// a CTA that scrolls to the form: a gallery-showcase link renders the full
+	// product-detail intro (hero + gallery + buy box), reusing the SaaS stylesheet/
+	// script verbatim; other links render the intro/welcome block (title + content +
+	// price/deadline + CTA). The reference-documents block sits above the form, inside
+	// the card.
+	$intro_outside_html = '';
+	$prelude_html       = '';
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
@@ -972,13 +990,8 @@ function xpressui_render_shortcode( $atts ) {
 			$pre_accent = '#0f766e';
 		}
 
-		$showcase_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
-		if ( '' === $showcase_html ) {
-			$prelude_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle );
-		}
-		$prelude_html .= xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
-
-		if ( '' !== $showcase_html ) {
+		$intro_outside_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
+		if ( '' !== $intro_outside_html ) {
 			$intro_css_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.css';
 			$intro_css_ver  = file_exists( $intro_css_path ) ? (string) filemtime( $intro_css_path ) : XPRESSUI_BRIDGE_VERSION;
 			wp_enqueue_style( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.css', [], $intro_css_ver );
@@ -987,7 +1000,12 @@ function xpressui_render_shortcode( $atts ) {
 			$intro_js_path = XPRESSUI_BRIDGE_DIR . 'assets/hosted-intro.js';
 			$intro_js_ver  = file_exists( $intro_js_path ) ? (string) filemtime( $intro_js_path ) : XPRESSUI_BRIDGE_VERSION;
 			wp_enqueue_script( 'xpressui-hosted-intro', XPRESSUI_BRIDGE_URL . 'assets/hosted-intro.js', [], $intro_js_ver, true );
+		} else {
+			// Non-gallery link: intro/welcome block outside the card, with a CTA to the form.
+			$intro_outside_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle, $mount_node_id, $pre_accent );
 		}
+
+		$prelude_html = xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
 	}
 
 	if ( '' !== $prelude_html ) {
@@ -1000,7 +1018,7 @@ function xpressui_render_shortcode( $atts ) {
 	}
 
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
-		. $showcase_html
+		. $intro_outside_html
 		. $fragment_html
 		. $config_tag
 		. '</div>';
