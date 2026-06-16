@@ -413,9 +413,6 @@ function xpressui_render_workflows_page() {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
 			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
-			if ( ! $is_bundled ) {
-				$actions_html[] = '<span class="delete"><a class="submitdelete" href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a></span>';
-			}
 			echo implode( ' | ', $actions_html );
 			echo '</div>';
 			echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Show more details', 'xpressui-bridge' ) . '</span></button>';
