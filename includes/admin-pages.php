@@ -391,7 +391,6 @@ function xpressui_render_workflows_page() {
 		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 100px;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 120px;">' . esc_html__( 'Source', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -399,18 +398,6 @@ function xpressui_render_workflows_page() {
 			$display_tier  = $runtime_tier !== '' ? $runtime_tier : 'light';
 			$is_bundled    = ! empty( $manifest_meta['isBundled'] ) || xpressui_is_bundled_workflow( $slug );
 			$update_available = $is_bundled && xpressui_is_bundled_workflow_update_available( $slug );
-			$reinstall_url = wp_nonce_url(
-				add_query_arg(
-					[
-						'post_type'        => 'xpressui_submission',
-						'page'             => 'xpressui-bridge',
-						'xpressui_action'  => 'reinstall_bundled_workflow',
-						'xpressui_slug'    => $slug,
-					],
-					admin_url( 'edit.php' )
-				),
-				'xpressui_reinstall_bundled_workflow_' . $slug
-			);
 			$delete_url = wp_nonce_url(
 				add_query_arg(
 					[
@@ -458,9 +445,7 @@ function xpressui_render_workflows_page() {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
 			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
-			if ( $is_bundled ) {
-				$actions_html[] = '<span class="reinstall"><a href="' . esc_url( $reinstall_url ) . '">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a></span>';
-			} else {
+			if ( ! $is_bundled ) {
 				$actions_html[] = '<span class="delete"><a class="submitdelete" href="' . esc_url( $delete_url ) . '" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete', 'xpressui-bridge' ) . '</a></span>';
 			}
 			echo implode( ' | ', $actions_html );
@@ -482,15 +467,6 @@ function xpressui_render_workflows_page() {
 				echo esc_html( $steps_text . ', ' . $fields_text );
 			} else {
 				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
-			}
-			echo '</td>';
-			
-			// Source Column
-			echo '<td style="vertical-align: middle;">';
-			if ( $is_bundled ) {
-				echo '<span class="xpressui-badge xpressui-badge--muted">' . esc_html__( 'Bundled', 'xpressui-bridge' ) . '</span>';
-			} else {
-				echo '<span class="xpressui-badge xpressui-badge--success">' . esc_html__( 'Console Sync', 'xpressui-bridge' ) . '</span>';
 			}
 			echo '</td>';
 			
@@ -1157,13 +1133,11 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	}
 	echo '</table>';
 
-	echo '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">';
-	if ( $is_bundled ) {
-		echo '<a href="' . esc_url( $reinstall_url ) . '" class="button">' . esc_html( $update_available ? __( 'Update', 'xpressui-bridge' ) : __( 'Reinstall', 'xpressui-bridge' ) ) . '</a>';
-	} else {
+	if ( ! $is_bundled ) {
+		echo '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">';
 		echo '<a href="' . esc_url( $delete_url ) . '" class="button button-link-delete" style="color: #d63638; text-decoration: none; border: 1px solid #d63638; padding: 4px 10px; border-radius: 3px; background: #fff;" onclick="return confirm(\'' . esc_js( __( 'Are you sure you want to delete this workflow?', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Delete Workflow', 'xpressui-bridge' ) . '</a>';
+		echo '</div>';
 	}
-	echo '</div>';
 	echo '</div>';
 
 	// ---------------------------------------------------------
