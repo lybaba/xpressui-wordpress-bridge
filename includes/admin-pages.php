@@ -1135,11 +1135,8 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '<hr class="wp-header-end">';
 	echo '<div id="xpressui-single-sync-container"></div>';
 
-	// Details grid
-	echo '<div class="xpressui-detail-grid" style="display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap;">';
-
 	// Details Card
-	echo '<div class="card" style="flex: 1; min-width: 300px; margin: 0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+	echo '<div class="card" style="max-width: 600px; margin: 20px 0 30px 0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
 	echo '<h2 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">' . esc_html__( 'Workflow Details', 'xpressui-bridge' ) . '</h2>';
 	echo '<table class="form-table" style="margin: 0; width: 100%;">';
 	echo '<tr><th style="padding: 10px 0; font-weight: 600; width: 150px;">' . esc_html__( 'Slug / ID', 'xpressui-bridge' ) . '</th><td style="padding: 10px 0;"><code>' . esc_html( $slug ) . '</code></td></tr>';
@@ -1157,61 +1154,8 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '</div>';
 	echo '</div>';
 
-	// Shortcode / Fallback card
-	echo '<div class="card" style="flex: 1; min-width: 300px; margin: 0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
-	echo '<h2 style="margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px;">' . esc_html__( 'Legacy Integration', 'xpressui-bridge' ) . '</h2>';
-	echo '<p>' . esc_html__( 'Use this shortcode to embed the default compiled form. Advanced behaviors (branding, notifications, redirections) are not applied without a Hosted Link.', 'xpressui-bridge' ) . '</p>';
-	echo '<div style="background: #f6f7f7; padding: 12px; border-radius: 4px; border: 1px solid #dcdcde; margin: 15px 0;">';
-	echo '<code style="font-size: 14px; font-weight: bold;">[xpressui id="' . esc_attr( $slug ) . '"]</code>';
-	echo '</div>';
-	
-	// Check if there is any page already embedding the legacy shortcode
-	$legacy_pages = xpressui_get_workflow_page_ids( $slug );
-	// Filter to check pages without a link_id
-	$pure_legacy_pages = [];
-	foreach ( $legacy_pages as $p_id ) {
-		$p_post = get_post( $p_id );
-		$p_content = $p_post ? $p_post->post_content : '';
-		if ( false === strpos( $p_content, 'link_id=' ) && false === strpos( $p_content, 'link=' ) ) {
-			$pure_legacy_pages[] = $p_id;
-		}
-	}
-
-	if ( ! empty( $pure_legacy_pages ) ) {
-		echo '<h3>' . esc_html__( 'Linked Pages (Legacy):', 'xpressui-bridge' ) . '</h3>';
-		echo '<ul style="margin: 0; padding-left: 20px;">';
-		foreach ( $pure_legacy_pages as $p_id ) {
-			$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
-			$p_edit = get_edit_post_link( $p_id );
-			echo '<li>';
-			echo '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
-			if ( $p_edit ) {
-				echo ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)';
-			}
-			echo '</li>';
-		}
-		echo '</ul>';
-	} else {
-		$create_legacy_url = wp_nonce_url(
-			add_query_arg(
-				[
-					'post_type'       => 'xpressui_submission',
-					'page'            => 'xpressui-bridge',
-					'xpressui_action' => 'create_workflow_page',
-					'xpressui_slug'   => $slug,
-				],
-				admin_url( 'edit.php' )
-			),
-			'xpressui_create_workflow_page_' . $slug
-		);
-		echo '<div style="margin-top: 15px;"><a href="' . esc_url( $create_legacy_url ) . '" class="button button-secondary">' . esc_html__( 'Create Legacy Page', 'xpressui-bridge' ) . '</a></div>';
-	}
-	echo '</div>';
-
-	echo '</div>'; // .xpressui-detail-grid
-
 	// ---------------------------------------------------------
-	// Synced Hosted Links Sub-table
+	// Linked Pages Table
 	// ---------------------------------------------------------
 	$hosted_links = [];
 	$base_dir = xpressui_get_workflows_base_dir();
@@ -1238,62 +1182,102 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		}
 	}
 
-	echo '<h2 style="margin-top: 40px; border-bottom: 2px solid #2271b1; padding-bottom: 8px;">' . esc_html__( 'Hosted Links (SaaS)', 'xpressui-bridge' ) . '</h2>';
-	echo '<p class="description" style="margin-bottom: 20px;">' . esc_html__( 'These links carry consolidated behaviors and styles configured on the IntakeFlow Console. Embed them using their parameterized shortcodes, or build dedicated WordPress pages for them below.', 'xpressui-bridge' ) . '</p>';
+	echo '<h2 style="margin-top: 40px; border-bottom: 2px solid #2271b1; padding-bottom: 8px;">' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description" style="margin-bottom: 20px;">' . esc_html__( 'Manage WordPress pages connected to this workflow. A linked page can run either the legacy fallback workflow or a specific SaaS Hosted Link.', 'xpressui-bridge' ) . '</p>';
 
-	if ( empty( $hosted_links ) ) {
-		echo '<div class="notice notice-info inline" style="margin: 0;"><p>';
-		echo esc_html__( 'No hosted links have been synchronized for this workflow yet. Click "Sync from Console" at the top of the main Workflows list to pull them.', 'xpressui-bridge' );
-		echo '</p></div>';
-	} else {
-		echo '<table class="wp-list-table widefat fixed striped xpressui-table" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden;">';
-		echo '<thead><tr>';
-		echo '<th style="font-weight: 700; width: 250px;">' . esc_html__( 'Hosted Link', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Link ID', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700;">' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'Linked Pages', 'xpressui-bridge' ) . '</th>';
-		echo '</tr></thead>';
-		echo '<tbody>';
-		foreach ( $hosted_links as $link ) {
-			$shortcode = '[xpressui id="' . esc_attr( $slug ) . '" link_id="' . esc_attr( $link['id'] ) . '"]';
-			$link_pages = xpressui_get_workflow_page_ids( $slug, [ 'draft', 'publish', 'pending', 'private' ], $link['id'] );
+	echo '<table class="wp-list-table widefat fixed striped xpressui-table" style="box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; margin-top: 15px;">';
+	echo '<thead><tr>';
+	echo '<th style="font-weight: 700; width: 250px;">' . esc_html__( 'Target', 'xpressui-bridge' ) . '</th>';
+	echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Link ID', 'xpressui-bridge' ) . '</th>';
+	echo '<th style="font-weight: 700;">' . esc_html__( 'Shortcode', 'xpressui-bridge' ) . '</th>';
+	echo '<th style="font-weight: 700; width: 350px;">' . esc_html__( 'WordPress Page', 'xpressui-bridge' ) . '</th>';
+	echo '</tr></thead>';
+	echo '<tbody>';
 
-			$create_link_page_url = wp_nonce_url(
-				add_query_arg(
-					[
-						'post_type'        => 'xpressui_submission',
-						'page'             => 'xpressui-bridge',
-						'xpressui_action'  => 'create_workflow_page',
-						'xpressui_slug'    => $slug,
-						'xpressui_link_id' => $link['id'],
-					],
-					admin_url( 'edit.php' )
-				),
-				'xpressui_create_workflow_page_' . $slug . '_' . $link['id']
-			);
-
-			echo '<tr>';
-			echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
-			echo '<td style="vertical-align: middle;"><code>' . esc_html( $link['id'] ) . '</code></td>';
-			echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
-			echo '<td style="vertical-align: middle;">';
-			if ( ! empty( $link_pages ) ) {
-				$page_links = [];
-				foreach ( $link_pages as $p_id ) {
-					$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
-					$p_edit = get_edit_post_link( $p_id );
-					$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
-				}
-				echo implode( ', ', $page_links );
-			} else {
-				echo '<a href="' . esc_url( $create_link_page_url ) . '" class="button button-small button-primary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
-			}
-			echo '</td>';
-			echo '</tr>';
+	// Row 1: Legacy Fallback
+	$legacy_pages = xpressui_get_workflow_page_ids( $slug );
+	$pure_legacy_pages = [];
+	foreach ( $legacy_pages as $p_id ) {
+		$p_post = get_post( $p_id );
+		$p_content = $p_post ? $p_post->post_content : '';
+		if ( false === strpos( $p_content, 'link_id=' ) && false === strpos( $p_content, 'link=' ) ) {
+			$pure_legacy_pages[] = $p_id;
 		}
-		echo '</tbody>';
-		echo '</table>';
 	}
+
+	$create_legacy_page_url = wp_nonce_url(
+		add_query_arg(
+			[
+				'post_type'       => 'xpressui_submission',
+				'page'            => 'xpressui-bridge',
+				'xpressui_action' => 'create_workflow_page',
+				'xpressui_slug'   => $slug,
+			],
+			admin_url( 'edit.php' )
+		),
+		'xpressui_create_workflow_page_' . $slug
+	);
+
+	echo '<tr>';
+	echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle; color: #666;"><em>' . esc_html__( 'Default / Legacy Fallback', 'xpressui-bridge' ) . '</em></td>';
+	echo '<td style="vertical-align: middle; color: #888;">&mdash;</td>';
+	echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">[xpressui id="' . esc_attr( $slug ) . '"]</code></td>';
+	echo '<td style="vertical-align: middle;">';
+	if ( ! empty( $pure_legacy_pages ) ) {
+		$page_links = [];
+		foreach ( $pure_legacy_pages as $p_id ) {
+			$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
+			$p_edit = get_edit_post_link( $p_id );
+			$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
+		}
+		echo implode( ', ', $page_links );
+	} else {
+		echo '<a href="' . esc_url( $create_legacy_page_url ) . '" class="button button-small button-secondary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
+	}
+	echo '</td>';
+	echo '</tr>';
+
+	// Synced hosted link rows
+	foreach ( $hosted_links as $link ) {
+		$shortcode = '[xpressui id="' . esc_attr( $slug ) . '" link_id="' . esc_attr( $link['id'] ) . '"]';
+		$link_pages = xpressui_get_workflow_page_ids( $slug, [ 'draft', 'publish', 'pending', 'private' ], $link['id'] );
+
+		$create_link_page_url = wp_nonce_url(
+			add_query_arg(
+				[
+					'post_type'        => 'xpressui_submission',
+					'page'             => 'xpressui-bridge',
+					'xpressui_action'  => 'create_workflow_page',
+					'xpressui_slug'    => $slug,
+					'xpressui_link_id' => $link['id'],
+				],
+				admin_url( 'edit.php' )
+			),
+			'xpressui_create_workflow_page_' . $slug . '_' . $link['id']
+		);
+
+		echo '<tr>';
+		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
+		echo '<td style="vertical-align: middle;"><code>' . esc_html( $link['id'] ) . '</code></td>';
+		echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
+		echo '<td style="vertical-align: middle;">';
+		if ( ! empty( $link_pages ) ) {
+			$page_links = [];
+			foreach ( $link_pages as $p_id ) {
+				$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
+				$p_edit = get_edit_post_link( $p_id );
+				$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>' . ( $p_edit ? ' (<a href="' . esc_url( $p_edit ) . '">' . esc_html__( 'edit', 'xpressui-bridge' ) . '</a>)' : '' );
+			}
+			echo implode( ', ', $page_links );
+		} else {
+			echo '<a href="' . esc_url( $create_link_page_url ) . '" class="button button-small button-primary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
+		}
+		echo '</td>';
+		echo '</tr>';
+	}
+
+	echo '</tbody>';
+	echo '</table>';
 
 	echo '</div>'; // .wrap
 
