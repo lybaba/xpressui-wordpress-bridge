@@ -1818,7 +1818,8 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	if ( empty( $sf['success_title'] ) ) {
 		$sf['success_title'] = 'print' === $submission_action
 			? __( 'Document prêt', 'xpressui-bridge' )
-			: __( 'Submission received', 'xpressui-bridge' );
+			: ( $form_config['workflowConfig']['successTitle']
+				?? __( 'Submission received', 'xpressui-bridge' ) );
 	}
 	if ( empty( $sf['success_message'] ) ) {
 		$sf['success_message'] = 'print' === $submission_action

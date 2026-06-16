@@ -243,6 +243,88 @@ function xpressui_format_intro_price( $price, $currency ) {
 }
 
 /**
+ * Renders the hero / gallery media block from a synced Hosted Link presentation,
+ * for parity with the SaaS splash hero + gallery. Combines heroImageUrl with
+ * introImageUrls (deduped, https only, capped at 8) into a slideshow; renders a
+ * single image when only one is present. Returns '' when there is no media.
+ *
+ * @param array  $presentation Hosted Link presentation (from link.config.json).
+ * @param string $locale       'fr' or 'en'.
+ * @param string $style_handle Registered style handle for wp_add_inline_style().
+ * @return string HTML (kses-safe: div/img/button).
+ */
+function xpressui_render_intro_media( $presentation, $locale = 'en', $style_handle = '' ) {
+	if ( ! is_array( $presentation ) ) {
+		return '';
+	}
+	$images = [];
+	$add    = static function ( $url ) use ( &$images ) {
+		$url = trim( (string) $url );
+		if ( '' === $url || ( stripos( $url, 'http://' ) !== 0 && stripos( $url, 'https://' ) !== 0 ) ) {
+			return;
+		}
+		if ( in_array( $url, $images, true ) || count( $images ) >= 8 ) {
+			return;
+		}
+		$images[] = $url;
+	};
+	$add( $presentation['heroImageUrl'] ?? '' );
+	$raw_gallery = $presentation['introImageUrls'] ?? [];
+	if ( is_array( $raw_gallery ) ) {
+		foreach ( $raw_gallery as $url ) {
+			$add( $url );
+		}
+	}
+	if ( empty( $images ) ) {
+		return '';
+	}
+
+	$media_css = '.xpressui-intro-media{position:relative;margin:0 0 1.25rem;border-radius:12px;overflow:hidden;background:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+		. '.xpressui-intro-media__viewport{position:relative;width:100%;aspect-ratio:16/9}'
+		. '.xpressui-intro-media__slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease}'
+		. '.xpressui-intro-media__slide.is-active{opacity:1}'
+		. '.xpressui-intro-media__nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;border-radius:999px;background:rgba(15,23,42,.55);color:#fff;font-size:1.4rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s ease;z-index:2}'
+		. '.xpressui-intro-media__nav:hover{background:rgba(15,23,42,.85)}'
+		. '.xpressui-intro-media__nav.is-prev{left:.6rem}'
+		. '.xpressui-intro-media__nav.is-next{right:.6rem}'
+		. '.xpressui-intro-media__dots{position:absolute;left:0;right:0;bottom:.6rem;display:flex;justify-content:center;gap:.4rem;z-index:2}'
+		. '.xpressui-intro-media__dot{width:8px;height:8px;border:none;border-radius:999px;background:rgba(255,255,255,.5);cursor:pointer;padding:0}'
+		. '.xpressui-intro-media__dot.is-active{background:#fff}';
+
+	if ( ! empty( $style_handle ) ) {
+		wp_add_inline_style( $style_handle, $media_css );
+	}
+
+	$prev_label = 'fr' === $locale ? __( 'Image précédente', 'xpressui-bridge' ) : __( 'Previous image', 'xpressui-bridge' );
+	$next_label = 'fr' === $locale ? __( 'Image suivante', 'xpressui-bridge' ) : __( 'Next image', 'xpressui-bridge' );
+	$has_many   = count( $images ) > 1;
+
+	ob_start();
+	if ( empty( $style_handle ) ) {
+		echo '<style>' . $media_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
+	?>
+<div class="xpressui-intro-media" data-xpressui-intro-media>
+	<div class="xpressui-intro-media__viewport">
+		<?php foreach ( $images as $index => $image_url ) : ?>
+		<img class="xpressui-intro-media__slide<?php echo 0 === $index ? ' is-active' : ''; ?>" src="<?php echo esc_url( $image_url ); ?>" alt=""<?php echo 0 === $index ? '' : ' loading="lazy"'; ?>>
+		<?php endforeach; ?>
+	</div>
+	<?php if ( $has_many ) : ?>
+	<button class="xpressui-intro-media__nav is-prev" type="button" data-xpressui-intro-media-prev aria-label="<?php echo esc_attr( $prev_label ); ?>">&lsaquo;</button>
+	<button class="xpressui-intro-media__nav is-next" type="button" data-xpressui-intro-media-next aria-label="<?php echo esc_attr( $next_label ); ?>">&rsaquo;</button>
+	<div class="xpressui-intro-media__dots">
+		<?php foreach ( $images as $index => $image_url ) : ?>
+		<button class="xpressui-intro-media__dot<?php echo 0 === $index ? ' is-active' : ''; ?>" type="button" data-xpressui-intro-media-dot="<?php echo (int) $index; ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %d: slide number */ __( 'Image %d', 'xpressui-bridge' ), $index + 1 ) ); ?>"></button>
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
+</div>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
  * Renders the intro/welcome block (title + markdown content + price + deadline)
  * from a synced Hosted Link presentation, for parity with the SaaS splash intro.
  * Returns '' when none of the intro fields are set.
@@ -479,6 +561,9 @@ function xpressui_render_shortcode( $atts ) {
 
 			if ( ! empty( $presentation['successMessage'] ) ) {
 				$form_config['workflowConfig']['successMessage'] = $presentation['successMessage'];
+			}
+			if ( ! empty( $presentation['successTitle'] ) ) {
+				$form_config['workflowConfig']['successTitle'] = $presentation['successTitle'];
 			}
 			if ( ! empty( $presentation['successRedirectUrl'] ) ) {
 				$form_config['workflowConfig']['redirectUrl'] = $presentation['successRedirectUrl'];
@@ -734,6 +819,11 @@ function xpressui_render_shortcode( $atts ) {
 	$download_script = 'try{document.addEventListener("click",function(e){var btn=e.target.closest(".xpressui-ref-docs__download");if(!btn)return;var url=btn.getAttribute("href");if(!url)return;e.preventDefault();btn.style.opacity="0.5";btn.style.pointerEvents="none";fetch(url).then(function(res){if(!res.ok)throw new Error("Fetch failed");return res.blob();}).then(function(blob){var blobUrl=URL.createObjectURL(blob);var a=document.createElement("a");a.href=blobUrl;a.download=btn.getAttribute("download")||url.substring(url.lastIndexOf("/")+1)||"document";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(blobUrl);}).catch(function(err){console.error("Download failed:",err);window.open(url,"_blank","noopener,noreferrer");}).finally(function(){btn.style.opacity="";btn.style.pointerEvents="";});});}catch(e){}';
 	wp_add_inline_script( 'xpressui-shell-init', $download_script, 'after' );
 
+	// Intro hero/gallery slideshow: cycle slides on prev/next/dot click. No-ops
+	// when a container has fewer than two slides (single hero image).
+	$gallery_script = 'try{document.querySelectorAll("[data-xpressui-intro-media]").forEach(function(box){var slides=box.querySelectorAll(".xpressui-intro-media__slide");if(slides.length<2)return;var dots=box.querySelectorAll("[data-xpressui-intro-media-dot]");var cur=0;function go(n){cur=(n+slides.length)%slides.length;slides.forEach(function(s,i){s.classList.toggle("is-active",i===cur);});dots.forEach(function(d,i){d.classList.toggle("is-active",i===cur);});}var p=box.querySelector("[data-xpressui-intro-media-prev]");var x=box.querySelector("[data-xpressui-intro-media-next]");if(p)p.addEventListener("click",function(){go(cur-1);});if(x)x.addEventListener("click",function(){go(cur+1);});dots.forEach(function(d,i){d.addEventListener("click",function(){go(i);});});});}catch(e){}';
+	wp_add_inline_script( 'xpressui-shell-init', $gallery_script, 'after' );
+
 	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
 
 	// Embed the form config as inert JSON markup read by plugin-shell-init.js.
@@ -750,7 +840,8 @@ function xpressui_render_shortcode( $atts ) {
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
-		$prelude_html     = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle )
+		$prelude_html     = xpressui_render_intro_media( $pre_presentation, $pre_locale, $style_handle )
+			. xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle )
 			. xpressui_render_reference_documents( $pre_presentation, $pre_locale, $style_handle );
 	}
 
