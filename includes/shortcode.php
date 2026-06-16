@@ -295,19 +295,9 @@ function xpressui_resolve_intro_media( $presentation, $page_template = '' ) {
  * @return string CSS appended via wp_add_inline_style().
  */
 function xpressui_gallery_showcase_embed_css() {
-	// The SaaS stylesheet styles the showcase as a fixed, full-viewport splash. Inside
-	// a WordPress page it must flow inline, so defensively force it static and visible
-	// (high specificity beats both the SaaS base rule and any theme rule that might hide
-	// a ".splash" element). The SaaS 2-column shell is sized with viewport units (52vw),
-	// which overflows + clips the right column in a narrower content column — re-size the
-	// columns relative to the grid container (fr) on desktop; the SaaS mobile breakpoint
-	// stacks them below 861px.
-	return '.xpressui-embed-wrapper .xpressui-splash.xpressui-splash--gallery-showcase{position:static;inset:auto;z-index:auto;display:block;min-height:0;height:auto;max-height:none;margin:0;padding:0;background:transparent;overflow:visible;opacity:1;visibility:visible;transform:none}'
+	return '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{max-width:none;margin:0 auto clamp(20px,4vw,40px);overflow-x:visible}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-media{max-width:none}'
-		. '.xpressui-intake-anchor{display:block;height:0;scroll-margin-top:90px}'
-		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px)}';
 }
 
 /**
@@ -961,11 +951,6 @@ function xpressui_render_shortcode( $atts ) {
 	// the form in both cases.
 	$showcase_html = '';
 	$prelude_html  = '';
-	// Clean scroll anchor for the showcase CTA — the same id as the form mount but
-	// without the internal "xpressui-" prefix, so the URL fragment stays tidy.
-	$cta_anchor_id = 0 === strpos( $mount_node_id, 'xpressui-' )
-		? substr( $mount_node_id, strlen( 'xpressui-' ) )
-		: $mount_node_id;
 	if ( is_array( $link_config ) ) {
 		$pre_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$pre_locale       = ( ( $pre_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
@@ -974,7 +959,7 @@ function xpressui_render_shortcode( $atts ) {
 			$pre_accent = '#0f766e';
 		}
 
-		$showcase_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $cta_anchor_id, $pre_accent );
+		$showcase_html = xpressui_render_gallery_showcase( $pre_presentation, $pre_locale, $mount_node_id, $pre_accent );
 		if ( '' === $showcase_html ) {
 			$prelude_html = xpressui_render_intro_welcome( $pre_presentation, $pre_locale, $style_handle );
 		}
@@ -1001,15 +986,8 @@ function xpressui_render_shortcode( $atts ) {
 		}
 	}
 
-	// When the showcase renders above the card, drop a clean scroll anchor right
-	// before the form so the CTA lands on it without leaking the internal mount id.
-	$cta_anchor = '' !== $showcase_html
-		? '<span id="' . esc_attr( $cta_anchor_id ) . '" class="xpressui-intake-anchor" aria-hidden="true"></span>'
-		: '';
-
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $showcase_html
-		. $cta_anchor
 		. $fragment_html
 		. $config_tag
 		. '</div>';
