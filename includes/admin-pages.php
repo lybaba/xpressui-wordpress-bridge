@@ -1114,7 +1114,10 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1 class="wp-heading-inline">';
-	echo '<a href="' . esc_url( $back_url ) . '" class="page-title-action" style="margin-right: 15px; font-size: 13px; font-weight: normal; text-decoration: none; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; background: #fff; color: #3c434a; line-height: 1;">&larr; ' . esc_html__( 'Back to Workflows', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( $back_url ) . '" class="page-title-action" style="margin-right: 12px; display: inline-flex; align-items: center; gap: 4px; vertical-align: middle;">';
+	echo '<span class="dashicons dashicons-arrow-left-alt2" style="font-size: 16px; width: 16px; height: 16px; display: inline-block; line-height: 1; margin-top: 1px;"></span>';
+	echo esc_html__( 'Back to Workflows', 'xpressui-bridge' );
+	echo '</a>';
 	echo esc_html( $display_name );
 	echo '</h1>';
 	if ( xpressui_pro_is_license_active() ) {
