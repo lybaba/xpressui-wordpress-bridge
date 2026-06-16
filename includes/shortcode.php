@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param string $locale       'fr' or 'en' (for the default section title).
  * @return string HTML (kses-safe: details/summary/section/div/span/a/svg).
  */
-function xpressui_render_reference_documents( $presentation, $locale = 'en' ) {
+function xpressui_render_reference_documents( $presentation, $locale = 'en', $style_handle = '' ) {
 	if ( ! is_array( $presentation ) || ! is_array( $presentation['referenceDocuments'] ?? null ) ) {
 		return '';
 	}
@@ -70,28 +70,35 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en' ) {
 		'file'    => '<svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" aria-hidden="true"><path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"></path></svg>',
 	];
 	$colors  = [ 'pdf' => '#b91c1c', 'image' => '#2563eb', 'archive' => '#ca8a04', 'file' => '#64748b' ];
-	$ext_svg = '<svg class="xpressui-ref-docs__ext" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>';
+
+	$ref_docs_css = '.xpressui-ref-docs{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 0 1.25rem;overflow:hidden;font-size:.9rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+		. '.xpressui-ref-docs summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.75rem;padding:.85rem 1.25rem;font-weight:700;color:#0f172a;border:none!important;outline:none!important;box-shadow:none!important}'
+		. '.xpressui-ref-docs summary:focus,.xpressui-ref-docs summary:active{outline:none!important;border:none!important;box-shadow:none!important}'
+		. '.xpressui-ref-docs summary::-webkit-details-marker{display:none}'
+		. '.xpressui-ref-docs__count{margin-left:auto;color:#64748b;font-weight:700;font-size:.82rem}'
+		. '.xpressui-ref-docs__chev{flex:0 0 auto;width:.5rem;height:.5rem;border-right:2px solid #64748b;border-bottom:2px solid #64748b;transform:rotate(45deg);transition:transform .16s ease}'
+		. '.xpressui-ref-docs[open] summary .xpressui-ref-docs__chev{transform:rotate(225deg)}'
+		. '.xpressui-ref-docs__body{border-top:1px solid #e2e8f0;padding:.2rem .85rem .35rem}'
+		. '.xpressui-ref-docs__row+.xpressui-ref-docs__row{border-top:1px solid #e2e8f0}'
+		. '.xpressui-ref-docs__item{display:flex;align-items:center;gap:.7rem;width:100%;min-width:0;padding:.6rem .35rem;color:#0f172a}'
+		. '.xpressui-ref-docs__icon{flex:0 0 auto;display:inline-flex;width:28px;height:28px}'
+		. '.xpressui-ref-docs__icon svg{width:28px;height:28px;display:block}'
+		. '.xpressui-ref-docs__text{display:grid;gap:.08rem;min-width:0;flex:1 1 auto}'
+		. '.xpressui-ref-docs__name{min-width:0;color:#0f172a;font-weight:700;line-height:1.25;word-break:break-word}'
+		. '.xpressui-ref-docs__file{color:#64748b;font-size:.78rem;line-height:1.2;word-break:break-all}'
+		. '.xpressui-ref-docs__download{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:#64748b;text-decoration:none!important;transition:background 120ms ease,color 120ms ease;align-self:center}'
+		. '.xpressui-ref-docs__download:hover{background:#f1f5f9;color:#0f172a}'
+		. '.xpressui-ref-docs__download .dashicons{font-size:16px!important;width:16px!important;height:16px!important;line-height:1!important;align-self:center}';
+
+	if ( ! empty( $style_handle ) ) {
+		wp_add_inline_style( $style_handle, $ref_docs_css );
+	}
 
 	ob_start();
+	if ( empty( $style_handle ) ) {
+		echo '<style>' . $ref_docs_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	}
 	?>
-<style>
-.xpressui-ref-docs{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;margin:0 0 1.25rem;overflow:hidden;font-size:.9rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}
-.xpressui-ref-docs summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:.75rem;padding:.85rem 1.25rem;font-weight:700;color:#0f172a}
-.xpressui-ref-docs summary::-webkit-details-marker{display:none}
-.xpressui-ref-docs__count{margin-left:auto;color:#64748b;font-weight:700;font-size:.82rem}
-.xpressui-ref-docs__chev{flex:0 0 auto;width:.5rem;height:.5rem;border-right:2px solid #64748b;border-bottom:2px solid #64748b;transform:rotate(45deg);transition:transform .16s ease}
-.xpressui-ref-docs[open] summary .xpressui-ref-docs__chev{transform:rotate(225deg)}
-.xpressui-ref-docs__body{border-top:1px solid #e2e8f0;padding:.2rem .85rem .35rem}
-.xpressui-ref-docs__row+.xpressui-ref-docs__row{border-top:1px solid #e2e8f0}
-.xpressui-ref-docs__link{display:flex;align-items:center;gap:.7rem;width:100%;min-width:0;padding:.6rem .35rem;color:#0f172a;text-decoration:none!important;border-radius:8px}
-.xpressui-ref-docs__link:hover{background:#f1f5f9}
-.xpressui-ref-docs__icon{flex:0 0 auto;display:inline-flex;width:28px;height:28px}
-.xpressui-ref-docs__icon svg{width:28px;height:28px;display:block}
-.xpressui-ref-docs__text{display:grid;gap:.08rem;min-width:0;flex:1 1 auto}
-.xpressui-ref-docs__name{min-width:0;color:#0f172a;font-weight:700;line-height:1.25;word-break:break-word}
-.xpressui-ref-docs__file{color:#64748b;font-size:.78rem;line-height:1.2;word-break:break-all}
-.xpressui-ref-docs__ext{flex:0 0 auto;color:#94a3b8;align-self:center}
-</style>
 <details class="xpressui-ref-docs" open>
 	<summary>
 		<span><?php echo esc_html( $title ); ?></span>
@@ -101,7 +108,7 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en' ) {
 	<div class="xpressui-ref-docs__body">
 		<?php foreach ( $documents as $doc ) : ?>
 		<div class="xpressui-ref-docs__row">
-			<a class="xpressui-ref-docs__link" href="<?php echo esc_url( $doc['url'] ); ?>" target="_blank" rel="noopener noreferrer nofollow">
+			<div class="xpressui-ref-docs__item">
 				<span class="xpressui-ref-docs__icon" style="color:<?php echo esc_attr( $colors[ $doc['kind'] ] ); ?>"><?php echo $icons[ $doc['kind'] ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG ?></span>
 				<span class="xpressui-ref-docs__text">
 					<span class="xpressui-ref-docs__name"><?php echo esc_html( '' !== $doc['name'] ? $doc['name'] : $doc['url'] ); ?></span>
@@ -109,8 +116,10 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en' ) {
 					<span class="xpressui-ref-docs__file"><?php echo esc_html( $doc['filename'] ); ?></span>
 					<?php endif; ?>
 				</span>
-				<?php echo $ext_svg; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG ?>
-			</a>
+				<a class="xpressui-ref-docs__download" href="<?php echo esc_url( $doc['url'] ); ?>" download aria-label="<?php esc_attr_e( 'Download document', 'xpressui-bridge' ); ?>" title="<?php esc_attr_e( 'Download', 'xpressui-bridge' ); ?>">
+					<span class="dashicons dashicons-download" aria-hidden="true"></span>
+				</a>
+			</div>
 		</div>
 		<?php endforeach; ?>
 	</div>
@@ -521,6 +530,8 @@ function xpressui_render_shortcode( $atts ) {
 	// Enqueue the shortcode-specific CSS via the WordPress style API.
 	// The static CSS file covers component base styles; dynamic/scoped overrides
 	// (theme colours, mount-ID scope) are appended as an inline style block.
+	wp_enqueue_style( 'dashicons' );
+
 	$style_handle = 'xpressui-shortcode-' . sanitize_key( $slug );
 	$static_css_url  = XPRESSUI_BRIDGE_URL . 'assets/css/xpressui-shortcode.css';
 	$static_css_path = XPRESSUI_BRIDGE_DIR . 'assets/css/xpressui-shortcode.css';
@@ -542,6 +553,10 @@ function xpressui_render_shortcode( $atts ) {
 	$resume_script = 'try{if(/[?&]xpressui_resume=/.test(location.search)){var _xpEl=document.getElementById(' . wp_json_encode( $mount_node_id ) . ');if(_xpEl)_xpEl.setAttribute("data-resume-loading","");}}catch(e){}';
 	wp_add_inline_script( 'xpressui-shell-init', $resume_script, 'after' );
 
+	// Handle reference documents direct download interception for cross-origin URLs.
+	$download_script = 'try{document.addEventListener("click",function(e){var btn=e.target.closest(".xpressui-ref-docs__download");if(!btn)return;var url=btn.getAttribute("href");if(!url)return;e.preventDefault();btn.style.opacity="0.5";btn.style.pointerEvents="none";fetch(url).then(function(res){if(!res.ok)throw new Error("Fetch failed");return res.blob();}).then(function(blob){var blobUrl=URL.createObjectURL(blob);var a=document.createElement("a");a.href=blobUrl;a.download=btn.getAttribute("download")||url.substring(url.lastIndexOf("/")+1)||"document";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(blobUrl);}).catch(function(err){console.error("Download failed:",err);window.open(url,"_blank","noopener,noreferrer");}).finally(function(){btn.style.opacity="";btn.style.pointerEvents="";});});}catch(e){}';
+	wp_add_inline_script( 'xpressui-shell-init', $download_script, 'after' );
+
 	do_action( 'xpressui_shortcode_scripts_enqueued', $slug, $template_context );
 
 	// Embed the form config as inert JSON markup read by plugin-shell-init.js.
@@ -557,11 +572,19 @@ function xpressui_render_shortcode( $atts ) {
 	if ( is_array( $link_config ) ) {
 		$ref_presentation    = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$ref_locale          = ( ( $ref_presentation['locale'] ?? '' ) === 'fr' ) ? 'fr' : 'en';
-		$reference_docs_html = xpressui_render_reference_documents( $ref_presentation, $ref_locale );
+		$reference_docs_html = xpressui_render_reference_documents( $ref_presentation, $ref_locale, $style_handle );
+	}
+
+	if ( '' !== $reference_docs_html ) {
+		$form_pos = strpos( $fragment_html, '<form' );
+		if ( false !== $form_pos ) {
+			$fragment_html = substr( $fragment_html, 0, $form_pos ) . $reference_docs_html . substr( $fragment_html, $form_pos );
+		} else {
+			$fragment_html = $reference_docs_html . $fragment_html;
+		}
 	}
 
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
-		. $reference_docs_html
 		. $fragment_html
 		. $config_tag
 		. '</div>';

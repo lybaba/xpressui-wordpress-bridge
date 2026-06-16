@@ -401,7 +401,7 @@ function xpressui_get_shell_allowed_html() {
 		'select'   => array_merge( $global_attrs, [ 'name' => true, 'required' => true, 'disabled' => true, 'multiple' => true ] ),
 		'option'   => array_merge( $global_attrs, [ 'value' => true, 'selected' => true, 'disabled' => true ] ),
 		'button'   => array_merge( $global_attrs, [ 'type' => true, 'name' => true, 'value' => true, 'disabled' => true ] ),
-		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true ] ),
+		'a'        => array_merge( $global_attrs, [ 'href' => true, 'target' => true, 'rel' => true, 'download' => true ] ),
 		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true, 'hidden' => true ] ),
 		'details'  => array_merge( $global_attrs, [ 'open' => true ] ),
 		'summary'  => $global_attrs,
