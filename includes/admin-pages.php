@@ -587,9 +587,9 @@ function xpressui_create_workflow_page( $slug, $link_id = '' ) {
 	if ( $link_id !== '' ) {
 		$link_config = xpressui_get_hosted_link_config( $slug, $link_id );
 		if ( $link_config && ! empty( $link_config['label'] ) ) {
-			$page_title .= ' - ' . sanitize_text_field( $link_config['label'] );
+			$page_title = sanitize_text_field( $link_config['label'] );
 		} else {
-			$page_title .= ' - ' . sanitize_text_field( $link_id );
+			$page_title = sanitize_text_field( $link_id );
 		}
 		$existing_pages = xpressui_get_workflow_page_ids( $slug, [ 'draft', 'publish', 'pending', 'private' ], $link_id );
 		$shortcode = '[xpressui id="' . $slug . '" link_id="' . esc_attr( $link_id ) . '"]';
