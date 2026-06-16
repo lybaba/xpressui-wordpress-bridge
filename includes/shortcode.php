@@ -295,18 +295,19 @@ function xpressui_resolve_intro_media( $presentation, $page_template = '' ) {
  * @return string CSS appended via wp_add_inline_style().
  */
 function xpressui_gallery_showcase_embed_css() {
-	// The SaaS shell is a full-page 2-column layout sized with viewport units (52vw),
-	// which overflows and clips the right column inside the narrower WordPress content
-	// column. Make the wrapper a query container and switch to 2 columns only when the
-	// container itself is wide enough; otherwise stack. Browsers without @container
-	// support fall back to the single-column default (never clipped).
-	return '.xpressui-embed-wrapper{container-type:inline-size}'
-		. '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
+	// The SaaS stylesheet styles the showcase as a fixed, full-viewport splash. Inside
+	// a WordPress page it must flow inline, so defensively force it static and visible
+	// (high specificity beats both the SaaS base rule and any theme rule that might hide
+	// a ".splash" element). The SaaS 2-column shell is sized with viewport units (52vw),
+	// which overflows + clips the right column in a narrower content column — re-size the
+	// columns relative to the grid container (fr) on desktop; the SaaS mobile breakpoint
+	// stacks them below 861px.
+	return '.xpressui-embed-wrapper .xpressui-splash.xpressui-splash--gallery-showcase{position:static;inset:auto;z-index:auto;display:block;min-height:0;height:auto;max-height:none;margin:0;padding:0;background:transparent;overflow:visible;opacity:1;visibility:visible;transform:none}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-media{max-width:none;margin:0 auto}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:1fr;max-width:none;margin-bottom:clamp(20px,4vw,40px);overflow-x:visible;gap:clamp(20px,4%,40px)}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{max-width:none;margin:0 auto clamp(20px,4vw,40px);overflow-x:visible}'
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-media{max-width:none}'
 		. '.xpressui-intake-anchor{display:block;height:0;scroll-margin-top:90px}'
-		. '@container (min-width:820px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(28px,4%,64px)}.xpressui-embed-wrapper .xpressui-gallery-showcase-media{margin:0}}';
+		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
 }
 
 /**
