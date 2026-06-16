@@ -177,6 +177,40 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
 // ---------------------------------------------------------------------------
 
 /**
+ * Resolves the admin notification recipients for a submission.
+ *
+ * Single source of truth is the synced Hosted Link config (link.config.json):
+ * when the submission came from a hosted link, the recipients (and the
+ * notify-on-submit toggle) come from that link. Submissions without a hosted link
+ * (default `[xpressui id="slug"]` render) fall back to the WordPress admin email.
+ * The legacy local `xpressui_project_settings` notifyEmail override is no longer
+ * consulted — configuration lives on the SaaS Hosted Link and is synced down.
+ *
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submitted payload (carries `hostedLinkId`).
+ * @return string Comma-separated recipient list, or '' when no notification is due.
+ */
+function xpressui_resolve_notification_recipients( $project_slug, $payload ) {
+	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+
+	if ( $hosted_link_id !== '' ) {
+		$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
+		$link_payload = ( is_array( $config ) && is_array( $config['payload'] ?? null ) ) ? $config['payload'] : [];
+		// A hosted link can disable submission notifications entirely.
+		if ( array_key_exists( 'notifyOnSubmit', $link_payload ) && ! $link_payload['notifyOnSubmit'] ) {
+			return '';
+		}
+		$emails = isset( $link_payload['notifyEmails'] ) ? (array) $link_payload['notifyEmails'] : [];
+		$emails = array_values( array_filter( array_map( 'trim', $emails ), 'is_email' ) );
+		return implode( ',', $emails );
+	}
+
+	// No hosted link (default render): notify the WordPress site admin.
+	$admin_email = (string) get_option( 'admin_email' );
+	return is_email( $admin_email ) ? $admin_email : '';
+}
+
+/**
  * Sends a notification email if a notification address is configured for the project.
  *
  * @param int          $post_id      Submission post ID.
@@ -184,14 +218,8 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
  * @param array|string $payload      Submitted form data.
  */
 function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
-	$notify_email = xpressui_get_project_setting( $project_slug, 'notifyEmail' );
+	$notify_email = xpressui_resolve_notification_recipients( $project_slug, $payload );
 	if ( $notify_email === '' ) {
-		$hosted_link_id = is_array( $payload ) ? ( $payload['hostedLinkId'] ?? '' ) : '';
-		if ( $hosted_link_id === '' ) {
-			$notify_email = get_option( 'admin_email' );
-		}
-	}
-	if ( $notify_email === '' || ! is_email( $notify_email ) ) {
 		return;
 	}
 
@@ -253,14 +281,8 @@ function xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload
  * @param array|string $payload      Updated payload.
  */
 function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, $payload ) {
-	$notify_email = xpressui_get_project_setting( $project_slug, 'notifyEmail' );
+	$notify_email = xpressui_resolve_notification_recipients( $project_slug, $payload );
 	if ( $notify_email === '' ) {
-		$hosted_link_id = is_array( $payload ) ? ( $payload['hostedLinkId'] ?? '' ) : '';
-		if ( $hosted_link_id === '' ) {
-			$notify_email = get_option( 'admin_email' );
-		}
-	}
-	if ( $notify_email === '' || ! is_email( $notify_email ) ) {
 		return;
 	}
 
