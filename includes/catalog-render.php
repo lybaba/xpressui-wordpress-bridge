@@ -233,8 +233,10 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	wp_add_inline_style( 'xpressui-shell', $theme_css );
 
 	// --- Cart globals + the self-contained SaaS catalog-init.js (no runtime UMD). ---
+	// Same journey as the SaaS: Buy now / cart → cart-token → cart-summary → checkout form.
 	$checkout_url = (string) ( $catalog['checkout_form_url'] ?? '' );
 	$token_url    = (string) ( $catalog['cart_token_url'] ?? '' );
+	$summary_url  = (string) ( $catalog['cart_summary_url'] ?? '' );
 	$init_url     = (string) ( $catalog['catalog_init_url'] ?? '' );
 	$return_url   = get_permalink();
 	if ( ! $return_url ) {
@@ -243,7 +245,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 
 	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $return_url ) . ';';
 	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $checkout_url ) . ';';
-	$globals .= 'window.__xpuiCatalogCartSummaryUrl="";';
+	$globals .= 'window.__xpuiCatalogCartSummaryUrl=' . wp_json_encode( $summary_url ) . ';';
 	$globals .= 'window.__xpuiCatalogTokenUrl=' . wp_json_encode( $token_url ) . ';';
 	$globals .= 'window.__xpuiCatalogInitHandlesHeaderCart=true;';
 	$globals .= 'window.__xpuiCatalogGate=null;';
