@@ -214,8 +214,11 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 		return '';
 	}
 
-	$mount_id = 'xpui-catalog-' . sanitize_html_class( substr( md5( (string) $project_slug . '|' . (string) $link_id ), 0, 12 ) );
-	$shell_id = $mount_id . '-shell';
+	// catalog-init.js (the SaaS asset) hard-binds to #xpressui-root and reads the cart
+	// inputs/cards within it, so the mount and cart shell MUST use these exact ids — the
+	// same ids the SaaS catalog page (catalog-page.html.j2) uses. One storefront per page.
+	$mount_id = 'xpressui-root';
+	$shell_id = 'xpressui-catalog-shell';
 
 	// --- Styles. The product card/grid/cart styles live in the shell stylesheet. ---
 	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
@@ -251,7 +254,10 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	}
 
 	// --- Markup: mount > form-frame > hidden cart shell + product grid. ---
-	$grid = xpressui_render_product_catalog_grid( $catalog );
+	// Pass the public catalog base so cards link to the SaaS product detail page
+	// (parity: clicking a card opens /catalog/<uid>/<slug>/<item>).
+	$detail_base = (string) ( $catalog['catalog_detail_base_url'] ?? '' );
+	$grid        = xpressui_render_product_catalog_grid( $catalog, $detail_base );
 
 	$shell  = '<form id="' . esc_attr( $shell_id ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
 	$shell .= '<input type="hidden" name="xpressuiProductCart" value="" />';
@@ -261,7 +267,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$shell .= '</form>';
 
 	$html  = '<div class="xpressui-embed-wrapper xpressui-inline-embed">';
-	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell">';
+	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell" data-hosted-link-id="' . esc_attr( (string) $link_id ) . '">';
 	$html .= '<div class="form-frame form-frame--commerce-landing">';
 	$html .= $shell;
 	$html .= $grid;
