@@ -1329,7 +1329,7 @@ function xpressui_get_runtime_health_summary() {
 	];
 }
 
-function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish', 'pending', 'private' ] ) {
+function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish', 'pending', 'private' ], $link_id = '' ) {
 	$slug = sanitize_title( (string) $slug );
 	if ( '' === $slug ) {
 		return [];
@@ -1340,7 +1340,7 @@ function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish'
 		$statuses = [ 'draft', 'publish', 'pending', 'private' ];
 	}
 
-	$cache_key = 'workflow_pages_' . md5( $slug . '|' . implode( ',', $statuses ) );
+	$cache_key = 'workflow_pages_' . md5( $slug . '|' . implode( ',', $statuses ) . '|' . $link_id );
 	$cached    = wp_cache_get( $cache_key, 'xpressui_bridge' );
 	if ( false !== $cached ) {
 		return is_array( $cached ) ? array_map( 'intval', $cached ) : [];
@@ -1355,11 +1355,21 @@ function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish'
 		'order'          => 'ASC',
 	] ) as $page ) {
 		$content = (string) ( $page->post_content ?? '' );
-		if (
-			false !== strpos( $content, '[xpressui id="' . $slug . '"' )
-			|| false !== strpos( $content, "[xpressui id='" . $slug . "'" )
-		) {
-			$ids[] = (int) $page->ID;
+		if ( '' !== $link_id ) {
+			// Check that both the workflow slug is in the shortcode id attribute AND the link_id/link matches
+			if (
+				( false !== strpos( $content, '[xpressui id="' . $slug . '"' ) || false !== strpos( $content, "[xpressui id='" . $slug . "'" ) )
+				&& ( false !== strpos( $content, 'link_id="' . $link_id . '"' ) || false !== strpos( $content, "link_id='" . $link_id . "'" ) || false !== strpos( $content, 'link="' . $link_id . '"' ) || false !== strpos( $content, "link='" . $link_id . "'" ) )
+			) {
+				$ids[] = (int) $page->ID;
+			}
+		} else {
+			if (
+				false !== strpos( $content, '[xpressui id="' . $slug . '"' )
+				|| false !== strpos( $content, "[xpressui id='" . $slug . "'" )
+			) {
+				$ids[] = (int) $page->ID;
+			}
 		}
 	}
 
@@ -1370,6 +1380,29 @@ function xpressui_get_workflow_page_ids( $slug, $statuses = [ 'draft', 'publish'
 function xpressui_get_workflow_primary_page_id( $slug ) {
 	$page_ids = xpressui_get_workflow_page_ids( $slug );
 	return ! empty( $page_ids ) ? (int) $page_ids[0] : 0;
+}
+
+function xpressui_get_hosted_link_config( $slug, $link_id ) {
+	$slug    = sanitize_title( (string) $slug );
+	$link_id = sanitize_file_name( (string) $link_id );
+	if ( $slug === '' || $link_id === '' ) {
+		return null;
+	}
+
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( $base_dir === '' ) {
+		return null;
+	}
+
+	$config_file = trailingslashit( $base_dir ) . $slug . '/hosted-links/' . $link_id . '/link.config.json';
+	if ( file_exists( $config_file ) ) {
+		$content = file_get_contents( $config_file );
+		if ( $content ) {
+			return json_decode( $content, true );
+		}
+	}
+
+	return null;
 }
 
 function xpressui_get_status_label( $status ) {
