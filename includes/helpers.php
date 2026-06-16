@@ -1405,6 +1405,31 @@ function xpressui_get_hosted_link_config( $slug, $link_id ) {
 	return null;
 }
 
+/**
+ * Resolves the post-submission redirect URL for a submission.
+ *
+ * Single source of truth is the synced Hosted Link presentation
+ * (link.config.json → presentation.successRedirectUrl). Submissions without a
+ * hosted link (or a link with no configured redirect) fall back to the site home.
+ *
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submission payload (carries `hostedLinkId`).
+ * @return string Redirect URL.
+ */
+function xpressui_resolve_redirect_url( $project_slug, $payload ) {
+	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+	if ( $hosted_link_id !== '' ) {
+		$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
+		$presentation = ( is_array( $config ) && is_array( $config['presentation'] ?? null ) ) ? $config['presentation'] : [];
+		$url          = trim( (string) ( $presentation['successRedirectUrl'] ?? '' ) );
+		if ( $url !== '' ) {
+			return $url;
+		}
+	}
+
+	return home_url( '/' );
+}
+
 function xpressui_get_status_label( $status ) {
 	$options = xpressui_get_status_options();
 	return $options[ $status ] ?? $options['new'];
@@ -1688,8 +1713,8 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	$multi_step    = $step_count > 1;
 	$all_settings  = get_option( 'xpressui_project_settings', [] );
 	$project_settings = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
-	$custom_success_message = sanitize_text_field( (string) ( $project_settings['submitSuccessMessage'] ?? '' ) );
-	$custom_error_message   = sanitize_text_field( (string) ( $project_settings['submitErrorMessage'] ?? '' ) );
+	// Success/error messages come from the synced Hosted Link presentation
+	// (applied in shortcode.php) or the defaults below — no local override.
 	$submission_action      = sanitize_key( (string) ( $project_settings['submissionAction'] ?? 'submit' ) );
 	if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
 		$submission_action = 'submit';
@@ -1728,12 +1753,6 @@ function xpressui_normalize_form_config( array $form_config, string $slug ): arr
 	}
 	if ( empty( $wc['errorMessage'] ) ) {
 		$wc['errorMessage'] = __( 'Unable to submit. Please try again.', 'xpressui-bridge' );
-	}
-	if ( $custom_success_message !== '' ) {
-		$wc['successMessage'] = $custom_success_message;
-	}
-	if ( $custom_error_message !== '' ) {
-		$wc['errorMessage'] = $custom_error_message;
 	}
 	unset( $wc );
 

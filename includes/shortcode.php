@@ -225,8 +225,8 @@ function xpressui_render_shortcode( $atts ) {
 				$form_config['workflowConfig'] = [];
 			}
 			if ( empty( $form_config['workflowConfig']['redirectUrl'] ) ) {
-				$redirect_url = xpressui_get_project_setting( $slug, 'redirectUrl' );
-				$form_config['workflowConfig']['redirectUrl'] = $redirect_url !== '' ? $redirect_url : home_url( '/' );
+				// No hosted link (default render) → redirect to the site home.
+				$form_config['workflowConfig']['redirectUrl'] = home_url( '/' );
 			}
 		}
 
