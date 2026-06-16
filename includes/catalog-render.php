@@ -191,3 +191,73 @@ function xpressui_render_product_catalog_grid( $catalog, $detail_base = '' ) {
 	<?php
 	return (string) ob_get_clean();
 }
+
+/**
+ * Renders a complete headless product-catalog embed for a hosted link.
+ *
+ * Mirrors the SaaS catalog page (export/catalog-page.html.j2): the product grid
+ * (server-rendered for SEO/LCP) inside a `page-shell` > `form-frame`, plus a hidden
+ * cart-state form shell, the `__xpuiCatalog*` globals, and the SaaS `catalog-init.js`.
+ *
+ * `catalog-init.js` is fully self-contained for cart + checkout (no XPressUI runtime
+ * UMD dependency): it binds the `data-product-*` hooks, persists the cart in the
+ * hidden form shell, and redirects checkout to the SaaS hosted-link form
+ * (`checkout_form_url`) — products render on WordPress, checkout completes on the SaaS.
+ *
+ * @param array  $catalog      Decoded catalog.json snapshot (with checkout/init/token URLs).
+ * @param string $project_slug Workflow slug (for a stable mount id).
+ * @param string $link_id      Hosted link id (for a stable mount id).
+ * @return string Embed HTML, or '' when the snapshot has no product items.
+ */
+function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id ) {
+	if ( ! is_array( $catalog ) || empty( $catalog['product_items'] ) ) {
+		return '';
+	}
+
+	$mount_id = 'xpui-catalog-' . sanitize_html_class( substr( md5( (string) $project_slug . '|' . (string) $link_id ), 0, 12 ) );
+
+	// --- Styles. The product card/grid/cart styles live in the shell stylesheet. ---
+	$shell_css_path = XPRESSUI_BRIDGE_DIR . 'assets/shell/xpressui-shell.css';
+	$shell_css_ver  = file_exists( $shell_css_path ) ? (string) filemtime( $shell_css_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_style( 'xpressui-shell', XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-shell.css', [], $shell_css_ver );
+
+	// --- Cart globals + the self-contained SaaS catalog-init.js (no runtime UMD). ---
+	$checkout_url = (string) ( $catalog['checkout_form_url'] ?? '' );
+	$token_url    = (string) ( $catalog['cart_token_url'] ?? '' );
+	$init_url     = (string) ( $catalog['catalog_init_url'] ?? '' );
+	$return_url   = get_permalink();
+	if ( ! $return_url ) {
+		$return_url = home_url( '/' );
+	}
+
+	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $return_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $checkout_url ) . ';';
+	$globals .= 'window.__xpuiCatalogCartSummaryUrl="";';
+	$globals .= 'window.__xpuiCatalogTokenUrl=' . wp_json_encode( $token_url ) . ';';
+	$globals .= 'window.__xpuiCatalogInitHandlesHeaderCart=true;';
+	$globals .= 'window.__xpuiCatalogGate=null;';
+
+	if ( '' !== $init_url ) {
+		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [], null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Cross-origin SaaS asset; the SaaS handles its own cache-busting.
+		wp_add_inline_script( 'xpressui-catalog-init', $globals, 'before' );
+	}
+
+	// --- Markup: mount > form-frame > hidden cart shell + product grid. ---
+	$grid = xpressui_render_product_catalog_grid( $catalog );
+
+	$shell  = '<form id="' . esc_attr( $mount_id . '-shell' ) . '" class="xpressui-catalog-cart-shell" hidden aria-hidden="true" style="display:none">';
+	$shell .= '<input type="hidden" name="xpressuiProductCart" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductTotal" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductCurrency" value="" />';
+	$shell .= '<input type="hidden" name="xpressuiProductCount" value="" />';
+	$shell .= '</form>';
+
+	$html  = '<div class="xpressui-embed-wrapper xpressui-inline-embed">';
+	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell">';
+	$html .= '<div class="form-frame form-frame--commerce-landing">';
+	$html .= $shell;
+	$html .= $grid;
+	$html .= '</div></div></div>';
+
+	return wp_kses( $html, xpressui_get_shell_allowed_html() );
+}
