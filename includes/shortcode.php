@@ -295,9 +295,15 @@ function xpressui_resolve_intro_media( $presentation, $page_template = '' ) {
  * @return string CSS appended via wp_add_inline_style().
  */
 function xpressui_gallery_showcase_embed_css() {
+	// The SaaS shell sizes its left column with 52vw (viewport-relative). Inside a
+	// narrower theme content column (e.g. a Bootstrap .col-lg-8) that starves the right
+	// column and squeezes/clips the buy box. On wide screens re-size both columns
+	// relative to the grid container (fr units, container-relative) so they always fit
+	// the available width; the SaaS mobile breakpoint (<=860px) keeps the stacked layout.
 	return '.xpressui-embed-wrapper .xpressui-splash--gallery-showcase{position:relative;inset:auto;z-index:auto;min-height:0;padding:0;background:transparent;overflow:visible}'
 		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-hero{margin:0}'
-		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px)}';
+		. '.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{margin-bottom:clamp(20px,4vw,40px);max-width:none;overflow-x:visible}'
+		. '@media (min-width:861px){.xpressui-embed-wrapper .xpressui-gallery-showcase-shell{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,3vw,56px)}}';
 }
 
 /**
