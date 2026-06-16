@@ -223,9 +223,9 @@ function xpressui_render_workflows_page() {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
 		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
+		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 100px;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th>';
 		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -292,6 +292,20 @@ function xpressui_render_workflows_page() {
 			echo '</div>';
 			echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Show more details', 'xpressui-bridge' ) . '</span></button>';
 			echo '</td>';
+
+			// Submissions Column
+			echo '<td style="vertical-align: middle; font-size: 13px;">';
+			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
+				$total = (int) $inbox_by_slug[ $slug ]['total'];
+				$new   = (int) $inbox_by_slug[ $slug ]['new'];
+				echo '<a href="' . esc_url( $all_submissions_url ) . '" style="font-size: 14px; font-weight: 600; text-decoration: none;">' . esc_html( (string) $total ) . '</a>';
+				if ( $new > 0 ) {
+					echo ' <span class="xpressui-badge xpressui-badge--status-new" style="margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle;">' . sprintf( esc_html__( '%d new', 'xpressui-bridge' ), $new ) . '</span>';
+				}
+			} else {
+				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
+			}
+			echo '</td>';
 			
 			// Version Column
 			$version = ! empty( $manifest_meta['runtimeVersion'] ) ? sanitize_text_field( $manifest_meta['runtimeVersion'] ) : '1.0.0';
@@ -305,20 +319,6 @@ function xpressui_render_workflows_page() {
 				$steps_text  = sprintf( _n( '%d step', '%d steps', $steps, 'xpressui-bridge' ), $steps );
 				$fields_text = sprintf( _n( '%d field', '%d fields', $fields, 'xpressui-bridge' ), $fields );
 				echo esc_html( $steps_text . ', ' . $fields_text );
-			} else {
-				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
-			}
-			echo '</td>';
-
-			// Submissions Column
-			echo '<td style="vertical-align: middle; font-size: 13px;">';
-			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
-				$total = (int) $inbox_by_slug[ $slug ]['total'];
-				$new   = (int) $inbox_by_slug[ $slug ]['new'];
-				echo '<a href="' . esc_url( $all_submissions_url ) . '" style="font-size: 14px; font-weight: 600; text-decoration: none;">' . esc_html( (string) $total ) . '</a>';
-				if ( $new > 0 ) {
-					echo ' <span class="xpressui-badge xpressui-badge--status-new" style="margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle;">' . sprintf( esc_html__( '%d new', 'xpressui-bridge' ), $new ) . '</span>';
-				}
 			} else {
 				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
 			}
