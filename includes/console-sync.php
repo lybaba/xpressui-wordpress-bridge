@@ -17,7 +17,7 @@ function xpressui_get_console_connection(): array {
 	$conn     = is_array( $stored ) ? array_merge( $defaults, $stored ) : $defaults;
 	if ( defined( 'XPRESSUI_CONSOLE_API_URL' ) ) {
 		$conn['apiUrl'] = XPRESSUI_CONSOLE_API_URL;
-	} else {
+	} elseif ( empty( $conn['apiUrl'] ) ) {
 		$conn['apiUrl'] = 'https://app.intakeflow.dev';
 	}
 	return $conn;
