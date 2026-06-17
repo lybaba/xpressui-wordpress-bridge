@@ -385,6 +385,11 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 		$vars,
 		'min-height:auto;display:block;place-items:unset;overflow:visible;padding:0;background:transparent;font-family:var(--template-font-family);color:var(--template-text);'
 	);
+	// The shell rule #xpressui-root.page-shell--product-catalog (specificity 1,2,0) paints
+	// a full-viewport gradient + min-height:100dvh; the reset above (#xpressui-root, 1,0,0)
+	// loses to it. Override at matching specificity so the storefront blends into the WP
+	// theme instead of repainting the page background.
+	$css .= $sel . '.page-shell--product-catalog{min-height:auto !important;background:transparent !important;}';
 	$css .= $sel . ' .template-product-landing{min-height:auto;gap:18px;}';
 	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
