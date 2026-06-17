@@ -1116,11 +1116,12 @@ function xpressui_render_shortcode( $atts ) {
 	// right before <form> — parity with the SaaS hosted checkout (the collapsed order
 	// summary sits inside the form card, above the fields).
 	if ( '' !== $checkout_order_summary ) {
-		$co_form_pos = strpos( $fragment_html, '<form' );
+		$checkout_prelude = '<div class="xpui-checkout-prelude">' . $checkout_order_summary . '</div>';
+		$co_form_pos      = strpos( $fragment_html, '<form' );
 		if ( false !== $co_form_pos ) {
-			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_order_summary . substr( $fragment_html, $co_form_pos );
+			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_prelude . substr( $fragment_html, $co_form_pos );
 		} else {
-			$fragment_html = $checkout_order_summary . $fragment_html;
+			$fragment_html = $checkout_prelude . $fragment_html;
 		}
 	}
 

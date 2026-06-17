@@ -248,7 +248,10 @@
 /* Ported verbatim from services/api/app/templates/hosted/cart-summary.css so the
    WP checkout-form order summary matches the SaaS: a collapsed <details> bar inside
    the form card, expandable to the line items. */
-.xpui-cart-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:0;margin:.5rem 0 1.5rem;font-size:.9rem;overflow:hidden}
+.xpui-cart-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:0;margin:0 0 1.25rem;font-size:.9rem;overflow:hidden}
+/* Collapse-proof top spacing for the in-form checkout prelude (summary + payment),
+   so it doesn't sit flush against the top edge of the form card. */
+.xpui-checkout-prelude{padding-top:1.25rem}
 .xpui-cs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.85rem 1.25rem;cursor:pointer;list-style:none}
 .xpui-cs-header::-webkit-details-marker{display:none}
 .xpui-cs-header::after{content:"";width:.5rem;height:.5rem;border-right:2px solid #64748b;border-bottom:2px solid #64748b;transform:rotate(45deg);transition:transform 160ms ease;flex:0 0 auto}
