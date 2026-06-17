@@ -35,7 +35,7 @@ function xpressui_render_console_connection_form(): void {
 				<td>
 					<input type="url" id="xpressui_console_api_url" name="xpressui_console_api_url"
 						value="<?php echo esc_url( $conn['apiUrl'] ); ?>"
-						class="regular-text" readonly>
+						class="regular-text"<?php echo defined( 'XPRESSUI_CONSOLE_API_URL' ) ? ' readonly' : ''; ?>>
 					<p class="description"><?php esc_html_e( 'Base URL of your IntakeFlow Console instance.', 'xpressui-bridge' ); ?></p>
 				</td>
 			</tr>
