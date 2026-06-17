@@ -466,8 +466,11 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	$reset  = $sel . '.page-shell--time-slots-catalog{min-height:auto !important;background:transparent !important;padding:0 !important;display:block !important;place-items:unset !important;overflow:visible !important;}';
 	$reset .= $sel . ' .form-frame--time-slots-catalog{width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important;box-sizing:border-box;}';
 	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100%;box-sizing:border-box;}';
-	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow-x:auto;}';
+	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow:visible;}';
 	$reset .= $sel . ' .template-time-slot-week-slots,' . $sel . ' .template-time-slot-resource-panel{min-width:0;}';
+	// The week grid is a fixed 5 columns at minmax(78px,1fr) (~390px min), which overflows
+	// a narrow WP content column. Let the columns shrink to fit so it never scrolls.
+	$reset .= $sel . ' .template-time-slot-week-head,' . $sel . ' .template-time-slot-week-slots{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}';
 	wp_add_inline_style( 'xpressui-time-slots', $reset );
 
 	// Self-contained booking hydration (copied from the SaaS booking-script).
