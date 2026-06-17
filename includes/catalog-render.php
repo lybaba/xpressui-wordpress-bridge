@@ -229,6 +229,25 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$cart_url     = add_query_arg( 'xpui_cart', '1', $grid_url );
 	$checkout_url = add_query_arg( 'xpui_checkout', '1', $grid_url );
 
+	// --- Order placed: success notice after a manual order or a Stripe return. ---
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
+	$checkout_state = isset( $_GET['xpuiCheckout'] ) ? sanitize_key( wp_unslash( $_GET['xpuiCheckout'] ) ) : '';
+	if ( 'success' === $checkout_state ) {
+		$ok_css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
+		$ok_css_ver  = file_exists( $ok_css_path ) ? (string) filemtime( $ok_css_path ) : XPRESSUI_BRIDGE_VERSION;
+		wp_enqueue_style( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.css', [], $ok_css_ver );
+		$ok_vars = is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [];
+		wp_add_inline_style( 'xpressui-cart-summary', xpressui_catalog_theme_vars_css( '.xpressui-cart-summary', $ok_vars ) );
+		$ok  = '<div class="xpressui-embed-wrapper xpressui-inline-embed xpressui-cart-summary"><div class="cs-page"><div class="cs-card">';
+		$ok .= '<div class="cs-header"><div class="cs-heading"><div class="cs-header-titles">';
+		$ok .= '<p class="cs-kicker">' . esc_html__( 'Thank you', 'xpressui-bridge' ) . '</p>';
+		$ok .= '<h1 class="cs-title">' . esc_html__( 'Order received', 'xpressui-bridge' ) . '</h1></div></div></div>';
+		$ok .= '<div class="cs-empty">' . esc_html__( 'Your order has been received. Thank you for your purchase.', 'xpressui-bridge' ) . '</div>';
+		$ok .= '<div class="cs-footer"><a class="cs-cta" href="' . esc_url( $grid_url ) . '">' . esc_html__( 'Back to the store', 'xpressui-bridge' ) . '</a></div>';
+		$ok .= '</div></div></div>';
+		return wp_kses( $ok, xpressui_get_shell_allowed_html() );
+	}
+
 	// --- Cart-summary page (headless on WP). The cart lives in localStorage on the WP
 	// origin; rows are rebuilt client-side. Nothing is sent to the SaaS. ---
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
