@@ -33,7 +33,7 @@
 
   function formatMoney(amount, currency) {
     var rounded = Number.isInteger(amount) ? amount : Number(amount.toFixed(2));
-    var text = new Intl.NumberFormat('fr-FR').format(rounded).replace(/ /g, ' ');
+    var text = new Intl.NumberFormat('fr-FR').format(rounded).replace(/ /g, " ");
     return (text + (currency ? ' ' + currency : '')).trim();
   }
 
@@ -242,4 +242,74 @@
     if (e.target && e.target.name === 'xpui_payment_method') { sync(); }
   });
   sync();
+})();
+
+/**
+ * Collapsed in-form order-summary bar (parity with the SaaS hosted checkout form):
+ * builds the <details> body rows + header total from the localStorage cart.
+ */
+(function () {
+  var bar = document.querySelector('[data-checkout-cart-summary]');
+  if (!bar) { return; }
+  var storageKey = bar.getAttribute('data-storage-key') || '';
+  var fallbackCurrency = bar.getAttribute('data-currency') || '';
+  var itemsEl = bar.querySelector('[data-cart-items]');
+  var totalEl = bar.querySelector('[data-cart-total]');
+
+  function parseNumber(v) {
+    var n = Number(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
+  }
+  function formatMoney(amount, currency) {
+    var rounded = Number.isInteger(amount) ? amount : Number(amount.toFixed(2));
+    var text = new Intl.NumberFormat('fr-FR').format(rounded).replace(/ /g, " ");
+    return (text + (currency ? ' ' + currency : '')).trim();
+  }
+  function esc(v) {
+    var d = document.createElement('div');
+    d.textContent = String(v == null ? '' : v);
+    return d.innerHTML;
+  }
+  function readCart() {
+    try {
+      var raw = window.localStorage.getItem(storageKey);
+      if (!raw) { return []; }
+      var parsed = JSON.parse(raw);
+      var cart = parsed && Array.isArray(parsed.cart) ? parsed.cart : [];
+      return cart.map(function (it) {
+        if (!it || typeof it !== 'object' || !it.id) { return null; }
+        var quantity = Math.max(1, parseInt(it.quantity, 10) || 1);
+        var price = parseNumber(it.price);
+        return {
+          label: String(it.label || it.id), image: String(it.image || ''),
+          quantity: quantity, price: price, lineTotal: price * quantity,
+          currency: String(it.currency || fallbackCurrency || ''),
+        };
+      }).filter(Boolean);
+    } catch (_err) { return []; }
+  }
+  function render() {
+    var cart = readCart();
+    if (itemsEl) { itemsEl.innerHTML = ''; }
+    var total = 0;
+    var currency = fallbackCurrency;
+    cart.forEach(function (it) {
+      total += it.lineTotal;
+      if (it.currency) { currency = it.currency; }
+      if (!itemsEl) { return; }
+      var row = document.createElement('div');
+      row.className = 'xpui-cs-row';
+      var media = it.image ? '<img class="xpui-cs-thumb" src="' + esc(it.image) + '" alt="" loading="lazy">' : '';
+      var qty = it.quantity > 1 ? ' <span class="xpui-cs-qty">x' + esc(it.quantity) + '</span>' : '';
+      row.innerHTML =
+        '<span class="xpui-cs-item">' + media +
+          '<span class="xpui-cs-label"><span class="xpui-cs-label-main">' + esc(it.label) + qty + '</span></span>' +
+        '</span>' +
+        '<span class="xpui-cs-amount">' + esc(formatMoney(it.lineTotal, it.currency)) + '</span>';
+      itemsEl.appendChild(row);
+    });
+    if (totalEl) { totalEl.textContent = formatMoney(total, currency); }
+  }
+  render();
+  window.addEventListener('pageshow', render);
 })();

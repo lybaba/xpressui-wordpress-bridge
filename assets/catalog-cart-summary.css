@@ -244,6 +244,27 @@
   color: var(--cs-muted);
   font-size: 15px;
 }
+/* ── Collapsed in-form order summary (parity with the SaaS hosted form) ── */
+/* Ported verbatim from services/api/app/templates/hosted/cart-summary.css so the
+   WP checkout-form order summary matches the SaaS: a collapsed <details> bar inside
+   the form card, expandable to the line items. */
+.xpui-cart-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:0;margin-bottom:1.25rem;font-size:.9rem;overflow:hidden}
+.xpui-cs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.85rem 1.25rem;cursor:pointer;list-style:none}
+.xpui-cs-header::-webkit-details-marker{display:none}
+.xpui-cs-header::after{content:"";width:.5rem;height:.5rem;border-right:2px solid #64748b;border-bottom:2px solid #64748b;transform:rotate(45deg);transition:transform 160ms ease;flex:0 0 auto}
+.xpui-cart-summary[open] .xpui-cs-header::after{transform:rotate(225deg)}
+.xpui-cs-title{font-weight:700;color:#0f172a}
+.xpui-cs-header-total{margin-left:auto;color:#0f172a;font-weight:800;white-space:nowrap}
+.xpui-cs-body{border-top:1px solid #e2e8f0;padding:.65rem 1.25rem .9rem}
+.xpui-cs-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.35rem 0;color:#334155}
+.xpui-cs-item{display:flex;align-items:center;min-width:0;gap:.65rem}
+.xpui-cs-thumb{width:42px;height:42px;flex:0 0 42px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff}
+.xpui-cs-label{display:grid;gap:.18rem;min-width:0}
+.xpui-cs-label-main{color:#0f172a;font-weight:700;line-height:1.25}
+.xpui-cs-qty{margin-left:.3em;color:#64748b;font-size:.85em}
+.xpui-cs-amount{font-weight:500;white-space:nowrap}
+@media (max-width:520px){.xpui-cs-row{align-items:flex-start}.xpui-cs-thumb{width:36px;height:36px;flex-basis:36px}.xpui-cs-amount{font-size:.84rem}}
+
 /* ── Checkout payment-method selector ───────────────────────────── */
 .xpui-checkout-payment {
   --cs-primary: var(--template-primary, #2563eb);

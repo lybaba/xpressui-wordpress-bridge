@@ -724,19 +724,19 @@ function xpressui_render_checkout_payment_methods( $payment ) {
 }
 
 /**
- * Renders the read-only Order summary block shown inside the WP checkout form.
+ * Renders the collapsed in-form Order summary bar shown inside the WP checkout form.
  *
- * Same client-side hydration as the cart-summary page (catalog-cart-summary.js reads
- * the localStorage cart), but read-only (data-readonly="1"): no steppers, no remove,
- * no checkout CTA — the form's own submit is the checkout. Mirrors the SaaS checkout
- * form which shows the order summary above the customer fields.
+ * Parity with the SaaS hosted checkout (templates/hosted/cart-summary.html.j2): a
+ * collapsed <details> bar ("Order summary <total> ⌄") injected inside the form card,
+ * expandable to the line items. Rows + total are hydrated client-side from the
+ * localStorage cart (catalog-cart-summary.js).
  *
  * @param array  $catalog  Decoded catalog.json snapshot.
  * @param string $link_id  Hosted link id (cart scope).
- * @param string $grid_url Storefront URL (back link).
- * @return string Order-summary HTML.
+ * @param string $grid_url Storefront URL (unused; kept for signature stability).
+ * @return string Order-summary bar HTML.
  */
-function xpressui_render_checkout_order_summary( $catalog, $link_id, $grid_url ) {
+function xpressui_render_checkout_order_summary( $catalog, $link_id, $grid_url = '' ) {
 	if ( ! is_array( $catalog ) ) {
 		return '';
 	}
@@ -747,8 +747,6 @@ function xpressui_render_checkout_order_summary( $catalog, $link_id, $grid_url )
 	$css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
 	$css_ver  = file_exists( $css_path ) ? (string) filemtime( $css_path ) : XPRESSUI_BRIDGE_VERSION;
 	wp_enqueue_style( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.css', [], $css_ver );
-	$vars = is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [];
-	wp_add_inline_style( 'xpressui-cart-summary', xpressui_catalog_theme_vars_css( '.xpressui-cart-summary', $vars ) );
 
 	$js_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.js';
 	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : XPRESSUI_BRIDGE_VERSION;
@@ -756,34 +754,13 @@ function xpressui_render_checkout_order_summary( $catalog, $link_id, $grid_url )
 
 	ob_start();
 	?>
-<div class="xpressui-cart-summary xpressui-checkout-summary">
-	<div
-		class="cs-page"
-		data-readonly="1"
-		data-storage-key="<?php echo esc_attr( $storage_key ); ?>"
-		data-catalog-url="<?php echo esc_url( $grid_url ); ?>"
-		data-currency="<?php echo esc_attr( $currency ); ?>"
-		data-empty-label="<?php esc_attr_e( 'Your cart is empty.', 'xpressui-bridge' ); ?>"
-	>
-		<div class="cs-card">
-			<div class="cs-header">
-				<div class="cs-heading">
-					<div class="cs-header-titles">
-						<p class="cs-kicker"><?php esc_html_e( 'Your order', 'xpressui-bridge' ); ?></p>
-						<h1 class="cs-title"><?php esc_html_e( 'Order summary', 'xpressui-bridge' ); ?></h1>
-					</div>
-				</div>
-			</div>
-			<ul class="cs-items" data-cart-items></ul>
-			<div class="cs-totals" data-cart-totals>
-				<div class="cs-totals-row cs-totals-row--total">
-					<span><?php esc_html_e( 'Total', 'xpressui-bridge' ); ?></span>
-					<strong data-cart-total></strong>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
+<details id="xpui-cart-summary" class="xpui-cart-summary" data-checkout-cart-summary data-storage-key="<?php echo esc_attr( $storage_key ); ?>" data-currency="<?php echo esc_attr( $currency ); ?>" aria-label="<?php esc_attr_e( 'Order summary', 'xpressui-bridge' ); ?>">
+	<summary class="xpui-cs-header">
+		<span class="xpui-cs-title"><?php esc_html_e( 'Order summary', 'xpressui-bridge' ); ?></span>
+		<strong class="xpui-cs-header-total" data-cart-total></strong>
+	</summary>
+	<div class="xpui-cs-body" data-cart-items></div>
+</details>
 	<?php
 	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
 }

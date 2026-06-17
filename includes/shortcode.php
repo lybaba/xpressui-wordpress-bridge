@@ -1102,9 +1102,20 @@ function xpressui_render_shortcode( $atts ) {
 		}
 	}
 
+	// Inject the catalog checkout order summary + payment selector INSIDE the form card,
+	// right before <form> — parity with the SaaS hosted checkout (the collapsed order
+	// summary sits inside the form card, above the fields).
+	if ( '' !== $checkout_order_summary ) {
+		$co_form_pos = strpos( $fragment_html, '<form' );
+		if ( false !== $co_form_pos ) {
+			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_order_summary . substr( $fragment_html, $co_form_pos );
+		} else {
+			$fragment_html = $checkout_order_summary . $fragment_html;
+		}
+	}
+
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $intro_outside_html
-		. $checkout_order_summary
 		. $fragment_html
 		. $config_tag
 		. '</div>';
