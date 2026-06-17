@@ -1,0 +1,843 @@
+  .page-shell--time-slots-catalog {
+    display: block;
+    place-items: initial;
+    min-height: 100dvh;
+    padding: 0;
+    background:
+      radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--template-primary) 10%, transparent) 0, transparent 28rem),
+      linear-gradient(180deg, color-mix(in srgb, var(--template-surface) 62%, var(--template-page-background)) 0%, var(--template-page-background) 100%);
+  }
+
+  /* catalog-public/styles.j2 sets overflow:auto on
+     #xpressui-root.page-shell--catalog-public (1,1,0) which creates a
+     non-scrolling scroll container and disables position:sticky on the header.
+     Override with higher specificity (1,2,0) to restore body as scroll container. */
+  #xpressui-root.page-shell--catalog-public.page-shell--time-slots-catalog {
+    overflow: visible;
+  }
+
+  .form-frame--time-slots-catalog {
+    width: min(100%, 1440px);
+    margin: 0 auto;
+    padding: clamp(22px, 3vw, 42px) clamp(18px, 4vw, 64px) clamp(48px, 6vw, 84px);
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .template-catalog-time-slots-landing {
+    display: grid;
+    gap: clamp(20px, 3vw, 32px);
+  }
+
+  .template-catalog-slots-body .template-field-label-row {
+    display: none;
+  }
+
+  .template-catalog-slots-body .template-field {
+    gap: 18px;
+  }
+
+  .template-catalog-slots-body [data-choice-time-slots] {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .template-time-slot-date-anchors {
+    height: 0;
+    overflow: hidden;
+  }
+
+  .template-time-slot-availability-row {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 78%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--template-surface) 96%, white);
+    box-shadow: 0 18px 44px -38px rgba(15, 23, 42, .32);
+  }
+
+  .template-time-slot-resource-panel {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+    padding: 4px;
+    border-radius: 14px;
+    color: inherit;
+    text-decoration: none !important;
+    transition: background .16s ease, box-shadow .16s ease;
+  }
+
+  .template-time-slot-resource-panel *,
+  .template-time-slot-week-day,
+  .template-time-slot-week-day * {
+    text-decoration: none !important;
+  }
+
+  .template-time-slot-resource-panel:hover,
+  .template-time-slot-resource-panel:focus-visible {
+    background: color-mix(in srgb, var(--template-primary) 6%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--template-primary) 18%, transparent);
+    outline: none;
+  }
+
+  .template-time-slot-resource-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 14px;
+    object-fit: cover;
+    background: color-mix(in srgb, var(--template-border) 36%, transparent);
+    border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
+  }
+
+  .template-time-slot-resource-avatar--empty,
+  .template-time-slot-resource-detail-empty {
+    display: grid;
+    place-items: center;
+    color: var(--template-primary);
+    font-size: 28px;
+    font-weight: 950;
+  }
+
+  .template-time-slot-resource-copy {
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .template-time-slot-resource-copy h3 {
+    margin: 0;
+    color: var(--template-text);
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .template-time-slot-resource-subtitle,
+  .template-time-slot-resource-meta,
+  .template-time-slot-resource-description,
+  .template-time-slot-resource-price {
+    margin: 0;
+    color: var(--template-muted-text);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .template-time-slot-resource-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .template-time-slot-resource-price {
+    color: var(--template-text);
+    font-weight: 900;
+  }
+
+  .template-time-slot-resource-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 32px;
+    margin-top: 4px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--template-primary) 34%, var(--template-border));
+    border-radius: 999px;
+    background: #fff;
+    color: var(--template-primary);
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .template-time-slot-week-board {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .template-time-slot-week-head,
+  .template-time-slot-week-slots {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(78px, 1fr));
+    gap: 8px;
+  }
+
+  .template-time-slot-week-day[hidden],
+  .template-time-slot-day-column[hidden],
+  .template-time-slot-weekly-day[hidden],
+  .template-time-slot-weekly-column[hidden],
+  .template-time-slot-detail-day[hidden] {
+    display: none;
+  }
+
+  .template-time-slot-week-day {
+    display: grid;
+    justify-items: center;
+    gap: 1px;
+    padding: 4px;
+    color: var(--template-muted-text);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .template-time-slot-week-day strong {
+    color: var(--template-text);
+    font-size: 15px;
+  }
+
+  .template-time-slot-week-day small {
+    color: var(--template-muted-text);
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .template-time-slot-day-column {
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    gap: 7px;
+    min-height: 82px;
+  }
+
+  .template-time-slot-pill {
+    width: 100%;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--template-primary) 38%, var(--template-border));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--template-primary) 7%, white);
+    color: var(--template-primary);
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .template-time-slot-pill:hover,
+  .template-time-slot-pill:focus-visible {
+    background: var(--template-primary);
+    color: #fff;
+    outline: none;
+  }
+
+  .template-time-slot-pill[data-selected="true"] {
+    background: var(--template-primary);
+    color: #fff;
+    box-shadow: 0 8px 22px -14px color-mix(in srgb, var(--template-primary) 80%, transparent);
+  }
+
+  .template-time-slot-pill--disabled,
+  .template-time-slot-pill[disabled] {
+    border-color: color-mix(in srgb, var(--template-border) 76%, transparent);
+    background: color-mix(in srgb, var(--template-border) 28%, white);
+    color: var(--template-muted-text);
+    cursor: not-allowed;
+  }
+
+  .template-time-slot-more,
+  .template-time-slot-empty {
+    color: var(--template-muted-text);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .template-time-slot-empty-state {
+    grid-column: 1 / -1;
+    width: min(760px, 100%);
+    margin: 64px auto 96px;
+    padding: 36px;
+    border: 1px solid var(--template-border);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 24px 72px -54px rgba(15, 23, 42, .42);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+  }
+
+  .template-time-slot-empty-state-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--template-primary) 10%, white);
+    border: 1px solid color-mix(in srgb, var(--template-primary) 18%, var(--template-border));
+    display: grid;
+    place-items: center;
+  }
+
+  .template-time-slot-empty-state-icon span {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--template-primary);
+    border-radius: 7px;
+    position: relative;
+  }
+
+  .template-time-slot-empty-state-icon span::before,
+  .template-time-slot-empty-state-icon span::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--template-primary);
+  }
+
+  .template-time-slot-empty-state-icon span::before {
+    top: 7px;
+  }
+
+  .template-time-slot-empty-state-icon span::after {
+    top: 14px;
+  }
+
+  .template-time-slot-empty-state-copy {
+    display: grid;
+    gap: 8px;
+  }
+
+  .template-time-slot-empty-state-copy h2 {
+    margin: 0;
+    color: var(--template-text);
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1.08;
+  }
+
+  .template-time-slot-empty-state-copy p {
+    max-width: 58ch;
+    margin: 0;
+    color: var(--template-muted-text);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+    .template-time-slot-empty-state {
+      margin: 32px auto 56px;
+      padding: 24px;
+      grid-template-columns: 1fr;
+    }
+
+    .template-time-slot-empty-state-copy h2 {
+      font-size: 24px;
+    }
+  }
+
+  .template-time-slot-window-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  .template-time-slot-window-nav button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--template-primary) 36%, var(--template-border));
+    border-radius: 999px;
+    background: #fff;
+    color: var(--template-primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .template-time-slot-window-nav button:hover,
+  .template-time-slot-window-nav button:focus-visible {
+    background: color-mix(in srgb, var(--template-primary) 8%, white);
+    outline: none;
+  }
+
+  .template-time-slot-window-nav button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+
+  .template-catalog-slots-body .template-time-slot-date-heading {
+    grid-column: 1 / -1;
+    margin: 12px 0 0;
+    color: var(--template-muted-text);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .template-catalog-slots-body .template-time-slot-card {
+    position: relative;
+    display: grid;
+    gap: 10px;
+    min-height: 0;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
+    background: color-mix(in srgb, var(--template-surface) 96%, white);
+    box-shadow: 0 18px 44px -36px rgba(15, 23, 42, 0.32);
+  }
+
+  .template-catalog-slots-body .template-time-slot-card:hover {
+    border-color: color-mix(in srgb, var(--template-primary) 36%, var(--template-border));
+    box-shadow: 0 18px 42px -28px color-mix(in srgb, var(--template-primary) 34%, transparent);
+  }
+
+  .template-catalog-slots-body .template-time-slot-card[data-selected="true"] {
+    border-color: var(--template-primary);
+    background: color-mix(in srgb, var(--template-primary) 4%, var(--template-surface));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--template-primary) 40%, transparent), 0 18px 42px -28px color-mix(in srgb, var(--template-primary) 36%, transparent);
+  }
+
+  .template-catalog-slots-body .template-time-slot-card[data-disabled="true"] {
+    opacity: .58;
+    cursor: not-allowed;
+  }
+
+  .template-catalog-slots-body .template-time-slot-resource-media {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: 170px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--template-border) 38%, transparent);
+  }
+
+  .template-catalog-slots-body .template-time-slot-resource-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .template-catalog-slots-body .template-time-slot-time {
+    color: var(--template-text);
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.15;
+  }
+
+  .template-catalog-slots-body .template-time-slot-date,
+  .template-catalog-slots-body .template-time-slot-location {
+    color: var(--template-muted-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .template-catalog-slots-body .template-field-help {
+    margin: 0;
+    color: var(--template-muted-text);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .template-catalog-slots-body .template-time-slot-price {
+    color: var(--template-text);
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .template-catalog-slots-body .template-time-slot-capacity {
+    color: var(--template-primary);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .template-catalog-slots-body .template-time-slot-select-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 34px;
+    margin-top: 2px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--template-primary) 42%, var(--template-border));
+    border-radius: 999px;
+    color: var(--template-primary);
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .template-catalog-slots-body .template-time-slot-selected-label {
+    display: none;
+  }
+
+  .template-catalog-slots-body .template-time-slot-card[data-selected="true"] .template-time-slot-select-indicator {
+    background: var(--template-primary);
+    color: #fff;
+  }
+
+  .template-catalog-slots-body .template-time-slot-card[data-selected="true"] .template-time-slot-select-label {
+    display: none;
+  }
+
+  .template-catalog-slots-body .template-time-slot-card[data-selected="true"] .template-time-slot-selected-label {
+    display: inline;
+  }
+
+  .form-frame--time-slots-catalog .template-catalog-cta-btn[aria-disabled="true"] {
+    opacity: .5;
+    cursor: not-allowed;
+    pointer-events: auto;
+  }
+
+  .template-time-slot-weekly-booking {
+    gap: 18px;
+    justify-items: center;
+  }
+
+  .template-time-slot-weekly-card {
+    width: min(100%, 1120px);
+    display: grid;
+    grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 78%, transparent);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 20px 52px -42px rgba(15, 23, 42, .42);
+  }
+
+  .template-time-slot-weekly-resource {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--template-surface) 98%, white);
+    color: inherit;
+    text-decoration: none !important;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+  }
+
+  .template-time-slot-weekly-resource *,
+  .template-time-slot-weekly-day,
+  .template-time-slot-weekly-day * {
+    text-decoration: none !important;
+  }
+
+  .template-time-slot-weekly-resource:hover h3,
+  .template-time-slot-weekly-resource:focus-visible h3 {
+    color: var(--template-primary);
+  }
+
+  .template-time-slot-weekly-resource:hover {
+    border-color: color-mix(in srgb, var(--template-primary) 30%, var(--template-border));
+    box-shadow: 0 12px 34px -30px color-mix(in srgb, var(--template-primary) 65%, transparent);
+    transform: translateY(-1px);
+  }
+
+  .template-time-slot-weekly-resource:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--template-primary) 42%, transparent);
+    outline-offset: 4px;
+    border-radius: 14px;
+  }
+
+  .template-time-slot-weekly-avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
+    background: color-mix(in srgb, var(--template-border) 34%, transparent);
+  }
+
+  .template-time-slot-weekly-copy {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .template-time-slot-weekly-copy h3,
+  .template-time-slot-weekly-copy p,
+  .template-time-slot-weekly-copy strong {
+    margin: 0;
+  }
+
+  .template-time-slot-weekly-copy h3 {
+    color: var(--template-text);
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .template-time-slot-weekly-copy p,
+  .template-time-slot-weekly-description {
+    color: var(--template-muted-text);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .template-time-slot-weekly-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .template-time-slot-weekly-copy strong {
+    color: var(--template-text);
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .template-time-slot-weekly-board {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 74%, transparent);
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--template-primary) 4%, white), #fff 42%);
+  }
+
+  .template-time-slot-weekly-board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--template-border) 72%, transparent);
+    color: var(--template-text);
+    font-size: 14px;
+    font-weight: 950;
+  }
+
+  .template-time-slot-weekly-board-header small {
+    color: var(--template-muted-text);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .template-time-slot-weekly-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 148px));
+    justify-content: start;
+    align-items: start;
+    gap: 10px;
+  }
+
+  .template-time-slot-weekly-day {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 48px;
+    padding: 9px 11px;
+    border: 1px solid color-mix(in srgb, var(--template-primary) 18%, var(--template-border));
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--template-primary) 7%, white), #fff);
+    color: var(--template-muted-text);
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .template-time-slot-weekly-date {
+    display: inline-grid;
+    justify-items: end;
+    gap: 1px;
+  }
+
+  .template-time-slot-weekly-day strong {
+    color: var(--template-text);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .template-time-slot-weekly-day small {
+    color: var(--template-muted-text);
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .template-time-slot-weekly-column {
+    display: grid;
+    grid-template-rows: auto auto;
+    gap: 10px;
+    min-height: 0;
+    padding: 7px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 74%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--template-surface) 96%, white);
+  }
+
+  .template-time-slot-weekly-slots {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  .template-time-slot-weekly-pill {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 999px;
+    background: #fff;
+  }
+
+  .template-time-slot-weekly-empty {
+    grid-column: 1 / -1;
+    display: grid;
+    place-items: center;
+    min-height: 112px;
+    border: 1px dashed color-mix(in srgb, var(--template-border) 86%, transparent);
+    border-radius: 16px;
+    color: var(--template-muted-text);
+    font-size: 13px;
+    font-weight: 850;
+  }
+
+  .template-time-slot-resource-details[hidden],
+  .template-time-slot-resource-detail[hidden] {
+    display: none !important;
+  }
+
+  .template-time-slot-resource-detail {
+    display: grid;
+    gap: 16px;
+  }
+
+  .template-time-slot-resource-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+    gap: clamp(18px, 4vw, 42px);
+    padding: clamp(18px, 3vw, 28px);
+    border: 1px solid color-mix(in srgb, var(--template-border) 78%, transparent);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--template-surface) 96%, white);
+  }
+
+  .template-time-slot-resource-detail-media {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 320px;
+    overflow: hidden;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--template-border) 36%, transparent);
+  }
+
+  .template-time-slot-resource-detail-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .template-time-slot-resource-detail-copy {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+  }
+
+  .template-time-slot-resource-detail-copy h1,
+  .template-time-slot-resource-detail-copy h2 {
+    margin: 0;
+    color: var(--template-text);
+    font-size: clamp(26px, 4vw, 44px);
+    line-height: 1.05;
+  }
+
+  .template-time-slot-detail-days {
+    display: grid;
+    gap: 12px;
+  }
+
+  .template-time-slot-detail-day {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--template-border) 76%, transparent);
+    border-radius: 14px;
+  }
+
+  .template-time-slot-detail-day h2,
+  .template-time-slot-detail-day h3 {
+    margin: 0;
+    color: var(--template-text);
+    font-size: 14px;
+  }
+
+  .template-time-slot-detail-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .template-time-slot-detail-pills .template-time-slot-pill {
+    width: auto;
+    min-width: 76px;
+  }
+
+  @media (max-width: 720px) {
+    .form-frame--time-slots-catalog {
+      padding-inline: 16px;
+    }
+
+    .template-catalog-time-slots-landing .template-catalog-landing-header {
+      padding: 22px;
+    }
+
+    .template-catalog-slots-body [data-choice-time-slots] {
+      grid-template-columns: 1fr;
+    }
+
+    .template-time-slot-availability-row,
+    .template-time-slot-resource-detail-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .template-time-slot-weekly-card {
+      grid-template-columns: 1fr;
+      width: 100%;
+    }
+
+    .template-time-slot-weekly-resource {
+      grid-template-columns: 72px minmax(0, 1fr);
+    }
+
+    .template-time-slot-weekly-avatar {
+      width: 72px;
+      height: 72px;
+    }
+
+    .template-time-slot-week-board {
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .template-time-slot-week-head,
+    .template-time-slot-week-slots {
+      min-width: 460px;
+    }
+
+    .template-time-slot-weekly-grid {
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+      min-width: 0;
+    }
+
+    .template-time-slot-weekly-board {
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .form-frame--time-slots-catalog .template-catalog-cta-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }

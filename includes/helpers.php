@@ -428,6 +428,7 @@ function xpressui_get_shell_allowed_html() {
 		'canvas'   => array_merge( $global_attrs, [ 'width' => true, 'height' => true ] ),
 		'strong'   => $global_attrs,
 		'em'       => $global_attrs,
+		'small'    => $global_attrs,
 		'br'       => $global_attrs,
 	];
 }

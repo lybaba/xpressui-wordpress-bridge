@@ -35,7 +35,13 @@ function xpressui_get_hosted_link_catalog( $project_slug, $link_id ) {
 		return null;
 	}
 	$decoded = json_decode( (string) file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-	if ( ! is_array( $decoded ) || empty( $decoded['product_items'] ) || ! is_array( $decoded['product_items'] ) ) {
+	if ( ! is_array( $decoded ) ) {
+		return null;
+	}
+	// Accept a product catalog (product_items) or a time-slots catalog (catalog_kind).
+	$is_product     = ! empty( $decoded['product_items'] ) && is_array( $decoded['product_items'] );
+	$is_time_slots  = 'time_slots' === (string) ( $decoded['catalog_kind'] ?? '' );
+	if ( ! $is_product && ! $is_time_slots ) {
 		return null;
 	}
 	return $decoded;
@@ -210,7 +216,23 @@ function xpressui_render_product_catalog_grid( $catalog, $detail_base = '' ) {
  * @return string Embed HTML, or '' when the snapshot has no product items.
  */
 function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id ) {
-	if ( ! is_array( $catalog ) || empty( $catalog['product_items'] ) ) {
+	if ( ! is_array( $catalog ) ) {
+		return '';
+	}
+
+	// Dispatch on catalog kind: time-slots (services / booking) catalogs render the
+	// booking UI (list + resource detail) instead of the product storefront.
+	if ( 'time_slots' === (string) ( $catalog['catalog_kind'] ?? '' ) ) {
+		$ts_return = get_permalink();
+		if ( ! $ts_return ) {
+			$ts_return = home_url( '/' );
+		}
+		$ts_grid     = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], $ts_return );
+		$ts_checkout = add_query_arg( 'xpui_checkout', '1', $ts_grid );
+		return xpressui_render_time_slots_embed( $catalog, $link_id, $ts_grid, $ts_checkout );
+	}
+
+	if ( empty( $catalog['product_items'] ) ) {
 		return '';
 	}
 
