@@ -486,7 +486,7 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		}
 	}
 
-	$intro_css = '.xpressui-intro{width:100%;box-sizing:border-box;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;margin:0 0 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
+	$intro_css = '.xpressui-intro{width:min(100%,900px);margin:0 auto 1.25rem;box-sizing:border-box;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem 1.25rem;box-shadow:0 1px 2px rgba(15,23,42,.04)}'
 		. '.xpressui-intro__title{margin:0 0 .6rem;font-size:1.15rem;font-weight:800;line-height:1.3;color:#0f172a}'
 		. '.xpressui-intro__content{color:#334155;font-size:.95rem;line-height:1.55}'
 		. '.xpressui-intro__content p:last-child{margin-bottom:0!important}'
@@ -1126,8 +1126,10 @@ function xpressui_render_shortcode( $atts ) {
 			// Product catalogs use a localStorage cart + order summary + payment selector.
 			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
 				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
-				$checkout_order_summary  = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
-				$checkout_order_summary .= xpressui_render_checkout_payment_methods( is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [] );
+				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+				// Payment-method block intentionally omitted: the WP checkout no longer renders
+				// the manual/Stripe "Payment method" selector. The submit handler tolerates an
+				// absent xpui_payment_method field (rest-endpoint.php sanitizes it to a string).
 
 				// Save the catalog order in WordPress by default: inject the localStorage
 				// cart + chosen payment method into the form as hidden fields so the normal
