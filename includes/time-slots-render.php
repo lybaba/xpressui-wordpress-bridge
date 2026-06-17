@@ -302,6 +302,140 @@ function xpressui_render_time_slots_resource_detail( $catalog, $resource ) {
 }
 
 /**
+ * Formats a booking window from ISO-8601 start/end into a short human string,
+ * e.g. "Tue 02 Jun · 17:00–21:00" (single day) or "02 Jun 17:00 → 03 Jun 09:00".
+ *
+ * @param string $starts ISO-8601 start.
+ * @param string $ends   ISO-8601 end.
+ * @return string
+ */
+function xpressui_format_booking_window( $starts, $ends ) {
+	$starts = trim( (string) $starts );
+	if ( '' === $starts ) {
+		return '';
+	}
+	try {
+		$s = new DateTime( $starts );
+	} catch ( Exception $e ) {
+		return '';
+	}
+	$e_dt = null;
+	if ( '' !== trim( (string) $ends ) ) {
+		try {
+			$e_dt = new DateTime( $ends );
+		} catch ( Exception $e ) {
+			$e_dt = null;
+		}
+	}
+	$day = $s->format( 'D d M' );
+	if ( null === $e_dt ) {
+		return $day . ' · ' . $s->format( 'H:i' );
+	}
+	if ( $s->format( 'Y-m-d' ) === $e_dt->format( 'Y-m-d' ) ) {
+		return $day . ' · ' . $s->format( 'H:i' ) . '–' . $e_dt->format( 'H:i' );
+	}
+	return $s->format( 'd M H:i' ) . ' → ' . $e_dt->format( 'd M H:i' );
+}
+
+/**
+ * Formats an amount + currency, e.g. "150 000 XOF" (space thousands separator).
+ *
+ * @param string $amount Numeric amount.
+ * @param string $currency Currency code.
+ * @return string
+ */
+function xpressui_format_money_amount( $amount, $currency ) {
+	$amount = trim( (string) $amount );
+	if ( '' === $amount || ! is_numeric( $amount ) ) {
+		return '';
+	}
+	$n    = (float) $amount;
+	$text = ( floor( $n ) === $n )
+		? number_format( $n, 0, ',', ' ' )
+		: number_format( $n, 2, ',', ' ' );
+	$currency = trim( (string) $currency );
+	return '' !== $currency ? $text . ' ' . $currency : $text;
+}
+
+/**
+ * Builds the time-slots checkout artifacts from the selected slot (carried in the
+ * query params the booking script appends): the collapsed "Booking summary" bar
+ * (shown inside the form card, parity with the SaaS) and the hidden fields that
+ * capture the booking in the WordPress submission (stored as a one-item product cart
+ * so it also surfaces on the Orders page).
+ *
+ * @return array{summary:string,fields:string} Empty strings when no slot is selected.
+ */
+function xpressui_render_time_slots_checkout() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only query var set by the booking redirect.
+	$get = static function ( $key ) {
+		return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	};
+	$slot_id = $get( 'timeSlotId' );
+	if ( '' === $slot_id ) {
+		return [ 'summary' => '', 'fields' => '' ];
+	}
+	$label    = $get( 'timeSlotLabel' );
+	$resource = $get( 'timeSlotResource' );
+	$starts   = $get( 'timeSlotStartsAt' );
+	$ends     = $get( 'timeSlotEndsAt' );
+	$price    = $get( 'timeSlotPrice' );
+	$currency = $get( 'timeSlotCurrency' );
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$image    = isset( $_GET['timeSlotResourceImage'] ) ? esc_url_raw( wp_unslash( $_GET['timeSlotResourceImage'] ) ) : '';
+
+	$title         = '' !== $resource ? $resource : ( '' !== $label ? $label : $slot_id );
+	$window        = xpressui_format_booking_window( $starts, $ends );
+	$price_display = xpressui_format_money_amount( $price, $currency );
+
+	// Styles for the collapsed bar live in the cart-summary stylesheet.
+	$css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
+	$css_ver  = file_exists( $css_path ) ? (string) filemtime( $css_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_style( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.css', [], $css_ver );
+
+	// Capture the booking as a one-item product cart so the WordPress submission +
+	// the Orders page treat it like any other order.
+	$cart_item = [
+		'id'       => $slot_id,
+		'label'    => $title,
+		'quantity' => 1,
+		'price'    => is_numeric( $price ) ? (float) $price : 0,
+		'currency' => $currency,
+		'image'    => $image,
+		'startsAt' => $starts,
+		'endsAt'   => $ends,
+	];
+	$fields  = '<input type="hidden" name="xpressuiProductCart" value="' . esc_attr( wp_json_encode( [ $cart_item ] ) ) . '" />';
+	$fields .= '<input type="hidden" name="xpressuiProductTotal" value="' . esc_attr( is_numeric( $price ) ? $price : '' ) . '" />';
+	$fields .= '<input type="hidden" name="xpressuiProductCurrency" value="' . esc_attr( $currency ) . '" />';
+	$fields .= '<input type="hidden" name="xpressuiProductCount" value="1" />';
+
+	ob_start();
+	?>
+<details id="xpui-cart-summary" class="xpui-cart-summary" aria-label="<?php esc_attr_e( 'Booking summary', 'xpressui-bridge' ); ?>">
+	<summary class="xpui-cs-header">
+		<span class="xpui-cs-title"><?php esc_html_e( 'Booking summary', 'xpressui-bridge' ); ?></span>
+		<?php if ( '' !== $price_display ) : ?><strong class="xpui-cs-header-total"><?php echo esc_html( $price_display ); ?></strong><?php endif; ?>
+	</summary>
+	<div class="xpui-cs-body">
+		<div class="xpui-cs-row">
+			<span class="xpui-cs-item">
+				<?php if ( '' !== $image ) : ?><img class="xpui-cs-thumb" src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy"><?php endif; ?>
+				<span class="xpui-cs-label">
+					<span class="xpui-cs-label-main"><?php echo esc_html( $title ); ?></span>
+					<?php if ( '' !== $window ) : ?><span class="xpui-cs-meta xpui-cs-meta--booking-period"><?php echo esc_html( $window ); ?></span><?php endif; ?>
+				</span>
+			</span>
+			<?php if ( '' !== $price_display ) : ?><span class="xpui-cs-amount"><?php echo esc_html( $price_display ); ?></span><?php endif; ?>
+		</div>
+	</div>
+</details>
+	<?php
+	$summary = wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
+	return [ 'summary' => $summary, 'fields' => $fields ];
+}
+
+/**
  * Renders the full headless time-slots embed (list or resource detail).
  *
  * Mirrors `export/catalog-time-slots-page.html.j2`: the page-shell > form-frame >
@@ -325,6 +459,16 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	wp_enqueue_style( 'xpressui-time-slots', XPRESSUI_BRIDGE_URL . 'assets/time-slots-catalog.css', [], $css_ver );
 	$vars = is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [];
 	wp_add_inline_style( 'xpressui-time-slots', xpressui_catalog_theme_vars_css( '#' . $mount_id, $vars ) );
+	// Blend into the host WordPress page: drop the full-viewport shell + gradient and the
+	// 1440px-centered frame padding (which overflow / float the catalog on a content
+	// column), and let a narrow booking board scroll horizontally instead of overflowing.
+	$sel    = '#' . $mount_id;
+	$reset  = $sel . '.page-shell--time-slots-catalog{min-height:auto !important;background:transparent !important;padding:0 !important;display:block !important;place-items:unset !important;overflow:visible !important;}';
+	$reset .= $sel . ' .form-frame--time-slots-catalog{width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important;box-sizing:border-box;}';
+	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100%;box-sizing:border-box;}';
+	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow-x:auto;}';
+	$reset .= $sel . ' .template-time-slot-week-slots,' . $sel . ' .template-time-slot-resource-panel{min-width:0;}';
+	wp_add_inline_style( 'xpressui-time-slots', $reset );
 
 	// Self-contained booking hydration (copied from the SaaS booking-script).
 	$js_path = XPRESSUI_BRIDGE_DIR . 'assets/time-slots-booking.js';

@@ -1070,15 +1070,23 @@ function xpressui_render_shortcode( $atts ) {
 	// form, mirroring the SaaS checkout form. The cart is read from localStorage by
 	// catalog-cart-summary.js; nothing is fetched from the SaaS for this block.
 	$checkout_order_summary = '';
+	$checkout_form_fields   = '';
 	if ( $is_catalog_checkout && $link_attr !== '' && is_array( $link_config ) ) {
 		$co_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$co_front        = is_array( $co_presentation['frontCatalog'] ?? null ) ? $co_presentation['frontCatalog'] : [];
 		if ( ! empty( $co_front['catalogId'] ) ) {
 			$co_catalog = xpressui_get_hosted_link_catalog( $slug, $link_attr );
+			$co_kind    = is_array( $co_catalog ) ? (string) ( $co_catalog['catalog_kind'] ?? '' ) : '';
+			if ( 'time_slots' === $co_kind ) {
+				// Time-slots checkout: the chosen slot is carried in the query params the
+				// booking redirect appends. Render the collapsed Booking summary (inside the
+				// form card, parity with the SaaS) + capture the slot in the submission.
+				$ts_checkout            = xpressui_render_time_slots_checkout();
+				$checkout_order_summary = $ts_checkout['summary'];
+				$checkout_form_fields   = $ts_checkout['fields'];
+			}
 			// Product catalogs use a localStorage cart + order summary + payment selector.
-			// Time-slots checkout carries the chosen slot via query params (handled by
-			// catalog-checkout.js), so this product-specific block is skipped for them.
-			if ( is_array( $co_catalog ) && 'time_slots' !== (string) ( $co_catalog['catalog_kind'] ?? '' ) ) {
+			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
 				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
 				$checkout_order_summary  = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
 				$checkout_order_summary .= xpressui_render_checkout_payment_methods( is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [] );
@@ -1113,6 +1121,18 @@ function xpressui_render_shortcode( $atts ) {
 			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_order_summary . substr( $fragment_html, $co_form_pos );
 		} else {
 			$fragment_html = $checkout_order_summary . $fragment_html;
+		}
+	}
+
+	// Time-slots checkout captures the booking server-side: inject the hidden fields
+	// just inside the <form> (after the opening tag) so the normal submit stores them.
+	if ( '' !== $checkout_form_fields ) {
+		$co_form_open = strpos( $fragment_html, '<form' );
+		if ( false !== $co_form_open ) {
+			$co_form_gt = strpos( $fragment_html, '>', $co_form_open );
+			if ( false !== $co_form_gt ) {
+				$fragment_html = substr( $fragment_html, 0, $co_form_gt + 1 ) . $checkout_form_fields . substr( $fragment_html, $co_form_gt + 1 );
+			}
 		}
 	}
 
