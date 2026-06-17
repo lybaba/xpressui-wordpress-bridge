@@ -16,6 +16,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * First character of a string (multibyte-safe when mbstring is available),
+ * used for the resource avatar initial.
+ *
+ * @param string $value
+ * @return string
+ */
+function xpressui_ts_initial( $value ) {
+	$value = (string) $value;
+	return function_exists( 'mb_substr' ) ? mb_substr( $value, 0, 1 ) : substr( $value, 0, 1 );
+}
+
+/**
  * Resolves the active resource for a headless time-slots detail view from
  * `?xpui_product=<resource url_id>`, or null (list view).
  *
@@ -191,7 +203,7 @@ function xpressui_render_time_slots_list( $catalog, $detail_base = '' ) {
 				<?php if ( '' !== $image ) : ?>
 				<img class="template-time-slot-resource-avatar" src="<?php echo esc_url( $image ); ?>" alt="<?php echo esc_attr( $title ); ?>" loading="lazy" />
 				<?php else : ?>
-				<div class="template-time-slot-resource-avatar template-time-slot-resource-avatar--empty"><?php echo esc_html( mb_substr( $title, 0, 1 ) ); ?></div>
+				<div class="template-time-slot-resource-avatar template-time-slot-resource-avatar--empty"><?php echo esc_html( xpressui_ts_initial( $title ) ); ?></div>
 				<?php endif; ?>
 				<div class="template-time-slot-resource-copy">
 					<h3><?php echo esc_html( $title ); ?></h3>
@@ -201,7 +213,8 @@ function xpressui_render_time_slots_list( $catalog, $detail_base = '' ) {
 					<?php if ( ! empty( $group['price_display'] ) ) : ?><p class="template-time-slot-resource-price"><?php echo esc_html( (string) $group['price_display'] ); ?></p><?php endif; ?>
 				</div>
 			</a>
-			<div class="template-time-slot-week-board" data-time-slot-window-board>
+			<?php $ts_cols = min( 5, max( 1, count( $day_slots ) ) ); ?>
+			<div class="template-time-slot-week-board" data-time-slot-window-board data-ts-cols="<?php echo esc_attr( (string) $ts_cols ); ?>">
 				<div class="template-time-slot-week-head" aria-hidden="true">
 					<?php foreach ( $day_slots as $day ) : ?>
 					<div class="template-time-slot-week-day" data-time-slot-date="<?php echo esc_attr( (string) ( $day['date'] ?? '' ) ); ?>" data-time-slot-window-day>
@@ -263,7 +276,7 @@ function xpressui_render_time_slots_resource_detail( $catalog, $resource ) {
 				<?php if ( '' !== $image ) : ?>
 				<img src="<?php echo esc_url( $image ); ?>" alt="" loading="lazy" />
 				<?php else : ?>
-				<div class="template-time-slot-resource-detail-empty"><?php echo esc_html( mb_substr( $title, 0, 1 ) ); ?></div>
+				<div class="template-time-slot-resource-detail-empty"><?php echo esc_html( xpressui_ts_initial( $title ) ); ?></div>
 				<?php endif; ?>
 			</div>
 			<div class="template-time-slot-resource-detail-copy">
@@ -468,9 +481,15 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100%;box-sizing:border-box;}';
 	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow:visible;}';
 	$reset .= $sel . ' .template-time-slot-week-slots,' . $sel . ' .template-time-slot-resource-panel{min-width:0;}';
-	// The week grid is a fixed 5 columns at minmax(78px,1fr) (~390px min), which overflows
-	// a narrow WP content column. Let the columns shrink to fit so it never scrolls.
-	$reset .= $sel . ' .template-time-slot-week-head,' . $sel . ' .template-time-slot-week-slots{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}';
+	$reset .= $sel . ' .template-time-slot-day-column,' . $sel . ' .template-time-slot-pill{min-width:0;box-sizing:border-box;max-width:100%;}';
+	// The week grid is a fixed 5 columns at minmax(78px,1fr) (~390px min): on a narrow WP
+	// content column the columns are too tight and the pills overlap. Size the grid to the
+	// actual number of days (data-ts-cols, ≤5) so the columns fit without overlap/scroll.
+	for ( $c = 1; $c <= 5; $c++ ) {
+		$reset .= $sel . ' .template-time-slot-week-board[data-ts-cols="' . $c . '"] .template-time-slot-week-head,'
+			. $sel . ' .template-time-slot-week-board[data-ts-cols="' . $c . '"] .template-time-slot-week-slots'
+			. '{grid-template-columns:repeat(' . $c . ',minmax(0,1fr)) !important;}';
+	}
 	wp_add_inline_style( 'xpressui-time-slots', $reset );
 
 	// Self-contained booking hydration (copied from the SaaS booking-script).
