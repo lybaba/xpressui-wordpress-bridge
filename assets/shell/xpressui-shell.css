@@ -1,19 +1,5 @@
-    body {
-      margin: 0;
-      font-family: var(--template-font-family);
-      color: var(--template-text);
-      background: var(--template-page-background);
-    }
-    .page-shell {
-      min-height: 100dvh;
-      height: 100%;
-      display: grid;
-      place-items: center;
-      padding: 24px 16px;
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
-    }
+    /* body{} stripped for WP embed — styling is scoped to #xpressui-root so the host theme's font/colour/background are left untouched */
+    .page-shell { display: grid; place-items: center; padding: 0; position: relative; isolation: isolate; min-height: 0; height: auto; }
     #xpressui-root {
       position: relative;
       isolation: isolate;
