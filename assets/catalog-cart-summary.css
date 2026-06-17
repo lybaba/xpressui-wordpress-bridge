@@ -244,7 +244,58 @@
   color: var(--cs-muted);
   font-size: 15px;
 }
+/* ── Checkout payment-method selector ───────────────────────────── */
+.xpui-checkout-payment {
+  --cs-primary: var(--template-primary, #2563eb);
+  --cs-surface: var(--template-surface, #ffffff);
+  --cs-text: var(--template-text, #0f172a);
+  --cs-border: var(--template-border, #d7e0ea);
+  --cs-radius-card: var(--template-card-radius, 20px);
+  width: 100%;
+  max-width: 680px;
+  margin: 16px auto 0;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-card);
+  padding: 20px 24px;
+  box-sizing: border-box;
+  color: var(--cs-text);
+}
+.xpui-checkout-payment-title { margin: 0 0 12px; font-size: 14px; font-weight: 800; letter-spacing: 0.01em; }
+.xpui-payment-methods { display: grid; gap: 10px; }
+.xpui-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--cs-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.xpui-payment-method:hover { border-color: color-mix(in srgb, var(--cs-primary) 40%, var(--cs-border)); }
+.xpui-payment-method:has(input:checked) {
+  border-color: var(--cs-primary);
+  background: color-mix(in srgb, var(--cs-primary) 6%, var(--cs-surface));
+}
+.xpui-payment-method input { width: 18px; height: 18px; accent-color: var(--cs-primary); flex: 0 0 auto; }
+.xpui-payment-method-label { font-size: 14px; font-weight: 650; }
+.xpui-payment-instructions {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cs-primary) 6%, var(--cs-surface));
+  border: 1px solid color-mix(in srgb, var(--cs-primary) 22%, var(--cs-border));
+  font-size: 13px;
+  line-height: 1.5;
+}
+.xpui-payment-instructions p { margin: 0 0 6px; }
+.xpui-payment-instructions p:last-child { margin-bottom: 0; }
+.xpui-payment-merchant { font-weight: 800; }
+.xpui-payment-iban { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
 @media (max-width: 640px) {
+  .xpui-checkout-payment { padding-inline: 18px; }
   .xpressui-cart-summary .cs-header { align-items: flex-start; padding-inline: 18px; }
   .xpressui-cart-summary .cs-heading { align-items: flex-start; }
   .xpressui-cart-summary .cs-title { font-size: 21px; }

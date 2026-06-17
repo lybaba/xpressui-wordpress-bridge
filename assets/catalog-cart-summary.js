@@ -223,3 +223,23 @@
   render();
   window.addEventListener('pageshow', render);
 })();
+
+/**
+ * Checkout payment-method selector: reveal the instructions block for the selected
+ * manual method (Stripe has none). Independent of the cart-summary page.
+ */
+(function () {
+  var wrap = document.querySelector('[data-checkout-payment]');
+  if (!wrap) { return; }
+  function sync() {
+    var checked = wrap.querySelector('input[name="xpui_payment_method"]:checked');
+    var value = checked ? checked.value : '';
+    wrap.querySelectorAll('[data-payment-instructions]').forEach(function (node) {
+      node.hidden = node.getAttribute('data-payment-instructions') !== value;
+    });
+  }
+  wrap.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'xpui_payment_method') { sync(); }
+  });
+  sync();
+})();

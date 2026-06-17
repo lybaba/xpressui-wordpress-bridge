@@ -1077,7 +1077,8 @@ function xpressui_render_shortcode( $atts ) {
 			$co_catalog = xpressui_get_hosted_link_catalog( $slug, $link_attr );
 			if ( is_array( $co_catalog ) ) {
 				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
-				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+				$checkout_order_summary  = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+				$checkout_order_summary .= xpressui_render_checkout_payment_methods( is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [] );
 			}
 		}
 	}

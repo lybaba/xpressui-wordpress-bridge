@@ -628,6 +628,83 @@ function xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $che
 }
 
 /**
+ * Renders the payment-method selector shown inside the WP checkout form.
+ *
+ * Mirrors the SaaS hosted checkout: a card option (when Stripe is enabled on a
+ * charges-enabled Connect account) and/or the workspace manual methods (Wave,
+ * Orange Money, bank, cash) with their instructions. The chosen method is posted
+ * with the order (field name xpui_payment_method). Returns '' when the link
+ * collects no payment.
+ *
+ * @param array $payment The catalog.json `payment` block.
+ * @return string Selector HTML, or '' when there is nothing to collect.
+ */
+function xpressui_render_checkout_payment_methods( $payment ) {
+	if ( ! is_array( $payment ) ) {
+		return '';
+	}
+	$collection = (string) ( $payment['collection'] ?? 'none' );
+	$stripe     = ! empty( $payment['stripe_enabled'] );
+	$methods    = ( isset( $payment['methods'] ) && is_array( $payment['methods'] ) ) ? $payment['methods'] : [];
+	if ( 'none' === $collection || ( ! $stripe && empty( $methods ) ) ) {
+		return '';
+	}
+
+	ob_start();
+	?>
+<div class="xpui-checkout-payment" data-checkout-payment>
+	<p class="xpui-checkout-payment-title"><?php esc_html_e( 'Payment method', 'xpressui-bridge' ); ?></p>
+	<div class="xpui-payment-methods">
+		<?php if ( $stripe ) : ?>
+		<label class="xpui-payment-method">
+			<input type="radio" name="xpui_payment_method" value="stripe" data-payment-method checked />
+			<span class="xpui-payment-method-label"><?php esc_html_e( 'Credit / debit card', 'xpressui-bridge' ); ?></span>
+		</label>
+		<?php endif; ?>
+		<?php foreach ( $methods as $i => $method ) : ?>
+			<?php
+			if ( ! is_array( $method ) ) {
+				continue;
+			}
+			$mid   = (string) ( $method['id'] ?? '' );
+			$label = (string) ( $method['label'] ?? $mid );
+			if ( '' === $mid ) {
+				continue;
+			}
+			$checked = ( ! $stripe && 0 === $i ) ? ' checked' : '';
+			?>
+		<label class="xpui-payment-method">
+			<input type="radio" name="xpui_payment_method" value="<?php echo esc_attr( $mid ); ?>" data-payment-method<?php echo esc_attr( $checked ); ?> />
+			<span class="xpui-payment-method-label"><?php echo esc_html( $label ); ?></span>
+		</label>
+		<?php endforeach; ?>
+	</div>
+	<?php foreach ( $methods as $method ) : ?>
+		<?php
+		if ( ! is_array( $method ) ) {
+			continue;
+		}
+		$mid          = (string) ( $method['id'] ?? '' );
+		$instructions = trim( (string) ( $method['instructions'] ?? '' ) );
+		$merchant     = trim( (string) ( $method['merchant_name'] ?? '' ) );
+		$phone        = trim( (string) ( $method['merchant_phone'] ?? '' ) );
+		$iban         = trim( (string) ( $method['iban'] ?? '' ) );
+		if ( '' === $mid ) {
+			continue;
+		}
+		?>
+	<div class="xpui-payment-instructions" data-payment-instructions="<?php echo esc_attr( $mid ); ?>" hidden>
+		<?php if ( '' !== $merchant ) : ?><p class="xpui-payment-merchant"><?php echo esc_html( $merchant ); ?><?php echo '' !== $phone ? ' — ' . esc_html( $phone ) : ''; ?></p><?php endif; ?>
+		<?php if ( '' !== $iban ) : ?><p class="xpui-payment-iban"><?php echo esc_html( $iban ); ?></p><?php endif; ?>
+		<?php if ( '' !== $instructions ) : ?><p class="xpui-payment-instructions-text"><?php echo esc_html( $instructions ); ?></p><?php endif; ?>
+	</div>
+	<?php endforeach; ?>
+</div>
+	<?php
+	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
+}
+
+/**
  * Renders the read-only Order summary block shown inside the WP checkout form.
  *
  * Same client-side hydration as the cart-summary page (catalog-cart-summary.js reads
