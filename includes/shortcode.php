@@ -1066,8 +1066,25 @@ function xpressui_render_shortcode( $atts ) {
 		}
 	}
 
+	// Catalog checkout (?xpui_checkout=1): show the read-only Order summary above the
+	// form, mirroring the SaaS checkout form. The cart is read from localStorage by
+	// catalog-cart-summary.js; nothing is fetched from the SaaS for this block.
+	$checkout_order_summary = '';
+	if ( $is_catalog_checkout && $link_attr !== '' && is_array( $link_config ) ) {
+		$co_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
+		$co_front        = is_array( $co_presentation['frontCatalog'] ?? null ) ? $co_presentation['frontCatalog'] : [];
+		if ( ! empty( $co_front['catalogId'] ) ) {
+			$co_catalog = xpressui_get_hosted_link_catalog( $slug, $link_attr );
+			if ( is_array( $co_catalog ) ) {
+				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
+				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+			}
+		}
+	}
+
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $intro_outside_html
+		. $checkout_order_summary
 		. $fragment_html
 		. $config_tag
 		. '</div>';

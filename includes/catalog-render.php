@@ -626,3 +626,68 @@ function xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $che
 	<?php
 	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
 }
+
+/**
+ * Renders the read-only Order summary block shown inside the WP checkout form.
+ *
+ * Same client-side hydration as the cart-summary page (catalog-cart-summary.js reads
+ * the localStorage cart), but read-only (data-readonly="1"): no steppers, no remove,
+ * no checkout CTA — the form's own submit is the checkout. Mirrors the SaaS checkout
+ * form which shows the order summary above the customer fields.
+ *
+ * @param array  $catalog  Decoded catalog.json snapshot.
+ * @param string $link_id  Hosted link id (cart scope).
+ * @param string $grid_url Storefront URL (back link).
+ * @return string Order-summary HTML.
+ */
+function xpressui_render_checkout_order_summary( $catalog, $link_id, $grid_url ) {
+	if ( ! is_array( $catalog ) ) {
+		return '';
+	}
+	$catalog_id  = (string) ( $catalog['catalog_id'] ?? '' );
+	$storage_key = xpressui_catalog_cart_storage_key( $link_id, $catalog_id );
+	$currency    = (string) ( $catalog['default_currency'] ?? '' );
+
+	$css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
+	$css_ver  = file_exists( $css_path ) ? (string) filemtime( $css_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_style( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.css', [], $css_ver );
+	$vars = is_array( $catalog['theme_css_vars'] ?? null ) ? $catalog['theme_css_vars'] : [];
+	wp_add_inline_style( 'xpressui-cart-summary', xpressui_catalog_theme_vars_css( '.xpressui-cart-summary', $vars ) );
+
+	$js_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.js';
+	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : XPRESSUI_BRIDGE_VERSION;
+	wp_enqueue_script( 'xpressui-cart-summary', XPRESSUI_BRIDGE_URL . 'assets/catalog-cart-summary.js', [], $js_ver, true );
+
+	ob_start();
+	?>
+<div class="xpressui-cart-summary xpressui-checkout-summary">
+	<div
+		class="cs-page"
+		data-readonly="1"
+		data-storage-key="<?php echo esc_attr( $storage_key ); ?>"
+		data-catalog-url="<?php echo esc_url( $grid_url ); ?>"
+		data-currency="<?php echo esc_attr( $currency ); ?>"
+		data-empty-label="<?php esc_attr_e( 'Your cart is empty.', 'xpressui-bridge' ); ?>"
+	>
+		<div class="cs-card">
+			<div class="cs-header">
+				<div class="cs-heading">
+					<div class="cs-header-titles">
+						<p class="cs-kicker"><?php esc_html_e( 'Your order', 'xpressui-bridge' ); ?></p>
+						<h1 class="cs-title"><?php esc_html_e( 'Order summary', 'xpressui-bridge' ); ?></h1>
+					</div>
+				</div>
+			</div>
+			<ul class="cs-items" data-cart-items></ul>
+			<div class="cs-totals" data-cart-totals>
+				<div class="cs-totals-row cs-totals-row--total">
+					<span><?php esc_html_e( 'Total', 'xpressui-bridge' ); ?></span>
+					<strong data-cart-total></strong>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	<?php
+	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
+}

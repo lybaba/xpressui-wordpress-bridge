@@ -17,6 +17,9 @@
   var catalogUrl = root.getAttribute('data-catalog-url') || '';
   var checkoutUrl = root.getAttribute('data-checkout-url') || '';
   var fallbackCurrency = root.getAttribute('data-currency') || '';
+  // Read-only mode: the order summary shown inside the checkout form. No steppers /
+  // remove / checkout — the form's submit is the checkout. Pure display.
+  var readonly = root.getAttribute('data-readonly') === '1';
   var itemsEl = root.querySelector('[data-cart-items]');
   var totalEl = root.querySelector('[data-cart-total]');
   var footerEl = root.querySelector('[data-cart-footer]');
@@ -112,10 +115,20 @@
     li.setAttribute('data-item-id', item.id);
     li.setAttribute('data-item-price', String(item.price));
     li.setAttribute('data-item-currency', item.currency);
-    var href = detailUrl(item.id);
     var media = item.image
       ? '<img src="' + esc(item.image) + '" alt="" loading="lazy">'
       : svgImagePlaceholder();
+    if (readonly) {
+      li.innerHTML =
+        '<span class="cs-thumb">' + media + '</span>' +
+        '<div class="cs-item-body">' +
+          '<p class="cs-item-label">' + esc(item.label) + '</p>' +
+          '<p class="cs-item-qty">' + esc(formatMoney(item.price, item.currency)) + ' × ' + esc(item.quantity) + '</p>' +
+        '</div>' +
+        '<span class="cs-item-subtotal" data-cart-subtotal>' + esc(formatMoney(item.lineTotal, item.currency)) + '</span>';
+      return li;
+    }
+    var href = detailUrl(item.id);
     li.innerHTML =
       '<a class="cs-thumb" href="' + esc(href) + '" aria-label="' + esc(item.label) + '">' + media + '</a>' +
       '<div class="cs-item-body">' +
@@ -182,6 +195,7 @@
   }
 
   root.addEventListener('click', function (event) {
+    if (readonly) { return; }
     var target = event.target;
     if (!(target instanceof Element)) { return; }
     var row = target.closest('[data-cart-item]');
