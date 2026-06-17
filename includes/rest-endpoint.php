@@ -20,6 +20,84 @@ function xpressui_register_rest_routes() {
 		'callback'            => 'xpressui_handle_resume_request',
 		'permission_callback' => '__return_true',
 	] );
+	register_rest_route( 'xpressui/v1', '/catalog-order', [
+		'methods'             => 'POST',
+		'callback'            => 'xpressui_handle_catalog_order',
+		'permission_callback' => '__return_true',
+	] );
+}
+
+/**
+ * Proxies a headless catalog checkout to the SaaS orders endpoint.
+ *
+ * The browser posts the customer form values + cart items + chosen payment method
+ * here; this calls the SaaS `.../hosted-links/{id}/orders` server-to-server with the
+ * stored developer API token (never exposed to the browser). The SaaS re-prices the
+ * cart, creates the submission, and returns a Stripe checkout URL (card) or a
+ * created status (manual). Nothing client-supplied is trusted for pricing.
+ */
+function xpressui_handle_catalog_order( WP_REST_Request $request ) {
+	$slug    = sanitize_title( (string) $request->get_param( 'projectSlug' ) );
+	$link_id = sanitize_text_field( (string) $request->get_param( 'linkId' ) );
+	if ( '' === $slug || '' === $link_id || ! xpressui_is_installed_workflow( $slug ) ) {
+		return new WP_Error( 'xpressui_bad_request', __( 'Unknown workflow or link.', 'xpressui-bridge' ), [ 'status' => 400 ] );
+	}
+
+	$conn = xpressui_get_console_connection();
+	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
+		return new WP_Error( 'xpressui_no_connection', __( 'Console connection is not configured.', 'xpressui-bridge' ), [ 'status' => 503 ] );
+	}
+
+	$raw_items = $request->get_param( 'items' );
+	$items     = [];
+	if ( is_array( $raw_items ) ) {
+		foreach ( $raw_items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$id = sanitize_text_field( (string) ( $item['id'] ?? '' ) );
+			if ( '' === $id ) {
+				continue;
+			}
+			$items[] = [ 'id' => $id, 'quantity' => max( 1, (int) ( $item['quantity'] ?? 1 ) ) ];
+		}
+	}
+	if ( empty( $items ) ) {
+		return new WP_Error( 'xpressui_empty_cart', __( 'Your cart is empty.', 'xpressui-bridge' ), [ 'status' => 422 ] );
+	}
+
+	$form_values = $request->get_param( 'formValues' );
+	$form_values = is_array( $form_values ) ? $form_values : [];
+	$payment_method = sanitize_text_field( (string) $request->get_param( 'paymentMethod' ) );
+
+	$endpoint = trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $slug )
+		. '/hosted-links/' . rawurlencode( $link_id ) . '/orders';
+	$response = wp_remote_post(
+		$endpoint,
+		[
+			'headers' => [
+				'X-Api-Token'  => $conn['apiToken'],
+				'Content-Type' => 'application/json',
+				'Accept'       => 'application/json',
+			],
+			'body'    => wp_json_encode(
+				[ 'formValues' => $form_values, 'items' => $items, 'paymentMethod' => $payment_method ]
+			),
+			'timeout' => 30,
+		]
+	);
+	if ( is_wp_error( $response ) ) {
+		return new WP_Error( 'xpressui_order_failed', $response->get_error_message(), [ 'status' => 502 ] );
+	}
+	$code = (int) wp_remote_retrieve_response_code( $response );
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( $code < 200 || $code >= 300 ) {
+		$detail = ( is_array( $body ) && ! empty( $body['detail'] ) && is_string( $body['detail'] ) )
+			? $body['detail']
+			: __( 'Order could not be created.', 'xpressui-bridge' );
+		return new WP_Error( 'xpressui_order_failed', $detail, [ 'status' => 502 ] );
+	}
+	return rest_ensure_response( is_array( $body ) ? $body : [] );
 }
 
 function xpressui_submission_permissions_check( WP_REST_Request $request ) {

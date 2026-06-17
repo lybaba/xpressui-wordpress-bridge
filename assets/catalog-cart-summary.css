@@ -1,0 +1,327 @@
+/**
+ * Headless WordPress cart-summary styles.
+ *
+ * Ported verbatim from the SaaS cart-summary-page.html.j2 so the WP order summary
+ * matches the SaaS pixel-for-pixel. The --cs-* variables are mapped onto the
+ * --template-* theme variables the embed already emits (see catalog-render.php),
+ * and .cs-page is adapted to blend into the host WordPress page instead of
+ * behaving as a full-viewport shell.
+ */
+.xpressui-cart-summary {
+  --cs-primary: var(--template-primary, #2563eb);
+  --cs-surface: var(--template-surface, #ffffff);
+  --cs-bg: var(--template-page-background, #edf3fb);
+  --cs-text: var(--template-text, #0f172a);
+  --cs-border: var(--template-border, #d7e0ea);
+  --cs-muted: color-mix(in srgb, var(--cs-text) 54%, transparent);
+  --cs-soft-border: color-mix(in srgb, var(--cs-border) 62%, transparent);
+  --cs-radius-card: var(--template-card-radius, 20px);
+  --cs-radius-btn: var(--template-button-radius, 14px);
+  color: var(--cs-text);
+}
+.xpressui-cart-summary *, .xpressui-cart-summary *::before, .xpressui-cart-summary *::after { box-sizing: border-box; }
+.xpressui-cart-summary .cs-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(8px, 2vw, 24px) 0;
+}
+.xpressui-cart-summary .cs-card {
+  width: 100%;
+  max-width: 680px;
+  background: var(--cs-surface);
+  border-radius: var(--cs-radius-card);
+  border: 1px solid var(--cs-border);
+  box-shadow: 0 26px 70px -46px rgba(15, 23, 42, 0.55), 0 2px 10px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+.xpressui-cart-summary .cs-header {
+  padding: 22px 28px 20px;
+  border-bottom: 1px solid var(--cs-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.xpressui-cart-summary .cs-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.xpressui-cart-summary .cs-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--cs-soft-border);
+  border-radius: 999px;
+  color: var(--cs-muted);
+  text-decoration: none;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  flex-shrink: 0;
+}
+.xpressui-cart-summary .cs-back:hover {
+  color: var(--cs-primary);
+  border-color: color-mix(in srgb, var(--cs-primary) 30%, var(--cs-border));
+  background: color-mix(in srgb, var(--cs-primary) 6%, var(--cs-surface));
+}
+.xpressui-cart-summary .cs-back svg { flex-shrink: 0; }
+.xpressui-cart-summary .cs-header-titles { min-width: 0; }
+.xpressui-cart-summary .cs-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cs-primary);
+  margin: 0 0 3px;
+}
+.xpressui-cart-summary .cs-title {
+  font-size: 24px;
+  line-height: 1.08;
+  font-weight: 850;
+  color: var(--cs-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xpressui-cart-summary .cs-items { padding: 6px 0; list-style: none; margin: 0; }
+.xpressui-cart-summary .cs-item {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(118px, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--cs-soft-border);
+  transition: background 0.12s;
+}
+.xpressui-cart-summary .cs-item:hover { background: color-mix(in srgb, var(--cs-bg) 38%, var(--cs-surface)); }
+.xpressui-cart-summary .cs-item:last-child { border-bottom: none; }
+.xpressui-cart-summary .cs-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--cs-bg);
+  border: 1px solid var(--cs-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.12s, transform 0.12s;
+}
+.xpressui-cart-summary .cs-thumb:hover {
+  border-color: color-mix(in srgb, var(--cs-primary) 42%, var(--cs-border));
+  transform: translateY(-1px);
+}
+.xpressui-cart-summary .cs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xpressui-cart-summary .cs-thumb-empty { color: color-mix(in srgb, var(--cs-text) 25%, transparent); }
+.xpressui-cart-summary .cs-item-body { min-width: 0; display: grid; gap: 8px; }
+.xpressui-cart-summary .cs-item-label {
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 750;
+  color: var(--cs-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.xpressui-cart-summary .cs-item-link { color: inherit; text-decoration: none; }
+.xpressui-cart-summary .cs-item-link:hover { color: var(--cs-primary); }
+.xpressui-cart-summary .cs-item-qty { font-size: 12px; color: var(--cs-muted); margin: 0; }
+.xpressui-cart-summary .cs-item-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.xpressui-cart-summary .cs-stepper {
+  display: inline-grid;
+  grid-template-columns: 42px minmax(44px, auto) 42px;
+  align-items: center;
+  height: 44px;
+  border: 1.5px solid var(--cs-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--cs-surface);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.xpressui-cart-summary .cs-stepper:focus-within {
+  border-color: var(--cs-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cs-primary) 16%, transparent);
+}
+.xpressui-cart-summary .cs-stepper-btn,
+.xpressui-cart-summary .cs-remove {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--cs-text);
+  font: inherit;
+  cursor: pointer;
+}
+.xpressui-cart-summary .cs-stepper-btn { width: 100%; height: 100%; font-size: 16px; line-height: 1; font-weight: 700; }
+.xpressui-cart-summary .cs-stepper-btn:hover { background: color-mix(in srgb, var(--cs-text) 7%, transparent); }
+.xpressui-cart-summary .cs-stepper-btn:active { background: color-mix(in srgb, var(--cs-text) 13%, transparent); }
+.xpressui-cart-summary .cs-stepper-qty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 34px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-inline: 1.5px solid var(--cs-border);
+}
+.xpressui-cart-summary .cs-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: #b91c1c;
+}
+.xpressui-cart-summary .cs-remove svg { width: 16px; height: 16px; display: block; }
+.xpressui-cart-summary .cs-remove:hover { background: #fee2e2; }
+.xpressui-cart-summary .cs-item-subtotal {
+  justify-self: end;
+  font-size: 15px;
+  font-weight: 850;
+  color: var(--cs-text);
+  text-align: right;
+  white-space: nowrap;
+}
+.xpressui-cart-summary .cs-totals {
+  padding: 18px 28px;
+  border-top: 1px solid var(--cs-border);
+  background: color-mix(in srgb, var(--cs-bg) 50%, var(--cs-surface));
+}
+.xpressui-cart-summary .cs-totals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--cs-muted);
+  padding: 5px 0;
+}
+.xpressui-cart-summary .cs-totals-row strong { color: var(--cs-text); font-weight: 800; }
+.xpressui-cart-summary .cs-totals-row--total {
+  font-size: 19px;
+  line-height: 1.2;
+  font-weight: 850;
+  color: var(--cs-text);
+  padding-top: 14px;
+  margin-top: 8px;
+}
+.xpressui-cart-summary .cs-footer {
+  padding: 18px 28px 28px;
+  border-top: 1px solid var(--cs-border);
+  background: var(--cs-surface);
+}
+.xpressui-cart-summary .cs-cta {
+  display: block;
+  width: 100%;
+  padding: 15px 20px;
+  background: var(--cs-primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 850;
+  text-align: center;
+  border: none;
+  border-radius: var(--cs-radius-btn);
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 16px 28px -20px color-mix(in srgb, var(--cs-primary) 80%, black);
+  transition: opacity 0.12s, transform 0.1s, box-shadow 0.12s;
+  letter-spacing: 0.01em;
+}
+.xpressui-cart-summary .cs-cta:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px -20px color-mix(in srgb, var(--cs-primary) 90%, black);
+}
+.xpressui-cart-summary .cs-cta:active { transform: translateY(0); }
+.xpressui-cart-summary .cs-cta-arrow { margin-left: 6px; opacity: 0.85; }
+.xpressui-cart-summary .cs-cta[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
+.xpressui-cart-summary .cs-empty {
+  padding: 40px 28px;
+  text-align: center;
+  color: var(--cs-muted);
+  font-size: 15px;
+}
+/* ── Collapsed in-form order summary (parity with the SaaS hosted form) ── */
+/* Ported verbatim from services/api/app/templates/hosted/cart-summary.css so the
+   WP checkout-form order summary matches the SaaS: a collapsed <details> bar inside
+   the form card, expandable to the line items. */
+.xpui-cart-summary{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:0;margin-bottom:1.25rem;font-size:.9rem;overflow:hidden}
+.xpui-cs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.85rem 1.25rem;cursor:pointer;list-style:none}
+.xpui-cs-header::-webkit-details-marker{display:none}
+.xpui-cs-header::after{content:"";width:.5rem;height:.5rem;border-right:2px solid #64748b;border-bottom:2px solid #64748b;transform:rotate(45deg);transition:transform 160ms ease;flex:0 0 auto}
+.xpui-cart-summary[open] .xpui-cs-header::after{transform:rotate(225deg)}
+.xpui-cs-title{font-weight:700;color:#0f172a}
+.xpui-cs-header-total{margin-left:auto;color:#0f172a;font-weight:800;white-space:nowrap}
+.xpui-cs-body{border-top:1px solid #e2e8f0;padding:.65rem 1.25rem .9rem}
+.xpui-cs-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.35rem 0;color:#334155}
+.xpui-cs-item{display:flex;align-items:center;min-width:0;gap:.65rem}
+.xpui-cs-thumb{width:42px;height:42px;flex:0 0 42px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;background:#fff}
+.xpui-cs-label{display:grid;gap:.18rem;min-width:0}
+.xpui-cs-label-main{color:#0f172a;font-weight:700;line-height:1.25}
+.xpui-cs-qty{margin-left:.3em;color:#64748b;font-size:.85em}
+.xpui-cs-amount{font-weight:500;white-space:nowrap}
+@media (max-width:520px){.xpui-cs-row{align-items:flex-start}.xpui-cs-thumb{width:36px;height:36px;flex-basis:36px}.xpui-cs-amount{font-size:.84rem}}
+
+/* ── Checkout payment-method selector ───────────────────────────── */
+.xpui-checkout-payment {
+  --cs-primary: var(--template-primary, #2563eb);
+  --cs-surface: var(--template-surface, #ffffff);
+  --cs-text: var(--template-text, #0f172a);
+  --cs-border: var(--template-border, #d7e0ea);
+  --cs-radius-card: var(--template-card-radius, 20px);
+  width: 100%;
+  max-width: 680px;
+  margin: 16px auto 0;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius-card);
+  padding: 20px 24px;
+  box-sizing: border-box;
+  color: var(--cs-text);
+}
+.xpui-checkout-payment-title { margin: 0 0 12px; font-size: 14px; font-weight: 800; letter-spacing: 0.01em; }
+.xpui-payment-methods { display: grid; gap: 10px; }
+.xpui-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--cs-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.xpui-payment-method:hover { border-color: color-mix(in srgb, var(--cs-primary) 40%, var(--cs-border)); }
+.xpui-payment-method:has(input:checked) {
+  border-color: var(--cs-primary);
+  background: color-mix(in srgb, var(--cs-primary) 6%, var(--cs-surface));
+}
+.xpui-payment-method input { width: 18px; height: 18px; accent-color: var(--cs-primary); flex: 0 0 auto; }
+.xpui-payment-method-label { font-size: 14px; font-weight: 650; }
+.xpui-payment-instructions {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cs-primary) 6%, var(--cs-surface));
+  border: 1px solid color-mix(in srgb, var(--cs-primary) 22%, var(--cs-border));
+  font-size: 13px;
+  line-height: 1.5;
+}
+.xpui-payment-instructions p { margin: 0 0 6px; }
+.xpui-payment-instructions p:last-child { margin-bottom: 0; }
+.xpui-payment-merchant { font-weight: 800; }
+.xpui-payment-iban { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+@media (max-width: 640px) {
+  .xpui-checkout-payment { padding-inline: 18px; }
+  .xpressui-cart-summary .cs-header { align-items: flex-start; padding-inline: 18px; }
+  .xpressui-cart-summary .cs-heading { align-items: flex-start; }
+  .xpressui-cart-summary .cs-title { font-size: 21px; }
+  .xpressui-cart-summary .cs-item { grid-template-columns: 56px minmax(0, 1fr); align-items: start; padding: 14px 18px; }
+  .xpressui-cart-summary .cs-thumb { width: 56px; height: 56px; border-radius: 12px; }
+  .xpressui-cart-summary .cs-item-subtotal { grid-column: 2; justify-self: start; margin-top: -2px; }
+  .xpressui-cart-summary .cs-footer, .xpressui-cart-summary .cs-totals { padding-inline: 18px; }
+}

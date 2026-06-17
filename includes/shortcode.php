@@ -596,11 +596,14 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Headless product catalog: when this hosted link fronts a product catalog and the
 	// snapshot was synced (hosted-links/<id>/catalogs/catalog.json), render the storefront
-	// grid server-side (SEO/LCP) instead of the form. Cart + checkout are wired by the
-	// self-contained SaaS catalog-init.js; checkout completes on the SaaS hosted-link
-	// form. The storefront is not subject to form expiry/submission gating, so this
-	// returns before the link-status checks below. See includes/catalog-render.php.
-	if ( $link_attr !== '' && is_array( $link_config ) ) {
+	// (grid / product detail / cart summary) server-side (SEO/LCP) instead of the form.
+	// The whole journey stays on WordPress. The final checkout step (?xpui_checkout=1)
+	// falls through to the hosted-link FORM below, which collects the order and submits
+	// to WordPress — so it is excluded here. The storefront is not subject to form
+	// expiry/submission gating, so this returns before the link-status checks below.
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
+	$is_catalog_checkout = ! empty( $_GET['xpui_checkout'] );
+	if ( $link_attr !== '' && is_array( $link_config ) && ! $is_catalog_checkout ) {
 		$fc_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$front_catalog   = is_array( $fc_presentation['frontCatalog'] ?? null ) ? $fc_presentation['frontCatalog'] : [];
 		if ( ! empty( $front_catalog['catalogId'] ) ) {
@@ -1060,6 +1063,53 @@ function xpressui_render_shortcode( $atts ) {
 			$fragment_html = substr( $fragment_html, 0, $form_pos ) . $prelude_html . substr( $fragment_html, $form_pos );
 		} else {
 			$fragment_html = $prelude_html . $fragment_html;
+		}
+	}
+
+	// Catalog checkout (?xpui_checkout=1): show the read-only Order summary above the
+	// form, mirroring the SaaS checkout form. The cart is read from localStorage by
+	// catalog-cart-summary.js; nothing is fetched from the SaaS for this block.
+	$checkout_order_summary = '';
+	if ( $is_catalog_checkout && $link_attr !== '' && is_array( $link_config ) ) {
+		$co_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
+		$co_front        = is_array( $co_presentation['frontCatalog'] ?? null ) ? $co_presentation['frontCatalog'] : [];
+		if ( ! empty( $co_front['catalogId'] ) ) {
+			$co_catalog = xpressui_get_hosted_link_catalog( $slug, $link_attr );
+			if ( is_array( $co_catalog ) ) {
+				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
+				$checkout_order_summary  = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+				$checkout_order_summary .= xpressui_render_checkout_payment_methods( is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [] );
+
+				// Save the catalog order in WordPress by default: inject the localStorage
+				// cart + chosen payment method into the form as hidden fields so the normal
+				// submit to xpressui/v1/submit stores the order in the WP submission inbox.
+				// (A future opt-in paid "bypass" can POST to the SaaS orders endpoint
+				// instead — the REST proxy is already in place.)
+				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
+				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
+				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
+				wp_localize_script(
+					'xpressui-catalog-checkout',
+					'xpressuiCatalogCheckout',
+					[
+						'slug'       => $slug,
+						'storageKey' => xpressui_catalog_cart_storage_key( $link_attr, (string) ( $co_catalog['catalog_id'] ?? '' ) ),
+						'returnUrl'  => $co_grid,
+					]
+				);
+			}
+		}
+	}
+
+	// Inject the catalog checkout order summary + payment selector INSIDE the form card,
+	// right before <form> — parity with the SaaS hosted checkout (the collapsed order
+	// summary sits inside the form card, above the fields).
+	if ( '' !== $checkout_order_summary ) {
+		$co_form_pos = strpos( $fragment_html, '<form' );
+		if ( false !== $co_form_pos ) {
+			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_order_summary . substr( $fragment_html, $co_form_pos );
+		} else {
+			$fragment_html = $checkout_order_summary . $fragment_html;
 		}
 	}
 
