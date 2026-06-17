@@ -26,6 +26,44 @@ function xpressui_get_console_connection(): array {
 	return $conn;
 }
 
+/**
+ * Builds the "Edit on IntakeFlow" Console URL for a workflow.
+ *
+ * The console builder route is `/workflow/{ownerUid}/{slug}` (the `:userId` segment is
+ * the workspace owner_uid, stored on the connection). Falls back to the Console root
+ * when the owner_uid is missing (connection not re-saved since the upgrade) or no slug.
+ *
+ * @param string $slug Workflow slug.
+ * @return string
+ */
+function xpressui_console_workflow_url( string $slug ): string {
+	$conn  = xpressui_get_console_connection();
+	$base  = trailingslashit( (string) $conn['apiUrl'] );
+	$owner = (string) ( $conn['ownerUid'] ?? '' );
+	if ( '' === $owner || '' === $slug ) {
+		return $base;
+	}
+	return $base . 'workflow/' . rawurlencode( $owner ) . '/' . rawurlencode( $slug );
+}
+
+/**
+ * Builds the "Edit on IntakeFlow" Console URL for a hosted link.
+ *
+ * The console route is `/hosted-links/{linkId}/customize` (scoped by the logged-in
+ * session, so no owner_uid is needed).
+ *
+ * @param string $link_id Hosted link id.
+ * @return string
+ */
+function xpressui_console_hosted_link_url( string $link_id ): string {
+	$conn = xpressui_get_console_connection();
+	$base = trailingslashit( (string) $conn['apiUrl'] );
+	if ( '' === $link_id ) {
+		return $base;
+	}
+	return $base . 'hosted-links/' . rawurlencode( $link_id ) . '/customize';
+}
+
 function xpressui_render_console_connection_form(): void {
 	$conn = xpressui_get_console_connection();
 	?>
