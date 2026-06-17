@@ -412,7 +412,7 @@ function xpressui_render_time_slots_checkout() {
 
 	ob_start();
 	?>
-<details id="xpui-cart-summary" class="xpui-cart-summary" aria-label="<?php esc_attr_e( 'Booking summary', 'xpressui-bridge' ); ?>">
+<details id="xpui-cart-summary" class="xpui-cart-summary" open aria-label="<?php esc_attr_e( 'Booking summary', 'xpressui-bridge' ); ?>">
 	<summary class="xpui-cs-header">
 		<span class="xpui-cs-title"><?php esc_html_e( 'Booking summary', 'xpressui-bridge' ); ?></span>
 		<?php if ( '' !== $price_display ) : ?><strong class="xpui-cs-header-total"><?php echo esc_html( $price_display ); ?></strong><?php endif; ?>
