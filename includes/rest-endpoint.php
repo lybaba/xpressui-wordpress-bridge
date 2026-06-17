@@ -25,6 +25,11 @@ function xpressui_register_rest_routes() {
 		'callback'            => 'xpressui_handle_catalog_order',
 		'permission_callback' => '__return_true',
 	] );
+	register_rest_route( 'xpressui/v1', '/sync', [
+		'methods'             => 'POST',
+		'callback'            => 'xpressui_handle_sync_webhook',
+		'permission_callback' => 'xpressui_sync_permissions_check',
+	] );
 }
 
 /**
@@ -1121,4 +1126,108 @@ function xpressui_store_signature_attachments( $post_id, $payload ) {
 	}
 
 	return $payload;
+}
+
+/**
+ * Permissions check for the Console sync webhook.
+ *
+ * @param WP_REST_Request $request The REST request object.
+ * @return bool|WP_Error True if authorized, WP_Error otherwise.
+ */
+function xpressui_sync_permissions_check( WP_REST_Request $request ) {
+	$timestamp = $request->get_header( 'x-bridge-timestamp' );
+	$site_id   = $request->get_header( 'x-bridge-site-id' );
+	$signature = $request->get_header( 'x-bridge-signature' );
+
+	if ( empty( $timestamp ) || empty( $site_id ) || empty( $signature ) ) {
+		return new WP_Error(
+			'xpressui_webhook_missing_headers',
+			__( 'Missing security headers.', 'xpressui-bridge' ),
+			[ 'status' => 401 ]
+		);
+	}
+
+	$conn          = xpressui_get_console_connection();
+	$shared_secret = $conn['sharedSecret'] ?? $conn['shared_secret'] ?? '';
+
+	if ( empty( $shared_secret ) ) {
+		return new WP_Error(
+			'xpressui_webhook_not_configured',
+			__( 'Webhook synchronization is not configured (missing shared secret).', 'xpressui-bridge' ),
+			[ 'status' => 403 ]
+		);
+	}
+
+	$method    = 'POST';
+	$path      = '/wp-json/xpressui/v1/sync';
+	$body      = $request->get_body();
+	$body_hash = hash( 'sha256', $body );
+
+	$payload = implode(
+		"\n",
+		[
+			strtoupper( $method ),
+			$path,
+			$timestamp,
+			$site_id,
+			$body_hash,
+		]
+	);
+
+	$expected = hash_hmac( 'sha256', $payload, $shared_secret );
+
+	if ( 0 === strpos( (string) $signature, 'v1=' ) ) {
+		$signature = substr( (string) $signature, 3 );
+	}
+
+	if ( ! hash_equals( $expected, (string) $signature ) ) {
+		return new WP_Error(
+			'xpressui_webhook_invalid_signature',
+			__( 'Invalid signature.', 'xpressui-bridge' ),
+			[ 'status' => 403 ]
+		);
+	}
+
+	return true;
+}
+
+/**
+ * Handle sync webhook from the IntakeFlow Console.
+ *
+ * @param WP_REST_Request $request The REST request object.
+ * @return WP_REST_Response Response object.
+ */
+function xpressui_handle_sync_webhook( WP_REST_Request $request ): WP_REST_Response {
+	$body       = json_decode( $request->get_body(), true );
+	$project_id = sanitize_text_field( (string) ( $body['projectSlug'] ?? $body['projectId'] ?? '' ) );
+
+	if ( empty( $project_id ) ) {
+		return new WP_REST_Response(
+			[
+				'success' => false,
+				'message' => __( 'Missing project slug or ID.', 'xpressui-bridge' ),
+			],
+			400
+		);
+	}
+
+	$res = xpressui_sync_project( $project_id );
+	if ( is_wp_error( $res ) ) {
+		return new WP_REST_Response(
+			[
+				'success' => false,
+				'message' => $res->get_error_message(),
+			],
+			500
+		);
+	}
+
+	return new WP_REST_Response(
+		[
+			'success' => true,
+			'slug'    => $res['slug'],
+			'message' => __( 'Project synchronized successfully.', 'xpressui-bridge' ),
+		],
+		200
+	);
 }

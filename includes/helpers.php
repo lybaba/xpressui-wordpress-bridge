@@ -2951,3 +2951,20 @@ function xpressui_build_structured_item_summary( $item, $choice_map = [] ) {
 		? wp_json_encode( $item, JSON_UNESCAPED_SLASHES )
 		: implode( ' · ', $parts );
 }
+
+/**
+ * Retrieve metadata for all locally installed workflows (generatedAt timestamp).
+ *
+ * @return array Map of workflow slug to metadata array.
+ */
+function xpressui_get_local_workflows_metadata(): array {
+	$slugs = xpressui_get_installed_workflow_slugs();
+	$meta = [];
+	foreach ( $slugs as $slug ) {
+		$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+		$meta[ $slug ] = [
+			'generatedAt' => $manifest_meta['generatedAt'] ?? '',
+		];
+	}
+	return $meta;
+}

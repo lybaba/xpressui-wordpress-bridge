@@ -12,43 +12,47 @@ defined( 'ABSPATH' ) || exit;
 // ---------------------------------------------------------------------------
 
 add_action( 'admin_menu', 'xpressui_pro_register_console_link', 20 );
-add_action( 'admin_footer', 'xpressui_pro_patch_console_menu_link' );
 
 function xpressui_pro_register_console_link(): void {
 	add_submenu_page(
 		'edit.php?post_type=xpressui_submission',
 		__( 'IntakeFlow Console', 'xpressui-bridge' ),
-		__( '↗ Console', 'xpressui-bridge' ),
+		__( 'Console', 'xpressui-bridge' ),
 		'manage_options',
-		'xpressui-console-redirect',
-		'xpressui_pro_redirect_to_console'
+		'xpressui-console',
+		'xpressui_render_embedded_console'
 	);
 }
 
-function xpressui_pro_patch_console_menu_link(): void {
-	$console_url = (string) wp_json_encode( xpressui_pro_get_console_url() );
-	wp_print_inline_script_tag(
-		"(function () {
-			document.querySelectorAll( '#adminmenu a[href*=\"xpressui-console-redirect\"]' ).forEach( function ( link ) {
-				link.href = {$console_url};
-				link.target = '_blank';
-				link.rel = 'noopener noreferrer';
-			} );
-		}());"
-	);
-}
+function xpressui_render_embedded_console(): void {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'Insufficient permissions.', 'xpressui-bridge' ) );
+	}
 
-function xpressui_pro_get_console_url(): string {
-	return 'https://app.intakeflow.dev';
-}
+	$conn = xpressui_get_console_connection();
+	$console_url = trailingslashit( $conn['apiUrl'] ?? 'https://app.intakeflow.dev' ) . '?embed=wordpress';
+	$api_token = $conn['apiToken'] ?? '';
 
-function xpressui_pro_redirect_to_console(): void {
-	$console_url = (string) wp_json_encode( xpressui_pro_get_console_url() );
-	$back_url    = (string) wp_json_encode( admin_url( 'edit.php?post_type=xpressui_submission' ) );
-	wp_print_inline_script_tag(
-		"(function () {
-			window.open( {$console_url}, '_blank', 'noopener,noreferrer' );
-			window.location.href = {$back_url};
-		}());"
-	);
+	?>
+	<div class="wrap xpressui-console-wrap" style="margin: 0; height: calc(100vh - 32px); position: relative;">
+		<div id="xpressui-console-loader" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: #f0f0f1; z-index: 10;">
+			<div style="text-align: center;">
+				<span class="spinner is-active" style="float: none; margin: 0 0 10px 0;"></span>
+				<p style="font-size: 14px; color: #646970;"><?php esc_html_e( 'Loading IntakeFlow Console...', 'xpressui-bridge' ); ?></p>
+			</div>
+		</div>
+		<iframe id="xpressui-console-iframe" src="<?php echo esc_url( $console_url ); ?>" style="width: 100%; height: 100%; border: none; display: none;" allow="clipboard-write"></iframe>
+	</div>
+	
+	<style>
+		/* Remove WP admin padding for a full-screen experience */
+		#wpbody-content {
+			padding-bottom: 0 !important;
+		}
+		.xpressui-console-wrap {
+			max-width: 100% !important;
+		}
+	</style>
+
+	<?php
 }

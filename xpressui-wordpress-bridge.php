@@ -157,14 +157,42 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			'xpressui-bridge-admin-wf',
 			'xpressuiBridgeAdmin',
 			[
-				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-				'settingsMap' => [],
-				'i18n'        => [
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'settingsMap'    => [],
+				'localWorkflows' => xpressui_get_local_workflows_metadata(),
+				'nonce'          => wp_create_nonce( 'xpressui_console_sync_nonce' ),
+				'i18n'           => [
 					'saving'        => __( 'Saving…', 'xpressui-bridge' ),
 					'saved'         => __( 'Saved.', 'xpressui-bridge' ),
 					'error'         => __( 'Error.', 'xpressui-bridge' ),
 					'networkError'  => __( 'Network error.', 'xpressui-bridge' ),
 					'toggleSection' => __( 'Toggle section', 'xpressui-bridge' ),
+					'outOfSync'     => __( 'Out of Sync', 'xpressui-bridge' ),
+				],
+			]
+		);
+	}
+
+	if ( 'xpressui_submission_page_xpressui-console' === $screen->id ) {
+		wp_enqueue_script(
+			'xpressui-bridge-admin-console',
+			XPRESSUI_BRIDGE_URL . 'assets/admin-console.js',
+			[ 'jquery' ],
+			XPRESSUI_BRIDGE_VERSION,
+			true
+		);
+		$conn = xpressui_get_console_connection();
+		wp_localize_script(
+			'xpressui-bridge-admin-console',
+			'xpressuiBridgeConsole',
+			[
+				'apiUrl'   => $conn['apiUrl'] ?? 'https://app.intakeflow.dev',
+				'apiToken' => $conn['apiToken'] ?? '',
+				'nonce'    => wp_create_nonce( 'xpressui_console_sync_nonce' ),
+				'i18n'     => [
+					'syncing' => __( 'Synchronizing workflow updates...', 'xpressui-bridge' ),
+					'synced'  => __( 'Workflow synchronized successfully!', 'xpressui-bridge' ),
+					'failed'  => __( 'Sync failed.', 'xpressui-bridge' ),
 				],
 			]
 		);

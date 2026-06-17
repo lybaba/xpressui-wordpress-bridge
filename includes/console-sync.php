@@ -17,7 +17,7 @@ function xpressui_get_console_connection(): array {
 	$conn     = is_array( $stored ) ? array_merge( $defaults, $stored ) : $defaults;
 	if ( defined( 'XPRESSUI_CONSOLE_API_URL' ) ) {
 		$conn['apiUrl'] = XPRESSUI_CONSOLE_API_URL;
-	} else {
+	} elseif ( empty( $conn['apiUrl'] ) ) {
 		$conn['apiUrl'] = 'https://app.intakeflow.dev';
 	}
 	return $conn;
@@ -149,25 +149,14 @@ function xpressui_ajax_console_list_projects(): void {
 
 add_action( 'wp_ajax_xpressui_console_sync_project', 'xpressui_ajax_console_sync_project' );
 
-function xpressui_ajax_console_sync_project(): void {
-	check_ajax_referer( 'xpressui_console_sync_nonce', 'nonce' );
-
-	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'xpressui-bridge' ) ], 403 );
-	}
-
+function xpressui_sync_project( string $project_id ) {
 	if ( ! xpressui_pro_is_license_active() ) {
-		wp_send_json_error( [ 'message' => __( 'Console Sync requires an active Console Connection.', 'xpressui-bridge' ) ], 403 );
-	}
-
-	$project_id = sanitize_text_field( wp_unslash( (string) ( $_POST['project_id'] ?? '' ) ) );
-	if ( '' === $project_id ) {
-		wp_send_json_error( [ 'message' => __( 'Missing project_id.', 'xpressui-bridge' ) ] );
+		return new WP_Error( 'xpressui_sync_inactive_license', __( 'Console Sync requires an active Console Connection.', 'xpressui-bridge' ) );
 	}
 
 	$conn = xpressui_get_console_connection();
 	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
-		wp_send_json_error( [ 'message' => __( 'Console connection not configured.', 'xpressui-bridge' ) ] );
+		return new WP_Error( 'xpressui_sync_not_configured', __( 'Console connection not configured.', 'xpressui-bridge' ) );
 	}
 
 	$response = wp_remote_get(
@@ -181,20 +170,23 @@ function xpressui_ajax_console_sync_project(): void {
 	);
 
 	if ( is_wp_error( $response ) ) {
-		wp_send_json_error( [ 'message' => $response->get_error_message() ] );
+		return $response;
 	}
 
 	$code = wp_remote_retrieve_response_code( $response );
 	if ( 200 !== $code ) {
-		/* translators: %d: HTTP status code returned by the Console API */
-		wp_send_json_error( [ 'message' => sprintf( __( 'Download failed (status %d).', 'xpressui-bridge' ), $code ) ] );
+		return new WP_Error(
+			'xpressui_sync_download_failed',
+			/* translators: %d: HTTP status code returned by the Console API */
+			sprintf( __( 'Download failed (status %d).', 'xpressui-bridge' ), $code )
+		);
 	}
 
 	$zip_content = wp_remote_retrieve_body( $response );
 	$tmp_zip     = wp_tempnam( 'xpressui-sync' ) . '.zip';
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 	if ( false === file_put_contents( $tmp_zip, $zip_content ) ) {
-		wp_send_json_error( [ 'message' => __( 'Could not write temporary ZIP file.', 'xpressui-bridge' ) ] );
+		return new WP_Error( 'xpressui_sync_tmp_write_failed', __( 'Could not write temporary ZIP file.', 'xpressui-bridge' ) );
 	}
 
 	$content_disp  = wp_remote_retrieve_header( $response, 'content-disposition' );
@@ -207,13 +199,13 @@ function xpressui_ajax_console_sync_project(): void {
 	$inspection = xpressui_validate_workflow_zip( $tmp_zip, $original_name );
 	if ( is_wp_error( $inspection ) ) {
 		wp_delete_file( $tmp_zip );
-		wp_send_json_error( [ 'message' => $inspection->get_error_message() ] );
+		return $inspection;
 	}
 
 	$target_dir = xpressui_get_workflows_base_dir();
 	if ( '' === $target_dir ) {
 		wp_delete_file( $tmp_zip );
-		wp_send_json_error( [ 'message' => __( 'The uploads directory is not available.', 'xpressui-bridge' ) ] );
+		return new WP_Error( 'xpressui_sync_no_uploads_dir', __( 'The uploads directory is not available.', 'xpressui-bridge' ) );
 	}
 
 	if ( ! file_exists( $target_dir ) ) {
@@ -234,7 +226,7 @@ function xpressui_ajax_console_sync_project(): void {
 	wp_delete_file( $tmp_zip );
 
 	if ( is_wp_error( $unzip_result ) ) {
-		wp_send_json_error( [ 'message' => $unzip_result->get_error_message() ] );
+		return $unzip_result;
 	}
 
 	// Fetch and save hosted link configurations
@@ -321,10 +313,33 @@ function xpressui_ajax_console_sync_project(): void {
 		}
 	}
 
-	wp_send_json_success( [
+	return [
+		'success' => true,
 		'slug'    => $slug,
+	];
+}
+
+function xpressui_ajax_console_sync_project(): void {
+	check_ajax_referer( 'xpressui_console_sync_nonce', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'xpressui-bridge' ) ], 403 );
+	}
+
+	$project_id = sanitize_text_field( wp_unslash( (string) ( $_POST['project_id'] ?? '' ) ) );
+	if ( '' === $project_id ) {
+		wp_send_json_error( [ 'message' => __( 'Missing project_id.', 'xpressui-bridge' ) ] );
+	}
+
+	$res = xpressui_sync_project( $project_id );
+	if ( is_wp_error( $res ) ) {
+		wp_send_json_error( [ 'message' => $res->get_error_message() ] );
+	}
+
+	wp_send_json_success( [
+		'slug'    => $res['slug'],
 		/* translators: %s: installed workflow slug */
-		'message' => sprintf( __( 'Synced! Embed with: [xpressui id="%s"]', 'xpressui-bridge' ), $slug ),
+		'message' => sprintf( __( 'Synced! Embed with: [xpressui id="%s"]', 'xpressui-bridge' ), $res['slug'] ),
 	] );
 }
 

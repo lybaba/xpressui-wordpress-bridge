@@ -910,10 +910,42 @@ function xpressui_render_shortcode( $atts ) {
 
 	// Render the form fragment (HTML only; CSS and scripts are enqueued below).
 	// form-fragment.php lives in templates/ (not generated/) as it is manually maintained.
+	$is_preview = isset( $_GET['xpui_preview'] ) && '1' === $_GET['xpui_preview'] && current_user_can( 'manage_options' );
+ 
+	if ( $is_preview ) {
+		$captured_errors = [];
+		set_error_handler( function( $severity, $message, $file, $line ) use ( &$captured_errors ) {
+			if ( error_reporting() & $severity ) {
+				$captured_errors[] = sprintf(
+					'[%s] %s in %s:%d',
+					( E_NOTICE === $severity || E_USER_NOTICE === $severity ) ? 'Notice' : 'Warning',
+					$message,
+					basename( $file ),
+					$line
+				);
+			}
+			return true;
+		} );
+	}
+
 	ob_start();
 	$xpressui_ctx = $template_context;
 	include $fragment_path;
 	$fragment_html = (string) ob_get_clean();
+
+	if ( $is_preview ) {
+		restore_error_handler();
+		if ( ! empty( $captured_errors ) ) {
+			$errors_html = '<div class="xpressui-sandbox-errors" style="background:#fef2f2; border:1px solid #ef4444; padding:12px; margin-bottom:15px; border-radius:4px; font-family:monospace; font-size:12px; color:#b91c1c;">'
+				. '<strong style="display:block;margin-bottom:6px;">' . esc_html__( 'PHP Template Errors/Warnings:', 'xpressui-bridge' ) . '</strong>'
+				. '<ul style="margin:0;padding-left:20px;list-style:disc;">';
+			foreach ( $captured_errors as $err ) {
+				$errors_html .= '<li>' . esc_html( $err ) . '</li>';
+			}
+			$errors_html .= '</ul></div>';
+			$fragment_html = $errors_html . $fragment_html;
+		}
+	}
 
 	// -----------------------------------------------------------------
 	// Enqueue the bundled XPressUI light runtime.
@@ -1148,6 +1180,12 @@ function xpressui_render_shortcode( $atts ) {
 		. $fragment_html
 		. $config_tag
 		. '</div>';
+
+	if ( $is_preview ) {
+		$preview_style = 'border: 3px dashed #ffb900; padding: 15px; margin: 15px 0; background: #fffdf5; position: relative; border-radius: 4px;';
+		$preview_badge = '<div style="position: absolute; top: -12px; left: 15px; background: #ffb900; color: #000; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 3px; font-family: -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Oxygen-Sans,Ubuntu,Cantarell,\'Helvetica Neue\',sans-serif; text-transform: uppercase;">' . esc_html__( 'Sandbox Preview Mode', 'xpressui-bridge' ) . '</div>';
+		$html_out = '<div class="xpressui-sandbox-preview-container" style="' . esc_attr( $preview_style ) . '">' . $preview_badge . $html_out . '</div>';
+	}
 
 	return wp_kses( $html_out, xpressui_get_shell_allowed_html() );
 }
