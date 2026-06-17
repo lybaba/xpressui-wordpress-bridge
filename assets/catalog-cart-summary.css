@@ -263,6 +263,10 @@
 .xpui-cs-label-main{color:#0f172a;font-weight:700;line-height:1.25}
 .xpui-cs-qty{margin-left:.3em;color:#64748b;font-size:.85em}
 .xpui-cs-amount{font-weight:500;white-space:nowrap}
+/* Booking date emphasis (parity with the SaaS booking summary): the booking window
+   is shown as a highlighted pill so the date stands out. */
+.xpui-cs-meta{color:#475569;font-size:.84rem;line-height:1.35}
+.xpui-cs-meta--booking-period{display:inline-flex;width:fit-content;max-width:100%;margin-top:.15rem;padding:.26rem .56rem;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-weight:800;line-height:1.25}
 @media (max-width:520px){.xpui-cs-row{align-items:flex-start}.xpui-cs-thumb{width:36px;height:36px;flex-basis:36px}.xpui-cs-amount{font-size:.84rem}}
 
 /* ── Checkout payment-method selector ───────────────────────────── */
