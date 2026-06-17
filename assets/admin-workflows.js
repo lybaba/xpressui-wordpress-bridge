@@ -111,4 +111,46 @@
 			apply();
 		});
 	});
+
+	// --- Async freshness check ------------------------------------------------
+	if (cfg && cfg.localWorkflows && cfg.nonce) {
+		var localWorkflows = cfg.localWorkflows;
+		var nonce = cfg.nonce;
+		var data = new URLSearchParams();
+		data.set('action', 'xpressui_console_list_projects');
+		data.set('nonce', nonce);
+
+		fetch(ajaxUrl, { method: 'POST', body: data, credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (res) {
+				if (res.success && res.data && res.data.projects) {
+					var projects = res.data.projects;
+					projects.forEach(function (p) {
+						var slug = p.slug;
+						var local = localWorkflows[slug];
+						if (local && local.generatedAt && p.updatedAt) {
+							var localTime = new Date(local.generatedAt).getTime();
+							var remoteTime = new Date(p.updatedAt).getTime();
+							if (remoteTime > localTime + 2000) { // Add a small buffer of 2s for clock skew
+								// Find the row and append an "Out of Sync" warning badge
+								var row = document.querySelector('.xpressui-workflow-row[data-slug="' + slug + '"]');
+								if (row) {
+									var titleCell = row.querySelector('.column-title strong');
+									if (titleCell && !titleCell.querySelector('.xpressui-badge--out-of-sync')) {
+										var badge = document.createElement('span');
+										badge.className = 'xpressui-badge xpressui-badge--out-of-sync';
+										badge.style.cssText = 'margin-left: 8px; vertical-align: middle; background: #fff8e1; border: 1px solid #ffe082; color: #b78103; font-weight: 500; font-size: 11px; padding: 2px 6px; border-radius: 4px; display: inline-block;';
+										badge.textContent = i18n.outOfSync || 'Out of Sync';
+										titleCell.appendChild(badge);
+									}
+								}
+							}
+						}
+					});
+				}
+			})
+			.catch(function (err) {
+				console.error('Failed to run async sync freshness check:', err);
+			});
+	}
 }(window.xpressuiBridgeAdmin));

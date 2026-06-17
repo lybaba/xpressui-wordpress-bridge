@@ -260,7 +260,7 @@ function xpressui_render_workflows_page() {
 				'xpressui_filter_nonce'
 			);
 			
-			echo '<tr>';
+			echo '<tr class="xpressui-workflow-row" data-slug="' . esc_attr( $slug ) . '">';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			$display_name = $project_name !== '' ? $project_name : $slug;
 			
@@ -285,6 +285,11 @@ function xpressui_render_workflows_page() {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
 			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
+			if ( xpressui_pro_is_license_active() ) {
+				$conn = xpressui_get_console_connection();
+				$edit_url = trailingslashit( $conn['apiUrl'] ) . 'projects/' . $slug . '/edit';
+				$actions_html[] = '<span class="edit"><a href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Edit on IntakeFlow', 'xpressui-bridge' ) . '</a></span>';
+			}
 			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
 				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
 			}
@@ -976,6 +981,12 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	echo '</h1>';
 	if ( xpressui_pro_is_license_active() ) {
 		echo '<button type="button" id="xpressui-single-sync-btn" class="page-title-action button button-primary" style="margin-left: 10px;">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
+		$conn = xpressui_get_console_connection();
+		$edit_url = trailingslashit( $conn['apiUrl'] ) . 'projects/' . $slug . '/edit';
+		echo '<a href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener" class="page-title-action button button-secondary" style="margin-left: 10px; display: inline-flex; align-items: center; gap: 4px;">'
+			. '<span class="dashicons dashicons-external" style="font-size: 14px; width: 14px; height: 14px; margin-top: 1px;"></span>'
+			. esc_html__( 'Edit on IntakeFlow', 'xpressui-bridge' )
+			. '</a>';
 	}
 	echo '<hr class="wp-header-end">';
 	echo '<div id="xpressui-single-sync-container"></div>';
@@ -1095,8 +1106,15 @@ function xpressui_render_workflow_detail_page( $slug ) {
 			'xpressui_create_workflow_page_' . $slug . '_' . $link['id']
 		);
 
+		$edit_link_html = '';
+		if ( xpressui_pro_is_license_active() ) {
+			$conn = xpressui_get_console_connection();
+			$link_edit_url = trailingslashit( $conn['apiUrl'] ) . 'projects/' . $slug . '/links/' . $link['id'];
+			$edit_link_html = ' <a href="' . esc_url( $link_edit_url ) . '" target="_blank" rel="noopener" style="text-decoration:none;" title="' . esc_attr__( 'Edit on IntakeFlow', 'xpressui-bridge' ) . '"><span class="dashicons dashicons-external" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle; margin-left: 4px; color: #2271b1;"></span></a>';
+		}
+
 		echo '<tr>';
-		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . '</td>';
+		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . $edit_link_html . '</td>';
 		echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
 		
 		// Expiration Date column
