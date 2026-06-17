@@ -64,6 +64,37 @@ function xpressui_console_hosted_link_url( string $link_id ): string {
 	return $base . 'hosted-links/' . rawurlencode( $link_id ) . '/customize';
 }
 
+/**
+ * Fetches a short-lived embed ticket from the Console `POST /api/v1/auth/embed-ticket`
+ * (authenticated by the stored API token). The ticket is passed to the console iframe in
+ * the URL fragment so the SPA can exchange it for a session (SSO) without exposing the
+ * long-lived token to the browser.
+ *
+ * @param string $api_url   Console base URL.
+ * @param string $api_token API token.
+ * @return string The ticket, or '' if it could not be obtained.
+ */
+function xpressui_fetch_console_embed_ticket( string $api_url, string $api_token ): string {
+	if ( '' === $api_url || '' === $api_token ) {
+		return '';
+	}
+	$response = wp_remote_post(
+		trailingslashit( $api_url ) . 'api/v1/auth/embed-ticket',
+		[
+			'headers' => [
+				'X-Api-Token' => $api_token,
+				'Accept'      => 'application/json',
+			],
+			'timeout' => 15,
+		]
+	);
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return '';
+	}
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	return is_array( $body ) ? sanitize_text_field( (string) ( $body['ticket'] ?? '' ) ) : '';
+}
+
 function xpressui_render_console_connection_form(): void {
 	$conn = xpressui_get_console_connection();
 	?>

@@ -33,6 +33,15 @@ function xpressui_render_embedded_console(): void {
 	$console_url = trailingslashit( $conn['apiUrl'] ?? 'https://app.intakeflow.dev' ) . '?embed=wordpress';
 	$api_token = $conn['apiToken'] ?? '';
 
+	// SSO the embedded console: resolve a short-lived ticket for the stored API token and
+	// pass it in the URL fragment (#ticket=…). The SPA exchanges it for a session on load,
+	// so the operator lands authenticated instead of on the logged-out landing page. The
+	// fragment is not sent to the server or as a referer, so the ticket is not logged.
+	$embed_ticket = xpressui_fetch_console_embed_ticket( (string) ( $conn['apiUrl'] ?? '' ), (string) $api_token );
+	if ( '' !== $embed_ticket ) {
+		$console_url .= '#ticket=' . $embed_ticket;
+	}
+
 	?>
 	<div class="wrap xpressui-console-wrap" style="margin: 0; height: calc(100vh - 32px); position: relative;">
 		<div id="xpressui-console-loader" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: #f0f0f1; z-index: 10;">
