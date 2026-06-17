@@ -1080,10 +1080,16 @@ function xpressui_render_shortcode( $atts ) {
 			if ( 'time_slots' === $co_kind ) {
 				// Time-slots checkout: the chosen slot is carried in the query params the
 				// booking redirect appends. Render the collapsed Booking summary (inside the
-				// form card, parity with the SaaS) + capture the slot in the submission.
+				// form card, parity with the SaaS).
 				$ts_checkout            = xpressui_render_time_slots_checkout();
 				$checkout_order_summary = $ts_checkout['summary'];
-				$checkout_form_fields   = $ts_checkout['fields'];
+				// Persist the booking in the WP submission: catalog-checkout.js intercepts the
+				// runtime submit and merges the slot (read from the URL params) into the payload
+				// — the runtime only serializes config fields, so DOM hidden inputs won't do.
+				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
+				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
+				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
+				wp_localize_script( 'xpressui-catalog-checkout', 'xpressuiCatalogCheckout', [ 'slug' => $slug ] );
 			}
 			// Product catalogs use a localStorage cart + order summary + payment selector.
 			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
