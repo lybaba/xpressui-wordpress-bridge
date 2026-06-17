@@ -40,6 +40,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/post-type.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/filters.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/metaboxes.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-pages.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-orders.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/instrumentation.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/rest-endpoint.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/shortcode.php';
@@ -92,6 +93,7 @@ add_action( 'admin_init', 'xpressui_handle_submission_status_action' );
 
 // --- Admin pages ---
 add_action( 'admin_menu', 'xpressui_register_admin_page' );
+add_action( 'admin_menu', 'xpressui_register_orders_page' );
 add_action( 'admin_menu', 'xpressui_register_settings_page' );
 add_action( 'admin_enqueue_scripts', 'xpressui_enqueue_admin_assets' );
 add_action( 'admin_init', 'xpressui_maybe_install_bundled_workflows' );

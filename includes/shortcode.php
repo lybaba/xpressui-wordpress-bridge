@@ -1080,9 +1080,11 @@ function xpressui_render_shortcode( $atts ) {
 				$checkout_order_summary  = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
 				$checkout_order_summary .= xpressui_render_checkout_payment_methods( is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [] );
 
-				// Route the checkout-form submit to the SaaS order (Stripe / manual) via
-				// the plugin REST proxy. The token stays server-side; the cart is read
-				// from localStorage and re-priced by the SaaS.
+				// Save the catalog order in WordPress by default: inject the localStorage
+				// cart + chosen payment method into the form as hidden fields so the normal
+				// submit to xpressui/v1/submit stores the order in the WP submission inbox.
+				// (A future opt-in paid "bypass" can POST to the SaaS orders endpoint
+				// instead — the REST proxy is already in place.)
 				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
 				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
 				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
@@ -1090,10 +1092,7 @@ function xpressui_render_shortcode( $atts ) {
 					'xpressui-catalog-checkout',
 					'xpressuiCatalogCheckout',
 					[
-						'restUrl'    => rest_url( 'xpressui/v1/catalog-order' ),
-						'nonce'      => wp_create_nonce( 'wp_rest' ),
 						'slug'       => $slug,
-						'linkId'     => $link_attr,
 						'storageKey' => xpressui_catalog_cart_storage_key( $link_attr, (string) ( $co_catalog['catalog_id'] ?? '' ) ),
 						'returnUrl'  => $co_grid,
 					]

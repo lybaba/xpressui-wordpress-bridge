@@ -1,33 +1,58 @@
 /**
- * Headless catalog checkout: route the checkout-form submit to the SaaS order.
+ * Headless catalog checkout — save the order in WordPress (default).
  *
- * On the catalog checkout page (?xpui_checkout=1) the hosted-link form collects the
- * customer info. This intercepts its submit (capture phase, before the runtime's own
- * submit handler — plugin-shell-init binds form 'submit' in bubble phase), gathers the
- * form values + the localStorage cart + the chosen payment method, and POSTs them to
- * the plugin's REST proxy, which calls the SaaS orders endpoint. The SaaS re-prices,
- * creates the submission, and returns a Stripe checkout URL (card → redirect) or a
- * created status (manual → clear cart + success). Config is injected via
- * window.xpressuiCatalogCheckout (wp_localize_script); absent → this is a no-op.
+ * The catalog checkout submission is stored in WordPress by default (the plugin's
+ * own submission inbox), NOT sent to the SaaS. This mirrors the SaaS cart-prefill:
+ * it injects the localStorage cart + chosen payment method into the checkout form as
+ * hidden fields (xpressuiProductCart / Total / Currency / Count / xpressuiPaymentMethod)
+ * so the form's normal submit to the WP REST endpoint carries the order. The cart is
+ * cleared once the submission succeeds.
+ *
+ * (A future, opt-in paid "bypass" can POST the same order straight to the SaaS cloud
+ * — the developer-token orders endpoint + REST proxy are already in place for that.)
+ *
+ * Config is injected via window.xpressuiCatalogCheckout (wp_localize_script); absent
+ * → no-op.
  */
 (function () {
   var cfg = window.xpressuiCatalogCheckout;
-  if (!cfg || !cfg.restUrl || !cfg.storageKey) { return; }
+  if (!cfg || !cfg.storageKey) { return; }
   var form = document.querySelector('.xpressui-inline-embed form');
   if (!form) { return; }
 
-  function readCartItems() {
+  function setHidden(name, value) {
+    var input = form.querySelector('input[type="hidden"][name="' + name + '"][data-xpui-cart]');
+    if (!input) {
+      input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.setAttribute('data-xpui-cart', '');
+      form.appendChild(input);
+    }
+    input.value = value;
+  }
+
+  function readCart() {
     try {
       var raw = window.localStorage.getItem(cfg.storageKey);
-      if (!raw) { return []; }
+      if (!raw) { return { items: [], total: 0, currency: '', count: 0 }; }
       var parsed = JSON.parse(raw);
       var cart = parsed && Array.isArray(parsed.cart) ? parsed.cart : [];
-      return cart
-        .map(function (it) {
-          return { id: String((it && it.id) || ''), quantity: Math.max(1, parseInt(it && it.quantity, 10) || 1) };
-        })
-        .filter(function (it) { return it.id; });
-    } catch (_err) { return []; }
+      var total = 0;
+      var count = 0;
+      var currency = '';
+      cart.forEach(function (it) {
+        if (!it || !it.id) { return; }
+        var q = Math.max(1, parseInt(it.quantity, 10) || 1);
+        var p = Number(it.price) || 0;
+        total += p * q;
+        count += q;
+        if (it.currency) { currency = it.currency; }
+      });
+      return { items: cart, total: total, currency: currency, count: count };
+    } catch (_err) {
+      return { items: [], total: 0, currency: '', count: 0 };
+    }
   }
 
   function selectedPaymentMethod() {
@@ -35,62 +60,30 @@
     return r ? r.value : '';
   }
 
-  function collectFormValues() {
-    var values = {};
-    try {
-      new FormData(form).forEach(function (value, key) {
-        if (key === 'xpui_payment_method') { return; }
-        if (value instanceof File) { return; } // files are not part of a catalog order
-        values[key] = value;
-      });
-    } catch (_err) {}
-    return values;
+  function syncHidden() {
+    var c = readCart();
+    setHidden('xpressuiProductCart', JSON.stringify(c.items));
+    setHidden('xpressuiProductTotal', String(c.total));
+    setHidden('xpressuiProductCurrency', c.currency);
+    setHidden('xpressuiProductCount', String(c.count));
+    setHidden('xpressuiPaymentMethod', selectedPaymentMethod());
   }
 
-  function goSuccess() {
-    try { window.localStorage.removeItem(cfg.storageKey); } catch (_err) {}
-    var sep = cfg.returnUrl && cfg.returnUrl.indexOf('?') === -1 ? '?' : '&';
-    window.location.href = (cfg.returnUrl || '/') + sep + 'xpuiCheckout=success';
-  }
+  syncHidden();
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.name === 'xpui_payment_method') { syncHidden(); }
+  });
+  // Re-sync right before submit in case the cart changed in another tab.
+  form.addEventListener('submit', function () { syncHidden(); }, true);
 
-  form.addEventListener(
-    'submit',
-    function (event) {
-      var items = readCartItems();
-      if (!items.length) { return; } // empty cart → let the form behave normally
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-      if (submitBtn) { submitBtn.disabled = true; }
-
-      fetch(cfg.restUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce || '' },
-        body: JSON.stringify({
-          projectSlug: cfg.slug,
-          linkId: cfg.linkId,
-          formValues: collectFormValues(),
-          items: items,
-          paymentMethod: selectedPaymentMethod(),
-        }),
-      })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d || {} }; }); })
-        .then(function (res) {
-          if (!res.ok) {
-            throw new Error(res.data.message || res.data.detail || 'Order failed');
-          }
-          if (res.data.checkoutUrl) {
-            window.location.href = res.data.checkoutUrl; // Stripe Checkout
-            return;
-          }
-          goSuccess(); // manual / no payment
-        })
-        .catch(function (err) {
-          if (submitBtn) { submitBtn.disabled = false; }
-          window.alert(err && err.message ? err.message : 'Order failed');
-        });
-    },
-    true // capture phase — run before the runtime's bubble-phase submit handler
-  );
+  // Clear the cart once the submission succeeds (the runtime shell flips to submitted).
+  try {
+    var observer = new MutationObserver(function () {
+      if (document.querySelector('[data-workflow-state="submitted"]')) {
+        try { window.localStorage.removeItem(cfg.storageKey); } catch (_err) {}
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-workflow-state'] });
+  } catch (_err) {}
 })();
