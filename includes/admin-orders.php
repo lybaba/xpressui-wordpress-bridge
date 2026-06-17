@@ -28,6 +28,40 @@ function xpressui_register_orders_page() {
 }
 
 /**
+ * Moves the "Orders" submenu item to right after "All Submissions" (the post-type
+ * default item), regardless of registration order. Runs late so every submenu is
+ * already registered.
+ */
+function xpressui_reorder_orders_submenu() {
+	global $submenu;
+	$parent = 'edit.php?post_type=xpressui_submission';
+	if ( empty( $submenu[ $parent ] ) || ! is_array( $submenu[ $parent ] ) ) {
+		return;
+	}
+	$orders_item = null;
+	foreach ( $submenu[ $parent ] as $item ) {
+		if ( isset( $item[2] ) && 'xpressui-orders' === $item[2] ) {
+			$orders_item = $item;
+			break;
+		}
+	}
+	if ( null === $orders_item ) {
+		return;
+	}
+	$rebuilt = [];
+	foreach ( $submenu[ $parent ] as $item ) {
+		if ( isset( $item[2] ) && 'xpressui-orders' === $item[2] ) {
+			continue; // drop the original; re-inserted right after "All Submissions"
+		}
+		$rebuilt[] = $item;
+		if ( isset( $item[2] ) && $parent === $item[2] ) {
+			$rebuilt[] = $orders_item;
+		}
+	}
+	$submenu[ $parent ] = array_values( $rebuilt );
+}
+
+/**
  * Extracts the product cart from a submission payload, or null when it is not a
  * catalog order. Reads from payload.values (runtime submit) or the payload root.
  *

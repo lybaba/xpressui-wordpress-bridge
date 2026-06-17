@@ -95,6 +95,7 @@ add_action( 'admin_init', 'xpressui_handle_submission_status_action' );
 add_action( 'admin_menu', 'xpressui_register_admin_page' );
 add_action( 'admin_menu', 'xpressui_register_orders_page' );
 add_action( 'admin_menu', 'xpressui_register_settings_page' );
+add_action( 'admin_menu', 'xpressui_reorder_orders_submenu', 999 );
 add_action( 'admin_enqueue_scripts', 'xpressui_enqueue_admin_assets' );
 add_action( 'admin_init', 'xpressui_maybe_install_bundled_workflows' );
 add_action( 'admin_init', 'xpressui_handle_workflow_admin_actions' );
