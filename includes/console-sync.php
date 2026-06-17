@@ -12,7 +12,10 @@ defined( 'ABSPATH' ) || exit;
 // ---------------------------------------------------------------------------
 
 function xpressui_get_console_connection(): array {
-	$defaults = [ 'apiUrl' => 'https://app.intakeflow.dev', 'apiToken' => '' ];
+	// `ownerUid` is the workspace owner identifier used in hosted/builder links
+	// (/hosted/{ownerUid}/{slug}, console /#/project/{ownerUid}/{slug}); it is resolved
+	// from the Console `GET /api/v1/me` when the connection is saved.
+	$defaults = [ 'apiUrl' => 'https://app.intakeflow.dev', 'apiToken' => '', 'ownerUid' => '' ];
 	$stored   = get_option( 'xpressui_console_connection', [] );
 	$conn     = is_array( $stored ) ? array_merge( $defaults, $stored ) : $defaults;
 	if ( defined( 'XPRESSUI_CONSOLE_API_URL' ) ) {
@@ -70,8 +73,48 @@ function xpressui_ajax_save_console_connection(): void {
 	}
 		$api_url   = isset( $_POST['xpressui_console_api_url'] ) ? esc_url_raw( trim( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_console_api_url'] ) ) ) ) : '';
 	$api_token = sanitize_text_field( wp_unslash( (string) ( $_POST['xpressui_console_api_token'] ?? '' ) ) );
-	update_option( 'xpressui_console_connection', [ 'apiUrl' => $api_url, 'apiToken' => $api_token ] );
-	wp_send_json_success( [ 'message' => __( 'Console connection saved.', 'xpressui-bridge' ) ] );
+	// Resolve the workspace owner_uid for this token (the identifier used in hosted /
+	// builder links) and store it alongside the connection so links can be rebuilt
+	// locally without a per-project round-trip.
+	$owner_uid = xpressui_fetch_console_owner_uid( $api_url, $api_token );
+
+	update_option( 'xpressui_console_connection', [
+		'apiUrl'   => $api_url,
+		'apiToken' => $api_token,
+		'ownerUid' => $owner_uid,
+	] );
+	wp_send_json_success( [
+		'message'  => __( 'Console connection saved.', 'xpressui-bridge' ),
+		'ownerUid' => $owner_uid,
+	] );
+}
+
+/**
+ * Fetches the workspace owner_uid for an API token from the Console `GET /api/v1/me`.
+ *
+ * @param string $api_url   Console base URL.
+ * @param string $api_token API token.
+ * @return string The ownerUid, or '' if it could not be resolved (bad token / network).
+ */
+function xpressui_fetch_console_owner_uid( string $api_url, string $api_token ): string {
+	if ( '' === $api_url || '' === $api_token ) {
+		return '';
+	}
+	$response = wp_remote_get(
+		trailingslashit( $api_url ) . 'api/v1/me',
+		[
+			'headers' => [
+				'X-Api-Token' => $api_token,
+				'Accept'      => 'application/json',
+			],
+			'timeout' => 15,
+		]
+	);
+	if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+		return '';
+	}
+	$body = json_decode( wp_remote_retrieve_body( $response ), true );
+	return is_array( $body ) ? sanitize_text_field( (string) ( $body['ownerUid'] ?? '' ) ) : '';
 }
 
 // ---------------------------------------------------------------------------
