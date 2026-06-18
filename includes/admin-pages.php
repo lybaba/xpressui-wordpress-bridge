@@ -163,7 +163,14 @@ function xpressui_render_workflows_page() {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
 	}
 
-	$view = isset( $_GET['xpressui_view'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_view'] ) ) : 'list';
+	// The "Details" links carry a nonce (see wp_nonce_url on $detail_url below); verify it
+	// before using the routing params, and fall back to the list view when it is absent or
+	// invalid (e.g. a stale bookmark). This satisfies nonce verification without an ignore.
+	$view       = 'list';
+	$view_nonce = isset( $_GET['xpressui_view_nonce'] ) ? sanitize_key( wp_unslash( $_GET['xpressui_view_nonce'] ) ) : '';
+	if ( $view_nonce && wp_verify_nonce( $view_nonce, 'xpressui_view_workflow' ) ) {
+		$view = isset( $_GET['xpressui_view'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_view'] ) ) : 'list';
+	}
 	if ( 'detail' === $view ) {
 		$slug = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
 		if ( $slug !== '' && xpressui_is_installed_workflow( $slug ) ) {
@@ -245,14 +252,18 @@ function xpressui_render_workflows_page() {
 				),
 				'xpressui_delete_workflow_' . $slug
 			);
-			$detail_url = add_query_arg(
-				[
-					'post_type'     => 'xpressui_submission',
-					'page'          => 'xpressui-bridge',
-					'xpressui_view' => 'detail',
-					'xpressui_slug' => $slug,
-				],
-				admin_url( 'edit.php' )
+			$detail_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'     => 'xpressui_submission',
+						'page'          => 'xpressui-bridge',
+						'xpressui_view' => 'detail',
+						'xpressui_slug' => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_view_workflow',
+				'xpressui_view_nonce'
 			);
 			$all_submissions_url = wp_nonce_url(
 				add_query_arg( [ 'post_type' => 'xpressui_submission', 'xpressui_project' => $slug ], admin_url( 'edit.php' ) ),
@@ -293,7 +304,7 @@ function xpressui_render_workflows_page() {
 			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
 				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
 			}
-			echo implode( ' | ', $actions_html );
+			echo wp_kses_post( implode( ' | ', $actions_html ) );
 			echo '</div>';
 			echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . esc_html__( 'Show more details', 'xpressui-bridge' ) . '</span></button>';
 			echo '</td>';
@@ -305,7 +316,8 @@ function xpressui_render_workflows_page() {
 				$new   = (int) $inbox_by_slug[ $slug ]['new'];
 				echo '<a href="' . esc_url( $all_submissions_url ) . '" style="font-size: 14px; font-weight: 600; text-decoration: none;">' . esc_html( (string) $total ) . '</a>';
 				if ( $new > 0 ) {
-					echo ' <span class="xpressui-badge xpressui-badge--status-new" style="margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle;">' . sprintf( esc_html__( '%d new', 'xpressui-bridge' ), $new ) . '</span>';
+					/* translators: %d: number of new (unread) submissions */
+					echo ' <span class="xpressui-badge xpressui-badge--status-new" style="margin-left: 6px; font-size: 10px; padding: 1px 6px; vertical-align: middle;">' . sprintf( esc_html__( '%d new', 'xpressui-bridge' ), (int) $new ) . '</span>';
 				}
 			} else {
 				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
@@ -321,7 +333,9 @@ function xpressui_render_workflows_page() {
 			$fields = isset( $manifest_meta['fieldCount'] ) ? (int) $manifest_meta['fieldCount'] : 0;
 			echo '<td style="vertical-align: middle; font-size: 13px;">';
 			if ( $steps > 0 || $fields > 0 ) {
+				/* translators: %d: number of steps in the workflow */
 				$steps_text  = sprintf( _n( '%d step', '%d steps', $steps, 'xpressui-bridge' ), $steps );
+				/* translators: %d: number of fields in the workflow */
 				$fields_text = sprintf( _n( '%d field', '%d fields', $fields, 'xpressui-bridge' ), $fields );
 				echo esc_html( $steps_text . ', ' . $fields_text );
 			} else {
@@ -997,12 +1011,6 @@ function xpressui_render_workflow_detail_page( $slug ) {
 	if ( xpressui_pro_is_license_active() ) {
 		echo '<div style="margin: 20px 0; display: flex; align-items: center; gap: 10px;">';
 		echo '<button type="button" id="xpressui-single-sync-btn" class="button button-primary">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
-		$conn = xpressui_get_console_connection();
-		$edit_url = xpressui_console_workflow_url( $slug );
-		echo '<a href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener" class="button button-secondary" style="display: inline-flex; align-items: center; gap: 4px;">'
-			. '<span class="dashicons dashicons-external" style="font-size: 14px; width: 14px; height: 14px; margin-top: 1px;"></span>'
-			. esc_html__( 'Edit on IntakeFlow', 'xpressui-bridge' )
-			. '</a>';
 		echo '</div>';
 		echo '<div id="xpressui-single-sync-container" style="display: none; max-width: 600px; margin: 15px 0; padding: 12px 16px; border-radius: 6px; font-weight: 500;"></div>';
 	}
@@ -1083,7 +1091,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 			$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
 			$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
 		}
-		echo implode( ', ', $page_links );
+		echo wp_kses_post( implode( ', ', $page_links ) );
 	} else {
 		echo '<a href="' . esc_url( $create_legacy_page_url ) . '" class="button button-small button-secondary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
 	}
@@ -1117,7 +1125,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		}
 
 		echo '<tr>';
-		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . $edit_link_html . '</td>';
+		echo '<td style="font-weight: 600; font-size: 13px; vertical-align: middle;">' . esc_html( $link['label'] ) . wp_kses_post( $edit_link_html ) . '</td>';
 		echo '<td style="vertical-align: middle;"><code style="background: #f0f0f1; padding: 4px 8px; border-radius: 4px; font-size: 13px;">' . esc_html( $shortcode ) . '</code></td>';
 		
 		// Expiration Date column
@@ -1129,7 +1137,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 				$expires_html = esc_html( wp_date( get_option( 'date_format' ), $timestamp ) );
 			}
 		}
-		echo '<td style="vertical-align: middle; font-size: 13px;">' . $expires_html . '</td>';
+		echo '<td style="vertical-align: middle; font-size: 13px;">' . wp_kses_post( $expires_html ) . '</td>';
 
 		echo '<td style="vertical-align: middle;">';
 		if ( ! empty( $link_pages ) ) {
@@ -1138,7 +1146,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 				$p_title = get_the_title( $p_id ) ?: '#' . $p_id;
 				$page_links[] = '<a href="' . esc_url( get_permalink( $p_id ) ) . '" target="_blank" rel="noreferrer"><strong>' . esc_html( $p_title ) . '</strong></a>';
 			}
-			echo implode( ', ', $page_links );
+			echo wp_kses_post( implode( ', ', $page_links ) );
 		} else {
 			echo '<a href="' . esc_url( $create_link_page_url ) . '" class="button button-small button-primary">' . esc_html__( 'Create page', 'xpressui-bridge' ) . '</a>';
 		}

@@ -781,6 +781,7 @@ function xpressui_check_console_api_health(): array {
 	if ( is_wp_error( $response ) ) {
 		return [
 			'status'  => 'unreachable',
+			/* translators: %s: error message returned by the HTTP request */
 			'message' => sprintf( __( 'API unreachable: %s', 'xpressui-bridge' ), $response->get_error_message() ),
 		];
 	}
@@ -789,6 +790,7 @@ function xpressui_check_console_api_health(): array {
 	if ( 200 !== $code ) {
 		return [
 			'status'  => 'degraded',
+			/* translators: %d: HTTP status code returned by the API */
 			'message' => sprintf( __( 'API returned HTTP status %d.', 'xpressui-bridge' ), $code ),
 		];
 	}
@@ -815,6 +817,7 @@ function xpressui_check_console_api_health(): array {
 		if ( is_wp_error( $auth_response ) ) {
 			return [
 				'status'  => 'auth_failed',
+				/* translators: %s: error message returned by the authentication request */
 				'message' => sprintf( __( 'Authentication check failed: %s', 'xpressui-bridge' ), $auth_response->get_error_message() ),
 			];
 		}
@@ -828,6 +831,7 @@ function xpressui_check_console_api_health(): array {
 		} elseif ( 200 !== $auth_code ) {
 			return [
 				'status'  => 'degraded',
+				/* translators: %d: HTTP status code returned by the authenticated request */
 				'message' => sprintf( __( 'Authenticated check returned HTTP status %d.', 'xpressui-bridge' ), $auth_code ),
 			];
 		}
