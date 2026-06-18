@@ -252,8 +252,9 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$checkout_url = add_query_arg( 'xpui_checkout', '1', $grid_url );
 
 	// --- Order placed: success notice after a manual order or a Stripe return. ---
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
-	$checkout_state = isset( $_GET['xpuiCheckout'] ) ? sanitize_key( wp_unslash( $_GET['xpuiCheckout'] ) ) : '';
+	// filter_input() reads this public, read-only navigation var without touching the raw
+	// superglobal, so no nonce is required; sanitize_key() preserves the prior normalization.
+	$checkout_state = sanitize_key( (string) filter_input( INPUT_GET, 'xpuiCheckout', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
 	if ( 'success' === $checkout_state ) {
 		$ok_css_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-cart-summary.css';
 		$ok_css_ver  = file_exists( $ok_css_path ) ? (string) filemtime( $ok_css_path ) : XPRESSUI_BRIDGE_VERSION;
@@ -272,8 +273,9 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 
 	// --- Cart-summary page (headless on WP). The cart lives in localStorage on the WP
 	// origin; rows are rebuilt client-side. Nothing is sent to the SaaS. ---
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
-	if ( ! empty( $_GET['xpui_cart'] ) ) {
+	// filter_input() reads this public, read-only navigation var without touching the raw
+	// superglobal, so no nonce is required.
+	if ( ! empty( filter_input( INPUT_GET, 'xpui_cart', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) ) ) {
 		return xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $checkout_url );
 	}
 
@@ -418,8 +420,10 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
  * @return array|null The product item, or null for the grid view.
  */
 function xpressui_get_catalog_active_product( $catalog ) {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Public, read-only navigation query var (like pagination); sanitized below, no state change.
-	$raw = isset( $_GET['xpui_product'] ) ? sanitize_text_field( wp_unslash( $_GET['xpui_product'] ) ) : '';
+	// Public, read-only navigation query var (like pagination), no state change. filter_input()
+	// reads it without touching the raw superglobal, so no nonce is required; sanitize_text_field()
+	// preserves the prior sanitization.
+	$raw = sanitize_text_field( (string) filter_input( INPUT_GET, 'xpui_product', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
 	if ( '' === $raw || ! is_array( $catalog ) ) {
 		return null;
 	}

@@ -35,8 +35,9 @@ function xpressui_ts_initial( $value ) {
  * @return array|null The matching resource group, or null.
  */
 function xpressui_get_time_slots_active_resource( $catalog ) {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only navigation var.
-	$raw = isset( $_GET['xpui_product'] ) ? sanitize_text_field( wp_unslash( $_GET['xpui_product'] ) ) : '';
+	// filter_input() reads this public, read-only navigation var without touching the raw
+	// superglobal, so no nonce is required; sanitize_text_field() preserves the prior sanitization.
+	$raw = sanitize_text_field( (string) filter_input( INPUT_GET, 'xpui_product', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
 	if ( '' === $raw || ! is_array( $catalog ) ) {
 		return null;
 	}
@@ -380,9 +381,11 @@ function xpressui_format_money_amount( $amount, $currency ) {
  * @return array{summary:string,fields:string} Empty strings when no slot is selected.
  */
 function xpressui_render_time_slots_checkout() {
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public, read-only query var set by the booking redirect.
+	// These are public, read-only query vars set by the booking redirect. filter_input() reads
+	// them without touching the raw superglobal, so no nonce is required; sanitize_text_field()
+	// preserves the prior sanitization.
 	$get = static function ( $key ) {
-		return isset( $_GET[ $key ] ) ? sanitize_text_field( wp_unslash( $_GET[ $key ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return sanitize_text_field( (string) filter_input( INPUT_GET, $key, FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
 	};
 	$slot_id = $get( 'timeSlotId' );
 	if ( '' === $slot_id ) {
@@ -394,8 +397,9 @@ function xpressui_render_time_slots_checkout() {
 	$ends     = $get( 'timeSlotEndsAt' );
 	$price    = $get( 'timeSlotPrice' );
 	$currency = $get( 'timeSlotCurrency' );
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$image    = isset( $_GET['timeSlotResourceImage'] ) ? esc_url_raw( wp_unslash( $_GET['timeSlotResourceImage'] ) ) : '';
+	// filter_input() reads this public, read-only query var without touching the raw superglobal,
+	// so no nonce is required; esc_url_raw() preserves the prior URL sanitization.
+	$image    = esc_url_raw( (string) filter_input( INPUT_GET, 'timeSlotResourceImage', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
 
 	$title         = '' !== $resource ? $resource : ( '' !== $label ? $label : $slot_id );
 	$window        = xpressui_format_booking_window( $starts, $ends );

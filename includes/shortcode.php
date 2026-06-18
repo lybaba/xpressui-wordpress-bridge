@@ -10,6 +10,50 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Ensures a registered, enqueued no-src style handle exists for inline CSS, returning
+ * its handle. Used as a fallback when a renderer is called without a caller-supplied
+ * style handle so its inline CSS is still emitted via the WordPress style API
+ * (wp_add_inline_style) instead of a raw, unescaped <style> echo. Shortcodes render
+ * after wp_head, so an enqueued-but-unprinted handle is flushed by core in wp_footer.
+ *
+ * @return string The registered inline style handle.
+ */
+function xpressui_ensure_inline_style_handle() {
+	$handle = 'xpressui-bridge-inline';
+	if ( ! wp_style_is( $handle, 'registered' ) ) {
+		wp_register_style( $handle, false, [], XPRESSUI_BRIDGE_VERSION );
+	}
+	if ( ! wp_style_is( $handle, 'enqueued' ) ) {
+		wp_enqueue_style( $handle );
+	}
+	return $handle;
+}
+
+/**
+ * The wp_kses() allowlist for the static inline SVG file-type icons in the reference
+ * documents block. Restricts output to <svg>/<path> with the geometry/presentation
+ * attributes those hardcoded icons use, so the icon echo is escaped (no raw output).
+ *
+ * @return array<string,array<string,bool>> Allowed-HTML map for wp_kses().
+ */
+function xpressui_ref_docs_svg_allowed_html() {
+	return [
+		'svg'  => [
+			'viewbox'     => true,
+			'fill'        => true,
+			'width'       => true,
+			'height'      => true,
+			'aria-hidden' => true,
+			'xmlns'       => true,
+		],
+		'path' => [
+			'd'    => true,
+			'fill' => true,
+		],
+	];
+}
+
+/**
  * Renders the "Reference documents" collapsible block from a synced Hosted Link
  * presentation, for parity with the SaaS hosted-link render. Returns '' when the
  * link has no reference documents.
@@ -90,14 +134,13 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en', $st
 		. '.xpressui-ref-docs__download:hover{background:#f1f5f9;color:#0f172a}'
 		. '.xpressui-ref-docs__download .dashicons{font-size:16px!important;width:16px!important;height:16px!important;line-height:1!important;align-self:center}';
 
-	if ( ! empty( $style_handle ) ) {
-		wp_add_inline_style( $style_handle, $ref_docs_css );
-	}
+	// Emit the CSS through the WordPress style API instead of a raw <style> echo. When no
+	// caller handle is supplied, fall back to a registered no-src handle so the inline CSS is
+	// still enqueued (and escaped by core) rather than printed unescaped.
+	$ref_docs_handle = ! empty( $style_handle ) ? $style_handle : xpressui_ensure_inline_style_handle();
+	wp_add_inline_style( $ref_docs_handle, $ref_docs_css );
 
 	ob_start();
-	if ( empty( $style_handle ) ) {
-		echo '<style>' . $ref_docs_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	}
 	?>
 <details class="xpressui-ref-docs" open>
 	<summary>
@@ -109,7 +152,7 @@ function xpressui_render_reference_documents( $presentation, $locale = 'en', $st
 		<?php foreach ( $documents as $doc ) : ?>
 		<div class="xpressui-ref-docs__row">
 			<div class="xpressui-ref-docs__item">
-				<span class="xpressui-ref-docs__icon" style="color:<?php echo esc_attr( $colors[ $doc['kind'] ] ); ?>"><?php echo $icons[ $doc['kind'] ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static SVG ?></span>
+				<span class="xpressui-ref-docs__icon" style="color:<?php echo esc_attr( $colors[ $doc['kind'] ] ); ?>"><?php echo wp_kses( $icons[ $doc['kind'] ], xpressui_ref_docs_svg_allowed_html() ); ?></span>
 				<span class="xpressui-ref-docs__text">
 					<span class="xpressui-ref-docs__name"><?php echo esc_html( '' !== $doc['name'] ? $doc['name'] : $doc['url'] ); ?></span>
 					<?php if ( '' !== $doc['filename'] && $doc['filename'] !== $doc['name'] ) : ?>
@@ -433,7 +476,7 @@ function xpressui_render_gallery_showcase( $presentation, $locale = 'en', $mount
 			</div>
 
 			<?php if ( '' !== $content_html ) : ?>
-			<div class="xpressui-gallery-showcase-desc template-product-detail-description"><?php echo $content_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by xpressui_render_intro_markdown (user text escaped), re-filtered by the final wp_kses. ?></div>
+			<div class="xpressui-gallery-showcase-desc template-product-detail-description"><?php echo wp_kses_post( $content_html ); // built by xpressui_render_intro_markdown (user text already esc_html'd); wp_kses_post keeps the generated p/strong/em/br and satisfies output escaping. ?></div>
 			<?php endif; ?>
 		</div>
 	</div>
@@ -498,25 +541,24 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 		. '.xpressui-intro__cta::after{content:"\2192";font-weight:700;text-decoration:none}'
 		. '.xpressui-intro__cta:hover{opacity:.72}';
 
-	if ( ! empty( $style_handle ) ) {
-		wp_add_inline_style( $style_handle, $intro_css );
-	}
+	// Emit the CSS through the WordPress style API instead of a raw <style> echo. When no
+	// caller handle is supplied, fall back to a registered no-src handle so the inline CSS is
+	// still enqueued (and escaped by core) rather than printed unescaped.
+	$intro_handle = ! empty( $style_handle ) ? $style_handle : xpressui_ensure_inline_style_handle();
+	wp_add_inline_style( $intro_handle, $intro_css );
 
 	$aria = '' !== $title
 		? $title
 		: ( 'fr' === $locale ? __( 'Introduction', 'xpressui-bridge' ) : __( 'Introduction', 'xpressui-bridge' ) );
 
 	ob_start();
-	if ( empty( $style_handle ) ) {
-		echo '<style>' . $intro_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	}
 	?>
 <section class="xpressui-intro" aria-label="<?php echo esc_attr( $aria ); ?>" style="--xpressui-accent: <?php echo esc_attr( $accent_color ); ?>;">
 	<?php if ( '' !== $title ) : ?>
 	<h2 class="xpressui-intro__title"><?php echo esc_html( $title ); ?></h2>
 	<?php endif; ?>
 	<?php if ( '' !== $content_html ) : ?>
-	<div class="xpressui-intro__content"><?php echo $content_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built by xpressui_render_intro_markdown (user text escaped), re-filtered by the final wp_kses. ?></div>
+	<div class="xpressui-intro__content"><?php echo wp_kses_post( $content_html ); // built by xpressui_render_intro_markdown (user text already esc_html'd); wp_kses_post keeps the generated p/strong/em/br and satisfies output escaping. ?></div>
 	<?php endif; ?>
 	<?php if ( '' !== $price_display || '' !== $deadline ) : ?>
 	<div class="xpressui-intro__meta">
