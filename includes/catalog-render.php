@@ -393,7 +393,7 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	// a full-viewport gradient + min-height:100dvh; the reset above (#xpressui-root, 1,0,0)
 	// loses to it. Override at matching specificity so the storefront blends into the WP
 	// theme instead of repainting the page background.
-	$css .= $sel . '.page-shell--product-catalog{min-height:auto !important;background:transparent !important;}';
+	$css .= $sel . '.page-shell--product-catalog{min-height:auto !important;background:transparent !important;padding-top:clamp(24px,4vw,40px) !important;padding-bottom:clamp(24px,4vw,40px) !important;}';
 	$css .= $sel . ' .template-product-landing{min-height:auto;gap:18px;}';
 	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
@@ -409,8 +409,10 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .template-product-title{margin:0;}';
 	$css .= $sel . ' .template-product-detail-page *{margin-top:0;margin-bottom:0;}';
 	// Back-to-storefront link on the headless detail page (no SaaS chrome to navigate from).
-	$css .= $sel . ' .xpui-catalog-back-link{display:inline-flex;align-items:center;gap:6px;margin:0 0 18px;font-size:13px;font-weight:700;text-decoration:none;color:var(--template-primary);}';
-	$css .= $sel . ' .xpui-catalog-back-link:hover{text-decoration:underline;}';
+	$css .= $sel . ' .xpui-catalog-back-link{display:inline-flex !important;align-items:center !important;gap:8px !important;margin:0 0 24px !important;padding:8px 16px !important;font-size:13px !important;font-weight:700 !important;text-decoration:none !important;color:var(--template-text,#0f172a) !important;background:var(--template-surface,#ffffff) !important;border:1.5px solid var(--template-border,#e2e8f0) !important;border-radius:var(--template-button-radius,12px) !important;box-shadow:0 1px 3px rgba(0,0,0,0.02) !important;transition:all 0.2s cubic-bezier(0.4,0,0.2,1) !important;cursor:pointer !important;}';
+	$css .= $sel . ' .xpui-catalog-back-link:hover{color:var(--template-primary,#2563eb) !important;border-color:var(--template-primary,#2563eb) !important;background:color-mix(in srgb, var(--template-primary,#2563eb) 6%, var(--template-surface,#ffffff)) !important;box-shadow:0 4px 12px rgba(37,99,235,0.08) !important;}';
+	$css .= $sel . ' .xpui-catalog-back-link svg{transition:transform 0.2s ease !important;flex-shrink:0 !important;}';
+	$css .= $sel . ' .xpui-catalog-back-link:hover svg{transform:translateX(-3px) !important;}';
 	// Hard-hide the cart-state form shell.
 	$css .= $sel . ' #' . $shell_id . ',' . $sel . ' #' . $shell_id . ' *{display:none !important;visibility:hidden !important;width:0 !important;height:0 !important;overflow:hidden !important;pointer-events:none !important;opacity:0 !important;}';
 
@@ -423,6 +425,7 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 
 	// Override the form-frame z-index to avoid establishing a stacking context.
 	$css .= $sel . ' .form-frame{z-index:auto !important;}';
+	$css .= $sel . ' .form-frame--commerce-landing:has([data-workflow-product-landing][data-checkout]){margin:clamp(24px,4vw,40px) auto !important;}';
 
 	// Specificity layout overrides for product details desktop view.
 	$css .= $sel . ' .template-product-detail-layout{display:grid !important;grid-template-columns:minmax(300px,1.2fr) minmax(280px,1fr) !important;gap:clamp(20px,4vw,40px) !important;align-items:start !important;min-height:0 !important;position:relative !important;}';
@@ -510,7 +513,10 @@ function xpressui_render_product_detail_section( $catalog, $product, $return_url
 	?>
 <div class="template-product-landing" data-template-zone="workflow_product_landing" data-workflow-product-landing>
 	<?php if ( '' !== $return_url ) : ?>
-	<a class="xpui-catalog-back-link" href="<?php echo esc_url( $return_url ); ?>">&larr; <?php echo esc_html( $back_label ); ?></a>
+	<a class="xpui-catalog-back-link" href="<?php echo esc_url( $return_url ); ?>">
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+		<span><?php echo esc_html( $back_label ); ?></span>
+	</a>
 	<?php endif; ?>
 	<?php if ( $cart_enabled ) : ?>
 	<div class="xpui-product-cart-toolbar">

@@ -142,4 +142,13 @@
       observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-workflow-state'] });
     } catch (_e) {}
   }
+
+  // Redirect to catalog storefront / services page if the checkout cart/booking is empty
+  try {
+    var order = resolveOrder();
+    if (!order || !order.items || !order.items.length) {
+      var redirectUrl = cfg.returnUrl || (window.location.protocol + '//' + window.location.host + window.location.pathname);
+      window.location.replace(redirectUrl);
+    }
+  } catch (_e) {}
 })();

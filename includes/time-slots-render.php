@@ -480,7 +480,7 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	// 1440px-centered frame padding (which overflow / float the catalog on a content
 	// column), and let a narrow booking board scroll horizontally instead of overflowing.
 	$sel    = '#' . $mount_id;
-	$reset  = $sel . '.page-shell--time-slots-catalog{min-height:auto !important;background:transparent !important;padding:0 !important;display:block !important;place-items:unset !important;overflow:visible !important;}';
+	$reset  = $sel . '.page-shell--time-slots-catalog{min-height:auto !important;background:transparent !important;padding:clamp(24px,4vw,40px) 0 !important;display:block !important;place-items:unset !important;overflow:visible !important;}';
 	$reset .= $sel . ' .form-frame--time-slots-catalog{width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important;box-sizing:border-box;}';
 	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100% !important;width:100% !important;float:none !important;box-sizing:border-box !important;}';
 	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow:visible;}';
@@ -509,7 +509,7 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	ob_start();
 	?>
 <div class="xpressui-embed-wrapper xpressui-inline-embed">
-	<style><?php echo $reset; ?></style>
+	<style><?php echo $reset; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Scoped reset CSS enqueued locally. ?></style>
 	<div id="<?php echo esc_attr( $mount_id ); ?>" class="xpressui-embed page-shell page-shell--catalog-public page-shell--time-slots-catalog" data-template-zone="page_shell" data-hosted-link-id="<?php echo esc_attr( (string) $link_id ); ?>">
 		<main class="form-frame form-frame--catalog-public form-frame--catalog-landing form-frame--time-slots-catalog">
 			<div class="template-catalog-time-slots-landing"

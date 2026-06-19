@@ -1120,6 +1120,7 @@ function xpressui_render_shortcode( $atts ) {
 	$checkout_order_summary = '';
 	$checkout_form_fields   = '';
 	if ( $is_catalog_checkout && $link_attr !== '' && is_array( $link_config ) ) {
+		$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
 		$co_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
 		$co_front        = is_array( $co_presentation['frontCatalog'] ?? null ) ? $co_presentation['frontCatalog'] : [];
 		if ( ! empty( $co_front['catalogId'] ) ) {
@@ -1137,11 +1138,17 @@ function xpressui_render_shortcode( $atts ) {
 				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
 				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
 				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
-				wp_localize_script( 'xpressui-catalog-checkout', 'xpressuiCatalogCheckout', [ 'slug' => $slug ] );
+				wp_localize_script(
+					'xpressui-catalog-checkout',
+					'xpressuiCatalogCheckout',
+					[
+						'slug'      => $slug,
+						'returnUrl' => $co_grid,
+					]
+				);
 			}
 			// Product catalogs use a localStorage cart + order summary + payment selector.
 			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
-				$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
 				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
 				// Payment-method block intentionally omitted: the WP checkout no longer renders
 				// the manual/Stripe "Payment method" selector. The submit handler tolerates an
