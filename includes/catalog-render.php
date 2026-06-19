@@ -399,6 +399,7 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	// Defuse host-theme spacing bleed on the card content (themes add margins to
 	// article/h3/p inside .entry-content, which breaks the card rhythm).
 	$css .= $sel . ' .template-product-card,' . $sel . ' .template-product-card *{margin-top:0;margin-bottom:0;}';
+	$css .= $sel . ' .template-product-meta,' . $sel . ' .xpui-product-card-actions{margin-top:auto !important;}';
 	$css .= $sel . ' .template-product-title{margin:0;}';
 	$css .= $sel . ' .template-product-detail-page *{margin-top:0;margin-bottom:0;}';
 	// Back-to-storefront link on the headless detail page (no SaaS chrome to navigate from).
