@@ -400,6 +400,12 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
 	$css .= $sel . ' .template-product-grid{margin-bottom:0;}';
+	// Parity with the services/time-slots template, whose list is the first child with nothing
+	// before it. The product cart toolbar (cart pill) is display:flex + margin in the shell, so
+	// as the landing's first flex child it pushed the grid down. Float it out of flow (pinned
+	// top-right) so the product grid starts at the same height as the services list.
+	$css .= $sel . ' .template-product-landing{position:relative;}';
+	$css .= $sel . ' .xpui-product-cart-toolbar{position:absolute;top:0;right:0;margin:0;z-index:50;}';
 	// Defuse host-theme spacing bleed on the card content (themes add margins to
 	// article/h3/p inside .entry-content, which breaks the card rhythm).
 	$css .= $sel . ' .template-product-card,' . $sel . ' .template-product-card *{margin-top:0;margin-bottom:0;}';
