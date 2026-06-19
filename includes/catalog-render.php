@@ -421,6 +421,9 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .xpui-product-cart-toolbar .xpui-cart-trigger:active{transform:translateY(0) scale(0.98) !important;}';
 	$css .= '@media (max-width:640px){' . $sel . ' .xpui-product-cart-toolbar{bottom:16px !important;right:16px !important;}}';
 
+	// Stacking columns on details page on smaller viewports.
+	$css .= '@media (max-width:700px){' . $sel . ' .template-product-detail-layout{grid-template-columns:1fr !important;gap:24px !important;}' . $sel . ' .template-product-detail-media{min-height:260px !important;aspect-ratio:4/3 !important;}}';
+
 	return $css;
 }
 
@@ -527,6 +530,7 @@ function xpressui_render_product_detail_section( $catalog, $product, $return_url
 	></section>
 	<section
 		class="template-product-detail-page"
+		style="display: grid !important; gap: 20px !important; padding: 24px 0 0 !important; margin: 0 !important; border: 0 !important; background: transparent !important;"
 		data-template-zone="workflow_product_detail"
 		data-product-detail-page
 		data-product-id="<?php echo esc_attr( $id ); ?>"
@@ -542,50 +546,50 @@ function xpressui_render_product_detail_section( $catalog, $product, $return_url
 		data-product-max-quantity="<?php echo esc_attr( $max_qty ); ?>"
 		data-prerendered="true"
 	>
-		<div class="template-product-detail-layout">
-			<div class="template-product-detail-media">
+		<div class="template-product-detail-layout" style="display: grid !important; grid-template-columns: minmax(300px, 1.2fr) minmax(280px, 1fr) !important; gap: clamp(20px, 4vw, 40px) !important; align-items: start !important; min-height: 0 !important; position: relative !important;">
+			<div class="template-product-detail-media" style="position: relative !important; display: grid !important; place-items: center !important; width: 100% !important; min-height: clamp(320px, 40vw, 500px) !important; aspect-ratio: 4/5 !important; border-radius: var(--template-card-radius, 14px) !important; overflow: hidden !important; box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; margin: 0 !important;">
 				<?php if ( '' !== $image ) : ?>
-				<img data-product-detail-image src="<?php echo esc_url( $image ); ?>" alt="<?php echo esc_attr( $label ); ?>" loading="lazy" />
+				<img data-product-detail-image style="width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;" src="<?php echo esc_url( $image ); ?>" alt="<?php echo esc_attr( $label ); ?>" loading="lazy" />
 				<?php else : ?>
-				<img data-product-detail-image alt="" loading="lazy" hidden />
+				<img data-product-detail-image style="width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important;" alt="" loading="lazy" hidden />
 				<div class="template-product-detail-media-empty" data-product-detail-image-empty aria-hidden="true">
 					<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="m21 15-5-5L5 21"></path></svg>
 				</div>
 				<?php endif; ?>
 			</div>
-			<div class="template-product-detail-copy">
+			<div class="template-product-detail-copy" style="display: flex !important; flex-direction: column !important; gap: 16px !important; padding: 0 !important; margin: 0 !important;">
 				<?php if ( '' !== $category ) : ?>
-				<p class="template-product-landing-kicker" data-product-detail-category><?php echo esc_html( $category ); ?></p>
+				<p class="template-product-landing-kicker" style="font-size: 12px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: var(--template-primary, #2563eb) !important; margin: 0 0 4px !important;" data-product-detail-category><?php echo esc_html( $category ); ?></p>
 				<?php else : ?>
-				<p class="template-product-landing-kicker" data-product-detail-category hidden></p>
+				<p class="template-product-landing-kicker" style="font-size: 12px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: var(--template-primary, #2563eb) !important; margin: 0 0 4px !important;" data-product-detail-category hidden></p>
 				<?php endif; ?>
-				<h2 class="template-product-detail-title" data-product-detail-title><?php echo esc_html( '' !== $label ? $label : $id ); ?></h2>
-				<p class="template-product-detail-description" data-product-detail-description><?php echo esc_html( $description ); ?></p>
+				<h2 class="template-product-detail-title" style="font-size: clamp(24px, 3vw, 36px) !important; font-weight: 800 !important; line-height: 1.2 !important; margin: 0 !important; color: var(--template-text, #0f172a) !important;" data-product-detail-title><?php echo esc_html( '' !== $label ? $label : $id ); ?></h2>
+				<p class="template-product-detail-description" style="font-size: 15px !important; line-height: 1.6 !important; color: var(--template-muted-text, #64748b) !important; margin: 0 !important;" data-product-detail-description><?php echo esc_html( $description ); ?></p>
 				<?php if ( $cart_enabled ) : ?>
-				<div class="template-product-detail-buy-box">
-					<div class="template-product-detail-price-row">
-						<strong class="template-product-detail-price" data-product-detail-price><?php echo esc_html( $price_display ); ?></strong>
-						<span class="template-product-detail-unit" data-product-detail-unit><?php echo esc_html( $unit ); ?></span>
+				<div class="template-product-detail-buy-box" style="display: flex !important; flex-direction: column !important; gap: 20px !important; padding: 24px !important; border-radius: var(--template-card-radius, 16px) !important; border: 1px solid var(--template-border, #e2e8f0) !important; background: var(--template-surface, #ffffff) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important; margin: 8px 0 0 !important;">
+					<div class="template-product-detail-price-row" style="display: flex !important; align-items: baseline !important; gap: 8px !important; margin: 0 !important;">
+						<strong class="template-product-detail-price" style="font-size: 24px !important; font-weight: 850 !important; color: var(--template-text, #0f172a) !important;" data-product-detail-price><?php echo esc_html( $price_display ); ?></strong>
+						<span class="template-product-detail-unit" style="font-size: 14px !important; color: var(--template-muted-text, #64748b) !important;" data-product-detail-unit><?php echo esc_html( $unit ); ?></span>
 					</div>
-					<div class="xpui-product-view-actions">
+					<div class="xpui-product-view-actions" style="display: flex !important; align-items: center !important; gap: 12px !important; margin: 0 !important; padding: 0 !important;">
 						<?php if ( $supports_many ) : ?>
-						<div class="xpui-qty-stepper" role="group" aria-label="<?php esc_attr_e( 'Quantity', 'xpressui-bridge' ); ?>">
-							<button type="button" class="xpui-qty-stepper-btn" data-product-detail-qty-dec aria-label="<?php esc_attr_e( 'Decrease quantity', 'xpressui-bridge' ); ?>" disabled>
+						<div class="xpui-qty-stepper" style="display: inline-flex !important; align-items: center !important; height: 42px !important; border: 1.5px solid var(--template-border, #e2e8f0) !important; border-radius: var(--template-button-radius, 12px) !important; overflow: hidden !important; background: transparent !important; margin: 0 !important; padding: 0 !important;" role="group" aria-label="<?php esc_attr_e( 'Quantity', 'xpressui-bridge' ); ?>">
+							<button type="button" class="xpui-qty-stepper-btn" style="width: 40px !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; background: transparent !important; cursor: pointer !important; color: var(--template-text, #0f172a) !important; margin: 0 !important; padding: 0 !important;" data-product-detail-qty-dec aria-label="<?php esc_attr_e( 'Decrease quantity', 'xpressui-bridge' ); ?>" disabled>
 								<svg width="12" height="2" viewBox="0 0 12 2" fill="none" aria-hidden="true"><path d="M1 1h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
 							</button>
-							<input type="number" class="xpui-qty-stepper-input" data-product-detail-qty-select id="xpui-detail-qty-select" value="0" min="0" max="<?php echo esc_attr( $max_qty_attr ); ?>" aria-label="<?php esc_attr_e( 'Quantity', 'xpressui-bridge' ); ?>" readonly />
-							<button type="button" class="xpui-qty-stepper-btn" data-product-detail-qty-inc aria-label="<?php esc_attr_e( 'Increase quantity', 'xpressui-bridge' ); ?>">
+							<input type="number" class="xpui-qty-stepper-input" style="width: 44px !important; height: 100% !important; border: none !important; border-left: 1.5px solid var(--template-border, #e2e8f0) !important; border-right: 1.5px solid var(--template-border, #e2e8f0) !important; background: transparent !important; color: var(--template-text, #0f172a) !important; font-size: 15px !important; font-weight: 700 !important; text-align: center !important; margin: 0 !important; padding: 0 !important; outline: none !important;" data-product-detail-qty-select id="xpui-detail-qty-select" value="0" min="0" max="<?php echo esc_attr( $max_qty_attr ); ?>" aria-label="<?php esc_attr_e( 'Quantity', 'xpressui-bridge' ); ?>" readonly />
+							<button type="button" class="xpui-qty-stepper-btn" style="width: 40px !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; border: none !important; background: transparent !important; cursor: pointer !important; color: var(--template-text, #0f172a) !important; margin: 0 !important; padding: 0 !important;" data-product-detail-qty-inc aria-label="<?php esc_attr_e( 'Increase quantity', 'xpressui-bridge' ); ?>">
 								<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
 							</button>
 						</div>
 						<?php endif; ?>
-						<button type="button" class="xpui-product-detail-checkout-btn" data-product-detail-cta><?php echo esc_html( $cta_label ); ?></button>
+						<button type="button" class="xpui-product-detail-checkout-btn" style="flex: 1 !important; height: 42px !important; border-radius: var(--template-button-radius, 12px) !important; background: var(--template-primary, #2563eb) !important; color: #ffffff !important; font-weight: 750 !important; border: none !important; cursor: pointer !important; font-family: var(--template-font-family) !important; font-size: 14px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; margin: 0 !important; padding: 0 16px !important;" data-product-detail-cta><?php echo esc_html( $cta_label ); ?></button>
 					</div>
 				</div>
 				<?php else : ?>
-				<div class="template-product-detail-price-row">
-					<strong class="template-product-detail-price" data-product-detail-price><?php echo esc_html( $price_display ); ?></strong>
-					<span class="template-product-detail-unit" data-product-detail-unit><?php echo esc_html( $unit ); ?></span>
+				<div class="template-product-detail-price-row" style="display: flex !important; align-items: baseline !important; gap: 8px !important; margin: 0 !important;">
+					<strong class="template-product-detail-price" style="font-size: 24px !important; font-weight: 850 !important; color: var(--template-text, #0f172a) !important;" data-product-detail-price><?php echo esc_html( $price_display ); ?></strong>
+					<span class="template-product-detail-unit" style="font-size: 14px !important; color: var(--template-muted-text, #64748b) !important;" data-product-detail-unit><?php echo esc_html( $unit ); ?></span>
 				</div>
 				<?php endif; ?>
 			</div>
