@@ -395,9 +395,13 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .template-product-landing{min-height:auto;gap:18px;}';
 	$css .= $sel . ' .template-product-landing-actions--floating{display:none;}';
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
-	$css .= $sel . ' .template-product-grid{margin-bottom:0;}';
-	// Defuse host-theme spacing bleed on the card content (themes add margins to
+	
+	// Force the product grid layout to override theme-specific float/display resets.
+	$css .= $sel . ' .template-product-grid{display:grid !important;gap:18px !important;margin-bottom:0 !important;float:none !important;width:100% !important;}';
+	
+	// Defuse host-theme spacing/layout bleed on the card content (themes add margins/widths/floats to
 	// article/h3/p inside .entry-content, which breaks the card rhythm).
+	$css .= $sel . ' .template-product-card{display:flex !important;flex-direction:column !important;float:none !important;width:auto !important;max-width:none !important;min-width:0 !important;margin:0 !important;}';
 	$css .= $sel . ' .template-product-card,' . $sel . ' .template-product-card *{margin-top:0;margin-bottom:0;}';
 	$css .= $sel . ' .template-product-meta,' . $sel . ' .xpui-product-card-actions{margin-top:auto !important;}';
 	$css .= $sel . ' .template-product-title{margin:0;}';

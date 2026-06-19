@@ -482,7 +482,7 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	$sel    = '#' . $mount_id;
 	$reset  = $sel . '.page-shell--time-slots-catalog{min-height:auto !important;background:transparent !important;padding:0 !important;display:block !important;place-items:unset !important;overflow:visible !important;}';
 	$reset .= $sel . ' .form-frame--time-slots-catalog{width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important;box-sizing:border-box;}';
-	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100%;box-sizing:border-box;}';
+	$reset .= $sel . ' .template-time-slot-availability-row{max-width:100% !important;width:100% !important;float:none !important;box-sizing:border-box !important;}';
 	$reset .= $sel . ' .template-time-slot-week-board{min-width:0;overflow:visible;}';
 	$reset .= $sel . ' .template-time-slot-week-slots,' . $sel . ' .template-time-slot-resource-panel{min-width:0;}';
 	$reset .= $sel . ' .template-time-slot-day-column,' . $sel . ' .template-time-slot-pill{min-width:0;box-sizing:border-box;max-width:100%;}';
