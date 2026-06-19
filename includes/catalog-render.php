@@ -427,6 +427,9 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .form-frame{z-index:auto !important;}';
 	$css .= $sel . ' .form-frame--commerce-landing:has([data-workflow-product-landing][data-checkout]){margin:clamp(24px,4vw,40px) auto !important;}';
 
+	// Scroll-margin-top offset to avoid content being hidden behind sticky theme headers.
+	$css .= $sel . ',' . $sel . ' *{scroll-margin-top:200px !important;}';
+
 	// Specificity layout overrides for product details desktop view.
 	$css .= $sel . ' .template-product-detail-layout{display:grid !important;grid-template-columns:minmax(300px,1.2fr) minmax(280px,1fr) !important;gap:clamp(20px,4vw,40px) !important;align-items:start !important;min-height:0 !important;position:relative !important;}';
 	$css .= $sel . ' .template-product-detail-media{position:relative !important;display:grid !important;place-items:center !important;width:100% !important;min-height:clamp(320px,40vw,500px) !important;aspect-ratio:4/5 !important;border-radius:var(--template-card-radius,14px) !important;overflow:hidden !important;box-shadow:0 4px 20px rgba(0,0,0,0.08) !important;margin:0 !important;}';

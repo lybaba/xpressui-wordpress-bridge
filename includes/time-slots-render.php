@@ -494,6 +494,9 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 			. $sel . ' .template-time-slot-week-board[data-ts-cols="' . $c . '"] .template-time-slot-week-slots'
 			. '{grid-template-columns:repeat(' . $c . ',minmax(0,1fr)) !important;}';
 	}
+	// Scroll-margin-top offset to avoid content being hidden behind sticky theme headers.
+	$reset .= $sel . ',' . $sel . ' *{scroll-margin-top:200px !important;}';
+
 	wp_add_inline_style( 'xpressui-time-slots', $reset );
 
 	// Self-contained booking hydration (copied from the SaaS booking-script).
