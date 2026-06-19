@@ -495,14 +495,22 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 			. '{grid-template-columns:repeat(' . $c . ',minmax(0,1fr)) !important;}';
 	}
 	// Scroll-margin-top offset to avoid content being hidden behind sticky theme headers.
-	$reset .= $sel . ',' . $sel . ' *{scroll-margin-top:200px !important;}';
+	$reset .= $sel . ',' . $sel . ' *{scroll-margin-top:calc(var(--xpressui-header-offset,0px) + 24px) !important;}';
 
 	wp_add_inline_style( 'xpressui-time-slots', $reset );
+
+	wp_enqueue_script(
+		'xpressui-header-offset',
+		XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-header-offset.js',
+		[],
+		XPRESSUI_BRIDGE_VERSION,
+		true
+	);
 
 	// Self-contained booking hydration (copied from the SaaS booking-script).
 	$js_path = XPRESSUI_BRIDGE_DIR . 'assets/time-slots-booking.js';
 	$js_ver  = file_exists( $js_path ) ? (string) filemtime( $js_path ) : XPRESSUI_BRIDGE_VERSION;
-	wp_enqueue_script( 'xpressui-time-slots-booking', XPRESSUI_BRIDGE_URL . 'assets/time-slots-booking.js', [], $js_ver, true );
+	wp_enqueue_script( 'xpressui-time-slots-booking', XPRESSUI_BRIDGE_URL . 'assets/time-slots-booking.js', [ 'xpressui-header-offset' ], $js_ver, true );
 
 	$active = xpressui_get_time_slots_active_resource( $catalog );
 	$inner  = is_array( $active )
@@ -512,7 +520,6 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	ob_start();
 	?>
 <div class="xpressui-embed-wrapper xpressui-inline-embed">
-	<style><?php echo $reset; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Scoped reset CSS enqueued locally. ?></style>
 	<div id="<?php echo esc_attr( $mount_id ); ?>" class="xpressui-embed page-shell page-shell--catalog-public page-shell--time-slots-catalog" data-template-zone="page_shell" data-hosted-link-id="<?php echo esc_attr( (string) $link_id ); ?>">
 		<main class="form-frame form-frame--catalog-public form-frame--catalog-landing form-frame--time-slots-catalog">
 			<div class="template-catalog-time-slots-landing"

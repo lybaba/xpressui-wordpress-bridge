@@ -297,6 +297,14 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	// Token URL is left empty so doCheckout takes the no-token path and just navigates. ---
 	$init_url = (string) ( $catalog['catalog_init_url'] ?? '' );
 
+	wp_enqueue_script(
+		'xpressui-header-offset',
+		XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-header-offset.js',
+		[],
+		XPRESSUI_BRIDGE_VERSION,
+		true
+	);
+
 	$globals  = 'window.__xpuiCatalogBaseUrl=' . wp_json_encode( $grid_url ) . ';';
 	$globals .= 'window.__xpuiCatalogCheckoutUrl=' . wp_json_encode( $cart_url ) . ';';
 	$globals .= 'window.__xpuiCatalogCartSummaryUrl="";';
@@ -305,7 +313,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$globals .= 'window.__xpuiCatalogGate=null;';
 
 	if ( '' !== $init_url ) {
-		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [], null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Cross-origin SaaS asset; the SaaS handles its own cache-busting.
+		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [ 'xpressui-header-offset' ], null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Cross-origin SaaS asset; the SaaS handles its own cache-busting.
 		wp_add_inline_script( 'xpressui-catalog-init', $globals, 'before' );
 	}
 
@@ -428,7 +436,7 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .form-frame--commerce-landing:has([data-workflow-product-landing][data-checkout]){margin:clamp(24px,4vw,40px) auto !important;}';
 
 	// Scroll-margin-top offset to avoid content being hidden behind sticky theme headers.
-	$css .= $sel . ',' . $sel . ' *{scroll-margin-top:200px !important;}';
+	$css .= $sel . ',' . $sel . ' *{scroll-margin-top:calc(var(--xpressui-header-offset,0px) + 24px) !important;}';
 
 	// Specificity layout overrides for product details desktop view.
 	$css .= $sel . ' .template-product-detail-layout{display:grid !important;grid-template-columns:minmax(300px,1.2fr) minmax(280px,1fr) !important;gap:clamp(20px,4vw,40px) !important;align-items:start !important;min-height:0 !important;position:relative !important;}';

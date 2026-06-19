@@ -512,7 +512,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	} else {
 		$inline_css .= "{$scope}.page-shell { min-height: 0 !important; height: auto !important; overflow: visible !important; padding: clamp(24px, 4vw, 40px) 0 !important; display: block !important; background: transparent !important; }\n";
 	}
-	$inline_css .= "{$scope}, {$scope} * { scroll-margin-top: 200px !important; }\n";
+	$inline_css .= "{$scope}, {$scope} * { scroll-margin-top: calc(var(--xpressui-header-offset, 0px) + 24px) !important; }\n";
 	$box_shadow = $has_bg ? '0 28px 80px -38px rgba(0,0,0,0.42)' : '0 16px 44px rgba(15, 23, 42, 0.1)';
 	$extra_fw   = $has_bg ? ' max-width: 680px !important; width: 100% !important;' : ' max-width: 900px !important; width: 100% !important; margin: clamp(24px, 4vw, 40px) auto !important;';
 	// Single framed card (like the hosted link). Forced with !important so the
@@ -574,7 +574,7 @@ function xpressui_build_shortcode_inline_css( array $template_context, $mount_no
 	// The timeline sidebar replaces the inline progress bar.
 	$inline_css .= "{$scope} .template-runtime-shell[data-step-layout='timeline'] .template-step-status { display: none !important; }\n";
 	// Timeline = a plain left column (sticky), with a subtle separator — no own card.
-	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky !important; top: 16px !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; margin: 0 !important; padding: 0 22px 0 0 !important; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; border-bottom: 0 !important; }\n";
+	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-timeline { position: sticky !important; top: calc(var(--xpressui-header-offset, 0px) + 16px) !important; display: flex !important; flex-direction: column !important; flex-wrap: nowrap !important; gap: 4px !important; margin: 0 !important; padding: 0 22px 0 0 !important; border-right: 1px solid color-mix(in srgb, var(--template-border) 60%, transparent) !important; border-bottom: 0 !important; }\n";
 	$inline_css .= "{$scope} [data-step-layout='timeline'] .template-step-layout-main { display: grid; gap: 16px; min-width: 0; }\n";
 	// On phones the sidebar can't sit beside the form — stack it, but keep it first.
 	$inline_css .= "@media (max-width: 640px) {\n";
@@ -679,7 +679,8 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 			]
 		) . ';'
 	);
-	wp_enqueue_script( $handle_prefix . '-data' );
+	$header_offset_url = XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-header-offset.js';
+	wp_enqueue_script( $handle_prefix . '-header-offset', $header_offset_url, [], XPRESSUI_BRIDGE_VERSION, false );
 
 	// If the template did not already embed the runtime/init scripts (fallback),
 	// enqueue them now so they appear in the captured output below.
@@ -690,12 +691,13 @@ function xpressui_render_compiled_workflow_shell_html( $slug ) {
 	$init_already_embedded = '' !== $init_url && false !== strpos( $rendered_html, esc_url_raw( $init_url ) );
 	if ( ! $init_already_embedded && '' !== $init_url ) {
 		$runtime_dep = $runtime_already_embedded ? [] : [ $handle_prefix . '-runtime' ];
-		wp_enqueue_script( $handle_prefix . '-init', $init_url, array_merge( [ $handle_prefix . '-data' ], $runtime_dep ), XPRESSUI_BRIDGE_VERSION, false );
+		$init_deps = array_merge( [ $handle_prefix . '-data', $handle_prefix . '-header-offset' ], $runtime_dep );
+		wp_enqueue_script( $handle_prefix . '-init', $init_url, $init_deps, XPRESSUI_BRIDGE_VERSION, false );
 	}
 
 	// Capture the script tags produced by the WP enqueue API for injection.
 	global $wp_scripts;
-	$handles_to_print = [ $handle_prefix . '-data' ];
+	$handles_to_print = [ $handle_prefix . '-data', $handle_prefix . '-header-offset' ];
 	if ( ! $runtime_already_embedded && '' !== $runtime_url ) {
 		$handles_to_print[] = $handle_prefix . '-runtime';
 	}

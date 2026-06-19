@@ -986,13 +986,21 @@ function xpressui_render_shortcode( $atts ) {
 		false
 	);
 
-	// Enqueue the shell init script (depends on the runtime).
+	wp_enqueue_script(
+		'xpressui-header-offset',
+		XPRESSUI_BRIDGE_URL . 'assets/shell/xpressui-header-offset.js',
+		[],
+		XPRESSUI_BRIDGE_VERSION,
+		true
+	);
+
+	// Enqueue the shell init script (depends on the runtime and header offset).
 	wp_enqueue_script(
 		'xpressui-shell-init',
 		XPRESSUI_BRIDGE_URL . 'assets/shell/plugin-shell-init.js',
-		[ $runtime_handle ],
+		[ $runtime_handle, 'xpressui-header-offset' ],
 		XPRESSUI_BRIDGE_VERSION,
-		false
+		true
 	);
 
 	// Inject REST endpoint, translations, and shell metadata before init runs.

@@ -951,7 +951,7 @@
     }
     .page-shell--product-catalog .template-product-landing-header {
       position: sticky;
-      top: 0;
+      top: var(--xpressui-header-offset, 0px);
       z-index: 60;
       min-height: 76px;
       margin: 0 0 clamp(18px, 2.5vw, 30px);
@@ -1628,7 +1628,7 @@
   flex-wrap: nowrap !important;
   gap: 2px !important;
   position: sticky !important;
-  top: 16px !important;
+  top: calc(var(--xpressui-header-offset, 0px) + 16px) !important;
   margin: 0 !important;
   padding: 0 !important;
 }
