@@ -4,7 +4,7 @@ Tags: document collection, client portal, file upload, intake form, multi-step f
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.96
+Stable tag: 1.0.97
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -141,6 +141,15 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.97 =
+* New: Headless product & time-slot booking catalogs render server-side in WordPress (SEO + faster load) on hosted-link pages.
+* New: Booking summary shown inside the checkout form for time-slot/booking catalogs.
+* New: "Sync All Workflows" with a live progress bar; hosted-links synchronization & webhooks.
+* New: Embedded console with secure single sign-on plus "Edit on IntakeFlow" deep links.
+* Improve: Many catalog/checkout layout fixes on WordPress themes — grid/card overlap, spacing and alignment, mobile stacking, sticky-header overlap, empty-cart checkout, consistent top spacing.
+* Improve: Payment-proof (bank transfer / RIB) field; option to disable archive file types in validation.
+* Fix: Resolved all Plugin Check / PHPCS findings with proper fixes (no suppressions).
 
 = 1.0.96 =
 * Use secure transient database storage for admin notices instead of raw query parameters to pass Plugin Check.
