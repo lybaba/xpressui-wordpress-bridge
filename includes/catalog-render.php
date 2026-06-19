@@ -331,12 +331,8 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$html  = '<div class="xpressui-embed-wrapper xpressui-inline-embed">';
 	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell" data-hosted-link-id="' . esc_attr( (string) $link_id ) . '">';
 	$html .= '<div class="form-frame form-frame--commerce-landing">';
-	// Grid (the "articles") first so the structure matches the services/time-slots template
-	// (list as the form-frame's first child). The hidden cart-shell <form> follows it — it is
-	// display:none and resolved by id, so its DOM position is irrelevant to the cart JS, but
-	// keeping it before the grid made it the :first-child and shifted the product layout.
-	$html .= $inner;
 	$html .= $shell;
+	$html .= $inner;
 	$html .= '</div></div></div>';
 
 	return wp_kses( $html, xpressui_get_shell_allowed_html() );
