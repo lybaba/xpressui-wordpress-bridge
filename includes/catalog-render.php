@@ -414,6 +414,13 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	// Hard-hide the cart-state form shell.
 	$css .= $sel . ' #' . $shell_id . ',' . $sel . ' #' . $shell_id . ' *{display:none !important;visibility:hidden !important;width:0 !important;height:0 !important;overflow:hidden !important;pointer-events:none !important;opacity:0 !important;}';
 
+	// Style the shopping cart trigger as a floating pill in the bottom-right corner.
+	$css .= $sel . ' .xpui-product-cart-toolbar{position:fixed !important;bottom:24px !important;right:24px !important;z-index:99999 !important;margin:0 !important;width:auto !important;float:none !important;display:flex !important;justify-content:flex-end !important;}';
+	$css .= $sel . ' .xpui-product-cart-toolbar .xpui-cart-trigger{width:auto !important;box-shadow:0 10px 25px -5px rgba(0,0,0,0.15),0 8px 16px -6px rgba(0,0,0,0.15) !important;transition:transform 0.2s ease,background-color 0.2s ease !important;}';
+	$css .= $sel . ' .xpui-product-cart-toolbar .xpui-cart-trigger:hover{transform:translateY(-2px) scale(1.02) !important;}';
+	$css .= $sel . ' .xpui-product-cart-toolbar .xpui-cart-trigger:active{transform:translateY(0) scale(0.98) !important;}';
+	$css .= '@media (max-width:640px){' . $sel . ' .xpui-product-cart-toolbar{bottom:16px !important;right:16px !important;}}';
+
 	return $css;
 }
 

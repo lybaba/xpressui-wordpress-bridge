@@ -664,7 +664,34 @@
     .xpui-capture-status { font-size: 13px; color: #64748b; }
     #xpressui-root [data-mobile-capture-btn] { cursor: pointer; background: color-mix(in srgb, var(--template-primary) 10%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 30%, transparent); color: var(--template-primary); font-size: 12px; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
     #xpressui-root [data-mobile-capture-btn]:hover { background: color-mix(in srgb, var(--template-primary) 16%, var(--template-surface)); border-color: color-mix(in srgb, var(--template-primary) 50%, transparent); transform: translateY(-1px); }
-    .xpui-product-cart-toolbar { display: flex; justify-content: flex-end; margin: 0 0 16px; }
+    .xpui-product-cart-toolbar {
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 24px !important;
+      z-index: 99999 !important;
+      margin: 0 !important;
+      width: auto !important;
+      float: none !important;
+      display: flex !important;
+      justify-content: flex-end !important;
+    }
+    .xpui-product-cart-toolbar .xpui-cart-trigger {
+      width: auto !important;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 16px -6px rgba(0,0,0,0.15) !important;
+      transition: transform 0.2s ease, background-color 0.2s ease !important;
+    }
+    .xpui-product-cart-toolbar .xpui-cart-trigger:hover {
+      transform: translateY(-2px) scale(1.02) !important;
+    }
+    .xpui-product-cart-toolbar .xpui-cart-trigger:active {
+      transform: translateY(0) scale(0.98) !important;
+    }
+    @media (max-width: 640px) {
+      .xpui-product-cart-toolbar {
+        bottom: 16px !important;
+        right: 16px !important;
+      }
+    }
     .xpui-cart-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 132px; min-height: 44px; border-radius: 999px; border: none; background: var(--template-text); color: #f8fafc; cursor: pointer; padding: 0 16px; box-shadow: 0 14px 34px -22px rgba(15,23,42,0.6); font-family: var(--template-font-family); font-weight: 850; }
     .xpui-cart-trigger[hidden] { display: none !important; }
     .xpui-cart-trigger-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; flex: 0 0 auto; }
