@@ -109,7 +109,7 @@ function xpressui_render_product_catalog_grid( $catalog, $detail_base = '' ) {
 		<?php echo $items_per_page ? 'data-items-per-page="' . esc_attr( (string) $items_per_page ) . '"' : ''; ?>
 	>
 		<div class="template-product-landing-search" data-product-landing-search hidden></div>
-		<div class="template-product-grid" data-workflow-product-grid<?php echo $grid_columns ? ' data-grid-columns="' . esc_attr( (string) $grid_columns ) . '"' : ''; ?>>
+		<div class="template-product-grid" style="display: grid !important; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)) !important; gap: 18px !important; row-gap: 18px !important; column-gap: 18px !important; margin-bottom: 14px !important; float: none !important; width: 100% !important; height: auto !important;" data-workflow-product-grid<?php echo $grid_columns ? ' data-grid-columns="' . esc_attr( (string) $grid_columns ) . '"' : ''; ?>>
 			<?php foreach ( $items as $item ) : ?>
 				<?php
 				if ( ! is_array( $item ) ) {
@@ -130,6 +130,7 @@ function xpressui_render_product_catalog_grid( $catalog, $detail_base = '' ) {
 				?>
 			<article
 				class="template-product-card"
+				style="display: flex !important; flex-direction: column !important; gap: 10px !important; min-width: 0 !important; min-height: 0 !important; padding: 12px !important; border: 1px solid color-mix(in srgb, var(--template-border, #d7e0ea) 78%, transparent) !important; border-radius: 12px !important; background: var(--template-surface, #ffffff) !important; float: none !important; width: auto !important; max-width: none !important; margin: 0 !important; box-sizing: border-box !important;"
 				data-product-id="<?php echo esc_attr( $id ); ?>"
 				data-product-label="<?php echo esc_attr( $label ); ?>"
 				data-product-sku="<?php echo esc_attr( (string) ( $item['sku'] ?? '' ) ); ?>"
@@ -329,6 +330,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$shell .= '</form>';
 
 	$html  = '<div class="xpressui-embed-wrapper xpressui-inline-embed">';
+	$html .= '<style>' . $theme_css . '</style>';
 	$html .= '<div id="' . esc_attr( $mount_id ) . '" class="xpressui-embed page-shell page-shell--product-catalog" data-template-zone="page_shell" data-hosted-link-id="' . esc_attr( (string) $link_id ) . '">';
 	$html .= '<div class="form-frame form-frame--commerce-landing">';
 	$html .= $shell;
@@ -397,7 +399,7 @@ function xpressui_build_catalog_embed_css( $mount_id, $shell_id, $vars ) {
 	$css .= $sel . ' .template-product-catalog-section{padding-top:0;}';
 	
 	// Force the product grid layout to override theme-specific float/display resets.
-	$css .= $sel . ' .template-product-grid{display:grid !important;gap:18px !important;margin-bottom:0 !important;float:none !important;width:100% !important;}';
+	$css .= $sel . ' .template-product-grid{display:grid !important;row-gap:18px !important;column-gap:18px !important;grid-row-gap:18px !important;grid-column-gap:18px !important;gap:18px !important;margin-bottom:0 !important;float:none !important;width:100% !important;}';
 	
 	// Defuse host-theme spacing/layout bleed on the card content (themes add margins/widths/floats to
 	// article/h3/p inside .entry-content, which breaks the card rhythm).

@@ -509,6 +509,7 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 	ob_start();
 	?>
 <div class="xpressui-embed-wrapper xpressui-inline-embed">
+	<style><?php echo $reset; ?></style>
 	<div id="<?php echo esc_attr( $mount_id ); ?>" class="xpressui-embed page-shell page-shell--catalog-public page-shell--time-slots-catalog" data-template-zone="page_shell" data-hosted-link-id="<?php echo esc_attr( (string) $link_id ); ?>">
 		<main class="form-frame form-frame--catalog-public form-frame--catalog-landing form-frame--time-slots-catalog">
 			<div class="template-catalog-time-slots-landing"
