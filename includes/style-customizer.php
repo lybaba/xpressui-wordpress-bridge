@@ -54,7 +54,7 @@ function xpressui_get_customizer_css() {
 	$css = '';
 	if ( $brand_color || $text_color || $bg_color || '' !== $radius || $font ) {
 		$css .= "\n/* IntakeFlow Style Customizer overrides */\n";
-		$css .= ".xpressui-embed-wrapper, .xpressui-embed, #xpressui-root {\n";
+		$css .= ".xpressui-embed-wrapper, .xpressui-embed, #xpressui-root, .xpressui-client-portal {\n";
 		if ( $brand_color ) {
 			$css .= "  --template-primary: " . esc_attr( $brand_color ) . " !important;\n";
 		}

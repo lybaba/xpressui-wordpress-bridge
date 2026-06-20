@@ -64,6 +64,8 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/sandbox-preview-features.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/style-customizer.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/form-importer.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/submission-exporter.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-logs.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/dashboard-widget.php';
 
 define( 'XPRESSUI_PRO_VERSION', XPRESSUI_BRIDGE_VERSION );
 define( 'XPRESSUI_PRO_RUNTIME_VERSION', XPRESSUI_BRIDGE_RUNTIME_VERSION );

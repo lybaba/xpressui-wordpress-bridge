@@ -364,6 +364,20 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		}
 	}
 
+	// Spam Honeypot Protection: Reject submission if honeypot fields are filled.
+	$hp_val1 = $request->get_param( 'xpressui_honeypot' );
+	$hp_val2 = $request->get_param( 'confirm_email' );
+	$payload_hp1 = is_array( $payload ) ? ( $payload['xpressui_honeypot'] ?? '' ) : '';
+	$payload_hp2 = is_array( $payload ) ? ( $payload['confirm_email'] ?? '' ) : '';
+
+	if ( ! empty( $hp_val1 ) || ! empty( $hp_val2 ) || ! empty( $payload_hp1 ) || ! empty( $payload_hp2 ) ) {
+		return new WP_Error(
+			'xpressui_spam_detected',
+			__( 'Spam submission detected.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+
 	// Resume resubmission path: bypass normal insert when a resume token is present.
 	$resume_token = is_array( $payload ) ? sanitize_text_field( (string) ( $payload['xpressui_resume_token'] ?? '' ) ) : '';
 	if ( $resume_token !== '' ) {

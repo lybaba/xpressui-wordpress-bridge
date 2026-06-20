@@ -992,6 +992,7 @@ function xpressui_render_settings_page() {
 	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=general' ) ) . '" class="nav-tab ' . ( 'general' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'General Settings', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=style' ) ) . '" class="nav-tab ' . ( 'style' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Style Customizer', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Form Importer', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=synclogs' ) ) . '" class="nav-tab ' . ( 'synclogs' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Sync Logs', 'xpressui-bridge' ) . '</a>';
 	echo '</h2>';
 
 	if ( 'style' === $current_tab ) {
@@ -1005,6 +1006,14 @@ function xpressui_render_settings_page() {
 	if ( 'import' === $current_tab ) {
 		if ( function_exists( 'xpressui_render_form_importer_tab' ) ) {
 			xpressui_render_form_importer_tab();
+		}
+		echo '</div>'; // .wrap
+		return;
+	}
+
+	if ( 'synclogs' === $current_tab ) {
+		if ( function_exists( 'xpressui_render_sync_logs_tab' ) ) {
+			xpressui_render_sync_logs_tab();
 		}
 		echo '</div>'; // .wrap
 		return;

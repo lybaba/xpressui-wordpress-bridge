@@ -138,7 +138,65 @@ function xpressui_get_portal_client_email() {
 function xpressui_render_client_portal_view() {
 	$client_email = xpressui_get_portal_client_email();
 
-	echo '<div class="xpressui-client-portal" style="font-family: -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif; max-width: 800px; margin: 30px auto; padding: 25px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);">';
+	// Fetch style customizer overrides
+	$customizer_css = '';
+	if ( function_exists( 'xpressui_get_customizer_css' ) ) {
+		$customizer_css = xpressui_get_customizer_css();
+	}
+
+	echo '<style>';
+	?>
+	.xpressui-client-portal {
+		--template-primary: #2563eb;
+		--template-text: #0f172a;
+		--template-surface: #ffffff;
+		--template-button-radius: 8px;
+		--template-card-radius: 16px;
+		--template-input-radius: 8px;
+		--template-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+		font-family: var(--template-font-family) !important;
+		max-width: 800px;
+		margin: 30px auto;
+		padding: 25px;
+		background: var(--template-surface) !important;
+		border: 1px solid #e2e8f0;
+		border-radius: var(--template-card-radius) !important;
+		box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+		color: var(--template-text) !important;
+	}
+	.xpressui-client-portal h2,
+	.xpressui-client-portal h3 {
+		color: var(--template-text) !important;
+	}
+	.xpressui-client-portal input[type="email"],
+	.xpressui-client-portal input[type="text"] {
+		border-radius: var(--template-input-radius) !important;
+		border: 1.5px solid #cbd5e1 !important;
+		background: #ffffff !important;
+		color: #0f172a !important;
+		box-sizing: border-box;
+	}
+	.xpressui-client-portal button[type="submit"] {
+		background: var(--template-primary) !important;
+		color: #ffffff !important;
+		border-radius: var(--template-button-radius) !important;
+		border: none !important;
+		font-weight: 700 !important;
+		cursor: pointer;
+		transition: opacity 0.2s;
+	}
+	.xpressui-client-portal button[type="submit"]:hover {
+		opacity: 0.9;
+	}
+	.xpressui-client-portal .submission-item {
+		border-radius: var(--template-input-radius) !important;
+	}
+	<?php
+	echo $customizer_css;
+	echo '</style>';
+
+	echo '<div class="xpressui-client-portal">';
 
 	if ( ! empty( $client_email ) ) {
 		// LOGGED IN DASHBOARD
@@ -161,7 +219,7 @@ function xpressui_render_portal_login_form() {
 	?>
 	<div style="text-align: center; margin-bottom: 25px;">
 		<div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
-		<h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;"><?php esc_html_e( 'Secure Client Portal', 'xpressui-bridge' ); ?></h2>
+		<h2 style="margin: 0; font-size: 22px; font-weight: 800;"><?php esc_html_e( 'Secure Client Portal', 'xpressui-bridge' ); ?></h2>
 		<p style="margin: 5px 0 0; color: #64748b; font-size: 14px;"><?php esc_html_e( 'Enter your email address to access your submissions and B2B workspace.', 'xpressui-bridge' ); ?></p>
 	</div>
 
@@ -177,10 +235,10 @@ function xpressui_render_portal_login_form() {
 		
 		<div>
 			<label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;"><?php esc_html_e( 'Email Address', 'xpressui-bridge' ); ?></label>
-			<input type="email" name="client_email" required placeholder="client@company.com" style="width: 100%; height: 42px; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; outline: none; box-sizing: border-box;" />
+			<input type="email" name="client_email" required placeholder="client@company.com" style="width: 100%; height: 42px; padding: 0 12px; font-size: 14px; outline: none;" />
 		</div>
 
-		<button type="submit" style="width: 100%; height: 42px; background: #2563eb; color: #ffffff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;"><?php esc_html_e( 'Send Verification Code', 'xpressui-bridge' ); ?></button>
+		<button type="submit" style="width: 100%; height: 42px; font-size: 14px;"><?php esc_html_e( 'Send Verification Code', 'xpressui-bridge' ); ?></button>
 	</form>
 	<?php
 }
@@ -193,7 +251,7 @@ function xpressui_render_portal_otp_form() {
 	?>
 	<div style="text-align: center; margin-bottom: 25px;">
 		<div style="font-size: 40px; margin-bottom: 10px;">✉️</div>
-		<h2 style="margin: 0; font-size: 22px; font-weight: 800; color: #0f172a;"><?php esc_html_e( 'Verify Your Identity', 'xpressui-bridge' ); ?></h2>
+		<h2 style="margin: 0; font-size: 22px; font-weight: 800;"><?php esc_html_e( 'Verify Your Identity', 'xpressui-bridge' ); ?></h2>
 		<p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">
 			<?php printf( esc_html__( 'We\'ve sent a code to %s. Enter it below to authorize this session.', 'xpressui-bridge' ), '<code>' . esc_html( $email ) . '</code>' ); ?>
 		</p>
@@ -216,10 +274,10 @@ function xpressui_render_portal_otp_form() {
 		
 		<div>
 			<label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;"><?php esc_html_e( 'Verification Code', 'xpressui-bridge' ); ?></label>
-			<input type="text" name="client_otp" required placeholder="123456" pattern="[0-9]*" style="width: 100%; height: 42px; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-size: 14px; text-align: center; letter-spacing: 4px; font-weight: bold; outline: none; box-sizing: border-box;" />
+			<input type="text" name="client_otp" required placeholder="123456" pattern="[0-9]*" style="width: 100%; height: 42px; padding: 0 12px; font-size: 14px; text-align: center; letter-spacing: 4px; font-weight: bold; outline: none;" />
 		</div>
 
-		<button type="submit" style="width: 100%; height: 42px; background: #16a34a; color: #ffffff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;"><?php esc_html_e( 'Authorize & Log In', 'xpressui-bridge' ); ?></button>
+		<button type="submit" style="width: 100%; height: 42px; font-size: 14px;"><?php esc_html_e( 'Authorize & Log In', 'xpressui-bridge' ); ?></button>
 	</form>
 	<?php
 }

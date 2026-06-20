@@ -16,6 +16,11 @@ $xpressui_mount_id = isset($xpressui_ctx['_mount_node_id'])
 	: 'xpressui-root';
 ?>
 <div id="<?php echo esc_attr($xpressui_mount_id); ?>" class="page-shell xpressui-inline-form" data-template-zone="page_shell">
+	<!-- Honeypot spam protection fields -->
+	<div style="display: none !important; opacity: 0 !important; position: absolute !important; left: -9999px !important; z-index: -9999 !important;" aria-hidden="true">
+		<input type="text" name="xpressui_honeypot" tabindex="-1" autocomplete="off" />
+		<input type="text" name="confirm_email" tabindex="-1" autocomplete="off" />
+	</div>
 <?php xpressui_bridge_template_include_template('header.php', $xpressui_ctx); ?>
 <?php xpressui_bridge_template_include_template('form-frame.php', $xpressui_ctx); ?>
 <?php xpressui_bridge_template_include_template('footer.php', $xpressui_ctx); ?>
