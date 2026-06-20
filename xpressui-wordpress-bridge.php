@@ -61,6 +61,9 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/woocommerce-bridge.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/page-builder-widgets.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/client-portal.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/sandbox-preview-features.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/style-customizer.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/form-importer.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/submission-exporter.php';
 
 define( 'XPRESSUI_PRO_VERSION', XPRESSUI_BRIDGE_VERSION );
 define( 'XPRESSUI_PRO_RUNTIME_VERSION', XPRESSUI_BRIDGE_RUNTIME_VERSION );

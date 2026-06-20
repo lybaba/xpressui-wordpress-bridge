@@ -1045,10 +1045,22 @@ function xpressui_render_shortcode( $atts ) {
 		wp_add_inline_style( $style_handle, $inline_css );
 	}
 
+	// Inject Style Customizer CSS overrides
+	if ( function_exists( 'xpressui_get_customizer_css' ) ) {
+		$customizer_css = xpressui_get_customizer_css();
+		if ( '' !== $customizer_css ) {
+			wp_add_inline_style( $style_handle, $customizer_css );
+		}
+	}
+
 	// Resume-mode detection: set data-resume-loading on the mount element when
 	// ?xpressui_resume= is present. Delivered via wp_add_inline_script.
 	$resume_script = 'try{if(/[?&]xpressui_resume=/.test(location.search)){var _xpEl=document.getElementById(' . wp_json_encode( $mount_node_id ) . ');if(_xpEl)_xpEl.setAttribute("data-resume-loading","");}}catch(e){}';
 	wp_add_inline_script( 'xpressui-shell-init', $resume_script, 'after' );
+
+	// Dynamic pre-filling via URL parameters
+	$prefill_script = 'try{var params=new URLSearchParams(location.search);params.forEach(function(val,key){var input=document.querySelector(\'[name="\'+key+\'"], [data-field-id="\'+key+\'"], #\'+key);if(input){input.value=val;input.dispatchEvent(new Event("input",{bubbles:true}));input.dispatchEvent(new Event("change",{bubbles:true}));}});}catch(e){}';
+	wp_add_inline_script( 'xpressui-shell-init', $prefill_script, 'after' );
 
 	// Handle reference documents direct download interception for cross-origin URLs.
 	$download_script = 'try{document.addEventListener("click",function(e){var btn=e.target.closest(".xpressui-ref-docs__download");if(!btn)return;var url=btn.getAttribute("href");if(!url)return;e.preventDefault();btn.style.opacity="0.5";btn.style.pointerEvents="none";fetch(url).then(function(res){if(!res.ok)throw new Error("Fetch failed");return res.blob();}).then(function(blob){var blobUrl=URL.createObjectURL(blob);var a=document.createElement("a");a.href=blobUrl;a.download=btn.getAttribute("download")||url.substring(url.lastIndexOf("/")+1)||"document";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(blobUrl);}).catch(function(err){console.error("Download failed:",err);window.open(url,"_blank","noopener,noreferrer");}).finally(function(){btn.style.opacity="";btn.style.pointerEvents="";});});}catch(e){}';

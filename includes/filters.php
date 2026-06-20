@@ -45,6 +45,17 @@ function xpressui_render_submission_filters( $post_type ) {
 		echo '<option value="' . esc_attr( $value ) . '"' . selected( $selected_assignee, $value, false ) . '>' . esc_html( $label ) . '</option>';
 	}
 	echo '</select>';
+
+	// CSV Export Button
+	$export_url = wp_nonce_url(
+		add_query_arg( [
+			'xpressui_export_csv' => '1',
+			'xpressui_project'    => $selected_project,
+		], admin_url( 'edit.php' ) ),
+		'xpressui_export_csv_action',
+		'nonce'
+	);
+	echo '<a href="' . esc_url( $export_url ) . '" class="button button-secondary" style="margin-left: 10px; display: inline-flex; align-items: center; justify-content: center; height: 30px;">' . esc_html__( 'Export to CSV', 'xpressui-bridge' ) . '</a>';
 }
 
 function xpressui_apply_submission_filters( $query ) {

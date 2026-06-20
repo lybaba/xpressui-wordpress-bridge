@@ -985,6 +985,31 @@ function xpressui_render_settings_page() {
 	echo '<h1>' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</h1>';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Configure your IntakeFlow Console settings and monitor runtime status.', 'xpressui-bridge' ) . '</p>';
 
+	// Tabbed navigation
+	$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
+
+	echo '<h2 class="nav-tab-wrapper" style="margin-bottom: 20px;">';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=general' ) ) . '" class="nav-tab ' . ( 'general' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'General Settings', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=style' ) ) . '" class="nav-tab ' . ( 'style' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Style Customizer', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Form Importer', 'xpressui-bridge' ) . '</a>';
+	echo '</h2>';
+
+	if ( 'style' === $current_tab ) {
+		if ( function_exists( 'xpressui_render_style_customizer_tab' ) ) {
+			xpressui_render_style_customizer_tab();
+		}
+		echo '</div>'; // .wrap
+		return;
+	}
+
+	if ( 'import' === $current_tab ) {
+		if ( function_exists( 'xpressui_render_form_importer_tab' ) ) {
+			xpressui_render_form_importer_tab();
+		}
+		echo '</div>'; // .wrap
+		return;
+	}
+
 	// 1. Runtime Health Card
 	$runtime_health = xpressui_get_runtime_health_summary();
 	$api_health     = xpressui_check_console_api_health();
