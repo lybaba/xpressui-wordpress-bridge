@@ -1208,10 +1208,27 @@ function xpressui_render_shortcode( $atts ) {
 		}
 	}
 
+	$hide_branding = get_option( 'xpressui_hide_branding', '0' ) === '1';
+	// Only connected Pro sites can actually activate hide_branding.
+	// Safety fallback check: if hide_branding is set but license is NOT active, force show.
+	if ( $hide_branding && ! xpressui_pro_is_license_active() ) {
+		$hide_branding = false;
+	}
+
+	$branding_footer = '';
+	if ( ! $hide_branding ) {
+		$branding_footer = '<div class="xpressui-form-branding-footer" style="text-align: center; margin-top: 15px; font-size: 11px; color: #94a3b8; font-family: -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif; width: 100%;">'
+			. '<a href="https://intakeflow.dev" target="_blank" rel="noopener noreferrer" style="color: #94a3b8; text-decoration: none; font-weight: 500;">'
+			. sprintf( esc_html__( 'Powered by %s', 'xpressui-bridge' ), 'IntakeFlow' )
+			. '</a>'
+			. '</div>';
+	}
+
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $intro_outside_html
 		. $fragment_html
 		. $config_tag
+		. $branding_footer
 		. '</div>';
 
 	if ( $is_preview ) {

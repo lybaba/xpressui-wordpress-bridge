@@ -848,3 +848,41 @@ function xpressui_check_console_api_health(): array {
 	];
 }
 
+/**
+ * Handles the redirect callback from the Console during 1-click connection.
+ * Sanitizes and saves the api_token, owner_uid, and api_url.
+ */
+function xpressui_maybe_handle_console_connect_callback() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	if ( ! isset( $_GET['api_token'] ) || ! isset( $_GET['owner_uid'] ) ) {
+		return;
+	}
+
+	$api_token = sanitize_text_field( wp_unslash( $_GET['api_token'] ) );
+	$owner_uid = sanitize_text_field( wp_unslash( $_GET['owner_uid'] ) );
+	$api_url   = isset( $_GET['api_url'] ) ? esc_url_raw( wp_unslash( $_GET['api_url'] ) ) : 'https://app.intakeflow.dev';
+
+	if ( '' === $api_token || '' === $owner_uid ) {
+		return;
+	}
+
+	update_option( 'xpressui_console_connection', [
+		'apiUrl'   => $api_url,
+		'apiToken' => $api_token,
+		'ownerUid' => $owner_uid,
+	] );
+
+	if ( function_exists( 'xpressui_set_admin_notice' ) ) {
+		xpressui_set_admin_notice( __( 'Successfully connected to IntakeFlow Console!', 'xpressui-bridge' ), 'success' );
+	}
+
+	// Redirect to the same page without query args to keep URL clean
+	$clean_url = remove_query_arg( [ 'api_token', 'owner_uid', 'api_url' ] );
+	wp_safe_redirect( $clean_url );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_maybe_handle_console_connect_callback' );
+

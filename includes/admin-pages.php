@@ -158,6 +158,135 @@ function xpressui_get_admin_notice() {
 	return null;
 }
 
+function xpressui_render_quota_roi_dashboard() {
+	$today_year = gmdate('Y');
+	$today_month = gmdate('m');
+
+	// Submissions in the current month
+	$current_month_submissions = count(get_posts([
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'date_query'     => [
+			[
+				'year'  => $today_year,
+				'month' => $today_month,
+			]
+		]
+	]));
+
+	// Total corrections requested (submissions with _xpressui_flagged_fields)
+	$corrections_count = count(get_posts([
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'meta_query'     => [
+			[
+				'key'     => '_xpressui_flagged_fields',
+				'compare' => 'EXISTS'
+			]
+		]
+	]));
+
+	// Total submissions
+	$total_submissions = count(get_posts([
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+	]));
+
+	$hours_saved = $total_submissions > 0 ? max( 0.5, round( ( $total_submissions * 15 + $corrections_count * 20 ) / 60, 1 ) ) : 0;
+	
+	// Default limit for free/trial is 100
+	$quota_limit = 100;
+	$quota_percentage = min(100, round(($current_month_submissions / $quota_limit) * 100));
+
+	$is_pro = xpressui_pro_is_license_active();
+	$conn = xpressui_get_console_connection();
+	$console_url = ! empty( $conn['apiUrl'] ) ? $conn['apiUrl'] : 'https://app.intakeflow.dev';
+	$upgrade_url = trailingslashit($console_url) . 'billing';
+
+	?>
+	<div class="xpressui-quota-roi-container" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0 30px; max-width: 1000px;">
+		
+		<!-- Quota Widget -->
+		<div class="card xpressui-admin-card xpressui-quota-card" style="flex: 1; min-width: 280px; margin: 0; padding: 20px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+			<div>
+				<h3 style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: space-between;">
+					<span><?php esc_html_e( 'Monthly Submission Quota', 'xpressui-bridge' ); ?></span>
+					<span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px;">
+						<?php echo $is_pro ? esc_html__( 'Pro Active', 'xpressui-bridge' ) : esc_html__( 'Free Plan', 'xpressui-bridge' ); ?>
+					</span>
+				</h3>
+				<p style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 12px;">
+					<?php echo (int) $current_month_submissions; ?> <span style="font-size: 14px; font-weight: 500; color: #64748b;">/ <?php echo (int) $quota_limit; ?> <?php esc_html_e( 'submissions', 'xpressui-bridge' ); ?></span>
+				</p>
+				
+				<!-- Progress Bar -->
+				<div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
+					<div style="width: <?php echo (int) $quota_percentage; ?>%; height: 100%; background: <?php echo $quota_percentage > 85 ? '#ef4444' : '#3b82f6'; ?>; border-radius: 999px; transition: width 0.4s ease-out;"></div>
+				</div>
+			</div>
+			
+			<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+				<span style="font-size: 12px; color: #64748b;">
+					<?php 
+					if ( $quota_percentage > 85 ) {
+						esc_html_e( 'Approaching limit! Please upgrade soon.', 'xpressui-bridge' );
+					} else {
+						esc_html_e( 'Resets on the 1st of next month.', 'xpressui-bridge' );
+					}
+					?>
+				</span>
+				<?php if ( ! $is_pro ) : ?>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) ); ?>" class="button button-secondary" style="font-size: 11px; height: 28px; line-height: 26px; border-radius: 6px; font-weight: 600; padding: 0 10px;">
+						<?php esc_html_e( 'Connect to Upgrade', 'xpressui-bridge' ); ?>
+					</a>
+				<?php else : ?>
+					<a href="<?php echo esc_url( $upgrade_url ); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="font-size: 11px; height: 28px; line-height: 26px; border-radius: 6px; font-weight: 600; padding: 0 10px;">
+						<?php esc_html_e( 'Upgrade Plan', 'xpressui-bridge' ); ?>
+					</a>
+				<?php endif; ?>
+			</div>
+		</div>
+
+		<!-- ROI Widget -->
+		<div class="card xpressui-admin-card xpressui-roi-card" style="flex: 1.2; min-width: 320px; margin: 0; padding: 20px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: flex-start;">
+			<div style="font-size: 32px; flex-shrink: 0; line-height: 1; padding: 8px; background: #f0fdf4; border-radius: 10px; color: #16a34a; font-weight: bold;">
+				⚡
+			</div>
+			<div>
+				<h3 style="margin: 0 0 5px; font-size: 15px; font-weight: 700; color: #0f172a;">
+					<?php esc_html_e( 'IntakeFlow Productivity ROI', 'xpressui-bridge' ); ?>
+				</h3>
+				<p style="font-size: 13px; color: #64748b; margin: 0 0 12px; line-height: 1.4;">
+					<?php 
+					printf(
+						/* translators: 1: total submissions, 2: corrections count */
+						esc_html__( 'By automating %1$d submissions and %2$d client document correction requests, IntakeFlow has saved you from tedious manual email follow-ups.', 'xpressui-bridge' ),
+						(int) $total_submissions,
+						(int) $corrections_count
+					);
+					?>
+				</p>
+				<div style="display: flex; gap: 15px; align-items: baseline;">
+					<span style="font-size: 28px; font-weight: 850; color: #16a34a; letter-spacing: -0.02em;">
+						<?php echo esc_html( (string) $hours_saved ); ?>
+					</span>
+					<span style="font-size: 13px; font-weight: 600; color: #16a34a;">
+						<?php esc_html_e( 'Hours of admin work saved', 'xpressui-bridge' ); ?>
+					</span>
+				</div>
+			</div>
+		</div>
+
+	</div>
+	<?php
+}
+
 function xpressui_render_workflows_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
@@ -208,6 +337,8 @@ function xpressui_render_workflows_page() {
 	}
 	echo '<hr class="wp-header-end">';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-workflow settings.', 'xpressui-bridge' ) . '</p>';
+
+	xpressui_render_quota_roi_dashboard();
 
 	if ( ! xpressui_pro_is_license_active() ) {
 		echo '<div class="notice notice-warning inline" style="margin-top: 15px; max-width: 900px;"><p>';
@@ -890,10 +1021,27 @@ function xpressui_render_settings_page() {
 	// 2. Console Sync / Connection Card
 	echo '<div class="card xpressui-admin-card">';
 	echo '<h2>' . esc_html__( 'Console Connection', 'xpressui-bridge' ) . '</h2>';
-	echo '<p class="description">' . esc_html__( 'Configure the connection to your IntakeFlow Console.', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="description">' . esc_html__( 'Connect your site to the IntakeFlow Console to synchronize workflows.', 'xpressui-bridge' ) . '</p>';
+
+	$conn = xpressui_get_console_connection();
+	$console_url = ! empty( $conn['apiUrl'] ) ? $conn['apiUrl'] : 'https://app.intakeflow.dev';
+	$connect_url = trailingslashit( $console_url ) . 'wordpress-connect?' . http_build_query([
+		'site_url'   => site_url(),
+		'site_name'  => get_bloginfo( 'name' ),
+		'return_url' => admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' )
+	]);
+
+	echo '<div style="margin: 20px 0; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; max-width: 600px;">';
+	echo '<p style="margin-top: 0; font-weight: 600; color: #0369a1;">' . esc_html__( 'Recommended: 1-Click Connection', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="description" style="margin-bottom: 12px;">' . esc_html__( 'Log in or sign up to your IntakeFlow Console to link this site automatically without copying tokens.', 'xpressui-bridge' ) . '</p>';
+	echo '<a href="' . esc_url( $connect_url ) . '" class="button button-primary button-large" style="display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 6px; font-weight: 600;">' . esc_html__( 'Connect IntakeFlow Account', 'xpressui-bridge' ) . '</a>';
+	echo '</div>';
+
+	echo '<details style="margin-top: 15px; cursor: pointer;"><summary style="font-weight: 600; color: #64748b; margin-bottom: 10px; outline: none;">' . esc_html__( 'Or configure connection manually', 'xpressui-bridge' ) . '</summary>';
 	if ( function_exists( 'xpressui_render_console_connection_form' ) ) {
 		xpressui_render_console_connection_form();
 	}
+	echo '</details>';
 	echo '</div>';
 
 	// Connection saving script
@@ -937,6 +1085,31 @@ JS,
 		wp_json_encode( __( 'Network error.', 'xpressui-bridge' ) )
 	);
 	wp_print_inline_script_tag( $connection_form_script );
+
+	// 3. Branding Settings Card
+	$is_pro = xpressui_pro_is_license_active();
+	$hide_branding = get_option( 'xpressui_hide_branding', '0' ) === '1';
+
+	echo '<div class="card xpressui-admin-card" style="margin-top: 20px;">';
+	echo '<h2>' . esc_html__( 'Branding Settings', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description">' . esc_html__( 'Manage branding settings for your embedded forms.', 'xpressui-bridge' ) . '</p>';
+	
+	echo '<form id="xpressui-branding-form" method="post" style="margin-top: 15px;">';
+	wp_nonce_field( 'xpressui_branding_settings_action', 'xpressui_branding_settings_nonce' );
+	echo '<input type="hidden" name="xpressui_save_branding_settings" value="1">';
+	
+	echo '<label style="display: block; margin-bottom: 12px; font-weight: 500;">';
+	echo '<input type="checkbox" name="xpressui_hide_branding" value="1" ' . checked( $hide_branding, true, false ) . ' ' . ( ! $is_pro ? 'disabled' : '' ) . ' />';
+	echo ' ' . esc_html__( 'Hide "Powered by IntakeFlow" footer under forms', 'xpressui-bridge' );
+	echo '</label>';
+	
+	if ( ! $is_pro ) {
+		echo '<p style="color: #0284c7; background: #e0f2fe; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: 5px; max-width: 500px;">' . esc_html__( '💡 Connecting your site to the IntakeFlow Console (Pro) will allow you to hide the branding footer.', 'xpressui-bridge' ) . '</p>';
+	}
+	
+	submit_button( __( 'Save Branding Settings', 'xpressui-bridge' ), 'secondary', 'submit_branding', true, [ 'disabled' => ! $is_pro ] );
+	echo '</form>';
+	echo '</div>';
 
 	echo '</div>'; // .wrap
 }
@@ -1227,3 +1400,28 @@ JS,
 		wp_print_inline_script_tag( $single_sync_script );
 	}
 }
+
+/**
+ * Saves the branding settings. Locked if not Pro.
+ */
+function xpressui_handle_save_branding_settings() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['xpressui_save_branding_settings'] ) ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_branding_settings_action', 'xpressui_branding_settings_nonce' );
+
+	if ( ! xpressui_pro_is_license_active() ) {
+		return; // block tampering if not pro
+	}
+
+	$hide = isset( $_POST['xpressui_hide_branding'] ) ? '1' : '0';
+	update_option( 'xpressui_hide_branding', $hide );
+
+	xpressui_set_admin_notice( __( 'Branding settings saved.', 'xpressui-bridge' ), 'success' );
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_save_branding_settings' );
