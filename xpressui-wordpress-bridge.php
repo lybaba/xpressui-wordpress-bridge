@@ -56,6 +56,12 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/license-handler.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/console-sync.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-sync.php';
 
+// --- IntakeFlow Plugin Add-ons & Integrations ---
+require_once XPRESSUI_BRIDGE_DIR . 'includes/woocommerce-bridge.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/page-builder-widgets.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/client-portal.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/sandbox-preview-features.php';
+
 define( 'XPRESSUI_PRO_VERSION', XPRESSUI_BRIDGE_VERSION );
 define( 'XPRESSUI_PRO_RUNTIME_VERSION', XPRESSUI_BRIDGE_RUNTIME_VERSION );
 define( 'XPRESSUI_PRO_DIR', XPRESSUI_BRIDGE_DIR );

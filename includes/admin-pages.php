@@ -1111,6 +1111,36 @@ JS,
 	echo '</form>';
 	echo '</div>';
 
+	// 4. WooCommerce Settings Card
+	$enable_woocommerce = get_option( 'xpressui_enable_woocommerce', '0' ) === '1';
+	$has_woocommerce = class_exists( 'WooCommerce' );
+
+	echo '<div class="card xpressui-admin-card" style="margin-top: 20px;">';
+	echo '<h2>' . esc_html__( 'WooCommerce Integration', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description">' . esc_html__( 'Redirect IntakeFlow storefront checkout to the native WooCommerce checkout.', 'xpressui-bridge' ) . '</p>';
+
+	echo '<form id="xpressui-woocommerce-settings-form" method="post" style="margin-top: 15px;">';
+	wp_nonce_field( 'xpressui_woocommerce_settings_action', 'xpressui_woocommerce_settings_nonce' );
+	echo '<input type="hidden" name="xpressui_save_woocommerce_settings" value="1">';
+
+	echo '<label style="display: block; margin-bottom: 12px; font-weight: 500;">';
+	echo '<input type="checkbox" name="xpressui_enable_woocommerce" value="1" ' . checked( $enable_woocommerce, true, false ) . ' ' . ( ! $has_woocommerce ? 'disabled' : '' ) . ' />';
+	echo ' ' . esc_html__( 'Enable WooCommerce checkout redirection', 'xpressui-bridge' );
+	echo '</label>';
+
+	if ( ! $has_woocommerce ) {
+		echo '<p style="color: #dc2626; background: #fef2f2; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: 5px; max-width: 500px;">' . esc_html__( '⚠️ WooCommerce is not active. Install and activate WooCommerce first.', 'xpressui-bridge' ) . '</p>';
+	}
+
+	submit_button( __( 'Save WooCommerce Settings', 'xpressui-bridge' ), 'secondary', 'submit_woocommerce', true, [ 'disabled' => ! $has_woocommerce ] );
+	echo '</form>';
+	echo '</div>';
+
+	// 5. Sandbox Features Cards (Google Drive / OCR simulator)
+	if ( function_exists( 'xpressui_render_sandbox_features_cards' ) ) {
+		xpressui_render_sandbox_features_cards();
+	}
+
 	echo '</div>'; // .wrap
 }
 
@@ -1425,3 +1455,24 @@ function xpressui_handle_save_branding_settings() {
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_save_branding_settings' );
+
+/**
+ * Saves the WooCommerce integration settings.
+ */
+function xpressui_handle_save_woocommerce_settings() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['xpressui_save_woocommerce_settings'] ) ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_woocommerce_settings_action', 'xpressui_woocommerce_settings_nonce' );
+
+	$enable = isset( $_POST['xpressui_enable_woocommerce'] ) ? '1' : '0';
+	update_option( 'xpressui_enable_woocommerce', $enable );
+
+	xpressui_set_admin_notice( __( 'WooCommerce integration settings saved.', 'xpressui-bridge' ), 'success' );
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_save_woocommerce_settings' );
