@@ -4,7 +4,7 @@ Tags: document collection, client portal, file upload, intake form, multi-step f
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.97
+Stable tag: 1.0.98
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,12 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.98 =
+* Improve: Form Importer now keeps phone, number, date and URL fields from Contact Form 7 and Gravity Forms as their proper input types instead of converting them to plain text.
+* Improve: Importer admin scripts and styles are now enqueued instead of being printed inline.
+* Improve: Workflow package files are written through the WordPress Filesystem API.
+* Improve: External service usage (the IntakeFlow Console) is documented with Terms of Service and Privacy Policy links.
 
 = 1.0.97 =
 * New: Headless product & time-slot booking catalogs render server-side in WordPress (SEO + faster load) on hosted-link pages.
