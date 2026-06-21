@@ -229,7 +229,7 @@ function xpressui_pro_field_supports_pattern( array $field ): bool {
 
 function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme, array $summary_stats, string $ov_project_bg, string $pack_project_bg ): void {
 	$customized = $summary_stats['has_theme'] ? '1' : '0';
-	$open       = $summary_stats['has_theme'] ? ' open' : '';
+	$open       = ' open';
 	echo '<details class="xpressui-admin-card"' . $open . ' data-xpressui-card-type="appearance" data-xpressui-customized="' . esc_attr( $customized ) . '" data-xpressui-search-text="appearance design tokens colors primary background surface text border radius" data-xpressui-reset-scope="appearance" id="xpressui-pro-card-appearance">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Appearance & Design Tokens', 'xpressui-bridge' ) . '</h2><span class="xpressui-card-meta">';
 	if ( $summary_stats['has_theme'] ) {
@@ -374,7 +374,7 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 // removed — additional file slots feature moved to cloud offering.
 
 function xpressui_pro_render_card_navigation( array $ov_navigation, array $pack_nav ): void {
-	$nav_open = ! empty( $ov_navigation ) ? ' open' : '';
+	$nav_open = ' open';
 	$nav_fields = [
 		'prev'   => [ __( 'Back button', 'xpressui-bridge' ), (string) ( $pack_nav['prevLabel'] ?? 'Back' ) ],
 		'next'   => [ __( 'Continue button', 'xpressui-bridge' ), (string) ( $pack_nav['nextLabel'] ?? 'Continue' ) ],
@@ -426,7 +426,7 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 				}
 			}
 		}
-		$card_open = $section_has_custom ? ' open' : '';
+		$card_open = ' open';
 
 		$customized_field_count = 0;
 		foreach ( $fields as $field_for_count ) {

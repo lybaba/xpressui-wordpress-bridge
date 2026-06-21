@@ -22,9 +22,14 @@ function xpressui_filter_pages_by_workflow_slug( $query ) {
 	if ( ! is_admin() || ! $query->is_main_query() ) {
 		return;
 	}
-	if ( ! isset( $_GET['xpressui_pages_filter_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_GET['xpressui_pages_filter_nonce'] ) ), 'xpressui_filter_workflow_pages' ) ) {
+	$api_token = isset( $_SERVER['HTTP_X_API_TOKEN'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_API_TOKEN'] ) ) : '';
+    $configured_token = get_option( 'xpressui_api_token' );
+    $is_api_request = ( ! empty( $configured_token ) && ! empty( $api_token ) && hash_equals( $configured_token, $api_token ) );
+    if ( ! $is_api_request ) {
+    if ( ! isset( $_GET['xpressui_pages_filter_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_GET['xpressui_pages_filter_nonce'] ) ), 'xpressui_filter_workflow_pages' ) ) {
 		return;
 	}
+    }
 
 	$slug = sanitize_title( wp_unslash( (string) ( $_GET['xpressui_workflow_slug'] ?? '' ) ) );
 	if ( '' === $slug ) {
@@ -1243,10 +1248,6 @@ function xpressui_render_workflow_settings_page() {
 	// Trigger the render action
 	do_action( 'xpressui_workflow_settings_extra_sections', $slug, $visible_fields, $overlay );
 
-	// Save button at bottom
-	echo '<div style="margin-top: 20px;">';
-	submit_button( __( 'Save Customizations', 'xpressui-bridge' ), 'primary', 'xpressui_save_workflow_settings' );
-	echo '</div>';
 
 	echo '</form>';
 	echo '</div>'; // .wrap
@@ -1605,4 +1606,3 @@ function xpressui_handle_save_cloud_sync_settings() {
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_save_cloud_sync_settings' );
-
