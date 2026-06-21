@@ -276,7 +276,11 @@ function xpressui_render_dashboard_page() {
 		box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
 		transition: all 0.2s !important;
 		cursor: pointer !important;
-		display: inline-block !important;
+		display: inline-flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		text-align: center !important;
+		vertical-align: middle !important;
 		font-size: 11px !important;
 		line-height: 20px !important;
 	}
@@ -493,8 +497,9 @@ function xpressui_render_dashboard_page() {
 		<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 30px;">
 			<h2 style="margin: 0 0 15px; font-size: 16px; font-weight: 800; color: #0f172a; display: flex; justify-content: space-between; align-items: center;">
 				<span><?php esc_html_e( 'Latest Submissions', 'xpressui-bridge' ); ?></span>
-				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission' ) ); ?>" class="button" style="border-radius: 8px; font-weight: 600; font-size: 11px;">
-					<?php esc_html_e( 'View All Submissions', 'xpressui-bridge' ); ?> →
+				<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission' ) ); ?>" class="button" style="border-radius: 8px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; vertical-align: middle;">
+					<?php esc_html_e( 'View All Submissions', 'xpressui-bridge' ); ?>
+					<span class="dashicons dashicons-arrow-right-alt2" style="font-size: 14px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;"></span>
 				</a>
 			</h2>
 
@@ -591,7 +596,7 @@ function xpressui_render_dashboard_page() {
 									</span>
 								</td>
 								<td style="text-align: center;">
-									<a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>" class="button button-small" style="border-radius: 6px;">
+									<a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>" class="button button-small" style="border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
 										<?php esc_html_e( 'View Details', 'xpressui-bridge' ); ?>
 									</a>
 								</td>
