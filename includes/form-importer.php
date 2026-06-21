@@ -412,6 +412,124 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 }
 
 /**
+ * Creates the imported workflow as a project on the SaaS Console.
+ *
+ * Encapsulates the Console "create" interaction only (build document → POST →
+ * validate response). Returns an array with the created project id + slug on
+ * success, or a WP_Error describing the failure. ANY failure here means the
+ * SaaS project could NOT be created, and the caller should fall back to a local
+ * import. The error code identifies the failure class for messaging:
+ *   - missing_connection : URL/token not configured
+ *   - connection_failed  : cURL/WP_Error (refused, timeout, DNS, ...)
+ *   - http_error         : non-2xx response (data => [ 'status' => int ])
+ *   - invalid_response   : 2xx but no usable project id
+ *
+ * @return array|WP_Error { projectId, slug } on success.
+ */
+function xpressui_console_create_project( $slug, $title, $fields, $steps ) {
+	$conn = xpressui_get_console_connection();
+	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
+		return new WP_Error( 'missing_connection', __( 'Console Connection URL or Token is missing.', 'xpressui-bridge' ) );
+	}
+
+	$document = xpressui_build_import_document( $slug, $title, $fields, $steps );
+	$payload  = [
+		'schemaVersion'    => 'console.workflow-export/v1',
+		'workflow'         => $document,
+		'conflictStrategy' => 'auto_suffix',
+		'name'             => $title,
+		'slug'             => $slug,
+	];
+
+	$response = wp_remote_post(
+		trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/import',
+		[
+			'headers' => [
+				'X-Api-Token'  => $conn['apiToken'],
+				'Content-Type' => 'application/json',
+				'Accept'       => 'application/json',
+			],
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => 30,
+		]
+	);
+
+	if ( is_wp_error( $response ) ) {
+		// Connection-level failure (refused, timeout, DNS, ...). Preserve the
+		// original error message for logging, but flag the class as connection_failed.
+		return new WP_Error( 'connection_failed', $response->get_error_message(), [ 'wp_error' => $response ] );
+	}
+
+	$code = wp_remote_retrieve_response_code( $response );
+	if ( 201 !== $code ) {
+		$err_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		$detail   = ! empty( $err_body['detail'] ) ? $err_body['detail'] : __( 'API Import Request failed.', 'xpressui-bridge' );
+		return new WP_Error( 'http_error', $detail, [ 'status' => (int) $code ] );
+	}
+
+	$body           = json_decode( wp_remote_retrieve_body( $response ), true );
+	$api_project_id = ! empty( $body['imported']['projectId'] ) ? sanitize_text_field( $body['imported']['projectId'] ) : '';
+	$final_slug     = ! empty( $body['slug'] ) ? sanitize_title( $body['slug'] ) : $slug;
+
+	if ( empty( $api_project_id ) ) {
+		return new WP_Error( 'invalid_response', __( 'Console API did not return a valid project ID.', 'xpressui-bridge' ) );
+	}
+
+	return [
+		'projectId' => $api_project_id,
+		'slug'      => $final_slug,
+	];
+}
+
+/**
+ * Maps a Console-create WP_Error to a short, human-readable reason for the user.
+ * Avoids dumping raw cURL text (e.g. "cURL error 7: ...").
+ *
+ * @param WP_Error $error Error from xpressui_console_create_project().
+ * @return string Short reason, e.g. "connection refused", "authentication failed (401)".
+ */
+function xpressui_console_failure_reason( $error ) {
+	$code = $error->get_error_code();
+
+	if ( 'missing_connection' === $code ) {
+		return __( 'connection not configured', 'xpressui-bridge' );
+	}
+
+	if ( 'http_error' === $code ) {
+		$data   = $error->get_error_data();
+		$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
+		if ( 401 === $status || 403 === $status ) {
+			/* translators: %d: HTTP status code. */
+			return sprintf( __( 'authentication failed (%d)', 'xpressui-bridge' ), $status );
+		}
+		if ( $status >= 500 ) {
+			/* translators: %d: HTTP status code. */
+			return sprintf( __( 'server error (%d)', 'xpressui-bridge' ), $status );
+		}
+		if ( $status > 0 ) {
+			/* translators: %d: HTTP status code. */
+			return sprintf( __( 'request rejected (%d)', 'xpressui-bridge' ), $status );
+		}
+		return __( 'request rejected', 'xpressui-bridge' );
+	}
+
+	if ( 'invalid_response' === $code ) {
+		return __( 'unexpected response', 'xpressui-bridge' );
+	}
+
+	// connection_failed (and any other) — infer from the raw message text.
+	$raw = strtolower( $error->get_error_message() );
+	if ( false !== strpos( $raw, 'timed out' ) || false !== strpos( $raw, 'timeout' ) ) {
+		return __( 'connection timed out', 'xpressui-bridge' );
+	}
+	if ( false !== strpos( $raw, 'could not resolve' ) || false !== strpos( $raw, 'resolve host' ) ) {
+		return __( 'host not found', 'xpressui-bridge' );
+	}
+	// cURL 7 / "connection refused" / generic connect failures.
+	return __( 'connection refused', 'xpressui-bridge' );
+}
+
+/**
  * Renders the Form Importer panel.
  */
 /**
@@ -614,54 +732,41 @@ function xpressui_ajax_import_form_wizard() {
 
 	// 3. Process Import
 	if ( 'saas' === $import_mode ) {
-		$conn = xpressui_get_console_connection();
-		if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
-			wp_send_json_error( [ 'message' => __( 'Console Connection URL or Token is missing. Save connection settings first.', 'xpressui-bridge' ) ] );
+		// Attempt to create the project on the Console. If the *create* itself fails
+		// (connection refused/timeout, non-2xx, missing config, or no project id
+		// returned), we DON'T hard-fail: we fall back to a local standalone workflow
+		// so the user always ends up with something working. The fallback is keyed off
+		// the create only — a successful create whose post-create file sync fails is a
+		// distinct case (the SaaS project exists) and stays a warning, never a fallback.
+		$create_result = xpressui_console_create_project( $slug, $title, $fields, $steps );
+
+		if ( is_wp_error( $create_result ) ) {
+			// Console create failed → fall back to LOCAL.
+			$reason     = xpressui_console_failure_reason( $create_result );
+			$local_slug = xpressui_create_imported_workflow_package( $slug, $title, $fields );
+			if ( is_wp_error( $local_slug ) ) {
+				// Even local failed — surface the local error.
+				wp_send_json_error( [ 'message' => $local_slug->get_error_message() ] );
+			}
+
+			wp_send_json_success( [
+				'shortcode' => '[xpressui id="' . esc_attr( $local_slug ) . '"]',
+				'slug'      => $local_slug,
+				'saas'      => false,
+				'fallback'  => true,
+				/* translators: %s: short human-readable reason the Console could not be reached. */
+				'notice'    => sprintf( __( "Couldn't reach your IntakeFlow Console (%s). The workflow was saved locally instead — you can sync it to the Console later.", 'xpressui-bridge' ), $reason ),
+				'message'   => sprintf( __( "Couldn't reach your IntakeFlow Console (%s). The workflow was saved locally instead — you can sync it to the Console later.", 'xpressui-bridge' ), $reason ),
+			] );
 		}
 
-		$document = xpressui_build_import_document( $slug, $title, $fields, $steps );
-		$payload  = [
-			'schemaVersion'    => 'console.workflow-export/v1',
-			'workflow'         => $document,
-			'conflictStrategy' => 'auto_suffix',
-			'name'             => $title,
-			'slug'             => $slug,
-		];
+		// Console create succeeded.
+		$api_project_id = $create_result['projectId'];
+		$final_slug     = $create_result['slug'];
 
-		// POST request to Console Import API
-		$response = wp_remote_post(
-			trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/import',
-			[
-				'headers' => [
-					'X-Api-Token'  => $conn['apiToken'],
-					'Content-Type' => 'application/json',
-					'Accept'       => 'application/json',
-				],
-				'body'    => wp_json_encode( $payload ),
-				'timeout' => 30,
-			]
-		);
-
-		if ( is_wp_error( $response ) ) {
-			wp_send_json_error( [ 'message' => sprintf( __( 'Console API connection error: %s', 'xpressui-bridge' ), $response->get_error_message() ) ] );
-		}
-
-		$code = wp_remote_retrieve_response_code( $response );
-		if ( 201 !== $code ) {
-			$err_body = json_decode( wp_remote_retrieve_body( $response ), true );
-			$detail   = ! empty( $err_body['detail'] ) ? $err_body['detail'] : __( 'API Import Request failed.', 'xpressui-bridge' );
-			wp_send_json_error( [ 'message' => sprintf( __( 'Console API error (status %d): %s', 'xpressui-bridge' ), $code, $detail ) ] );
-		}
-
-		$body = json_decode( wp_remote_retrieve_body( $response ), true );
-		$api_project_id = ! empty( $body['imported']['projectId'] ) ? sanitize_text_field( $body['imported']['projectId'] ) : '';
-		$final_slug     = ! empty( $body['slug'] ) ? sanitize_title( $body['slug'] ) : $slug;
-
-		if ( empty( $api_project_id ) ) {
-			wp_send_json_error( [ 'message' => __( 'Console API did not return a valid project ID.', 'xpressui-bridge' ) ] );
-		}
-
-		// Pull the newly created project back to WordPress
+		// Pull the newly created project back to WordPress. A sync failure here is NOT
+		// a "Console unreachable" condition (the SaaS project was created), so we do
+		// NOT create a duplicate local workflow — we report it as a warning.
 		$sync_res = xpressui_sync_project( $api_project_id );
 		if ( is_wp_error( $sync_res ) ) {
 			wp_send_json_error( [ 'message' => sprintf( __( 'SaaS project created, but local sync failed: %s', 'xpressui-bridge' ), $sync_res->get_error_message() ) ] );
@@ -1303,6 +1408,17 @@ function xpressui_render_form_importer_tab() {
 								$('#xpui-wiz-shortcode').text(response.data.shortcode);
 								$('#xpui-wiz-copy-btn').attr('data-clipboard-text', response.data.shortcode);
 								$('#xpui-wiz-success-msg').text(response.data.message);
+
+								// Fallback (Console unreachable → saved locally): show the
+								// notice as an info banner, not a SaaS-synced success.
+								$('#xpui-wiz-fallback-notice').remove();
+								if (response.data.fallback) {
+									$('#xpui-wiz-success-title').text('<?php echo esc_js( __( 'Saved Locally', 'xpressui-bridge' ) ); ?>');
+									$('<div id="xpui-wiz-fallback-notice" style="margin:15px auto 0; max-width:450px; text-align:left; display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #fde68a; background:#fffbeb; border-radius:10px;"></div>')
+										.append($('<span style="font-size:16px; line-height:1.2;"></span>').text('⚠️'))
+										.append($('<div style="font-size:13px; color:#92400e; line-height:1.5;"></div>').text(response.data.notice || response.data.message))
+										.insertAfter('#xpui-wiz-success-msg');
+								}
 
 								if (response.data.saas && response.data.edit_url) {
 									$('#xpui-wiz-edit-btn').attr('href', response.data.edit_url).show();
