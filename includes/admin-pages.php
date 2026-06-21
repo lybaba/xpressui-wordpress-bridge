@@ -49,6 +49,16 @@ function xpressui_register_admin_page() {
 		'xpressui-bridge',
 		'xpressui_render_workflows_page'
 	);
+
+	add_submenu_page(
+		'edit.php?post_type=xpressui_submission',
+		__( 'Workflow Settings', 'xpressui-bridge' ),
+		__( 'Workflow Settings', 'xpressui-bridge' ),
+		'manage_options',
+		'xpressui-workflow-settings',
+		'xpressui_render_workflow_settings_page'
+	);
+	remove_submenu_page( 'edit.php?post_type=xpressui_submission', 'xpressui-workflow-settings' );
 }
 
 // ---------------------------------------------------------------------------
@@ -298,11 +308,19 @@ function xpressui_render_workflows_page() {
 				$actions_html[] = '<span>' . $action_html . '</span>';
 			}
 			$actions_html[] = '<span class="view"><a href="' . esc_url( $detail_url ) . '">' . esc_html__( 'Details', 'xpressui-bridge' ) . '</a></span>';
-			if ( xpressui_pro_is_license_active() ) {
-				$conn = xpressui_get_console_connection();
-				$edit_url = xpressui_console_workflow_url( $slug );
-				$actions_html[] = '<span class="edit"><a href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . esc_html__( 'Edit on IntakeFlow', 'xpressui-bridge' ) . '</a></span>';
-			}
+			$customize_url = wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'     => 'xpressui_submission',
+						'page'          => 'xpressui-workflow-settings',
+						'xpressui_slug' => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_view_workflow',
+				'xpressui_view_nonce'
+			);
+			$actions_html[] = '<span class="edit"><a href="' . esc_url( $customize_url ) . '">' . esc_html__( 'Customize', 'xpressui-bridge' ) . '</a></span>';
 			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
 				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
 			}
@@ -1070,6 +1088,160 @@ JS,
 		xpressui_render_sandbox_features_cards();
 	}
 
+	echo '</div>'; // .wrap
+}
+
+/**
+ * Renders the local settings/customization page for a workflow.
+ */
+function xpressui_render_workflow_settings_page() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
+	}
+
+	$view_nonce = isset( $_GET['xpressui_view_nonce'] ) ? sanitize_key( wp_unslash( $_GET['xpressui_view_nonce'] ) ) : '';
+	if ( ! $view_nonce || ! wp_verify_nonce( $view_nonce, 'xpressui_view_workflow' ) ) {
+		wp_die( esc_html__( 'Invalid security token.', 'xpressui-bridge' ) );
+	}
+
+	$slug = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
+	if ( empty( $slug ) || ! xpressui_is_installed_workflow( $slug ) ) {
+		wp_die( esc_html__( 'Invalid workflow.', 'xpressui-bridge' ) );
+	}
+
+	// Handle Save Action
+	if ( isset( $_POST['xpressui_save_workflow_settings'] ) ) {
+		check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );
+
+		// Fire the hook in overlay-admin.php to save the overlay settings
+		do_action( 'xpressui_workflow_settings_extra_save', $slug );
+
+		xpressui_set_admin_notice( __( 'Workflow settings saved.', 'xpressui-bridge' ), 'success' );
+		wp_safe_redirect(
+			wp_nonce_url(
+				add_query_arg(
+					[
+						'post_type'     => 'xpressui_submission',
+						'page'          => 'xpressui-workflow-settings',
+						'xpressui_slug' => $slug,
+					],
+					admin_url( 'edit.php' )
+				),
+				'xpressui_view_workflow',
+				'xpressui_view_nonce'
+			)
+		);
+		exit;
+	}
+
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+	$project_name  = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
+	$display_name  = $project_name !== '' ? $project_name : $slug;
+
+	$back_url = add_query_arg(
+		[
+			'post_type' => 'xpressui_submission',
+			'page'      => 'xpressui-bridge',
+		],
+		admin_url( 'edit.php' )
+	);
+
+	$notice = xpressui_get_admin_notice();
+	if ( $notice ) {
+		echo '<div class="notice ' . ( $notice['type'] === 'error' ? 'notice-error' : 'notice-success' ) . ' is-dismissible"><p>' . wp_kses_post( $notice['message'] ) . '</p></div>';
+	}
+
+	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap">';
+	
+	// Header
+	echo '<div class="xpressui-pro-header">';
+	echo '<div class="xpressui-pro-header-left">';
+	echo '<h1>' . esc_html( $display_name ) . '</h1>';
+	echo '<p>' . esc_html__( 'Customize your workflow style, buttons, sections, and input fields. All overrides are saved locally.', 'xpressui-bridge' ) . '</p>';
+	echo '</div>';
+	echo '<div class="xpressui-pro-header-right">';
+	echo '<span class="xpressui-pro-badge">' . esc_html__( 'Local Customizer', 'xpressui-bridge' ) . '</span>';
+	echo '<a href="' . esc_url( $back_url ) . '" class="xpressui-pro-back">&larr; ' . esc_html__( 'Back to Workflows', 'xpressui-bridge' ) . '</a>';
+	echo '</div>';
+	echo '</div>';
+
+	// Fetch template context and overlays
+	$template_context = xpressui_load_workflow_template_context( $slug );
+	$sections         = isset( $template_context['rendered_form']['sections'] ) && is_array( $template_context['rendered_form']['sections'] )
+		? $template_context['rendered_form']['sections']
+		: [];
+	$visible_fields   = [];
+	foreach ( $sections as $sect ) {
+		foreach ( (array) ( $sect['fields'] ?? [] ) as $fld ) {
+			$fn = (string) ( $fld['name'] ?? '' );
+			if ( $fn !== '' ) {
+				$visible_fields[] = $fld;
+			}
+		}
+	}
+	$overlay = xpressui_pro_load_workflow_overlay( $slug );
+
+	$section_count = count( $sections );
+	$field_count = count( $visible_fields );
+	$customized_fields = isset( $overlay['fields'] ) ? count( $overlay['fields'] ) : 0;
+
+	// Summary chips
+	echo '<div class="xpressui-pro-summary">';
+	echo '<div class="xpressui-pro-summary-chip">';
+	echo '<strong>' . (int) $section_count . '</strong>';
+	echo '<span>' . esc_html__( 'Sections', 'xpressui-bridge' ) . '</span>';
+	echo '</div>';
+	echo '<div class="xpressui-pro-summary-chip">';
+	echo '<strong>' . (int) $field_count . '</strong>';
+	echo '<span>' . esc_html__( 'Fields', 'xpressui-bridge' ) . '</span>';
+	echo '</div>';
+	if ( $customized_fields > 0 ) {
+		echo '<div class="xpressui-pro-summary-chip">';
+		echo '<strong>' . (int) $customized_fields . '</strong>';
+		echo '<span>' . esc_html__( 'Overrides', 'xpressui-bridge' ) . '</span>';
+		echo '</div>';
+	}
+	echo '</div>';
+
+	// Toolbar controls
+	echo '<div class="xpressui-pro-toolbar">';
+	echo '<button type="button" class="xpressui-pro-details-toggle" data-target="all">' . esc_html__( 'Expand all', 'xpressui-bridge' ) . '</button>';
+	echo '<button type="button" class="xpressui-pro-details-toggle" data-target="none">' . esc_html__( 'Collapse all', 'xpressui-bridge' ) . '</button>';
+	echo '<button type="button" class="xpressui-pro-filter-toggle">' . esc_html__( 'Customized Only', 'xpressui-bridge' ) . '</button>';
+	echo '<div class="xpressui-pro-toolbar-search">';
+	echo '<input type="search" placeholder="' . esc_attr__( 'Search fields...', 'xpressui-bridge' ) . '" data-xpressui-card-search />';
+	echo '<div class="xpressui-pro-toolbar-meta">';
+	echo '<span data-xpressui-visible-count>' . (int) ( $section_count + 2 ) . '</span> ' . esc_html__( 'blocks', 'xpressui-bridge' );
+	echo '</div>';
+	echo '</div>';
+	echo '</div>';
+
+	// Empty State card
+	echo '<div class="xpressui-pro-empty-state" data-xpressui-empty-state style="display: none;">';
+	echo esc_html__( 'No cards match your search criteria.', 'xpressui-bridge' );
+	echo '</div>';
+
+	// Form
+	echo '<form method="post" action="">';
+	wp_nonce_field( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );
+
+	// Sticky save bar
+	echo '<div class="xpressui-sticky-actions">';
+	echo '<span class="xpressui-sticky-status" data-xpressui-dirty-status>' . esc_html__( 'No unsaved changes', 'xpressui-bridge' ) . '</span>';
+	echo '<div class="xpressui-sticky-actions-buttons">';
+	submit_button( __( 'Save Customizations', 'xpressui-bridge' ), 'primary', 'xpressui_save_workflow_settings', false );
+	echo '</div>';
+	echo '</div>';
+
+	// Trigger the render action
+	do_action( 'xpressui_workflow_settings_extra_sections', $slug, $visible_fields, $overlay );
+
+	// Save button at bottom
+	echo '<div style="margin-top: 20px;">';
+	submit_button( __( 'Save Customizations', 'xpressui-bridge' ), 'primary', 'xpressui_save_workflow_settings' );
+	echo '</div>';
+
+	echo '</form>';
 	echo '</div>'; // .wrap
 }
 
