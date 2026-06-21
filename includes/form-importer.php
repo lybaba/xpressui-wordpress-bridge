@@ -1131,15 +1131,15 @@ function xpressui_render_form_importer_tab() {
 					<ul class="xpui-wiz-progress-steps">
 						<li class="xpui-wiz-progress-step" id="xpui-prog-step-1">
 							<span class="xpui-wiz-progress-step-icon" id="xpui-prog-icon-1">⏳</span>
-							<span><?php esc_html_e( 'Parsing source form fields & choices...', 'xpressui-bridge' ); ?></span>
+							<span class="xpui-wiz-progress-step-text" id="xpui-prog-text-1"><?php esc_html_e( 'Parsing source form fields & choices...', 'xpressui-bridge' ); ?></span>
 						</li>
 						<li class="xpui-wiz-progress-step" id="xpui-prog-step-2">
 							<span class="xpui-wiz-progress-step-icon" id="xpui-prog-icon-2">⏳</span>
-							<span id="xpui-prog-text-2"><?php esc_html_e( 'Generating local standalone workflow package...', 'xpressui-bridge' ); ?></span>
+							<span class="xpui-wiz-progress-step-text" id="xpui-prog-text-2"><?php esc_html_e( 'Generating local standalone workflow package...', 'xpressui-bridge' ); ?></span>
 						</li>
 						<li class="xpui-wiz-progress-step" id="xpui-prog-step-3">
 							<span class="xpui-wiz-progress-step-icon" id="xpui-prog-icon-3">⏳</span>
-							<span id="xpui-prog-text-3"><?php esc_html_e( 'Conversion complete!', 'xpressui-bridge' ); ?></span>
+							<span class="xpui-wiz-progress-step-text" id="xpui-prog-text-3"><?php esc_html_e( 'Conversion complete!', 'xpressui-bridge' ); ?></span>
 						</li>
 					</ul>
 				</div>
@@ -1170,9 +1170,15 @@ function xpressui_render_form_importer_tab() {
 
 			<!-- Footer Buttons -->
 			<div class="xpui-wiz-buttons" id="xpui-wiz-buttons-row">
-				<button type="button" class="xpui-wiz-btn xpui-wiz-btn-secondary" id="xpui-wiz-prev" style="display:none;"><?php esc_html_e( 'Back', 'xpressui-bridge' ); ?></button>
+				<button type="button" class="xpui-wiz-btn xpui-wiz-btn-secondary" id="xpui-wiz-prev" style="display:none;">
+					<span class="dashicons dashicons-arrow-left-alt2" style="font-size:16px; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;"></span>
+					<?php esc_html_e( 'Back', 'xpressui-bridge' ); ?>
+				</button>
 				<div style="flex:1;"></div>
-				<button type="button" class="xpui-wiz-btn xpui-wiz-btn-primary" id="xpui-wiz-next" disabled><?php esc_html_e( 'Next', 'xpressui-bridge' ); ?></button>
+				<button type="button" class="xpui-wiz-btn xpui-wiz-btn-primary" id="xpui-wiz-next" disabled>
+					<?php esc_html_e( 'Next', 'xpressui-bridge' ); ?>
+					<span class="dashicons dashicons-arrow-right-alt2" style="font-size:16px; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;"></span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -1206,10 +1212,10 @@ function xpressui_render_form_importer_tab() {
 			// button row toggles
 			if (currentStep === 1) {
 				$('#xpui-wiz-prev').hide();
-				$('#xpui-wiz-next').show().text('<?php esc_attr_e( 'Next', 'xpressui-bridge' ); ?> →').prop('disabled', !sourceFormVal);
+				$('#xpui-wiz-next').show().html('<?php echo esc_js( __( 'Next', 'xpressui-bridge' ) ); ?> <span class="dashicons dashicons-arrow-right-alt2" style="font-size:16px; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;"></span>').prop('disabled', !sourceFormVal);
 			} else if (currentStep === 2) {
 				$('#xpui-wiz-prev').show();
-				$('#xpui-wiz-next').show().text('<?php esc_attr_e( 'Convert & Sync', 'xpressui-bridge' ); ?> 🚀').prop('disabled', false);
+				$('#xpui-wiz-next').show().html('<?php echo esc_js( __( 'Convert & Sync', 'xpressui-bridge' ) ); ?> <span class="dashicons dashicons-arrow-right-alt2" style="font-size:16px; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center;"></span>').prop('disabled', false);
 			} else {
 				// Step 3 (Processing) and Step 4 (Finish) hide the footer buttons row
 				$('#xpui-wiz-buttons-row').hide();
@@ -1256,6 +1262,9 @@ function xpressui_render_form_importer_tab() {
 			if (currentStep === 2) {
 				currentStep = 1;
 				updateStepUi();
+			} else if (currentStep === 3) {
+				currentStep = 2;
+				updateStepUi();
 			}
 		});
 
@@ -1264,9 +1273,9 @@ function xpressui_render_form_importer_tab() {
 			var text = $(this).attr('data-clipboard-text');
 			var $btn = $(this);
 			navigator.clipboard.writeText(text).then(function() {
-				$btn.text('<?php esc_attr_e( 'Copied!', 'xpressui-bridge' ); ?>').css('background', '#dcfce7');
+				$btn.text('<?php echo esc_js( __( 'Copied!', 'xpressui-bridge' ) ); ?>').css('background', '#dcfce7');
 				setTimeout(function() {
-					$btn.text('<?php esc_attr_e( 'Copy', 'xpressui-bridge' ); ?>').css('background', '#ffffff');
+					$btn.text('<?php echo esc_js( __( 'Copy', 'xpressui-bridge' ) ); ?>').css('background', '#ffffff');
 				}, 1500);
 			});
 		});
@@ -1278,17 +1287,24 @@ function xpressui_render_form_importer_tab() {
 			var sourceId = parts[1];
 
 			// Reset progress screen
-			$('#xpui-progress-fill').css('width', '10%');
-			$('#xpui-prog-step-1').removeClass('done').addClass('active').find('.xpui-wiz-progress-step-icon').text('⏳');
-			$('#xpui-prog-step-2').removeClass('done active').find('.xpui-wiz-progress-step-icon').text('⏳');
-			$('#xpui-prog-step-3').removeClass('done active').find('.xpui-wiz-progress-step-icon').text('⏳');
+			$('#xpui-progress-fill').css({
+				'width': '10%',
+				'background': 'linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%)'
+			});
+			
+			$('.xpui-wiz-progress-step').removeClass('done active error');
+			$('.xpui-wiz-progress-step-text').css('color', '');
+			
+			$('#xpui-prog-step-1').addClass('active').find('.xpui-wiz-progress-step-icon').text('⏳');
+			$('#xpui-prog-step-2').find('.xpui-wiz-progress-step-icon').text('⏳');
+			$('#xpui-prog-step-3').find('.xpui-wiz-progress-step-icon').text('⏳');
 
 			if (importMode === 'saas') {
-				$('#xpui-prog-text-2').text('<?php esc_attr_e( 'Uploading and creating project in SaaS Console...', 'xpressui-bridge' ); ?>');
-				$('#xpui-prog-text-3').text('<?php esc_attr_e( 'Downloading and synchronizing workflow files...', 'xpressui-bridge' ); ?>');
+				$('#xpui-prog-text-2').text('<?php echo esc_js( __( 'Uploading and creating project in SaaS Console...', 'xpressui-bridge' ) ); ?>');
+				$('#xpui-prog-text-3').text('<?php echo esc_js( __( 'Downloading and synchronizing workflow files...', 'xpressui-bridge' ) ); ?>');
 			} else {
-				$('#xpui-prog-text-2').text('<?php esc_attr_e( 'Generating local standalone workflow package...', 'xpressui-bridge' ); ?>');
-				$('#xpui-prog-text-3').text('<?php esc_attr_e( 'Import complete!', 'xpressui-bridge' ); ?>');
+				$('#xpui-prog-text-2').text('<?php echo esc_js( __( 'Generating local standalone workflow package...', 'xpressui-bridge' ) ); ?>');
+				$('#xpui-prog-text-3').text('<?php echo esc_js( __( 'Import complete!', 'xpressui-bridge' ) ); ?>');
 			}
 
 			setTimeout(function() {
@@ -1316,8 +1332,9 @@ function xpressui_render_form_importer_tab() {
 						if (!response.success) {
 							// Handle error in Step 3
 							$('#xpui-progress-fill').css('background', '#ef4444');
-							$('#xpui-prog-step-2').removeClass('active');
-							$('#xpui-prog-step-2').html('<span style="color:#ef4444">❌ ' + escapeHtml(response.data.message) + '</span>');
+							$('#xpui-prog-step-2').removeClass('active').addClass('error');
+							$('#xpui-prog-step-2').find('.xpui-wiz-progress-step-icon').text('❌');
+							$('#xpui-prog-text-2').css('color', '#ef4444').text(response.data.message);
 							// Provide back button to try again
 							$('#xpui-wiz-buttons-row').show();
 							$('#xpui-wiz-prev').show();
@@ -1355,8 +1372,9 @@ function xpressui_render_form_importer_tab() {
 					},
 					error: function() {
 						$('#xpui-progress-fill').css('background', '#ef4444');
-						$('#xpui-prog-step-2').removeClass('active');
-						$('#xpui-prog-step-2').html('<span style="color:#ef4444">❌ ' + '<?php esc_attr_e( "Network error. Please try again.", "xpressui-bridge" ); ?>' + '</span>');
+						$('#xpui-prog-step-2').removeClass('active').addClass('error');
+						$('#xpui-prog-step-2').find('.xpui-wiz-progress-step-icon').text('❌');
+						$('#xpui-prog-text-2').css('color', '#ef4444').text('<?php echo esc_js( __( "Network error. Please try again.", "xpressui-bridge" ) ); ?>');
 						$('#xpui-wiz-buttons-row').show();
 						$('#xpui-wiz-prev').show();
 						$('#xpui-wiz-next').hide();

@@ -348,7 +348,7 @@ function xpressui_format_booking_window( $starts, $ends ) {
 	if ( $s->format( 'Y-m-d' ) === $e_dt->format( 'Y-m-d' ) ) {
 		return $day . ' · ' . $s->format( 'H:i' ) . '–' . $e_dt->format( 'H:i' );
 	}
-	return $s->format( 'd M H:i' ) . ' → ' . $e_dt->format( 'd M H:i' );
+	return $s->format( 'd M H:i' ) . ' - ' . $e_dt->format( 'd M H:i' );
 }
 
 /**

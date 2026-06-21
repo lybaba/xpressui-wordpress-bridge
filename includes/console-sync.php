@@ -118,7 +118,7 @@ function xpressui_render_console_connection_form(): void {
 						value="<?php echo esc_attr( $conn['apiToken'] ); ?>"
 						class="regular-text" autocomplete="off">
 					<p class="description">
-						<?php esc_html_e( 'Generate a token in the Console under Profile → API Tokens.', 'xpressui-bridge' ); ?>
+						<?php esc_html_e( 'Generate a token in the Console under Profile > API Tokens.', 'xpressui-bridge' ); ?>
 					</p>
 				</td>
 			</tr>
