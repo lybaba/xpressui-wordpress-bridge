@@ -200,6 +200,109 @@ function xpressui_import_gravity_form( $form_id ) {
 }
 
 /**
+ * The default IntakeFlow theme applied to imported workflows.
+ *
+ * Mirrors the SaaS Console default preset (`console-clean`, see
+ * services/api/app/project_documents.py::DEFAULT_PROJECT_THEME_CONFIG) so an
+ * imported CF7/Gravity form renders with the SAME themed look as a real
+ * IntakeFlow workflow instead of a bare, unstyled form. Returned in the
+ * camelCase `themeConfig` shape carried inside form.config.json.
+ *
+ * @return array
+ */
+function xpressui_import_default_theme_config() {
+	return [
+		'presetId'        => 'console-clean',
+		'layout'          => 'centered',
+		'density'         => 'comfortable',
+		'labelPosition'   => 'stacked',
+		'submitWidth'     => 'auto',
+		'backgroundStyle' => 'panel',
+		'frameStyle'      => 'card',
+		'fieldColumns'    => 1,
+		'stepLayout'      => 'default',
+		'colors'          => [
+			'pageBackground' => '#edf3fb',
+			'surface'        => '#ffffff',
+			'text'           => '#0f172a',
+			'mutedText'      => '#475569',
+			'primary'        => '#2563eb',
+			'border'         => '#d7e0ea',
+		],
+		'radius'          => [
+			'card'   => 28,
+			'input'  => 14,
+			'button' => 14,
+		],
+	];
+}
+
+/**
+ * Builds the snake_case `theme` block for template.context.json from the
+ * camelCase `themeConfig`. This is the shape the WordPress render path reads
+ * (includes/shortcode.php → xpressui_build_shortcode_inline_css() and the
+ * project-page template) to emit the `--template-*` CSS variables. It mirrors
+ * the exporter's template-context `theme` projection (services/api/app/exporter.py).
+ *
+ * @param array $theme_config camelCase themeConfig.
+ * @return array snake_case theme block.
+ */
+function xpressui_import_theme_context_from_config( array $theme_config ) {
+	$colors = is_array( $theme_config['colors'] ?? null ) ? $theme_config['colors'] : [];
+	$radius = is_array( $theme_config['radius'] ?? null ) ? $theme_config['radius'] : [];
+
+	return [
+		'preset_id'        => $theme_config['presetId'] ?? 'console-clean',
+		'layout'           => $theme_config['layout'] ?? 'centered',
+		'density'          => $theme_config['density'] ?? 'comfortable',
+		'label_position'   => $theme_config['labelPosition'] ?? 'stacked',
+		'background_style' => $theme_config['backgroundStyle'] ?? 'panel',
+		'frame_style'      => $theme_config['frameStyle'] ?? 'card',
+		'field_columns'    => $theme_config['fieldColumns'] ?? 1,
+		'step_layout'      => $theme_config['stepLayout'] ?? 'default',
+		'colors'           => [
+			'page_background' => $colors['pageBackground'] ?? '#edf3fb',
+			'surface'         => $colors['surface'] ?? '#ffffff',
+			'text'            => $colors['text'] ?? '#0f172a',
+			'muted_text'      => $colors['mutedText'] ?? '#475569',
+			'primary'         => $colors['primary'] ?? '#2563eb',
+			'border'          => $colors['border'] ?? '#d7e0ea',
+		],
+		'radius'           => [
+			'card'   => $radius['card'] ?? 28,
+			'input'  => $radius['input'] ?? 14,
+			'button' => $radius['button'] ?? 14,
+		],
+	];
+}
+
+/**
+ * Maps a parsed import field type (CF7/Gravity) to the IntakeFlow runtime field
+ * type the templates and runtime expect. Without this, types like `select`,
+ * `phone`, `checkbox`, `radio` fall through to the templates/core/field.php
+ * `unsupported` branch (render_type === type with no matching case), producing a
+ * broken/blank control. `select-one`, `checkboxes`, `radio-buttons`, `tel` are
+ * the names templates/core/field.php and the runtime recognise.
+ *
+ * @param string $type Parsed source field type.
+ * @return string IntakeFlow runtime field type.
+ */
+function xpressui_import_map_field_type( $type ) {
+	switch ( $type ) {
+		case 'select':
+			return 'select-one';
+		case 'checkbox':
+			return 'checkboxes';
+		case 'radio':
+			return 'radio-buttons';
+		case 'phone':
+			return 'tel';
+		default:
+			return $type;
+	}
+}
+
+/**
  * Helper to construct the ConsoleProjectDocumentPayload for importing to SaaS Console.
  */
 function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
@@ -273,6 +376,19 @@ function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
 				'successMessage'     => __( 'Thank you — your answers are in.', 'xpressui-bridge' ),
 				'errorMessage'       => __( 'Something went wrong. Please try again.', 'xpressui-bridge' )
 			],
+			// Default IntakeFlow theme so the render path emits the --template-* CSS
+			// variables and the form looks like a real workflow (not a bare form).
+			// The WP render reads the snake_case `theme` from template.context.json
+			// (written by xpressui_create_imported_workflow_package); themeConfig here
+			// keeps form.config.json complete for SaaS parity + future re-export.
+			'themeConfig'      => xpressui_import_default_theme_config(),
+			// Multi-step UI placement (parity with a real workflow config). Harmless
+			// for single-step forms (the runtime hides step nav when stepCount <= 1).
+			'stepUi'           => [
+				'progressPlacement'   => 'top',
+				'navigationPlacement' => 'bottom',
+				'backBehavior'        => 'always'
+			],
 			'sections'         => [
 				'custom' => array_map( function( $step ) {
 					return [
@@ -282,7 +398,14 @@ function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
 						'adminLabel' => $step['title'],
 						'name'       => $step['id']
 					];
-				}, $steps )
+				}, $steps ),
+				// Navigation/submit button group — parity with a real workflow config.
+				// The runtime enables/binds these by name; labels mirror navigationLabels.
+				'btngroup' => [
+					[ 'type' => 'submit', 'name' => 'prevbtn',   'label' => __( 'Back', 'xpressui-bridge' ),     'adminLabel' => __( 'Back', 'xpressui-bridge' ) ],
+					[ 'type' => 'submit', 'name' => 'nextbtn',   'label' => __( 'Continue', 'xpressui-bridge' ), 'adminLabel' => __( 'Continue', 'xpressui-bridge' ) ],
+					[ 'type' => 'submit', 'name' => 'submitbtn', 'label' => __( 'Submit', 'xpressui-bridge' ),   'adminLabel' => __( 'Submit', 'xpressui-bridge' ) ],
+				],
 			],
 			'submit'           => [
 				'endpoint'            => '__XPRESSUI_WORDPRESS_REST_URL__',
@@ -311,12 +434,7 @@ function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
 		$step_fields = [];
 		foreach ( $fields as $f ) {
 			if ( in_array( $f['id'], $step['fields'], true ) ) {
-				$type_mapped = $f['type'];
-				if ( 'checkbox' === $type_mapped ) {
-					$type_mapped = 'checkboxes';
-				} elseif ( 'radio' === $type_mapped ) {
-					$type_mapped = 'radio-buttons';
-				}
+				$type_mapped = xpressui_import_map_field_type( $f['type'] );
 
 				$field_control = [
 					'type'        => $type_mapped,
@@ -394,18 +512,57 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 	$import_document = xpressui_build_import_document( $slug, $title, $fields, $steps );
 	$form_config     = is_array( $import_document['config'] ?? null ) ? $import_document['config'] : [];
 
+	// Source-of-truth project identifiers come from the SAME document that produced
+	// form.config.json (whose submit.metadata.projectId the runtime sends back on
+	// submit). The manifest + template.context.json below MUST reuse these exact
+	// values, otherwise xpressui_validate_submission_identifiers() (rest-endpoint.php)
+	// rejects the submission with "Submission project metadata does not match the
+	// installed workflow" — the manifest projectId is hash_equals()-compared against
+	// the submitted one. Reading them from the document (not regenerating uniqid())
+	// is what keeps the three artifacts consistent.
+	$project_id      = is_string( $import_document['project']['id'] ?? null ) ? $import_document['project']['id'] : ( 'import_' . uniqid() );
+	$config_version  = isset( $import_document['config']['version'] ) ? (string) $import_document['config']['version'] : '1';
+
+	// Build the template.context.json — the WordPress render reads the `theme` block
+	// from HERE (xpressui_load_workflow_template_context → xpressui_build_shortcode_inline_css),
+	// NOT from form.config.json. Without it the shortcode falls back to an empty theme,
+	// so every --template-* CSS variable resolves blank → the form renders BARE
+	// (unstyled inputs, a greyed/colourless submit). Carrying the default theme here is
+	// what makes an imported form look like a real IntakeFlow workflow. `rendered_form`
+	// is intentionally NOT written: the shortcode rebuilds it from form.config.json on
+	// every render (xpressui_build_rendered_form_from_config), keeping it fresh.
+	$theme_config     = is_array( $form_config['themeConfig'] ?? null ) ? $form_config['themeConfig'] : xpressui_import_default_theme_config();
+	$template_context = [
+		'xpressui_locale' => 'en',
+		'project'         => [
+			'id'                   => $project_id,
+			'slug'                 => $slug,
+			'name'                 => $title,
+			'show_project_title'   => true,
+			'status'               => 'draft',
+			'background_image_url' => null,
+		],
+		'theme'           => xpressui_import_theme_context_from_config( $theme_config ),
+		'runtime'         => [
+			'target'           => 'form',
+			'mount_node_id'    => 'xpressui-root',
+			'form_config_json' => wp_json_encode( $form_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
+		],
+	];
+
 	$manifest = [
-		'projectId'          => 'import_' . uniqid(),
-		'projectName'        => $title . ' (' . __( 'Imported', 'xpressui-bridge' ) . ')',
+		'projectId'          => $project_id,
+		'projectName'        => $title,
 		'projectSlug'        => $slug,
-		'configVersion'      => '1.0.0',
+		'configVersion'      => $config_version,
 		'runtimeTier'        => 'light', // Standalone offline execution
 		'isBundled'          => true,
 		'manifestFingerprint'=> md5( wp_json_encode( $fields ) ),
 		// Declare the on-disk artifacts so the list scan and the shortcode renderer
 		// resolve form.config.json (xpressui_get_workflow_artifact_path()).
 		'artifacts'          => [
-			'config' => 'form.config.json',
+			'config'          => 'form.config.json',
+			'templateContext' => 'template.context.json',
 		],
 		'fields'             => $fields,
 		'steps'              => $steps,
@@ -430,6 +587,16 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 	);
 	if ( false === $config_written ) {
 		return new WP_Error( 'write_failed', __( 'Could not write form.config.json configuration.', 'xpressui-bridge' ) );
+	}
+
+	// Write template.context.json — carries the default theme so the form renders
+	// styled (not bare). Declared as the `templateContext` artifact above.
+	$context_written = file_put_contents(
+		trailingslashit( $target_dir ) . 'template.context.json',
+		wp_json_encode( $template_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
+	);
+	if ( false === $context_written ) {
+		return new WP_Error( 'write_failed', __( 'Could not write template.context.json configuration.', 'xpressui-bridge' ) );
 	}
 
 	// Write manifest.json
@@ -898,20 +1065,32 @@ function xpressui_render_form_importer_tab() {
 		margin-bottom: 35px;
 		position: relative;
 	}
+	/*
+	 * The connector line must start at the centre of the first badge and end at
+	 * the centre of the last badge. With four flex:1 step items each item is 25%
+	 * wide, so the badge centres sit at 12.5% and 87.5%. Anchoring the line to
+	 * those points (left:12.5%, right:12.5%) keeps it terminating exactly at
+	 * step 4 with no overflow into the empty space past the final circle.
+	 */
 	.xpui-wiz-line {
 		position: absolute;
 		top: 16px;
-		left: 10%;
-		right: 10%;
+		left: 12.5%;
+		right: 12.5%;
 		height: 3px;
 		background: #e2e8f0;
 		z-index: 1;
 	}
+	/*
+	 * The progress fill shares the same left anchor and spans a percentage of the
+	 * connector width (not the whole row), so a 100% fill stops at the last badge.
+	 */
 	.xpui-wiz-line-progress {
 		position: absolute;
 		top: 16px;
-		left: 10%;
+		left: 12.5%;
 		width: 0%;
+		max-width: 75%;
 		height: 3px;
 		background: #2563eb;
 		z-index: 2;
@@ -1097,15 +1276,22 @@ function xpressui_render_form_importer_tab() {
 		padding: 0 16px;
 		box-sizing: border-box;
 		font-size: 13px;
+		text-decoration: none;
+	}
+	.xpui-wiz-btn:hover,
+	.xpui-wiz-btn:focus {
+		text-decoration: none;
 	}
 	.xpui-wiz-btn-primary {
 		background: #2563eb;
 		border: 1px solid #2563eb;
 		color: #ffffff;
 	}
-	.xpui-wiz-btn-primary:hover {
+	.xpui-wiz-btn-primary:hover,
+	.xpui-wiz-btn-primary:focus {
 		background: #1d4ed8;
 		border-color: #1d4ed8;
+		color: #ffffff;
 	}
 	.xpui-wiz-btn-secondary {
 		background: #ffffff;
@@ -1257,7 +1443,6 @@ function xpressui_render_form_importer_tab() {
 						reveals + fills it for the fallback state only.
 					-->
 					<div id="xpui-wiz-fallback-note" style="display:none; margin:14px auto 0; max-width:450px; text-align:left; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px;">
-						<span style="font-size:16px; line-height:1.3; flex-shrink:0;">&#128190;</span>
 						<div style="flex:1;">
 							<div id="xpui-wiz-fallback-note-text" style="font-size:13px; color:#334155; line-height:1.5;"></div>
 							<div id="xpui-wiz-fallback-note-reason" style="margin-top:4px; font-size:11px; color:#94a3b8; line-height:1.4;"></div>
@@ -1273,10 +1458,10 @@ function xpressui_render_form_importer_tab() {
 
 					<p style="margin-top:15px; display:flex; gap:10px; justify-content:center;" id="xpui-wiz-success-actions">
 						<a href="" target="_blank" rel="noopener noreferrer" class="xpui-wiz-btn xpui-wiz-btn-primary" id="xpui-wiz-edit-btn" style="display:none;">
-							⚡ <?php esc_html_e( 'Edit in SaaS Console', 'xpressui-bridge' ); ?>
+							<?php esc_html_e( 'Edit in Console', 'xpressui-bridge' ); ?>
 						</a>
 						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' ) ); ?>" class="xpui-wiz-btn xpui-wiz-btn-secondary">
-							📂 <?php esc_html_e( 'View Workflows', 'xpressui-bridge' ); ?>
+							<?php esc_html_e( 'View Workflows', 'xpressui-bridge' ); ?>
 						</a>
 					</p>
 
@@ -1288,35 +1473,30 @@ function xpressui_render_form_importer_tab() {
 					-->
 					<div id="xpui-wiz-connect-nudge" style="display:none; text-align:left; margin:24px auto 0; max-width:520px; border:1px solid #bfdbfe; background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%); border-radius:14px; padding:22px 24px; box-shadow:0 4px 6px -1px rgba(37,99,235,0.08);">
 						<h3 style="margin:0 0 6px; font-size:16px; font-weight:800; color:#1e3a8a;">
-							🚀 <?php esc_html_e( 'Workflow created locally — connect to unlock the full product', 'xpressui-bridge' ); ?>
+							<?php esc_html_e( 'Your form is live on this site', 'xpressui-bridge' ); ?>
 						</h3>
 						<p style="margin:0 0 14px; font-size:13px; color:#475569; line-height:1.5;">
-							<?php esc_html_e( 'Your workflow runs right now on this site. Connect a free IntakeFlow account to unlock the rest:', 'xpressui-bridge' ); ?>
+							<?php esc_html_e( 'Connect a free IntakeFlow account to get more out of it:', 'xpressui-bridge' ); ?>
 						</p>
 						<ul style="list-style:none; margin:0 0 18px; padding:0;">
 							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
-								<span style="font-size:15px; line-height:1.3;">☁️</span>
-								<span><strong><?php esc_html_e( 'Cloud backup of submissions', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'every entry safely stored off your server.', 'xpressui-bridge' ); ?></span>
+								<span><strong><?php esc_html_e( 'Cloud backup', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'submissions are stored off your server.', 'xpressui-bridge' ); ?></span>
 							</li>
 							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
-								<span style="font-size:15px; line-height:1.3;">🎨</span>
-								<span><strong><?php esc_html_e( 'Visual multi-step editor', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'redesign and re-order steps without touching code.', 'xpressui-bridge' ); ?></span>
+								<span><strong><?php esc_html_e( 'Visual editor', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'change steps and design without code.', 'xpressui-bridge' ); ?></span>
 							</li>
 							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
-								<span style="font-size:15px; line-height:1.3;">🔗</span>
-								<span><strong><?php esc_html_e( 'Reliable integrations & webhooks', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'delivered server-side by the Console.', 'xpressui-bridge' ); ?></span>
+								<span><strong><?php esc_html_e( 'Webhooks and integrations', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'delivered reliably by the Console.', 'xpressui-bridge' ); ?></span>
 							</li>
 							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
-								<span style="font-size:15px; line-height:1.3;">⏰</span>
-								<span><strong><?php esc_html_e( 'Automated reminders', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'follow up with people automatically.', 'xpressui-bridge' ); ?></span>
+								<span><strong><?php esc_html_e( 'Follow-up reminders', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'sent automatically.', 'xpressui-bridge' ); ?></span>
 							</li>
 							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:0; font-size:13px; color:#334155; line-height:1.45;">
-								<span style="font-size:15px; line-height:1.3;">📊</span>
-								<span><strong><?php esc_html_e( 'Analytics', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'see completion rates and where people drop off.', 'xpressui-bridge' ); ?></span>
+								<span><strong><?php esc_html_e( 'Analytics', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'completion and drop-off rates.', 'xpressui-bridge' ); ?></span>
 							</li>
 						</ul>
 						<a href="<?php echo esc_url( $connect_settings_url ); ?>" class="xpui-wiz-btn xpui-wiz-btn-primary" style="width:100%; box-sizing:border-box;">
-							🔌 <?php esc_html_e( 'Connect IntakeFlow Account', 'xpressui-bridge' ); ?>
+							<?php esc_html_e( 'Connect IntakeFlow Account', 'xpressui-bridge' ); ?>
 						</a>
 						<p style="margin:12px 0 0; text-align:center;">
 							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' ) ); ?>" style="font-size:12px; color:#64748b; text-decoration:underline;">
@@ -1364,11 +1544,13 @@ function xpressui_render_form_importer_tab() {
 				}
 			}
 			
-			// line progress
+			// Line progress. The connector spans 12.5%..87.5% of the row (75% wide),
+			// so the fill width is measured against that span: reaching badge 2 is
+			// 25%, badge 3 is 50%, badge 4 (the end) is the full 75%.
 			var progressPercent = 0;
-			if (currentStep === 2) progressPercent = 33;
-			if (currentStep === 3) progressPercent = 66;
-			if (currentStep === 4) progressPercent = 100;
+			if (currentStep === 2) progressPercent = 25;
+			if (currentStep === 3) progressPercent = 50;
+			if (currentStep === 4) progressPercent = 75;
 			$('#xpui-line-progress').css('width', progressPercent + '%');
 
 			// button row toggles
