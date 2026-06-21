@@ -746,16 +746,7 @@ function xpressui_normalize_optional_settings_url( $value ): string {
 	return $value;
 }
 
-/**
- * Renders a small inline "Connect to edit" upsell hint for a gated control.
- */
-function xpressui_pro_gated_hint(): string {
-	$connect_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
-	return '<p class="description" style="color:#2563eb;"><span aria-hidden="true">🔒 </span><a href="' . esc_url( $connect_url ) . '">'
-		. esc_html__( 'Connect your IntakeFlow account to edit this.', 'xpressui-bridge' ) . '</a></p>';
-}
-
-function xpressui_pro_render_card_settings( string $slug, bool $is_local_only = false ): void {
+function xpressui_pro_render_card_settings( string $slug ): void {
 	$all_settings  = get_option( 'xpressui_project_settings', [] );
 	$s             = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
 
@@ -785,20 +776,12 @@ function xpressui_pro_render_card_settings( string $slug, bool $is_local_only = 
 	$html .= '<p class="description">' . esc_html__( 'Receive an email on each new submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
 	xpressui_pro_row( 'xpressui_notify_email', __( 'Notification email', 'xpressui-bridge' ), $html );
 
-	$gated_attr = $is_local_only ? ' disabled' : '';
-
-	$html = '<input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $redirect_url ) . '"' . $gated_attr . '>';
+	$html = '<input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $redirect_url ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Redirect after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p>';
-	if ( $is_local_only ) {
-		$html .= xpressui_pro_gated_hint();
-	}
 	xpressui_pro_row( 'xpressui_redirect_url', __( 'Post-submit redirect', 'xpressui-bridge' ), $html );
 
-	$html = '<input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( $webhook_url ) . '"' . $gated_attr . '>';
+	$html = '<input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( $webhook_url ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Receive a POST JSON payload after each submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
-	if ( $is_local_only ) {
-		$html .= xpressui_pro_gated_hint();
-	}
 	xpressui_pro_row( 'xpressui_webhook_url', __( 'Webhook destination', 'xpressui-bridge' ), $html );
 
 	$html = '<label><input type="checkbox" id="xpressui_show_project_title" name="xpressui_show_project_title" value="1"' . checked( '1', $show_project_title, false ) . '> ';
@@ -819,15 +802,12 @@ function xpressui_pro_render_card_settings( string $slug, bool $is_local_only = 
 	$html .= '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p>';
 	xpressui_pro_row( 'xpressui_section_label_visibility', __( 'Section labels', 'xpressui-bridge' ), $html );
 
-	$html = '<select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text"' . $gated_attr . '>';
+	$html = '<select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text">';
 	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'Print / download PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
 		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $submission_action, $val, false ) . '>' . esc_html( $label ) . '</option>';
 	}
 	$html .= '</select>';
 	$html .= '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing the submission in WordPress.', 'xpressui-bridge' ) . '</p>';
-	if ( $is_local_only ) {
-		$html .= xpressui_pro_gated_hint();
-	}
 	xpressui_pro_row( 'xpressui_submission_action', __( 'Submission action', 'xpressui-bridge' ), $html );
 
 	echo '</tbody></table>';
@@ -850,18 +830,12 @@ function xpressui_pro_render_card_settings( string $slug, bool $is_local_only = 
 	echo '<h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">' . esc_html__( 'Booking Link', 'xpressui-bridge' ) . '</h3>';
 	echo '<table class="form-table"><tbody>';
 
-	$html = '<input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( $booking_url ) . '"' . $gated_attr . '>';
+	$html = '<input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( $booking_url ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Show a booking button on the success screen and in the confirmation email. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
-	if ( $is_local_only ) {
-		$html .= xpressui_pro_gated_hint();
-	}
 	xpressui_pro_row( 'xpressui_booking_url', __( 'Booking URL', 'xpressui-bridge' ), $html );
 
-	$html = '<input type="text" id="xpressui_booking_button_label" name="xpressui_booking_button_label" class="regular-text" placeholder="' . esc_attr__( 'Book an appointment', 'xpressui-bridge' ) . '" value="' . esc_attr( $booking_button_label ) . '"' . $gated_attr . '>';
+	$html = '<input type="text" id="xpressui_booking_button_label" name="xpressui_booking_button_label" class="regular-text" placeholder="' . esc_attr__( 'Book an appointment', 'xpressui-bridge' ) . '" value="' . esc_attr( $booking_button_label ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Label of the booking button. Leave empty to use the default.', 'xpressui-bridge' ) . '</p>';
-	if ( $is_local_only ) {
-		$html .= xpressui_pro_gated_hint();
-	}
 	xpressui_pro_row( 'xpressui_booking_button_label', __( 'Button label', 'xpressui-bridge' ), $html );
 
 	echo '</tbody></table>';
@@ -923,34 +897,10 @@ function xpressui_pro_render_extra_workflow_sections( string $slug, array $s, ar
 		'has_theme' => ! empty( $ov_theme ) || $ov_project_bg !== '',
 	];
 
-	// Local-only workflows (local import / bundled starter) get the advanced field
-	// editor and integration controls gated behind connecting the Console.
-	$is_local_only = xpressui_workflow_is_local_only( $slug );
-
 	xpressui_pro_render_card_appearance( $ov_theme, $pack_theme, $summary_stats, $ov_project_bg, $pack_project_bg );
 	xpressui_pro_render_card_navigation( $ov_navigation, $pack_nav );
-	if ( $is_local_only ) {
-		xpressui_pro_render_card_sections_locked();
-	} else {
-		xpressui_pro_render_card_sections( $sections, $ov_sections, $ov_fields, [] );
-	}
-	xpressui_pro_render_card_settings( $slug, $is_local_only );
-}
-
-/**
- * Renders a locked placeholder for the per-field editor on local-only workflows.
- * The advanced field/section/validation editor is a Console-tier capability, so we
- * show an upsell rather than the controls.
- */
-function xpressui_pro_render_card_sections_locked(): void {
-	$connect_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
-	echo '<details class="xpressui-admin-card" open id="xpressui-pro-card-fields-locked" data-xpressui-card-type="section" data-xpressui-search-text="fields sections labels validation overrides">';
-	echo '<summary class="xpressui-card-summary"><h2>🔒 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' ) . '</h2></summary>';
-	echo '<div class="xpressui-card-body">';
-	echo '<p style="margin:0 0 12px;color:#475569;max-width:640px;">' . esc_html__( 'Editing labels, sections, choices, and field validation is part of the IntakeFlow Console — the visual builder with steps, logic, and advanced fields. Connect your account to unlock the full field editor.', 'xpressui-bridge' ) . '</p>';
-	echo '<a href="' . esc_url( $connect_url ) . '" class="button button-primary">' . esc_html__( 'Connect IntakeFlow Account', 'xpressui-bridge' ) . '</a>';
-	echo '</div>';
-	echo '</details>';
+	xpressui_pro_render_card_sections( $sections, $ov_sections, $ov_fields, [] );
+	xpressui_pro_render_card_settings( $slug );
 }
 
 function xpressui_pro_extra_workflow_save( string $slug ): void {
@@ -960,17 +910,6 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 	) {
 		return;
 	}
-
-	// Local-only workflows have the advanced field editor and integration controls
-	// gated in the UI (rendered disabled/locked). Disabled inputs are not submitted by
-	// the browser, but a crafted POST could still carry them — so for local-only
-	// workflows we IGNORE the gated keys here and keep whatever was previously stored,
-	// making the gate non-spoofable.
-	$is_local_only       = xpressui_workflow_is_local_only( $slug );
-	$stored_all_settings = get_option( 'xpressui_project_settings', [] );
-	$stored_settings     = is_array( $stored_all_settings ) && is_array( $stored_all_settings[ $slug ] ?? null )
-		? $stored_all_settings[ $slug ]
-		: [];
 
 	// 1. First parse and save the local project settings to xpressui_project_settings option
 	$raw_notify_email = isset( $_POST['xpressui_notify_email'] ) ? trim( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_notify_email'] ) ) ) : '';
@@ -998,22 +937,6 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 	$submission_action           = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
 	if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
 		$submission_action = 'submit';
-	}
-
-	// Local-only: gated integration controls keep their previously stored values
-	// regardless of what the request carries. Skip URL validation warnings for them too.
-	if ( $is_local_only ) {
-		$redirect_url         = (string) ( $stored_settings['redirectUrl'] ?? '' );
-		$webhook_url          = (string) ( $stored_settings['webhookUrl'] ?? '' );
-		$booking_url          = (string) ( $stored_settings['bookingUrl'] ?? '' );
-		$booking_button_label = (string) ( $stored_settings['bookingButtonLabel'] ?? '' );
-		$submission_action    = (string) ( $stored_settings['submissionAction'] ?? 'submit' );
-		if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
-			$submission_action = 'submit';
-		}
-		$raw_redirect_url = '';
-		$raw_webhook_url  = '';
-		$raw_booking_url  = '';
 	}
 
 	$all_settings = get_option( 'xpressui_project_settings', [] );
@@ -1127,51 +1050,46 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 		unset( $overlay['project_background_image_url'] );
 	}
 
-	// Sections + fields overlay (the advanced per-field editor) is gated/locked for
-	// local-only workflows — skip parsing it entirely and preserve any stored overlay,
-	// so a crafted POST can't write field/section overrides.
-	if ( ! $is_local_only ) {
-			$raw_sections = isset( $_POST['xpressui_overlay_sections'] ) && is_array( $_POST['xpressui_overlay_sections'] )
-				? map_deep( wp_unslash( $_POST['xpressui_overlay_sections'] ), 'sanitize_text_field' )
-				: [];
-		$sections_overlay = [];
-		foreach ( $raw_sections as $sname => $slabel ) {
-			$sname  = preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $sname );
-			$slabel = sanitize_text_field( wp_unslash( (string) $slabel ) );
-			if ( $sname !== '' && $slabel !== '' ) {
-				$sections_overlay[ $sname ] = $slabel;
-			}
+		$raw_sections = isset( $_POST['xpressui_overlay_sections'] ) && is_array( $_POST['xpressui_overlay_sections'] )
+			? map_deep( wp_unslash( $_POST['xpressui_overlay_sections'] ), 'sanitize_text_field' )
+			: [];
+	$sections_overlay = [];
+	foreach ( $raw_sections as $sname => $slabel ) {
+		$sname  = preg_replace( '/[^A-Za-z0-9_-]/', '', (string) $sname );
+		$slabel = sanitize_text_field( wp_unslash( (string) $slabel ) );
+		if ( $sname !== '' && $slabel !== '' ) {
+			$sections_overlay[ $sname ] = $slabel;
 		}
-		if ( ! empty( $sections_overlay ) ) {
-			$overlay['sections'] = $sections_overlay;
-		} else {
-			unset( $overlay['sections'] );
-		}
+	}
+	if ( ! empty( $sections_overlay ) ) {
+		$overlay['sections'] = $sections_overlay;
+	} else {
+		unset( $overlay['sections'] );
+	}
 
-		// Fields overlay.
-			$raw_fields_post = isset( $_POST['xpressui_overlay_fields'] ) && is_array( $_POST['xpressui_overlay_fields'] )
-				? map_deep( wp_unslash( $_POST['xpressui_overlay_fields'] ), 'sanitize_text_field' )
-				: [];
-		if ( ! empty( $raw_fields_post ) ) {
-			$tc              = xpressui_load_workflow_template_context( $slug );
-			$_pack_fields    = [];
-			foreach ( (array) ( $tc['rendered_form']['sections'] ?? [] ) as $_section ) {
-				foreach ( (array) ( $_section['fields'] ?? [] ) as $_field ) {
-					$_fn = (string) ( $_field['name'] ?? '' );
-					if ( $_fn !== '' ) {
-						$_pack_fields[ $_fn ] = $_field;
-					}
+	// Fields overlay.
+		$raw_fields_post = isset( $_POST['xpressui_overlay_fields'] ) && is_array( $_POST['xpressui_overlay_fields'] )
+			? map_deep( wp_unslash( $_POST['xpressui_overlay_fields'] ), 'sanitize_text_field' )
+			: [];
+	if ( ! empty( $raw_fields_post ) ) {
+		$tc              = xpressui_load_workflow_template_context( $slug );
+		$_pack_fields    = [];
+		foreach ( (array) ( $tc['rendered_form']['sections'] ?? [] ) as $_section ) {
+			foreach ( (array) ( $_section['fields'] ?? [] ) as $_field ) {
+				$_fn = (string) ( $_field['name'] ?? '' );
+				if ( $_fn !== '' ) {
+					$_pack_fields[ $_fn ] = $_field;
 				}
 			}
-			$fields_overlay = xpressui_pro_build_fields_overlay_from_post( $raw_fields_post, $_pack_fields );
-			if ( ! empty( $fields_overlay ) ) {
-				$overlay['fields'] = $fields_overlay;
-			} else {
-				unset( $overlay['fields'] );
-			}
+		}
+		$fields_overlay = xpressui_pro_build_fields_overlay_from_post( $raw_fields_post, $_pack_fields );
+		if ( ! empty( $fields_overlay ) ) {
+			$overlay['fields'] = $fields_overlay;
 		} else {
 			unset( $overlay['fields'] );
 		}
+	} else {
+		unset( $overlay['fields'] );
 	}
 
 	if ( empty( $overlay ) ) {

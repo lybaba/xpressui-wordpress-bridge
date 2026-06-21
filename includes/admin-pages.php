@@ -1110,12 +1110,7 @@ function xpressui_render_workflow_settings_page() {
 		}
 	}
 
-	// Local-only workflows (local import / bundled starter, no Console project) get a
-	// deliberately limited editing surface: basic appearance stays editable, but the
-	// advanced field editor and integrations are gated behind connecting the Console.
-	$is_local_only = xpressui_workflow_is_local_only( $slug );
-
-	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance' . ( $is_local_only ? ' xpressui-local-only' : '' ) . '">';
+	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance">';
 
 	// Header
 	echo '<div class="xpressui-pro-header">';
@@ -1129,27 +1124,11 @@ function xpressui_render_workflow_settings_page() {
 	echo '</div>';
 	echo '</div>';
 
-	// Upsell gate for local-only workflows.
-	if ( $is_local_only ) {
-		$connect_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
-		echo '<div class="xpressui-admin-card xpressui-upsell-gate" style="border-left:4px solid #2563eb;padding:18px 20px;margin-bottom:18px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;">';
-		echo '<div style="flex:1;min-width:320px;">';
-		echo '<h2 style="margin:0 0 6px;font-size:15px;">🔒 ' . esc_html__( 'This workflow lives only on this site', 'xpressui-bridge' ) . '</h2>';
-		echo '<p style="margin:0;color:#475569;max-width:640px;">' . esc_html__( 'Connect your IntakeFlow account to unlock the full editor — visual multi-step builder, steps & logic, fields, and advanced design. Basic appearance tweaks stay available here.', 'xpressui-bridge' ) . '</p>';
-		echo '</div>';
-		echo '<a href="' . esc_url( $connect_url ) . '" class="button button-primary button-hero">' . esc_html__( 'Connect IntakeFlow Account', 'xpressui-bridge' ) . '</a>';
-		echo '</div>';
-	}
-
 	// Tabs navigation
 	echo '<h2 class="nav-tab-wrapper xpressui-customizer-tabs" style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 0;">';
 	echo '<a href="#tab-appearance" class="nav-tab nav-tab-active" data-tab="appearance">🎨 ' . esc_html__( 'Style & Appearance', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="#tab-navigation" class="nav-tab" data-tab="navigation">🗺️ ' . esc_html__( 'Navigation Buttons', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' );
-	if ( $is_local_only ) {
-		echo ' <span class="xpressui-pro-badge" style="background:#e2e8f0;color:#475569;">🔒</span>';
-	}
-	echo '</a>';
+	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="#tab-settings" class="nav-tab" data-tab="settings">⚙️ ' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</a>';
 	echo '</h2>';
 
