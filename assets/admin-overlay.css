@@ -95,11 +95,11 @@
 
 /* --- Customizer Tab Visibility Layout --- */
 .xpressui-admin-wrap.xpressui-active-tab-appearance .xpressui-pro-toolbar,
-.xpressui-admin-wrap.xpressui-active-tab-appearance details:not(#xpressui-pro-card-appearance),
+.xpressui-admin-wrap.xpressui-active-tab-appearance .xpressui-admin-card:not(#xpressui-pro-card-appearance),
 .xpressui-admin-wrap.xpressui-active-tab-navigation .xpressui-pro-toolbar,
-.xpressui-admin-wrap.xpressui-active-tab-navigation details:not(#xpressui-pro-card-navigation),
-.xpressui-admin-wrap.xpressui-active-tab-fields details#xpressui-pro-card-appearance,
-.xpressui-admin-wrap.xpressui-active-tab-fields details#xpressui-pro-card-navigation {
+.xpressui-admin-wrap.xpressui-active-tab-navigation .xpressui-admin-card:not(#xpressui-pro-card-navigation),
+.xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-appearance,
+.xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-navigation {
 	display: none !important;
 }
 

@@ -80,7 +80,7 @@ function xpressui_enqueue_overlay_assets(): void {
 		'xpressui-pro-admin-overlay',
 		XPRESSUI_PRO_URL . 'assets/admin-overlay.css',
 		[],
-		XPRESSUI_PRO_VERSION
+		XPRESSUI_PRO_VERSION . '-ux-v5'
 	);
 	if ( $is_settings ) {
 		wp_enqueue_media();
@@ -88,7 +88,7 @@ function xpressui_enqueue_overlay_assets(): void {
 			'xpressui-pro-admin-overlay-js',
 			XPRESSUI_PRO_URL . 'assets/admin-overlay.js',
 			[],
-			XPRESSUI_PRO_VERSION,
+			XPRESSUI_PRO_VERSION . '-ux-v5',
 			true
 		);
 	}
