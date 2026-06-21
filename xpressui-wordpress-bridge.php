@@ -40,6 +40,7 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/post-type.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/filters.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/metaboxes.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-pages.php';
+require_once XPRESSUI_BRIDGE_DIR . 'includes/dashboard-page.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/admin-orders.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/instrumentation.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/rest-endpoint.php';
