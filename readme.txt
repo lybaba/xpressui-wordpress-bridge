@@ -100,11 +100,17 @@ No. Once a workflow package is installed, the plugin operates entirely within yo
 This plugin can optionally connect to the IntakeFlow SaaS platform (hosted at intakeflow.dev) to enable real-time cloud synchronization, advanced field types, and centralized workflow management.
 
 When connected to IntakeFlow:
-* The plugin makes outbound HTTP requests to `https://api.intakeflow.dev` (or your custom console URL) to sync project schemas, download workflows, and verify subscription status.
-* Outbound sync requests include an API Token (`X-Api-Token`) generated from your IntakeFlow dashboard.
+* The plugin makes outbound HTTP requests to `https://app.intakeflow.dev` (or the custom console URL you configure under Settings) to verify your subscription status, sync project schemas, and download workflow packages.
+* Outbound requests include an API Token (`X-Api-Token`) generated from your IntakeFlow dashboard so the service can identify your account.
+* When you connect an account, the plugin sends the token to validate it and to look up the owner of the account.
+* When you use the Form Importer with an account connected, the structure of the imported Contact Form 7 / Gravity Forms form (field names, labels and types — not visitor submissions) is sent to the console to create the corresponding workflow, which is then downloaded back to this site.
 * No visitor or submission data is transmitted to the IntakeFlow console unless specifically configured by the administrator for cloud backup or webhook routing.
 
 A connection is required to sync custom workflows. The bundled starter workflow functions fully offline without a connection.
+
+Use of the IntakeFlow service is governed by its terms and privacy policy:
+* Terms of Service: https://intakeflow.dev/terms
+* Privacy Policy: https://intakeflow.dev/privacy
 
 The bundled XPressUI standard runtime (JavaScript) is served directly from the plugin directory — it is never loaded from a CDN or external URL.
 

@@ -52,19 +52,24 @@ function xpressui_handle_form_import_submission() {
 add_action( 'admin_init', 'xpressui_handle_form_import_submission' );
 
 /**
- * Imports a Contact Form 7 form as an IntakeFlow workflow.
+ * Parses a Contact Form 7 form into a normalised { title, fields } structure.
+ *
+ * Single source of the CF7 field-type mapping, shared by BOTH import entry
+ * points: the guided wizard AJAX (xpressui_ajax_import_form_wizard) and the
+ * non-JS fallback (xpressui_import_cf7_form). Keeping the parse in one place is
+ * what stops the two paths drifting (e.g. one mapping [tel] to a tel input and
+ * the other degrading it to text).
+ *
+ * @param int $form_id CF7 form post ID.
+ * @return array|WP_Error { 'title' => string, 'fields' => array } or WP_Error.
  */
-/**
- * Imports a Contact Form 7 form as an IntakeFlow workflow.
- */
-function xpressui_import_cf7_form( $form_id ) {
+function xpressui_parse_cf7_form_fields( $form_id ) {
 	$post = get_post( $form_id );
 	if ( ! $post || 'wpcf7_contact_form' !== $post->post_type ) {
 		return new WP_Error( 'invalid_form', __( 'Contact Form 7 form not found.', 'xpressui-bridge' ) );
 	}
 
-	$title = $post->post_title;
-	$slug  = 'cf7-import-' . sanitize_title( $title ) . '-' . wp_rand( 100, 999 );
+	$title   = $post->post_title;
 	$content = $post->post_content;
 
 	// Parse CF7 shortcode tags
@@ -133,13 +138,31 @@ function xpressui_import_cf7_form( $form_id ) {
 		$fields[] = $field_entry;
 	}
 
-	return xpressui_create_imported_workflow_package( $slug, $title, $fields );
+	return [ 'title' => $title, 'fields' => $fields ];
 }
 
 /**
- * Imports a Gravity Form as an IntakeFlow workflow.
+ * Imports a Contact Form 7 form as an IntakeFlow workflow (non-JS fallback path).
  */
-function xpressui_import_gravity_form( $form_id ) {
+function xpressui_import_cf7_form( $form_id ) {
+	$parsed = xpressui_parse_cf7_form_fields( $form_id );
+	if ( is_wp_error( $parsed ) ) {
+		return $parsed;
+	}
+	$slug = 'cf7-import-' . sanitize_title( $parsed['title'] ) . '-' . wp_rand( 100, 999 );
+	return xpressui_create_imported_workflow_package( $slug, $parsed['title'], $parsed['fields'] );
+}
+
+/**
+ * Parses a Gravity Form into a normalised { title, fields } structure.
+ *
+ * Single source of the Gravity field-type mapping, shared by both the wizard
+ * AJAX and the non-JS fallback (see xpressui_parse_cf7_form_fields()).
+ *
+ * @param int $form_id Gravity Forms form ID.
+ * @return array|WP_Error { 'title' => string, 'fields' => array } or WP_Error.
+ */
+function xpressui_parse_gravity_form_fields( $form_id ) {
 	if ( ! class_exists( 'GFAPI' ) ) {
 		return new WP_Error( 'gf_not_installed', __( 'Gravity Forms API is not available.', 'xpressui-bridge' ) );
 	}
@@ -150,7 +173,6 @@ function xpressui_import_gravity_form( $form_id ) {
 	}
 
 	$title = $form['title'];
-	$slug  = 'gf-import-' . sanitize_title( $title ) . '-' . wp_rand( 100, 999 );
 	$fields = [];
 
 	if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
@@ -214,7 +236,19 @@ function xpressui_import_gravity_form( $form_id ) {
 		}
 	}
 
-	return xpressui_create_imported_workflow_package( $slug, $title, $fields );
+	return [ 'title' => $title, 'fields' => $fields ];
+}
+
+/**
+ * Imports a Gravity Form as an IntakeFlow workflow (non-JS fallback path).
+ */
+function xpressui_import_gravity_form( $form_id ) {
+	$parsed = xpressui_parse_gravity_form_fields( $form_id );
+	if ( is_wp_error( $parsed ) ) {
+		return $parsed;
+	}
+	$slug = 'gf-import-' . sanitize_title( $parsed['title'] ) . '-' . wp_rand( 100, 999 );
+	return xpressui_create_imported_workflow_package( $slug, $parsed['title'], $parsed['fields'] );
 }
 
 /**
@@ -487,6 +521,17 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 		wp_mkdir_p( $target_dir );
 	}
 
+	// Write the package artifacts through the WordPress filesystem API (same
+	// pattern as includes/console-sync.php) rather than raw file_put_contents,
+	// so the plugin honours the host's configured FS method and FS_CHMOD_FILE.
+	global $wp_filesystem;
+	if ( ! function_exists( 'WP_Filesystem' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+	}
+	if ( ! WP_Filesystem() ) {
+		return new WP_Error( 'fs_error', __( 'Could not initialise the WordPress filesystem.', 'xpressui-bridge' ) );
+	}
+
 	// Map fields to steps (IntakeFlow workflow schema structure)
 	$steps = [
 		[
@@ -602,9 +647,10 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 	// Write form.config.json FIRST — it is a required artifact for the package to be
 	// considered installed. If it cannot be written, fail before leaving a half-built
 	// (invisible) package behind.
-	$config_written = file_put_contents(
+	$config_written = $wp_filesystem->put_contents(
 		trailingslashit( $target_dir ) . 'form.config.json',
-		wp_json_encode( $form_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
+		wp_json_encode( $form_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
+		FS_CHMOD_FILE
 	);
 	if ( false === $config_written ) {
 		return new WP_Error( 'write_failed', __( 'Could not write form.config.json configuration.', 'xpressui-bridge' ) );
@@ -612,18 +658,20 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 
 	// Write template.context.json — carries the default theme so the form renders
 	// styled (not bare). Declared as the `templateContext` artifact above.
-	$context_written = file_put_contents(
+	$context_written = $wp_filesystem->put_contents(
 		trailingslashit( $target_dir ) . 'template.context.json',
-		wp_json_encode( $template_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
+		wp_json_encode( $template_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
+		FS_CHMOD_FILE
 	);
 	if ( false === $context_written ) {
 		return new WP_Error( 'write_failed', __( 'Could not write template.context.json configuration.', 'xpressui-bridge' ) );
 	}
 
 	// Write manifest.json
-	$written = file_put_contents(
+	$written = $wp_filesystem->put_contents(
 		trailingslashit( $target_dir ) . 'manifest.json',
-		wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
+		wp_json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ),
+		FS_CHMOD_FILE
 	);
 
 	if ( false === $written ) {
@@ -755,9 +803,6 @@ function xpressui_console_failure_reason( $error ) {
 }
 
 /**
- * Renders the Form Importer panel.
- */
-/**
  * AJAX: handles the guided wizard import process.
  */
 add_action( 'wp_ajax_xpressui_import_form_wizard', 'xpressui_ajax_import_form_wizard' );
@@ -769,7 +814,7 @@ function xpressui_ajax_import_form_wizard() {
 		wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'xpressui-bridge' ) ], 403 );
 	}
 
-	$source_type = sanitize_key( $_POST['source_type'] ?? '' );
+	$source_type = sanitize_key( wp_unslash( $_POST['source_type'] ?? '' ) );
 	$form_id     = intval( $_POST['source_form_id'] ?? 0 );
 	$custom_name = sanitize_text_field( wp_unslash( $_POST['custom_name'] ?? '' ) );
 	$custom_slug = sanitize_title( wp_unslash( $_POST['custom_slug'] ?? '' ) );
@@ -783,137 +828,21 @@ function xpressui_ajax_import_form_wizard() {
 		wp_send_json_error( [ 'message' => __( 'Missing source form selection.', 'xpressui-bridge' ) ] );
 	}
 
-	// 1. Parse fields and choices from the source form
-	$fields = [];
-	$title  = '';
-
+	// 1. Parse the source form into { title, fields } via the shared parser — the
+	// SAME field-type mapping the non-JS fallback path uses, so the two import
+	// paths never drift on which field types are recognised.
 	if ( 'cf7' === $source_type ) {
-		$post = get_post( $form_id );
-		if ( ! $post || 'wpcf7_contact_form' !== $post->post_type ) {
-			wp_send_json_error( [ 'message' => __( 'Contact Form 7 form not found.', 'xpressui-bridge' ) ] );
-		}
-		$title   = $post->post_title;
-		$content = $post->post_content;
-
-		preg_match_all( '/\[([a-zA-Z0-9_*]+)\s+([a-zA-Z0-9_-]+)([^\]]*)\]/', $content, $matches, PREG_SET_ORDER );
-		if ( empty( $matches ) ) {
-			wp_send_json_error( [ 'message' => __( 'No fields detected in Contact Form 7 form.', 'xpressui-bridge' ) ] );
-		}
-
-		foreach ( $matches as $match ) {
-			$type_raw = $match[1];
-			$name     = $match[2];
-			$attrs    = $match[3];
-
-			$is_required = strpos( $type_raw, '*' ) !== false;
-			$clean_type  = str_replace( '*', '', $type_raw );
-
-			$field_type = 'text';
-			if ( 'email' === $clean_type ) {
-				$field_type = 'email';
-			} elseif ( 'textarea' === $clean_type ) {
-				$field_type = 'textarea';
-			} elseif ( 'file' === $clean_type ) {
-				$field_type = 'file';
-			} elseif ( in_array( $clean_type, [ 'select', 'checkbox', 'radio' ], true ) ) {
-				$field_type = $clean_type;
-			}
-
-			$choices = [];
-			if ( in_array( $field_type, [ 'select', 'checkbox', 'radio' ], true ) ) {
-				preg_match_all( '/"([^"]+)"/', $attrs, $attr_matches );
-				if ( ! empty( $attr_matches[1] ) ) {
-					foreach ( $attr_matches[1] as $choice_val ) {
-						$choices[] = [
-							'label' => $choice_val,
-							'value' => sanitize_title( $choice_val ),
-						];
-					}
-				}
-				if ( empty( $choices ) ) {
-					$choices = [
-						[ 'label' => __( 'Option 1', 'xpressui-bridge' ), 'value' => 'option_1' ],
-						[ 'label' => __( 'Option 2', 'xpressui-bridge' ), 'value' => 'option_2' ],
-					];
-				}
-			}
-
-			$label = ucwords( str_replace( [ '-', '_' ], ' ', $name ) );
-			$field_entry = [
-				'id'          => $name,
-				'label'       => $label,
-				'type'        => $field_type,
-				'required'    => $is_required,
-				'placeholder' => $label,
-			];
-			if ( ! empty( $choices ) ) {
-				$field_entry['choices'] = $choices;
-			}
-			$fields[] = $field_entry;
-		}
-
+		$parsed = xpressui_parse_cf7_form_fields( $form_id );
 	} elseif ( 'gf' === $source_type ) {
-		if ( ! class_exists( 'GFAPI' ) ) {
-			wp_send_json_error( [ 'message' => __( 'Gravity Forms API is not available.', 'xpressui-bridge' ) ] );
-		}
-		$form = GFAPI::get_form( $form_id );
-		if ( ! $form || is_wp_error( $form ) ) {
-			wp_send_json_error( [ 'message' => __( 'Gravity Form not found.', 'xpressui-bridge' ) ] );
-		}
-		$title = $form['title'];
-
-		if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
-			foreach ( $form['fields'] as $gf_field ) {
-				$name = 'field_' . $gf_field->id;
-				$type = $gf_field->type;
-				$label = $gf_field->label;
-				$is_required = ! empty( $gf_field->isRequired );
-
-				$field_type = 'text';
-				if ( 'email' === $type ) {
-					$field_type = 'email';
-				} elseif ( 'textarea' === $type ) {
-					$field_type = 'textarea';
-				} elseif ( 'fileupload' === $type ) {
-					$field_type = 'file';
-				} elseif ( in_array( $type, [ 'select', 'checkbox', 'radio' ], true ) ) {
-					$field_type = $type;
-				}
-
-				$choices = [];
-				if ( in_array( $field_type, [ 'select', 'checkbox', 'radio' ], true ) ) {
-					if ( ! empty( $gf_field->choices ) && is_array( $gf_field->choices ) ) {
-						foreach ( $gf_field->choices as $c ) {
-							$choices[] = [
-								'label' => $c['text'],
-								'value' => $c['value'],
-							];
-						}
-					}
-					if ( empty( $choices ) ) {
-						$choices = [
-							[ 'label' => __( 'Option 1', 'xpressui-bridge' ), 'value' => 'option_1' ],
-							[ 'label' => __( 'Option 2', 'xpressui-bridge' ), 'value' => 'option_2' ],
-						];
-					}
-				}
-
-				$field_entry = [
-					'id'          => $name,
-					'label'       => $label,
-					'type'        => $field_type,
-					'required'    => $is_required,
-					'placeholder' => $label,
-				];
-				if ( ! empty( $choices ) ) {
-					$field_entry['choices'] = $choices;
-				}
-				$fields[] = $field_entry;
-			}
-		}
+		$parsed = xpressui_parse_gravity_form_fields( $form_id );
 	} else {
 		wp_send_json_error( [ 'message' => __( 'Unsupported source form type.', 'xpressui-bridge' ) ] );
 	}
+	if ( is_wp_error( $parsed ) ) {
+		wp_send_json_error( [ 'message' => $parsed->get_error_message() ] );
+	}
+	$title  = $parsed['title'];
+	$fields = $parsed['fields'];
 
 	// 2. Resolve final Title & Slug
 	if ( ! empty( $custom_name ) ) {

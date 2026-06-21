@@ -418,7 +418,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	}
 
 	if ( $is_trial ) {
-		// WPForms Lite / Trial connect model:
+		// Trial connect model:
 		// Send notification emails but do not save to local WordPress database.
 		$stored_files       = xpressui_store_uploaded_files( 0, $request );
 		$payload_with_files = xpressui_attach_file_references( $payload, $stored_files );
