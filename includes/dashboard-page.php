@@ -613,9 +613,8 @@ function xpressui_render_dashboard_page() {
 				<h3 style="margin-top: 0; font-size: 14px; font-weight: 750; color: #0f172a;">🛠️ <?php esc_html_e( 'Quick Actions', 'xpressui-bridge' ); ?></h3>
 				<ul style="margin: 15px 0 0; padding: 0 0 0 15px; line-height: 1.8;">
 					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' ) ); ?>"><?php esc_html_e( 'Manage Workflow Packages', 'xpressui-bridge' ); ?></a></li>
-					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) ); ?>"><?php esc_html_e( 'Import forms from Gravity / CF7', 'xpressui-bridge' ); ?></a></li>
-					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=style' ) ); ?>"><?php esc_html_e( 'Configure style customizer', 'xpressui-bridge' ); ?></a></li>
-					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=synclogs' ) ); ?>"><?php esc_html_e( 'Inspect webhook sync logs', 'xpressui-bridge' ); ?></a></li>
+					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) ); ?>"><?php esc_html_e( 'Import forms from Gravity / CF7', 'xpressui-bridge' ); ?></a></li>
+					<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-sync-logs' ) ); ?>"><?php esc_html_e( 'Inspect webhook sync logs', 'xpressui-bridge' ); ?></a></li>
 				</ul>
 			</div>
 			

@@ -832,6 +832,31 @@ function xpressui_render_shortcode( $atts ) {
 			}
 		}
 
+		// Apply local settings overrides (takes precedence over SaaS synced config for the local shortcode embed)
+		$all_settings  = get_option( 'xpressui_project_settings', [] );
+		$project_settings = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
+		if ( ! empty( $project_settings['submitSuccessMessage'] ) ) {
+			$form_config['workflowConfig']['successMessage'] = $project_settings['submitSuccessMessage'];
+		}
+		if ( ! empty( $project_settings['submitErrorMessage'] ) ) {
+			$form_config['workflowConfig']['errorMessage'] = $project_settings['submitErrorMessage'];
+		}
+		if ( ! empty( $project_settings['redirectUrl'] ) ) {
+			$form_config['workflowConfig']['redirectUrl'] = $project_settings['redirectUrl'];
+		}
+		if ( ! empty( $project_settings['bookingUrl'] ) ) {
+			$form_config['workflowConfig']['bookingUrl'] = $project_settings['bookingUrl'];
+		}
+		if ( ! empty( $project_settings['bookingButtonLabel'] ) ) {
+			$form_config['workflowConfig']['bookingButtonLabel'] = $project_settings['bookingButtonLabel'];
+		}
+		if ( ! empty( $project_settings['notifyEmail'] ) ) {
+			$form_config['workflowConfig']['notifyEmail'] = $project_settings['notifyEmail'];
+		}
+		if ( ! empty( $project_settings['webhookUrl'] ) ) {
+			$form_config['workflowConfig']['webhookUrl'] = $project_settings['webhookUrl'];
+		}
+
 		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );
 		// Refresh rendered_form sections from the live form config so shortcode output
 		// stays aligned with the current runtime even when template.context.json is stale.
@@ -939,15 +964,23 @@ function xpressui_render_shortcode( $atts ) {
 	if ( is_array( $template_context['runtime'] ?? null ) ) {
 		$template_context['runtime']['mount_node_id']        = 'xpressui-mount-' . $slug;
 		
-		$booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		$booking_url = '';
 		if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingUrl'] ) ) {
 			$booking_url = $link_config['presentation']['bookingUrl'];
 		}
+		$local_booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+		if ( ! empty( $local_booking_url ) ) {
+			$booking_url = $local_booking_url;
+		}
 		$template_context['runtime']['booking_url'] = $booking_url;
 
-		$_booking_btn = xpressui_get_project_setting( $slug, 'bookingButtonLabel' );
+		$_booking_btn = '';
 		if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingButtonLabel'] ) ) {
 			$_booking_btn = $link_config['presentation']['bookingButtonLabel'];
+		}
+		$local_booking_btn = xpressui_get_project_setting( $slug, 'bookingButtonLabel' );
+		if ( ! empty( $local_booking_btn ) ) {
+			$_booking_btn = $local_booking_btn;
 		}
 		$template_context['runtime']['booking_button_label'] = '' !== $_booking_btn ? $_booking_btn : __( 'Book an appointment', 'xpressui-bridge' );
 	}
@@ -1004,9 +1037,13 @@ function xpressui_render_shortcode( $atts ) {
 	);
 
 	// Inject REST endpoint, translations, and shell metadata before init runs.
-	$booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+	$booking_url = '';
 	if ( is_array( $link_config ) && ! empty( $link_config['presentation']['bookingUrl'] ) ) {
 		$booking_url = $link_config['presentation']['bookingUrl'];
+	}
+	$local_booking_url = xpressui_get_project_setting( $slug, 'bookingUrl' );
+	if ( ! empty( $local_booking_url ) ) {
+		$booking_url = $local_booking_url;
 	}
 
 	$shell_meta = [

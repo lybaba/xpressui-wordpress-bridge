@@ -26,7 +26,7 @@ function xpressui_handle_form_import_submission() {
 
 	if ( empty( $source_type ) || ! $form_id ) {
 		xpressui_set_admin_notice( __( 'Invalid form selection.', 'xpressui-bridge' ), 'error' );
-		wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) );
+		wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) );
 		exit;
 	}
 
@@ -46,7 +46,7 @@ function xpressui_handle_form_import_submission() {
 		xpressui_set_admin_notice( __( 'Form conversion failed.', 'xpressui-bridge' ), 'error' );
 	}
 
-	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) );
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) );
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_form_import_submission' );
@@ -428,9 +428,13 @@ function xpressui_ajax_import_form_wizard() {
 
 	$source_type = sanitize_key( $_POST['source_type'] ?? '' );
 	$form_id     = intval( $_POST['source_form_id'] ?? 0 );
-	$import_mode = sanitize_key( $_POST['import_mode'] ?? 'local' );
 	$custom_name = sanitize_text_field( wp_unslash( $_POST['custom_name'] ?? '' ) );
 	$custom_slug = sanitize_title( wp_unslash( $_POST['custom_slug'] ?? '' ) );
+
+	// Destination is decided automatically server-side (source of truth): if the
+	// Console connection has an active API token, create the workflow in the SaaS;
+	// otherwise save it locally as a standalone workflow. Any client-sent value is ignored.
+	$import_mode = xpressui_pro_is_license_active() ? 'saas' : 'local';
 
 	if ( empty( $source_type ) || ! $form_id ) {
 		wp_send_json_error( [ 'message' => __( 'Missing source form selection.', 'xpressui-bridge' ) ] );
@@ -609,7 +613,7 @@ function xpressui_ajax_import_form_wizard() {
 	}
 
 	// 3. Process Import
-	if ( 'saas' === $import_mode && xpressui_pro_is_license_active() ) {
+	if ( 'saas' === $import_mode ) {
 		$conn = xpressui_get_console_connection();
 		if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
 			wp_send_json_error( [ 'message' => __( 'Console Connection URL or Token is missing. Save connection settings first.', 'xpressui-bridge' ) ] );
@@ -821,58 +825,6 @@ function xpressui_render_form_importer_tab() {
 		to { opacity: 1; transform: translateY(0); }
 	}
 
-	/* Options/Modes selection */
-	.xpui-wiz-modes {
-		display: flex;
-		gap: 20px;
-		margin: 20px 0;
-		flex-wrap: wrap;
-	}
-	.xpui-wiz-mode-card {
-		flex: 1;
-		min-width: 220px;
-		border: 2px solid #e2e8f0;
-		border-radius: 12px;
-		padding: 20px;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		position: relative;
-		background: #ffffff;
-	}
-	.xpui-wiz-mode-card:hover {
-		border-color: #cbd5e1;
-		transform: translateY(-2px);
-	}
-	.xpui-wiz-mode-card.active {
-		border-color: #2563eb;
-		background: #eff6ff;
-	}
-	.xpui-wiz-mode-card.disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
-		background: #f8fafc;
-	}
-	.xpui-wiz-mode-card.disabled:hover {
-		transform: none;
-		border-color: #e2e8f0;
-	}
-	.xpui-wiz-mode-icon {
-		font-size: 26px;
-		margin-bottom: 12px;
-	}
-	.xpui-wiz-mode-title {
-		font-size: 14px;
-		font-weight: 750;
-		color: #0f172a;
-		margin: 0 0 6px;
-	}
-	.xpui-wiz-mode-desc {
-		font-size: 12px;
-		color: #64748b;
-		line-height: 1.5;
-		margin: 0;
-	}
-
 	/* Progress indicator */
 	.xpui-wiz-progress-container {
 		margin: 25px 0;
@@ -1080,31 +1032,26 @@ function xpressui_render_form_importer_tab() {
 
 			<!-- Step 2: Destination Settings -->
 			<div class="xpui-wiz-step-body" id="xpui-wiz-step-2-body">
-				<h2 style="margin-top:0; font-size:18px; font-weight:800; color:#0f172a;"><?php esc_html_e( 'Choose Destination Mode', 'xpressui-bridge' ); ?></h2>
-				<p class="description" style="margin-bottom:20px;"><?php esc_html_e( 'Choose whether to save this workflow only in local WordPress files, or upload it to your SaaS Console to edit visually.', 'xpressui-bridge' ); ?></p>
-				
-				<div class="xpui-wiz-modes">
-					<!-- SaaS mode card -->
-					<div class="xpui-wiz-mode-card <?php echo $is_saas_connected ? 'active' : 'disabled'; ?>" id="xpui-mode-saas" data-mode="saas">
-						<div class="xpui-wiz-mode-icon">⚡</div>
-						<h3 class="xpui-wiz-mode-title"><?php esc_html_e( 'IntakeFlow SaaS Console (SaaS)', 'xpressui-bridge' ); ?></h3>
-						<p class="xpui-wiz-mode-desc">
-							<?php if ( $is_saas_connected ) : ?>
-								<?php esc_html_e( 'Create workflow in the SaaS Console, visually edit it with drag-and-drop, and automatically sync it back.', 'xpressui-bridge' ); ?>
-							<?php else : ?>
-								<strong><?php esc_html_e( 'Connection Required', 'xpressui-bridge' ); ?></strong><br>
-								<?php esc_html_e( 'Please configure your API token in the General Settings tab to enable direct SaaS synchronization.', 'xpressui-bridge' ); ?>
-							<?php endif; ?>
-						</p>
-					</div>
+				<h2 style="margin-top:0; font-size:18px; font-weight:800; color:#0f172a;"><?php esc_html_e( 'Name Your Workflow', 'xpressui-bridge' ); ?></h2>
+				<p class="description" style="margin-bottom:20px;"><?php esc_html_e( 'Give your imported workflow a name and slug. The destination is chosen automatically based on your Console connection.', 'xpressui-bridge' ); ?></p>
 
-					<!-- Local mode card -->
-					<div class="xpui-wiz-mode-card <?php echo ! $is_saas_connected ? 'active' : ''; ?>" id="xpui-mode-local" data-mode="local">
-						<div class="xpui-wiz-mode-icon">💾</div>
-						<h3 class="xpui-wiz-mode-title"><?php esc_html_e( 'Local Only (Standalone)', 'xpressui-bridge' ); ?></h3>
-						<p class="xpui-wiz-mode-desc"><?php esc_html_e( 'Creates a standalone offline workflow saved directly in your WordPress upload folder. Submissions are unlimited.', 'xpressui-bridge' ); ?></p>
+				<?php if ( $is_saas_connected ) : ?>
+					<div style="display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:10px; margin-bottom:20px;">
+						<span style="font-size:18px; line-height:1.2;">⚡</span>
+						<div style="font-size:13px; color:#1e3a8a; line-height:1.5;">
+							<strong><?php esc_html_e( 'Destination: IntakeFlow Console', 'xpressui-bridge' ); ?></strong><br>
+							<?php esc_html_e( 'This workflow will be created in your IntakeFlow Console and synced back to WordPress.', 'xpressui-bridge' ); ?>
+						</div>
 					</div>
-				</div>
+				<?php else : ?>
+					<div style="display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px; margin-bottom:20px;">
+						<span style="font-size:18px; line-height:1.2;">💾</span>
+						<div style="font-size:13px; color:#475569; line-height:1.5;">
+							<strong><?php esc_html_e( 'Destination: Local (Standalone)', 'xpressui-bridge' ); ?></strong><br>
+							<?php esc_html_e( 'Saved locally in WordPress (no Console connection). Connect your API token in the General Settings tab to create workflows in the Console instead.', 'xpressui-bridge' ); ?>
+						</div>
+					</div>
+				<?php endif; ?>
 
 				<div style="margin-top:20px; display:flex; gap:15px;">
 					<div style="flex:1;">
@@ -1238,13 +1185,8 @@ function xpressui_render_form_importer_tab() {
 			updateStepUi();
 		});
 
-		// Step 2 choice card selection
-		$('.xpui-wiz-mode-card').on('click', function() {
-			if ($(this).hasClass('disabled')) return;
-			$('.xpui-wiz-mode-card').removeClass('active');
-			$(this).addClass('active');
-			importMode = $(this).data('mode');
-		});
+		// Destination is decided automatically (saas when connected, else local) — see
+		// `importMode` above; the server re-derives it authoritatively, so no UI choice.
 
 		// Footer buttons handlers
 		$('#xpui-wiz-next').on('click', function() {

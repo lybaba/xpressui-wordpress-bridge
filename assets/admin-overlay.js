@@ -178,7 +178,7 @@ document.querySelectorAll('.xpressui-customizer-tabs a').forEach(function(tabLin
 
 		const wrap = document.querySelector('.xpressui-admin-wrap');
 		if (wrap) {
-			wrap.classList.remove('xpressui-active-tab-appearance', 'xpressui-active-tab-navigation', 'xpressui-active-tab-fields');
+			wrap.classList.remove('xpressui-active-tab-appearance', 'xpressui-active-tab-navigation', 'xpressui-active-tab-fields', 'xpressui-active-tab-settings');
 			wrap.classList.add('xpressui-active-tab-' + tab);
 		}
 	});
@@ -266,3 +266,23 @@ document.addEventListener('click', function(e) {
 		}
 	}
 });
+
+// Auto-dismiss initial save message on the status bar after 4 seconds
+if (xpressuiDirtyStatus) {
+	const savedMsg = xpressuiDirtyStatus.getAttribute('data-saved-message');
+	if (savedMsg) {
+		setTimeout(function() {
+			if (!xpressuiProFormDirty) {
+				xpressuiDirtyStatus.style.transition = 'opacity 0.3s ease';
+				xpressuiDirtyStatus.style.opacity = '0';
+				setTimeout(function() {
+					if (!xpressuiProFormDirty) {
+						xpressuiDirtyStatus.classList.remove('is-saved');
+						xpressuiDirtyStatus.textContent = 'No unsaved changes';
+						xpressuiDirtyStatus.style.opacity = '1';
+					}
+				}, 300);
+			}
+		}, 4000);
+	}
+}

@@ -191,6 +191,14 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
  * @return string Comma-separated recipient list, or '' when no notification is due.
  */
 function xpressui_resolve_notification_recipients( $project_slug, $payload ) {
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	if ( is_array( $all_settings ) && ! empty( $all_settings[ $project_slug ]['notifyEmail'] ) ) {
+		$emails = array_values( array_filter( array_map( 'trim', explode( ',', $all_settings[ $project_slug ]['notifyEmail'] ) ), 'is_email' ) );
+		if ( ! empty( $emails ) ) {
+			return implode( ',', $emails );
+		}
+	}
+
 	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
 
 	if ( $hosted_link_id !== '' ) {

@@ -213,7 +213,7 @@ function xpressui_pro_build_status_body( int $post_id, string $status, string $p
 			$header_label = __( 'Additional information required', 'xpressui-bridge' );
 			/* translators: %s: workflow slug */
 			$intro   = sprintf( __( 'Thank you for your submission for %s. After review, our team needs some additional information before we can proceed.', 'xpressui-bridge' ), $project_slug );
-			$closing = __( 'Use the button below to complete the requested corrections, or reply to this email.', 'xpressui-bridge' );
+			$closing = __( 'Please reply to this email to provide the additional information.', 'xpressui-bridge' );
 			break;
 	}
 
@@ -241,17 +241,7 @@ function xpressui_pro_build_status_body( int $post_id, string $status, string $p
 		}
 	}
 
-	// Resume link for pending_info: lets the submitter re-open the form
-	// pre-filled and correct only the flagged fields (see resubmission.php).
 	$cta_html = '';
-	if ( 'pending_info' === $status && function_exists( 'xpressui_pro_build_resume_url' ) ) {
-		$resume_url = xpressui_pro_build_resume_url( $post_id );
-		if ( '' !== $resume_url ) {
-			$cta_html = '<p style="margin:20px 0 0;"><a href="' . esc_url( $resume_url )
-				. '" style="display:inline-block;padding:11px 20px;background:#c2562a;color:#ffffff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;">'
-				. esc_html__( 'Complete my submission', 'xpressui-bridge' ) . '</a></p>';
-		}
-	}
 
 	/* translators: %s: site name */
 	$footer_note = esc_html( sprintf( __( 'Sent by %s.', 'xpressui-bridge' ), get_bloginfo( 'name' ) ) );

@@ -32,7 +32,7 @@
 .xpressui-pro-header::before{content:"";position:absolute;left:-48px;bottom:-72px;width:220px;height:220px;background:rgba(56,189,248,.08);border-radius:50%}
 .xpressui-pro-header-left{position:relative;z-index:1}
 .xpressui-pro-header-left h1{margin:0 0 3px;font-size:18px;font-weight:700;color:#fff;line-height:1.12}
-.xpressui-pro-header-left p{margin:0;max-width:640px;font-size:11px;color:rgba(255,255,255,.76);line-height:1.4}
+.xpressui-pro-header-left > p{margin:0;max-width:640px;font-size:11px;color:rgba(255,255,255,.76);line-height:1.4}
 .xpressui-pro-header-right{position:relative;z-index:1;text-align:right;flex-shrink:0;display:grid;justify-items:end;gap:6px}
 .xpressui-pro-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.24);border-radius:20px;padding:4px 10px;font-size:10px;font-weight:800;letter-spacing:.08em;color:#fff;text-transform:uppercase;box-shadow:0 10px 24px rgba(15,23,42,.18)}
 .xpressui-pro-back{display:block;margin-top:0;font-size:12px;color:rgba(255,255,255,.68);text-decoration:none}
@@ -94,12 +94,16 @@
 @media (max-width:782px){.xpressui-field-control-row{grid-template-columns:1fr}.xpressui-pro-header{padding:14px 14px 13px}.xpressui-pro-header-left h1{font-size:17px}.xpressui-pro-summary{gap:7px}}
 
 /* --- Customizer Tab Visibility Layout --- */
-.xpressui-admin-wrap.xpressui-active-tab-appearance .xpressui-pro-toolbar,
+.xpressui-admin-wrap:not(.xpressui-active-tab-fields) .xpressui-pro-toolbar {
+	display: none !important;
+}
+
 .xpressui-admin-wrap.xpressui-active-tab-appearance .xpressui-admin-card:not(#xpressui-pro-card-appearance),
-.xpressui-admin-wrap.xpressui-active-tab-navigation .xpressui-pro-toolbar,
 .xpressui-admin-wrap.xpressui-active-tab-navigation .xpressui-admin-card:not(#xpressui-pro-card-navigation),
+.xpressui-admin-wrap.xpressui-active-tab-settings .xpressui-admin-card:not(#xpressui-pro-card-settings),
 .xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-appearance,
-.xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-navigation {
+.xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-navigation,
+.xpressui-admin-wrap.xpressui-active-tab-fields .xpressui-admin-card#xpressui-pro-card-settings {
 	display: none !important;
 }
 

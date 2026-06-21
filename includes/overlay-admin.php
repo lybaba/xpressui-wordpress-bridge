@@ -737,6 +737,129 @@ function xpressui_pro_row( string $for, string $label, string $content ): void {
 // Unified Workflow Settings integration — extra sections (Pro)
 // ---------------------------------------------------------------------------
 
+function xpressui_normalize_optional_settings_url( $value ): string {
+	$value = trim( sanitize_text_field( wp_unslash( (string) $value ) ) );
+	if ( in_array( $value, [ '', 'http://', 'https://' ], true ) ) {
+		return '';
+	}
+
+	return $value;
+}
+
+function xpressui_pro_render_card_settings( string $slug ): void {
+	$all_settings  = get_option( 'xpressui_project_settings', [] );
+	$s             = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
+
+	$notify_email                = (string) ( $s['notifyEmail'] ?? '' );
+	$redirect_url                = (string) ( $s['redirectUrl'] ?? '' );
+	$webhook_url                 = (string) ( $s['webhookUrl'] ?? '' );
+	$booking_url                 = (string) ( $s['bookingUrl'] ?? '' );
+	$booking_button_label        = (string) ( $s['bookingButtonLabel'] ?? '' );
+	$show_project_title          = (string) ( $s['showProjectTitle'] ?? '0' );
+	$show_required_note          = (string) ( $s['showRequiredFieldsNote'] ?? '0' );
+	$section_label_visibility    = (string) ( $s['sectionLabelVisibility'] ?? 'auto' );
+	$notify_submitter_on_submit = (string) ( $s['notifySubmitterOnSubmit'] ?? '0' );
+	$submit_confirmation_message = (string) ( $s['submitConfirmationMessage'] ?? '' );
+	$submit_success_message     = (string) ( $s['submitSuccessMessage'] ?? '' );
+	$submit_error_message       = (string) ( $s['submitErrorMessage'] ?? '' );
+	$submission_action          = (string) ( $s['submissionAction'] ?? 'submit' );
+
+	echo '<details class="xpressui-admin-card" open id="xpressui-pro-card-settings">';
+	echo '<summary class="xpressui-card-summary"><h2>⚙️ ' . esc_html__( 'Workflow Settings & Integrations', 'xpressui-bridge' ) . '</h2></summary>';
+	echo '<div class="xpressui-card-body">';
+
+	// 1. General Project Settings
+	echo '<h3 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">' . esc_html__( 'Project Settings', 'xpressui-bridge' ) . '</h3>';
+	echo '<table class="form-table"><tbody>';
+
+	$html = '<input type="email" id="xpressui_notify_email" name="xpressui_notify_email" class="regular-text" placeholder="hello@example.com" value="' . esc_attr( $notify_email ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Receive an email on each new submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_notify_email', __( 'Notification email', 'xpressui-bridge' ), $html );
+
+	$html = '<input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $redirect_url ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Redirect after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_redirect_url', __( 'Post-submit redirect', 'xpressui-bridge' ), $html );
+
+	$html = '<input type="url" id="xpressui_webhook_url" name="xpressui_webhook_url" class="regular-text" placeholder="https://" value="' . esc_attr( $webhook_url ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Receive a POST JSON payload after each submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_webhook_url', __( 'Webhook destination', 'xpressui-bridge' ), $html );
+
+	$html = '<label><input type="checkbox" id="xpressui_show_project_title" name="xpressui_show_project_title" value="1"' . checked( '1', $show_project_title, false ) . '> ';
+	$html .= esc_html__( 'Display the workflow title above the form inside the WordPress page.', 'xpressui-bridge' ) . '</label>';
+	$html .= '<p class="description">' . esc_html__( 'Disabled by default to avoid duplicating the WordPress page title.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_show_project_title', __( 'Form title', 'xpressui-bridge' ), $html );
+
+	$html = '<label><input type="checkbox" id="xpressui_show_required_fields_note" name="xpressui_show_required_fields_note" value="1"' . checked( '1', $show_required_note, false ) . '> ';
+	$html .= esc_html__( 'Display the "* Required fields" note above the form.', 'xpressui-bridge' ) . '</label>';
+	$html .= '<p class="description">' . esc_html__( 'Disabled by default for a cleaner WordPress page layout.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_show_required_fields_note', __( 'Required fields note', 'xpressui-bridge' ), $html );
+
+	$html = '<select id="xpressui_section_label_visibility" name="xpressui_section_label_visibility" class="regular-text">';
+	foreach ( [ 'auto' => __( 'Auto', 'xpressui-bridge' ), 'show' => __( 'Always show', 'xpressui-bridge' ), 'hide' => __( 'Always hide', 'xpressui-bridge' ) ] as $val => $label ) {
+		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $section_label_visibility, $val, false ) . '>' . esc_html( $label ) . '</option>';
+	}
+	$html .= '</select>';
+	$html .= '<p class="description">' . esc_html__( 'Auto hides section titles when the workflow only contains one section.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_section_label_visibility', __( 'Section labels', 'xpressui-bridge' ), $html );
+
+	$html = '<select id="xpressui_submission_action" name="xpressui_submission_action" class="regular-text">';
+	foreach ( [ 'submit' => __( 'Default', 'xpressui-bridge' ), 'print' => __( 'Print / download PDF only', 'xpressui-bridge' ) ] as $val => $label ) {
+		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $submission_action, $val, false ) . '>' . esc_html( $label ) . '</option>';
+	}
+	$html .= '</select>';
+	$html .= '<p class="description">' . esc_html__( 'PDF only validates the form and prepares a temporary document link without storing the submission in WordPress.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_submission_action', __( 'Submission action', 'xpressui-bridge' ), $html );
+
+	echo '</tbody></table>';
+
+	// 2. Submit Feedback
+	echo '<h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">' . esc_html__( 'Submit Feedback', 'xpressui-bridge' ) . '</h3>';
+	echo '<table class="form-table"><tbody>';
+
+	$html = '<input type="text" id="xpressui_submit_success_message" name="xpressui_submit_success_message" class="large-text" value="' . esc_attr( $submit_success_message ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Optional custom success message shown after a valid submission.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_submit_success_message', __( 'Success message', 'xpressui-bridge' ), $html );
+
+	$html = '<input type="text" id="xpressui_submit_error_message" name="xpressui_submit_error_message" class="large-text" value="' . esc_attr( $submit_error_message ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Optional custom error message shown when the submission fails.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_submit_error_message', __( 'Error message', 'xpressui-bridge' ), $html );
+
+	echo '</tbody></table>';
+
+	// 3. Booking Link
+	echo '<h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">' . esc_html__( 'Booking Link', 'xpressui-bridge' ) . '</h3>';
+	echo '<table class="form-table"><tbody>';
+
+	$html = '<input type="url" id="xpressui_booking_url" name="xpressui_booking_url" class="regular-text" placeholder="https://calendly.com/..." value="' . esc_attr( $booking_url ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Show a booking button on the success screen and in the confirmation email. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_booking_url', __( 'Booking URL', 'xpressui-bridge' ), $html );
+
+	$html = '<input type="text" id="xpressui_booking_button_label" name="xpressui_booking_button_label" class="regular-text" placeholder="' . esc_attr__( 'Book an appointment', 'xpressui-bridge' ) . '" value="' . esc_attr( $booking_button_label ) . '">';
+	$html .= '<p class="description">' . esc_html__( 'Label of the booking button. Leave empty to use the default.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_booking_button_label', __( 'Button label', 'xpressui-bridge' ), $html );
+
+	echo '</tbody></table>';
+
+	// 4. Submission Confirmation Email
+	echo '<h3 style="margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px;">' . esc_html__( 'Submission Confirmation Email', 'xpressui-bridge' ) . '</h3>';
+	echo '<p style="margin-bottom: 15px; color: #64748b;">' . esc_html__( 'Send an automated confirmation email to the submitter when they submit for the first time. Resubmissions do not trigger this email.', 'xpressui-bridge' ) . '</p>';
+	echo '<table class="form-table"><tbody>';
+
+	$html = '<label><input type="checkbox" name="xpressui_notify_submitter_on_submit" value="1"' . checked( '1', $notify_submitter_on_submit, false ) . '> ';
+	$html .= esc_html__( 'Send a confirmation email to the submitter when they submit.', 'xpressui-bridge' ) . '</label>';
+	$html .= '<p class="description">' . esc_html__( 'Requires the submission to include an email field.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_notify_submitter_on_submit', __( 'Enable', 'xpressui-bridge' ), $html );
+
+	$html = '<textarea id="xpressui_submit_confirmation_message" name="xpressui_submit_confirmation_message" class="regular-text" rows="3">' . esc_textarea( $submit_confirmation_message ) . '</textarea>';
+	$html .= '<p class="description">' . esc_html__( 'Optional message shown at the top of the confirmation email. Leave empty to use the default.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_submit_confirmation_message', __( 'Custom message', 'xpressui-bridge' ), $html );
+
+	echo '</tbody></table>';
+
+	echo '</div>';
+	echo '</details>';
+}
+
 function xpressui_pro_render_extra_workflow_sections( string $slug, array $s, array $overlay ): void {
 	$template_context = xpressui_load_workflow_template_context( $slug );
 	$sections         = isset( $template_context['rendered_form']['sections'] ) && is_array( $template_context['rendered_form']['sections'] )
@@ -777,17 +900,87 @@ function xpressui_pro_render_extra_workflow_sections( string $slug, array $s, ar
 	xpressui_pro_render_card_appearance( $ov_theme, $pack_theme, $summary_stats, $ov_project_bg, $pack_project_bg );
 	xpressui_pro_render_card_navigation( $ov_navigation, $pack_nav );
 	xpressui_pro_render_card_sections( $sections, $ov_sections, $ov_fields, [] );
+	xpressui_pro_render_card_settings( $slug );
 }
 
-	function xpressui_pro_extra_workflow_save( string $slug ): void {
-		if (
-			! isset( $_POST['xpressui_workflow_settings_nonce'] )
-			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_workflow_settings_nonce'] ) ), 'xpressui_workflow_settings_' . $slug )
-		) {
-			return;
-		}
+function xpressui_pro_extra_workflow_save( string $slug ): void {
+	if (
+		! isset( $_POST['xpressui_workflow_settings_nonce'] )
+		|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_workflow_settings_nonce'] ) ), 'xpressui_workflow_settings_' . $slug )
+	) {
+		return;
+	}
 
-		$overlay = xpressui_pro_load_workflow_overlay( $slug );
+	// 1. First parse and save the local project settings to xpressui_project_settings option
+	$raw_notify_email = isset( $_POST['xpressui_notify_email'] ) ? trim( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_notify_email'] ) ) ) : '';
+	$raw_redirect_url = isset( $_POST['xpressui_redirect_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_redirect_url'] ) ) ) : '';
+	$raw_webhook_url  = isset( $_POST['xpressui_webhook_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_webhook_url'] ) ) ) : '';
+	$raw_booking_url  = isset( $_POST['xpressui_booking_url'] ) ? xpressui_normalize_optional_settings_url( sanitize_text_field( wp_unslash( (string) $_POST['xpressui_booking_url'] ) ) ) : '';
+
+	$notify_email         = '' !== $raw_notify_email ? sanitize_email( $raw_notify_email ) : '';
+	$redirect_url         = '' !== $raw_redirect_url ? esc_url_raw( $raw_redirect_url ) : '';
+	$webhook_url          = '' !== $raw_webhook_url ? esc_url_raw( $raw_webhook_url ) : '';
+	$booking_url          = '' !== $raw_booking_url ? esc_url_raw( $booking_url ) : '';
+	$booking_button_label = isset( $_POST['xpressui_booking_button_label'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_booking_button_label'] ) ) : '';
+
+	$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
+	$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
+	$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
+	if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
+		$section_label_visibility = 'auto';
+	}
+
+	$notify_submitter_on_submit  = ! empty( $_POST['xpressui_notify_submitter_on_submit'] ) ? '1' : '0';
+	$submit_confirmation_message = isset( $_POST['xpressui_submit_confirmation_message'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_submit_confirmation_message'] ) ) : '';
+	$submit_success_message      = isset( $_POST['xpressui_submit_success_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_success_message'] ) ) : '';
+	$submit_error_message        = isset( $_POST['xpressui_submit_error_message'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['xpressui_submit_error_message'] ) ) : '';
+	$submission_action           = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_submission_action'] ?? 'submit' ) ) );
+	if ( ! in_array( $submission_action, [ 'submit', 'print' ], true ) ) {
+		$submission_action = 'submit';
+	}
+
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	if ( ! is_array( $all_settings ) ) {
+		$all_settings = [];
+	}
+	$all_settings[ $slug ] = [
+		'notifyEmail'               => $notify_email,
+		'redirectUrl'               => $redirect_url,
+		'webhookUrl'                => $webhook_url,
+		'bookingUrl'                => $booking_url,
+		'bookingButtonLabel'        => $booking_button_label,
+		'showProjectTitle'          => $show_project_title,
+		'showRequiredFieldsNote'    => $show_required_note,
+		'sectionLabelVisibility'    => $section_label_visibility,
+		'notifySubmitterOnSubmit'   => $notify_submitter_on_submit,
+		'submitConfirmationMessage' => $submit_confirmation_message,
+		'submitSuccessMessage'      => $submit_success_message,
+		'submitErrorMessage'        => $submit_error_message,
+		'submissionAction'          => $submission_action,
+	];
+	update_option( 'xpressui_project_settings', $all_settings );
+
+	// Handle validation warnings and set notice if any
+	$warnings = [];
+	if ( $raw_notify_email !== '' && $notify_email === '' ) {
+		$warnings[] = __( 'The notification email is not valid.', 'xpressui-bridge' );
+	}
+	if ( $raw_redirect_url !== '' && $redirect_url === '' ) {
+		$warnings[] = __( 'The post-submit redirect URL is not valid.', 'xpressui-bridge' );
+	}
+	if ( $raw_webhook_url !== '' && $webhook_url === '' ) {
+		$warnings[] = __( 'The webhook URL is not valid.', 'xpressui-bridge' );
+	}
+	if ( $raw_booking_url !== '' && $booking_url === '' ) {
+		$warnings[] = __( 'The booking URL is not valid.', 'xpressui-bridge' );
+	}
+
+	if ( ! empty( $warnings ) ) {
+		xpressui_set_admin_notice( implode( ' ', $warnings ), 'error' );
+	}
+
+	// 2. Next parse and save the original overlay settings
+	$overlay = xpressui_pro_load_workflow_overlay( $slug );
 	if ( ! is_array( $overlay ) ) {
 		$overlay = [];
 	}

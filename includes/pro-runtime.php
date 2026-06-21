@@ -8,7 +8,6 @@ require_once XPRESSUI_PRO_DIR . 'includes/overlay.php';
 require_once XPRESSUI_PRO_DIR . 'includes/overlay-admin.php';
 require_once XPRESSUI_PRO_DIR . 'includes/status-page.php';
 require_once XPRESSUI_PRO_DIR . 'includes/mobile-capture.php';
-require_once XPRESSUI_PRO_DIR . 'includes/resubmission.php';
 require_once XPRESSUI_PRO_DIR . 'includes/status-notifications.php';
 // update-checker.php is loaded unconditionally from the main plugin file.
 

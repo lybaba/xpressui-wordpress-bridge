@@ -55,7 +55,7 @@ function xpressui_register_admin_page() {
 		'xpressui_render_workflows_page'
 	);
 
-	add_submenu_page(
+	$settings_hook = add_submenu_page(
 		'edit.php?post_type=xpressui_submission',
 		__( 'Workflow Settings', 'xpressui-bridge' ),
 		__( 'Workflow Settings', 'xpressui-bridge' ),
@@ -64,6 +64,13 @@ function xpressui_register_admin_page() {
 		'xpressui_render_workflow_settings_page'
 	);
 	remove_submenu_page( 'edit.php?post_type=xpressui_submission', 'xpressui-workflow-settings' );
+
+	if ( $settings_hook ) {
+		add_action( 'load-' . $settings_hook, function () {
+			global $title;
+			$title = __( 'Workflow Settings', 'xpressui-bridge' );
+		} );
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -196,12 +203,7 @@ function xpressui_render_workflows_page() {
 		}
 	}
 
-	// Fetch Inbox rows for column display
-	$inbox_rows = xpressui_get_project_inbox_rows();
-	$inbox_by_slug = [];
-	foreach ( $inbox_rows as $row ) {
-		$inbox_by_slug[ $row['projectSlug'] ] = $row;
-	}
+	$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'list';
 
 	$notice_class   = '';
 	$notice_message = '';
@@ -212,19 +214,43 @@ function xpressui_render_workflows_page() {
 		$notice_class   = ( $notice['type'] === 'error' ) ? 'notice-error' : 'notice-success';
 	}
 
-	// Project settings are now managed per-workflow on the Workflow Settings page (Settings link in each row).
-
 	if ( $notice_message ) {
 		echo '<div class="notice ' . esc_attr( $notice_class ) . ' is-dismissible"><p>' . wp_kses_post( $notice_message ) . '</p></div>';
 	}
 
 	echo '<div class="wrap xpressui-wrap xpressui-wrap--workflows">';
 	echo '<h1 class="wp-heading-inline">' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</h1>';
-	if ( xpressui_pro_is_license_active() ) {
+	if ( 'list' === $current_tab && xpressui_pro_is_license_active() ) {
 		echo '<button type="button" id="xpressui-global-sync-btn" class="page-title-action button button-primary" style="margin-left: 10px;">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
 	}
 	echo '<hr class="wp-header-end">';
-	echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-workflow settings.', 'xpressui-bridge' ) . '</p>';
+	
+	if ( 'list' === $current_tab ) {
+		echo '<p class="xpressui-page-intro">' . esc_html__( 'Manage your installed workflow packages and configure per-workflow settings.', 'xpressui-bridge' ) . '</p>';
+	} else {
+		echo '<p class="xpressui-page-intro">' . esc_html__( 'Convert legacy contact forms from other plugins into modern multi-step IntakeFlow portal workflows.', 'xpressui-bridge' ) . '</p>';
+	}
+
+	// Tabbed navigation
+	echo '<h2 class="nav-tab-wrapper" style="margin-bottom: 20px;">';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=list' ) ) . '" class="nav-tab ' . ( 'list' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Installed Workflows', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Form Importer', 'xpressui-bridge' ) . '</a>';
+	echo '</h2>';
+
+	if ( 'import' === $current_tab ) {
+		if ( function_exists( 'xpressui_render_form_importer_tab' ) ) {
+			xpressui_render_form_importer_tab();
+		}
+		echo '</div>'; // .wrap
+		return;
+	}
+
+	// Fetch Inbox rows for column display
+	$inbox_rows = xpressui_get_project_inbox_rows();
+	$inbox_by_slug = [];
+	foreach ( $inbox_rows as $row ) {
+		$inbox_by_slug[ $row['projectSlug'] ] = $row;
+	}
 
 	if ( ! xpressui_pro_is_license_active() ) {
 		echo '<div class="notice notice-warning inline" style="margin-top: 15px; max-width: 900px;"><p>';
@@ -855,6 +881,36 @@ function xpressui_register_settings_page() {
 		'xpressui-settings',
 		'xpressui_render_settings_page'
 	);
+
+	add_submenu_page(
+		'edit.php?post_type=xpressui_submission',
+		__( 'Sync Logs', 'xpressui-bridge' ),
+		__( 'Sync Logs', 'xpressui-bridge' ),
+		'manage_options',
+		'xpressui-sync-logs',
+		'xpressui_render_sync_logs_page'
+	);
+}
+
+/**
+ * Dedicated Sync Logs admin page (moved out of the Settings tab).
+ *
+ * Wraps the existing sync-logs render in the standard admin page chrome.
+ */
+function xpressui_render_sync_logs_page() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'xpressui-bridge' ) );
+	}
+
+	echo '<div class="wrap xpressui-wrap">';
+	echo '<h1>' . esc_html__( 'Sync Logs', 'xpressui-bridge' ) . '</h1>';
+	echo '<p class="xpressui-page-intro">' . esc_html__( 'Monitor outgoing webhook deliveries of form submissions sent to the console, and retry failed syncs.', 'xpressui-bridge' ) . '</p>';
+
+	if ( function_exists( 'xpressui_render_sync_logs_tab' ) ) {
+		xpressui_render_sync_logs_tab();
+	}
+
+	echo '</div>'; // .wrap
 }
 
 function xpressui_render_settings_page() {
@@ -878,40 +934,6 @@ function xpressui_render_settings_page() {
 	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</h1>';
 	echo '<p class="xpressui-page-intro">' . esc_html__( 'Configure your IntakeFlow Console settings and monitor runtime status.', 'xpressui-bridge' ) . '</p>';
-
-	// Tabbed navigation
-	$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
-
-	echo '<h2 class="nav-tab-wrapper" style="margin-bottom: 20px;">';
-	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=general' ) ) . '" class="nav-tab ' . ( 'general' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'General Settings', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=style' ) ) . '" class="nav-tab ' . ( 'style' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Style Customizer', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Form Importer', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings&tab=synclogs' ) ) . '" class="nav-tab ' . ( 'synclogs' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Sync Logs', 'xpressui-bridge' ) . '</a>';
-	echo '</h2>';
-
-	if ( 'style' === $current_tab ) {
-		if ( function_exists( 'xpressui_render_style_customizer_tab' ) ) {
-			xpressui_render_style_customizer_tab();
-		}
-		echo '</div>'; // .wrap
-		return;
-	}
-
-	if ( 'import' === $current_tab ) {
-		if ( function_exists( 'xpressui_render_form_importer_tab' ) ) {
-			xpressui_render_form_importer_tab();
-		}
-		echo '</div>'; // .wrap
-		return;
-	}
-
-	if ( 'synclogs' === $current_tab ) {
-		if ( function_exists( 'xpressui_render_sync_logs_tab' ) ) {
-			xpressui_render_sync_logs_tab();
-		}
-		echo '</div>'; // .wrap
-		return;
-	}
 
 	// 1. Runtime Health Card
 	$runtime_health = xpressui_get_runtime_health_summary();
@@ -1114,30 +1136,6 @@ function xpressui_render_workflow_settings_page() {
 		wp_die( esc_html__( 'Invalid workflow.', 'xpressui-bridge' ) );
 	}
 
-	// Handle Save Action
-	if ( isset( $_POST['xpressui_save_workflow_settings'] ) ) {
-		check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );
-
-		// Fire the hook in overlay-admin.php to save the overlay settings
-		do_action( 'xpressui_workflow_settings_extra_save', $slug );
-
-		xpressui_set_admin_notice( __( 'Workflow settings saved.', 'xpressui-bridge' ), 'success' );
-		wp_safe_redirect(
-			wp_nonce_url(
-				add_query_arg(
-					[
-						'post_type'     => 'xpressui_submission',
-						'page'          => 'xpressui-workflow-settings',
-						'xpressui_slug' => $slug,
-					],
-					admin_url( 'edit.php' )
-				),
-				'xpressui_view_workflow',
-				'xpressui_view_nonce'
-			)
-		);
-		exit;
-	}
 
 	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
 	$project_name  = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
@@ -1152,8 +1150,13 @@ function xpressui_render_workflow_settings_page() {
 	);
 
 	$notice = xpressui_get_admin_notice();
+	$success_message = '';
 	if ( $notice ) {
-		echo '<div class="notice ' . ( $notice['type'] === 'error' ? 'notice-error' : 'notice-success' ) . ' is-dismissible"><p>' . wp_kses_post( $notice['message'] ) . '</p></div>';
+		if ( $notice['type'] === 'success' ) {
+			$success_message = $notice['message'];
+		} else {
+			echo '<div class="notice ' . ( $notice['type'] === 'error' ? 'notice-error' : 'notice-success' ) . ' is-dismissible"><p>' . wp_kses_post( $notice['message'] ) . '</p></div>';
+		}
 	}
 
 	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance">';
@@ -1175,6 +1178,7 @@ function xpressui_render_workflow_settings_page() {
 	echo '<a href="#tab-appearance" class="nav-tab nav-tab-active" data-tab="appearance">🎨 ' . esc_html__( 'Style & Appearance', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="#tab-navigation" class="nav-tab" data-tab="navigation">🗺️ ' . esc_html__( 'Navigation Buttons', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="#tab-settings" class="nav-tab" data-tab="settings">⚙️ ' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</a>';
 	echo '</h2>';
 
 	// Fetch template context and overlays
@@ -1238,8 +1242,17 @@ function xpressui_render_workflow_settings_page() {
 	wp_nonce_field( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );
 
 	// Sticky save bar
+	$status_class = 'xpressui-sticky-status';
+	$status_text  = __( 'No unsaved changes', 'xpressui-bridge' );
+	$extra_attrs  = '';
+	if ( ! empty( $success_message ) ) {
+		$status_class .= ' is-saved';
+		$status_text   = $success_message;
+		$extra_attrs   = ' data-saved-message="' . esc_attr( $success_message ) . '"';
+	}
+
 	echo '<div class="xpressui-sticky-actions">';
-	echo '<span class="xpressui-sticky-status" data-xpressui-dirty-status>' . esc_html__( 'No unsaved changes', 'xpressui-bridge' ) . '</span>';
+	echo '<span class="' . esc_attr( $status_class ) . '" data-xpressui-dirty-status' . $extra_attrs . '>' . esc_html( $status_text ) . '</span>';
 	echo '<div class="xpressui-sticky-actions-buttons">';
 	submit_button( __( 'Save Customizations', 'xpressui-bridge' ), 'primary', 'xpressui_save_workflow_settings', false );
 	echo '</div>';
@@ -1606,3 +1619,43 @@ function xpressui_handle_save_cloud_sync_settings() {
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_save_cloud_sync_settings' );
+
+/**
+ * Handles saving the workflow settings.
+ */
+function xpressui_handle_save_workflow_settings() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['xpressui_save_workflow_settings'] ) ) {
+		return;
+	}
+
+	$slug = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
+	if ( empty( $slug ) || ! xpressui_is_installed_workflow( $slug ) ) {
+		wp_die( esc_html__( 'Invalid workflow.', 'xpressui-bridge' ) );
+	}
+
+	check_admin_referer( 'xpressui_workflow_settings_' . $slug, 'xpressui_workflow_settings_nonce' );
+
+	// Fire the hook in overlay-admin.php to save the overlay settings
+	do_action( 'xpressui_workflow_settings_extra_save', $slug );
+
+	if ( ! get_transient( 'xpressui_notice_' . get_current_user_id() ) ) {
+		xpressui_set_admin_notice( __( 'Workflow settings saved.', 'xpressui-bridge' ), 'success' );
+	}
+
+	$redirect_url = add_query_arg(
+		[
+			'post_type'           => 'xpressui_submission',
+			'page'                => 'xpressui-workflow-settings',
+			'xpressui_slug'       => $slug,
+			'xpressui_view_nonce' => wp_create_nonce( 'xpressui_view_workflow' ),
+		],
+		admin_url( 'edit.php' )
+	);
+
+	wp_safe_redirect( $redirect_url );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_save_workflow_settings' );

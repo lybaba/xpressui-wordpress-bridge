@@ -32,6 +32,10 @@ add_action( 'xpressui_dispatch_webhook_async', 'xpressui_dispatch_webhook_async'
  * @return string Webhook URL, or '' when none is configured.
  */
 function xpressui_resolve_webhook_url( $project_slug, $payload ) {
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	if ( is_array( $all_settings ) && ! empty( $all_settings[ $project_slug ]['webhookUrl'] ) ) {
+		return trim( (string) $all_settings[ $project_slug ]['webhookUrl'] );
+	}
 	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
 	if ( $hosted_link_id === '' ) {
 		return '';
