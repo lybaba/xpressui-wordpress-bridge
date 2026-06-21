@@ -42,6 +42,31 @@ function xpressui_resolve_webhook_url( $project_slug, $payload ) {
 }
 
 function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
+	$enable_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
+	if ( ! $enable_sync ) {
+		update_post_meta( $post_id, '_xpressui_webhook_status', 'local_only' );
+		update_post_meta( $post_id, '_xpressui_webhook_error', __( 'Cloud sync is disabled in settings.', 'xpressui-bridge' ) );
+		return;
+	}
+
+	// Count submissions to check quota (100 free tier limit)
+	$args = [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+	];
+	$local_subs = get_posts( $args );
+	$sub_count  = is_array( $local_subs ) ? count( $local_subs ) : 0;
+	$quota_limit = 100;
+
+	$is_pro = xpressui_pro_is_license_active();
+	if ( ! $is_pro && $sub_count > $quota_limit ) {
+		update_post_meta( $post_id, '_xpressui_webhook_status', 'local_only_quota_exceeded' );
+		update_post_meta( $post_id, '_xpressui_webhook_error', __( 'Cloud sync paused: backup quota exceeded on Free Plan.', 'xpressui-bridge' ) );
+		return;
+	}
+
 	$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
 	if ( $webhook_url === '' ) {
 		return;

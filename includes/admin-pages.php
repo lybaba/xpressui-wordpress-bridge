@@ -1145,7 +1145,31 @@ JS,
 	echo '</form>';
 	echo '</div>';
 
-	// 4. WooCommerce Settings Card
+	// 4. Cloud Sync & Backup Card
+	$enable_cloud_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
+
+	echo '<div class="card xpressui-admin-card" style="margin-top: 20px;">';
+	echo '<h2>' . esc_html__( 'Cloud Sync & Backup Settings', 'xpressui-bridge' ) . '</h2>';
+	echo '<p class="description">' . esc_html__( 'Enable or disable automatic cloud backup & sync to the IntakeFlow Console.', 'xpressui-bridge' ) . '</p>';
+
+	echo '<form id="xpressui-cloud-sync-settings-form" method="post" style="margin-top: 15px;">';
+	wp_nonce_field( 'xpressui_cloud_sync_settings_action', 'xpressui_cloud_sync_settings_nonce' );
+	echo '<input type="hidden" name="xpressui_save_cloud_sync_settings" value="1">';
+
+	echo '<label style="display: block; margin-bottom: 12px; font-weight: 500;">';
+	echo '<input type="checkbox" name="xpressui_enable_cloud_sync" value="1" ' . checked( $enable_cloud_sync, true, false ) . ' />';
+	echo ' ' . esc_html__( 'Enable automatic cloud synchronization', 'xpressui-bridge' );
+	echo '</label>';
+
+	echo '<p style="color: #475569; background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: 5px; max-width: 500px;">' 
+		. esc_html__( '💡 Active Cloud Sync allows you to backup submissions, receive automated reminders (chaser), and access advanced tools like PDF summaries and OCR receipt extraction.', 'xpressui-bridge' ) 
+		. '</p>';
+
+	submit_button( __( 'Save Cloud Sync Settings', 'xpressui-bridge' ), 'secondary', 'submit_cloud_sync' );
+	echo '</form>';
+	echo '</div>';
+
+	// 5. WooCommerce Settings Card
 	$enable_woocommerce = get_option( 'xpressui_enable_woocommerce', '0' ) === '1';
 	$has_woocommerce = class_exists( 'WooCommerce' );
 
@@ -1510,3 +1534,25 @@ function xpressui_handle_save_woocommerce_settings() {
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_save_woocommerce_settings' );
+
+/**
+ * Saves the Cloud Sync Settings.
+ */
+function xpressui_handle_save_cloud_sync_settings() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	if ( ! isset( $_POST['xpressui_save_cloud_sync_settings'] ) ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_cloud_sync_settings_action', 'xpressui_cloud_sync_settings_nonce' );
+
+	$enable = isset( $_POST['xpressui_enable_cloud_sync'] ) ? '1' : '0';
+	update_option( 'xpressui_enable_cloud_sync', $enable );
+
+	xpressui_set_admin_notice( __( 'Cloud Sync settings saved.', 'xpressui-bridge' ), 'success' );
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_save_cloud_sync_settings' );
+

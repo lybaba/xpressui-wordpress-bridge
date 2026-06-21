@@ -131,6 +131,12 @@ function xpressui_render_sync_logs_tab() {
 						} elseif ( 'queued' === $status ) {
 							$badge_style = 'background: #fef9c3; color: #a16207;';
 							$status_label = __( 'Queued', 'xpressui-bridge' );
+						} elseif ( 'local_only' === $status ) {
+							$badge_style = 'background: #cbd5e1; color: #475569;';
+							$status_label = __( 'Local Only', 'xpressui-bridge' );
+						} elseif ( 'local_only_quota_exceeded' === $status ) {
+							$badge_style = 'background: #fee2e2; color: #b91c1c;';
+							$status_label = __( 'Local Only (Quota Exceeded)', 'xpressui-bridge' );
 						}
 						?>
 						<tr id="xpressui-sync-row-<?php echo esc_attr( $post_id ); ?>">
