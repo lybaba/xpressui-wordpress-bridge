@@ -267,14 +267,123 @@ function xpressui_render_workflows_page() {
 	$installed_slugs = xpressui_get_installed_workflow_slugs();
 	$bundled_slugs = xpressui_get_bundled_workflow_slugs();
 
-	$visible_installed_slugs = $installed_slugs;
+	// --- List controls: search → sort → paginate -----------------------------
+	// Query args (all on the Installed Workflows tab):
+	//   wf_s       search string (title or slug substring)
+	//   wf_orderby title | submissions | version  (whitelisted)
+	//   wf_order   asc | desc
+	//   wf_paged   1-based page number
+	$wf_search  = isset( $_GET['wf_s'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['wf_s'] ) ) : '';
+	$wf_orderby = isset( $_GET['wf_orderby'] ) ? sanitize_key( wp_unslash( (string) $_GET['wf_orderby'] ) ) : '';
+	if ( ! in_array( $wf_orderby, [ 'title', 'submissions', 'version' ], true ) ) {
+		$wf_orderby = '';
+	}
+	$wf_order = isset( $_GET['wf_order'] ) ? strtolower( sanitize_key( wp_unslash( (string) $_GET['wf_order'] ) ) ) : 'asc';
+	if ( ! in_array( $wf_order, [ 'asc', 'desc' ], true ) ) {
+		$wf_order = 'asc';
+	}
+	$wf_paged   = isset( $_GET['wf_paged'] ) ? max( 1, absint( $_GET['wf_paged'] ) ) : 1;
+	$wf_per_page = 20;
 
-	$render_workflow_table = function ( array $slugs ) use ( $inbox_by_slug ) {
+	// Build a metadata row for every installed workflow (display name, submission
+	// count, version) once. These values are needed for display anyway, so we
+	// reuse them for filtering and sorting and avoid recomputing per page.
+	$workflow_rows = [];
+	foreach ( $installed_slugs as $slug ) {
+		$meta         = xpressui_get_workflow_manifest_meta( $slug );
+		$project_name = sanitize_text_field( (string) ( $meta['projectName'] ?? '' ) );
+		$display_name = $project_name !== '' ? $project_name : $slug;
+		$version      = ! empty( $meta['runtimeVersion'] ) ? sanitize_text_field( $meta['runtimeVersion'] ) : '1.0.0';
+		$submissions  = ( isset( $inbox_by_slug[ $slug ] ) ) ? (int) $inbox_by_slug[ $slug ]['total'] : 0;
+		$workflow_rows[] = [
+			'slug'        => $slug,
+			'title'       => $display_name,
+			'version'     => $version,
+			'submissions' => $submissions,
+		];
+	}
+
+	// Filter (search) on the full set, before sort + paginate.
+	if ( $wf_search !== '' ) {
+		$needle = strtolower( $wf_search );
+		$workflow_rows = array_values( array_filter(
+			$workflow_rows,
+			function ( $row ) use ( $needle ) {
+				return ( strpos( strtolower( $row['title'] ), $needle ) !== false )
+					|| ( strpos( strtolower( $row['slug'] ), $needle ) !== false );
+			}
+		) );
+	}
+
+	// Sort the full (filtered) set, before paginate. No explicit sort keeps the
+	// installed order; an explicit wf_orderby applies the requested comparator.
+	if ( $wf_orderby !== '' ) {
+		usort(
+			$workflow_rows,
+			function ( $a, $b ) use ( $wf_orderby ) {
+				if ( 'submissions' === $wf_orderby ) {
+					return $a['submissions'] <=> $b['submissions'];
+				}
+				if ( 'version' === $wf_orderby ) {
+					return version_compare( (string) $a['version'], (string) $b['version'] );
+				}
+				return strcasecmp( (string) $a['title'], (string) $b['title'] );
+			}
+		);
+		if ( 'desc' === $wf_order ) {
+			$workflow_rows = array_reverse( $workflow_rows );
+		}
+	}
+
+	$total_items = count( $workflow_rows );
+	$total_pages = max( 1, (int) ceil( $total_items / $wf_per_page ) );
+	if ( $wf_paged > $total_pages ) {
+		$wf_paged = $total_pages;
+	}
+	$page_rows  = array_slice( $workflow_rows, ( $wf_paged - 1 ) * $wf_per_page, $wf_per_page );
+	$visible_installed_slugs = wp_list_pluck( $page_rows, 'slug' );
+
+	// Base URL for all list-control links (keeps tab + search + sort + page args).
+	$wf_base_args = [
+		'post_type' => 'xpressui_submission',
+		'page'      => 'xpressui-bridge',
+		'tab'       => 'list',
+	];
+	if ( $wf_search !== '' ) {
+		$wf_base_args['wf_s'] = $wf_search;
+	}
+	if ( $wf_orderby !== '' ) {
+		$wf_base_args['wf_orderby'] = $wf_orderby;
+		$wf_base_args['wf_order']   = $wf_order;
+	}
+	$wf_base_url = add_query_arg( $wf_base_args, admin_url( 'edit.php' ) );
+
+	// Sortable column header helper — emits a <th> with the WP .sortable/.sorted
+	// classes and an anchor that toggles asc/desc for that column.
+	$render_sortable_th = function ( $column, $label, $extra_style = '', $extra_class = '' ) use ( $wf_orderby, $wf_order, $wf_base_args ) {
+		$is_sorted   = ( $wf_orderby === $column );
+		$cur_order   = $is_sorted ? $wf_order : '';
+		// Next order when clicking: toggle if already sorted, else asc.
+		$next_order  = ( $is_sorted && 'asc' === $wf_order ) ? 'desc' : 'asc';
+		$indicator   = $is_sorted ? ( 'asc' === $wf_order ? 'asc' : 'desc' ) : 'desc';
+		$th_class    = trim( 'manage-column sortable ' . ( $is_sorted ? 'sorted ' . $cur_order : $indicator ) . ( $extra_class ? ' ' . $extra_class : '' ) );
+		$link_args   = $wf_base_args;
+		$link_args['wf_orderby'] = $column;
+		$link_args['wf_order']   = $next_order;
+		unset( $link_args['wf_paged'] ); // Reset to page 1 on sort change.
+		$link = add_query_arg( $link_args, admin_url( 'edit.php' ) );
+		$style = 'font-weight: 700;' . ( $extra_style ? ' ' . $extra_style : '' );
+		echo '<th scope="col" class="' . esc_attr( $th_class ) . '" style="' . esc_attr( $style ) . '">';
+		echo '<a href="' . esc_url( $link ) . '"><span>' . esc_html( $label ) . '</span><span class="sorting-indicator"></span></a>';
+		echo '</th>';
+	};
+
+	$render_workflow_table = function ( array $slugs ) use ( $inbox_by_slug, $render_sortable_th ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
-		echo '<th class="column-title column-primary" style="font-weight: 700;">' . esc_html__( 'Workflow', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</th>';
-		echo '<th style="font-weight: 700; width: 100px;">' . esc_html__( 'Version', 'xpressui-bridge' ) . '</th>';
+		$render_sortable_th( 'title', __( 'Workflow', 'xpressui-bridge' ), '', 'column-title column-primary' );
+		$render_sortable_th( 'submissions', __( 'Submissions', 'xpressui-bridge' ), 'width: 150px;' );
+		$render_sortable_th( 'version', __( 'Version', 'xpressui-bridge' ), 'width: 100px;' );
 		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
@@ -407,11 +516,81 @@ function xpressui_render_workflows_page() {
 
 	do_action( 'xpressui_workflows_page_sections' );
 
+	// --- Pagination controls (WP .tablenav-pages) ----------------------------
+	$render_wf_pagination = function ( $position ) use ( $total_items, $total_pages, $wf_paged, $wf_base_url, $wf_search ) {
+		if ( $total_items < 1 ) {
+			return;
+		}
+		echo '<div class="tablenav ' . esc_attr( $position ) . '">';
+		echo '<div class="tablenav-pages">';
+		echo '<span class="displaying-num">' . esc_html( sprintf(
+			/* translators: %s: number of workflow items */
+			_n( '%s item', '%s items', $total_items, 'xpressui-bridge' ),
+			number_format_i18n( $total_items )
+		) ) . '</span>';
+		if ( $total_pages > 1 ) {
+			$links = paginate_links(
+				[
+					'base'      => add_query_arg( 'wf_paged', '%#%', $wf_base_url ),
+					'format'    => '',
+					'prev_text' => '&laquo;',
+					'next_text' => '&raquo;',
+					'total'     => $total_pages,
+					'current'   => $wf_paged,
+					'type'      => 'array',
+				]
+			);
+			if ( $links ) {
+				echo '<span class="pagination-links">' . wp_kses_post( implode( "\n", $links ) ) . '</span>';
+			}
+		}
+		echo '</div>';
+		echo '<br class="clear">';
+		echo '</div>';
+	};
+
+	// --- Search box (WP .search-box) -----------------------------------------
+	echo '<form method="get" class="search-form" style="margin: 12px 0;">';
+	echo '<input type="hidden" name="post_type" value="xpressui_submission" />';
+	echo '<input type="hidden" name="page" value="xpressui-bridge" />';
+	echo '<input type="hidden" name="tab" value="list" />';
+	if ( $wf_orderby !== '' ) {
+		echo '<input type="hidden" name="wf_orderby" value="' . esc_attr( $wf_orderby ) . '" />';
+		echo '<input type="hidden" name="wf_order" value="' . esc_attr( $wf_order ) . '" />';
+	}
+	echo '<p class="search-box">';
+	echo '<label class="screen-reader-text" for="xpressui-wf-search-input">' . esc_html__( 'Search Workflows', 'xpressui-bridge' ) . '</label>';
+	echo '<input type="search" id="xpressui-wf-search-input" name="wf_s" value="' . esc_attr( $wf_search ) . '" placeholder="' . esc_attr__( 'Search by title or slug', 'xpressui-bridge' ) . '" />';
+	echo '<input type="submit" class="button" value="' . esc_attr__( 'Search Workflows', 'xpressui-bridge' ) . '" />';
+	if ( $wf_search !== '' ) {
+		$clear_args = [ 'post_type' => 'xpressui_submission', 'page' => 'xpressui-bridge', 'tab' => 'list' ];
+		if ( $wf_orderby !== '' ) {
+			$clear_args['wf_orderby'] = $wf_orderby;
+			$clear_args['wf_order']   = $wf_order;
+		}
+		echo ' <a href="' . esc_url( add_query_arg( $clear_args, admin_url( 'edit.php' ) ) ) . '" class="button-link" style="margin-left: 8px;">' . esc_html__( 'Clear', 'xpressui-bridge' ) . '</a>';
+	}
+	echo '</p>';
+	echo '</form>';
+
+	if ( $wf_search !== '' ) {
+		echo '<p class="xpressui-search-summary" style="color:#646970;">' . esc_html( sprintf(
+			/* translators: 1: number of matching workflows, 2: search term */
+			_n( '%1$d workflow matches "%2$s".', '%1$d workflows match "%2$s".', $total_items, 'xpressui-bridge' ),
+			$total_items,
+			$wf_search
+		) ) . '</p>';
+	}
+
 	// --- Installed workflows table ---
-	if ( empty( $visible_installed_slugs ) ) {
+	if ( empty( $installed_slugs ) ) {
 		echo '<div class="card xpressui-admin-card xpressui-empty-state"><p class="xpressui-empty-state__title">' . esc_html__( 'No workflows installed yet.', 'xpressui-bridge' ) . '</p><p class="xpressui-empty-state__body">' . esc_html__( 'Upload a workflow package below to get started, or use the bundled starter workflow already included with the plugin.', 'xpressui-bridge' ) . '</p></div>';
+	} elseif ( empty( $visible_installed_slugs ) ) {
+		echo '<div class="card xpressui-admin-card xpressui-empty-state"><p class="xpressui-empty-state__title">' . esc_html__( 'No workflows match your search.', 'xpressui-bridge' ) . '</p></div>';
 	} else {
+		$render_wf_pagination( 'top' );
 		$render_workflow_table( $visible_installed_slugs );
+		$render_wf_pagination( 'bottom' );
 	}
 
 	// Inline javascript to handle the global sync button
