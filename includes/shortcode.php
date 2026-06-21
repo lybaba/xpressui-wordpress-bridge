@@ -1082,13 +1082,11 @@ function xpressui_render_shortcode( $atts ) {
 		wp_add_inline_style( $style_handle, $inline_css );
 	}
 
-	// Inject Style Customizer CSS overrides
-	if ( function_exists( 'xpressui_get_customizer_css' ) ) {
-		$customizer_css = xpressui_get_customizer_css();
-		if ( '' !== $customizer_css ) {
-			wp_add_inline_style( $style_handle, $customizer_css );
-		}
-	}
+	// Per-workflow appearance overrides (primary color, surface, page background,
+	// frame/font, radii) are applied earlier via the `xpressui_template_context`
+	// filter (includes/overlay.php → xpressui_pro_patch_theme), which patches
+	// $template_context['theme'] before xpressui_build_shortcode_inline_css() emits
+	// the --template-* CSS variables above. No separate customizer pass is needed.
 
 	// Resume-mode detection: set data-resume-loading on the mount element when
 	// ?xpressui_resume= is present. Delivered via wp_add_inline_script.

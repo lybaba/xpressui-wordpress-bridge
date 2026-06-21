@@ -138,11 +138,9 @@ function xpressui_get_portal_client_email() {
 function xpressui_render_client_portal_view() {
 	$client_email = xpressui_get_portal_client_email();
 
-	// Fetch style customizer overrides
+	// The legacy global Style Customizer was replaced by per-workflow overlays
+	// (includes/overlay.php), so there are no portal-level customizer overrides to inject.
 	$customizer_css = '';
-	if ( function_exists( 'xpressui_get_customizer_css' ) ) {
-		$customizer_css = xpressui_get_customizer_css();
-	}
 
 	echo '<style>';
 	?>
