@@ -206,6 +206,19 @@ function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
 	$project_id = 'import_' . uniqid();
 	$now_iso = gmdate( 'Y-m-d\TH:i:s\Z' );
 
+	// A workflow with a single step must be declared as a single-step form, not a
+	// multi-step one. The hydration-only runtime gates the Submit button behind
+	// reaching the LAST step: in a multi-step workflow the user advances with
+	// "Continue"/"Next" before Submit is enabled. With only one step there is no
+	// "next" to advance, so a multi-step declaration leaves Submit permanently
+	// greyed/disabled. Mirror the shape a working single-step Console config has
+	// (`type: form`, `mode: form`, `submissionMode: single-step-submit`) so the
+	// imported form is actually submittable.
+	$is_multi_step  = is_array( $steps ) && count( $steps ) > 1;
+	$config_type    = $is_multi_step ? 'multistepform' : 'form';
+	$config_mode    = $is_multi_step ? 'form-multi-step' : 'form';
+	$submission_mode = $is_multi_step ? 'multi-step-submit' : 'single-step-submit';
+
 	$properties = [];
 	$required = [];
 	foreach ( $fields as $f ) {
@@ -242,17 +255,17 @@ function xpressui_build_import_document( $slug, $title, $fields, $steps ) {
 			'version'          => 1,
 			'id'               => $project_id,
 			'uid'              => $project_id . '-uid',
-			'type'             => 'multistepform',
+			'type'             => $config_type,
 			'name'             => $slug,
 			'title'            => $title,
-			'mode'             => 'form-multi-step',
+			'mode'             => $config_mode,
 			'navigationLabels' => [
 				'prevLabel'   => __( 'Back', 'xpressui-bridge' ),
 				'nextLabel'   => __( 'Continue', 'xpressui-bridge' ),
 				'submitLabel' => __( 'Submit', 'xpressui-bridge' )
 			],
 			'workflowConfig'   => [
-				'submissionMode'     => 'multi-step-submit',
+				'submissionMode'     => $submission_mode,
 				'providerMode'       => 'wordpress-bridge',
 				'resumeSupport'      => 'disabled',
 				'documentHandling'   => 'basic-upload',
@@ -778,9 +791,12 @@ function xpressui_ajax_import_form_wizard() {
 				'slug'      => $local_slug,
 				'saas'      => false,
 				'fallback'  => true,
-				/* translators: %s: short human-readable reason the Console could not be reached. */
-				'notice'    => sprintf( __( "Couldn't reach your IntakeFlow Console (%s). The workflow was saved locally instead — you can sync it to the Console later.", 'xpressui-bridge' ), $reason ),
-				'message'   => sprintf( __( "Couldn't reach your IntakeFlow Console (%s). The workflow was saved locally instead — you can sync it to the Console later.", 'xpressui-bridge' ), $reason ),
+				// Friendly headline note shown once (no raw technical detail). The raw
+				// reason travels separately in `reason` so the UI can render it small/muted.
+				'notice'    => __( "We couldn't reach your IntakeFlow Console just now, so your workflow was saved on this site. You can sync it to the Console anytime.", 'xpressui-bridge' ),
+				// Subtle technical detail (e.g. "authentication failed (401)") — rendered muted.
+				'reason'    => $reason,
+				'message'   => __( 'Workflow saved on this site.', 'xpressui-bridge' ),
 			] );
 		}
 
@@ -1233,6 +1249,22 @@ function xpressui_render_form_importer_tab() {
 					<div class="xpui-wiz-success-icon">✓</div>
 					<h2 style="margin-top:0; font-size:20px; font-weight:850; color:#15803d;" id="xpui-wiz-success-title"><?php esc_html_e( 'Conversion Complete!', 'xpressui-bridge' ); ?></h2>
 					<p style="font-size:13.5px; color:#475569;" id="xpui-wiz-success-msg"><?php esc_html_e( 'Your form was converted to an IntakeFlow Workflow.', 'xpressui-bridge' ); ?></p>
+
+					<!--
+						Fallback note (Console unreachable -> saved locally). One friendly
+						line; the raw technical reason renders muted underneath, with an
+						optional "Retry sync to Console" action. Hidden by default; the JS
+						reveals + fills it for the fallback state only.
+					-->
+					<div id="xpui-wiz-fallback-note" style="display:none; margin:14px auto 0; max-width:450px; text-align:left; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px;">
+						<span style="font-size:16px; line-height:1.3; flex-shrink:0;">&#128190;</span>
+						<div style="flex:1;">
+							<div id="xpui-wiz-fallback-note-text" style="font-size:13px; color:#334155; line-height:1.5;"></div>
+							<div id="xpui-wiz-fallback-note-reason" style="margin-top:4px; font-size:11px; color:#94a3b8; line-height:1.4;"></div>
+							<button type="button" class="xpui-wiz-copy-btn" id="xpui-wiz-retry-sync-btn" style="margin-top:10px; padding:5px 12px; font-size:12px;"><?php esc_html_e( 'Retry sync to Console', 'xpressui-bridge' ); ?></button>
+							<span id="xpui-wiz-retry-status" style="margin-left:10px; font-size:12px; color:#64748b;"></span>
+						</div>
+					</div>
 					
 					<div class="xpui-wiz-code-box">
 						<span class="xpui-wiz-code" id="xpui-wiz-shortcode">[xpressui id=""]</span>
@@ -1316,6 +1348,9 @@ function xpressui_render_form_importer_tab() {
 		var sourceFormVal = '';
 		var isSaasConnected = <?php echo $is_saas_connected ? 'true' : 'false'; ?>;
 		var importMode = isSaasConnected ? 'saas' : 'local';
+		// Slug of the just-created local workflow, set on a fallback result so the
+		// "Retry sync to Console" button can re-attempt the Console create for it.
+		var retrySyncSlug = '';
 
 		// Step Navigation Line & Badge updates
 		function updateStepUi() {
@@ -1402,6 +1437,55 @@ function xpressui_render_form_importer_tab() {
 			});
 		});
 
+		// Retry sync to Console (fallback state only). Re-attempts the Console
+		// "create" for the just-created local workflow, reusing the existing
+		// xpressui_console_create_local_workflow AJAX (keyed by slug). On success,
+		// flip the Success step to the SaaS-success presentation.
+		$('#xpui-wiz-retry-sync-btn').on('click', function() {
+			if (!retrySyncSlug) { return; }
+			var $btn = $(this);
+			$btn.prop('disabled', true);
+			$('#xpui-wiz-retry-status').css('color', '#64748b').text('<?php echo esc_js( __( 'Syncing to Console...', 'xpressui-bridge' ) ); ?>');
+
+			$.ajax({
+				url: '<?php echo admin_url( "admin-ajax.php" ); ?>',
+				type: 'POST',
+				data: {
+					action: 'xpressui_console_create_local_workflow',
+					nonce: '<?php echo wp_create_nonce( "xpressui_console_sync_nonce" ); ?>',
+					slug: retrySyncSlug
+				},
+				success: function(response) {
+					if (!response || !response.success) {
+						var msg = (response && response.data && response.data.message) ? response.data.message : '<?php echo esc_js( __( 'Sync failed. Please try again.', 'xpressui-bridge' ) ); ?>';
+						$('#xpui-wiz-retry-status').css('color', '#b91c1c').text(msg);
+						$btn.prop('disabled', false);
+						return;
+					}
+					// Console create + sync succeeded — flip to the SaaS-success state.
+					var newSlug = response.data.slug || retrySyncSlug;
+					var newShortcode = '[xpressui id="' + newSlug + '"]';
+					$('#xpui-wiz-shortcode').text(newShortcode);
+					$('#xpui-wiz-copy-btn').attr('data-clipboard-text', newShortcode);
+					$('#xpui-wiz-success-title').css('color', '#15803d').text('<?php echo esc_js( __( 'Created on your IntakeFlow Console', 'xpressui-bridge' ) ); ?>');
+					$('#xpui-wiz-success-msg').text('<?php echo esc_js( __( 'Synced back to this site and ready to embed.', 'xpressui-bridge' ) ); ?>');
+					$('#xpui-wiz-fallback-note').hide();
+					$('#xpui-wiz-connect-nudge').hide();
+					var editUrl = response.data.edit_url || '';
+					if (editUrl) {
+						$('#xpui-wiz-edit-btn').attr('href', editUrl).show();
+					} else {
+						$('#xpui-wiz-edit-btn').hide();
+					}
+					$('#xpui-wiz-success-actions').show();
+				},
+				error: function() {
+					$('#xpui-wiz-retry-status').css('color', '#b91c1c').text('<?php echo esc_js( __( 'Network error. Please try again.', 'xpressui-bridge' ) ); ?>');
+					$btn.prop('disabled', false);
+				}
+			});
+		});
+
 		// Start AJAX Conversion & Sync
 		function startConversion() {
 			var parts = sourceFormVal.split(':');
@@ -1479,41 +1563,56 @@ function xpressui_render_form_importer_tab() {
 								currentStep = 4;
 								updateStepUi();
 
-								// Fill success details
-								$('#xpui-wiz-shortcode').text(response.data.shortcode);
-								$('#xpui-wiz-copy-btn').attr('data-clipboard-text', response.data.shortcode);
-								$('#xpui-wiz-success-msg').text(response.data.message);
+								// Render the Success step for exactly one of three outcomes:
+								//   (a) SaaS success    -> saas:true
+								//   (b) Pure local      -> saas:false, no fallback (no account)
+								//   (c) Fallback->local -> saas:false, fallback:true (Console error)
+								// Hierarchy: header -> (fallback only) one note -> shortcode -> nudge.
+								var d = response.data;
 
-								// Fallback (Console unreachable → saved locally): show the
-								// notice as an info banner, not a SaaS-synced success.
-								$('#xpui-wiz-fallback-notice').remove();
-								if (response.data.fallback) {
-									$('#xpui-wiz-success-title').text('<?php echo esc_js( __( 'Saved Locally', 'xpressui-bridge' ) ); ?>');
-									$('<div id="xpui-wiz-fallback-notice" style="margin:15px auto 0; max-width:450px; text-align:left; display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid #fde68a; background:#fffbeb; border-radius:10px;"></div>')
-										.append($('<span style="font-size:16px; line-height:1.2;"></span>').text('⚠️'))
-										.append($('<div style="font-size:13px; color:#92400e; line-height:1.5;"></div>').text(response.data.notice || response.data.message))
-										.insertAfter('#xpui-wiz-success-msg');
-								}
+								// Shortcode embed (primary, always present).
+								$('#xpui-wiz-shortcode').text(d.shortcode);
+								$('#xpui-wiz-copy-btn').attr('data-clipboard-text', d.shortcode);
 
-								if (response.data.saas && response.data.edit_url) {
-									$('#xpui-wiz-edit-btn').attr('href', response.data.edit_url).show();
-								} else {
-									$('#xpui-wiz-edit-btn').hide();
-								}
-
-								// Conversion nudge: show it ONLY for a LOCAL import (no SaaS
-								// account, or fallback-to-local). On a connected SaaS import
-								// keep the normal success unchanged. response.data.saas is
-								// true only when the workflow was created on the Console.
-								if (response.data.saas) {
+								if (d.saas) {
+									// (a) SaaS success.
+									$('#xpui-wiz-success-title').css('color', '#15803d').text('<?php echo esc_js( __( 'Created on your IntakeFlow Console', 'xpressui-bridge' ) ); ?>');
+									$('#xpui-wiz-success-msg').text('<?php echo esc_js( __( 'Synced back to this site and ready to embed.', 'xpressui-bridge' ) ); ?>');
+									$('#xpui-wiz-fallback-note').hide();
 									$('#xpui-wiz-connect-nudge').hide();
 									$('#xpui-wiz-success-actions').show();
+									if (d.edit_url) {
+										$('#xpui-wiz-edit-btn').attr('href', d.edit_url).show();
+									} else {
+										$('#xpui-wiz-edit-btn').hide();
+									}
 								} else {
-									// The nudge carries its own primary CTA + "continue to my
-									// workflow" link, so hide the default action row to avoid
-									// a duplicate "View Workflows" button.
+									// (b) + (c): saved locally. Header + nudge; default action row hidden
+									// (the nudge carries its own CTA + 'continue' link).
+									$('#xpui-wiz-success-title').css('color', '#15803d').text('<?php echo esc_js( __( 'Saved Locally', 'xpressui-bridge' ) ); ?>');
+									$('#xpui-wiz-edit-btn').hide();
 									$('#xpui-wiz-success-actions').hide();
 									$('#xpui-wiz-connect-nudge').show();
+
+									if (d.fallback) {
+										// (c) Fallback: one friendly note (NOT duplicated in the subtitle);
+										// the raw technical reason stays subtle/muted underneath.
+										$('#xpui-wiz-success-msg').text('<?php echo esc_js( __( 'Your form was converted and is running on this site.', 'xpressui-bridge' ) ); ?>');
+										$('#xpui-wiz-fallback-note-text').text(d.notice || d.message || '');
+										if (d.reason) {
+											$('#xpui-wiz-fallback-note-reason').text('<?php echo esc_js( __( 'Details:', 'xpressui-bridge' ) ); ?> ' + d.reason).show();
+										} else {
+											$('#xpui-wiz-fallback-note-reason').hide();
+										}
+										retrySyncSlug = d.slug || '';
+										$('#xpui-wiz-retry-status').text('');
+										$('#xpui-wiz-retry-sync-btn').prop('disabled', false).show();
+										$('#xpui-wiz-fallback-note').css('display', 'flex');
+									} else {
+										// (b) Pure local (no account): no error/note at all.
+										$('#xpui-wiz-success-msg').text('<?php echo esc_js( __( 'Your form was converted to an IntakeFlow Workflow.', 'xpressui-bridge' ) ); ?>');
+										$('#xpui-wiz-fallback-note').hide();
+									}
 								}
 							}, 800);
 						}, 600);
