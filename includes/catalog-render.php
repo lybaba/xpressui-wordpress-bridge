@@ -28,9 +28,22 @@ function xpressui_get_hosted_link_catalog( $project_slug, $link_id ) {
 	if ( '' === $project_slug || '' === $link_id ) {
 		return null;
 	}
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( '' === $base_dir ) {
+		return null;
+	}
+	$file = trailingslashit( $base_dir ) . $project_slug
+		. '/hosted-links/' . $link_id . '/catalogs/catalog.json';
+
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	global $wp_filesystem;
 	if ( ! WP_Filesystem() ) {
+		return null;
+	}
+	// Most workflows have no fronted catalog (e.g. an imported contact form), so the
+	// snapshot simply does not exist — return null quietly rather than letting
+	// get_contents() be called with a missing path (PHP 8 ValueError on empty path).
+	if ( ! $wp_filesystem->exists( $file ) ) {
 		return null;
 	}
 	$contents = $wp_filesystem->get_contents( $file );

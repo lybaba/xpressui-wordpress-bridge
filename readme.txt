@@ -4,7 +4,7 @@ Tags: document collection, client portal, file upload, intake form, multi-step f
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.98
+Stable tag: 1.0.99
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.0.99 =
+* Fix: Resolve a fatal error ("Path cannot be empty") that could occur when rendering an [xpressui] shortcode, caused by a missing catalog file path after the 1.0.98 filesystem refactor. Workflows without a fronted catalog now render normally again.
 
 = 1.0.98 =
 * Improve: Form Importer now keeps phone, number, date and URL fields from Contact Form 7 and Gravity Forms as their proper input types instead of converting them to plain text.
