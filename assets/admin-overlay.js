@@ -163,3 +163,106 @@ document.querySelectorAll('[data-xpressui-sortable]').forEach(function(list){
 		}
 	});
 });
+
+// Tab switching
+document.querySelectorAll('.xpressui-customizer-tabs a').forEach(function(tabLink) {
+	tabLink.addEventListener('click', function(e) {
+		e.preventDefault();
+		const tab = this.getAttribute('data-tab');
+		if (!tab) return;
+
+		document.querySelectorAll('.xpressui-customizer-tabs a').forEach(function(link) {
+			link.classList.remove('nav-tab-active');
+		});
+		this.classList.add('nav-tab-active');
+
+		const wrap = document.querySelector('.xpressui-admin-wrap');
+		if (wrap) {
+			wrap.classList.remove('xpressui-active-tab-appearance', 'xpressui-active-tab-navigation', 'xpressui-active-tab-fields');
+			wrap.classList.add('xpressui-active-tab-' + tab);
+		}
+	});
+});
+
+// WordPress Media Uploader
+document.addEventListener('click', function(e) {
+	const btn = e.target.closest('.xpressui-media-upload-btn');
+	if (!btn) return;
+	e.preventDefault();
+
+	const targetId = btn.getAttribute('data-target');
+	const targetInput = document.getElementById(targetId);
+	if (!targetInput) return;
+
+	if (typeof wp !== 'undefined' && wp.media) {
+		const frame = wp.media({
+			title: 'Select or Upload Background Image',
+			button: { text: 'Use this Image' },
+			multiple: false
+		});
+
+		frame.on('select', function() {
+			const attachment = frame.state().get('selection').first().toJSON();
+			if (attachment && attachment.url) {
+				targetInput.value = attachment.url;
+				targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+				targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+			}
+		});
+
+		frame.open();
+	}
+});
+
+// Google Fonts Select handler
+const fontSelect = document.getElementById('xpressui_font_family_select');
+const fontHidden = document.getElementById('xpressui_overlay_theme_font_family');
+const fontInput = document.getElementById('xpressui_custom_font_family_input');
+
+if (fontSelect && fontHidden && fontInput) {
+	fontSelect.addEventListener('change', function() {
+		const val = this.value;
+		if (val === 'custom') {
+			fontInput.style.display = 'block';
+			fontHidden.value = fontInput.value;
+		} else {
+			fontInput.style.display = 'none';
+			fontHidden.value = val;
+		}
+		fontHidden.dispatchEvent(new Event('input', { bubbles: true }));
+		fontHidden.dispatchEvent(new Event('change', { bubbles: true }));
+	});
+
+	fontInput.addEventListener('input', function() {
+		if (fontSelect.value === 'custom') {
+			fontHidden.value = this.value;
+			fontHidden.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+	});
+}
+
+// Color swatches click handler
+document.addEventListener('click', function(e) {
+	const swatch = e.target.closest('.xpressui-swatch');
+	if (!swatch) return;
+	e.preventDefault();
+
+	const color = swatch.getAttribute('data-color');
+	if (!color) return;
+
+	const parentCell = swatch.closest('td');
+	if (parentCell) {
+		const colorPicker = parentCell.querySelector('input[type="color"]');
+		const textInput = parentCell.querySelector('input[type="text"]');
+
+		if (colorPicker) {
+			colorPicker.value = color;
+			colorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+		if (textInput) {
+			textInput.value = color;
+			textInput.dispatchEvent(new Event('input', { bubbles: true }));
+			textInput.dispatchEvent(new Event('change', { bubbles: true }));
+		}
+	}
+});

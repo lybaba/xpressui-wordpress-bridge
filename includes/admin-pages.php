@@ -1151,7 +1151,7 @@ function xpressui_render_workflow_settings_page() {
 		echo '<div class="notice ' . ( $notice['type'] === 'error' ? 'notice-error' : 'notice-success' ) . ' is-dismissible"><p>' . wp_kses_post( $notice['message'] ) . '</p></div>';
 	}
 
-	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap">';
+	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance">';
 	
 	// Header
 	echo '<div class="xpressui-pro-header">';
@@ -1164,6 +1164,13 @@ function xpressui_render_workflow_settings_page() {
 	echo '<a href="' . esc_url( $back_url ) . '" class="xpressui-pro-back">&larr; ' . esc_html__( 'Back to Workflows', 'xpressui-bridge' ) . '</a>';
 	echo '</div>';
 	echo '</div>';
+
+	// Tabs navigation
+	echo '<h2 class="nav-tab-wrapper xpressui-customizer-tabs" style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 0;">';
+	echo '<a href="#tab-appearance" class="nav-tab nav-tab-active" data-tab="appearance">🎨 ' . esc_html__( 'Style & Appearance', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="#tab-navigation" class="nav-tab" data-tab="navigation">🗺️ ' . esc_html__( 'Navigation Buttons', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' ) . '</a>';
+	echo '</h2>';
 
 	// Fetch template context and overlays
 	$template_context = xpressui_load_workflow_template_context( $slug );

@@ -83,6 +83,7 @@ function xpressui_enqueue_overlay_assets(): void {
 		XPRESSUI_PRO_VERSION
 	);
 	if ( $is_settings ) {
+		wp_enqueue_media();
 		wp_enqueue_script(
 			'xpressui-pro-admin-overlay-js',
 			XPRESSUI_PRO_URL . 'assets/admin-overlay.js',
@@ -270,14 +271,40 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 	$html .= '<p class="description">' . esc_html__( 'Use “Plain” when your theme already wraps content in a card, to avoid a double frame.', 'xpressui-bridge' ) . '</p>';
 	xpressui_pro_row( '', __( 'Frame Style', 'xpressui-bridge' ), $html );
 
-	$html  = '<input type="url" name="xpressui_overlay_project_background_image_url" class="large-text" value="' . esc_attr( $ov_project_bg ) . '" placeholder="' . esc_attr( $pack_project_bg ) . '" />';
-	$html .= '<p class="description">' . esc_html__( 'Enter an image URL from your WordPress Media Library.', 'xpressui-bridge' ) . '</p>';
-	xpressui_pro_row( '', __( 'Background Image URL', 'xpressui-bridge' ), $html );
+	$html  = '<div style="display:flex;gap:10px;align-items:center;max-width:420px;">';
+	$html .= '<input type="url" id="xpressui_overlay_project_background_image_url" name="xpressui_overlay_project_background_image_url" class="regular-text" style="flex:1;" value="' . esc_attr( $ov_project_bg ) . '" placeholder="' . esc_attr( $pack_project_bg ) . '" />';
+	$html .= '<button type="button" class="button xpressui-media-upload-btn" data-target="xpressui_overlay_project_background_image_url">' . esc_html__( 'Select Image', 'xpressui-bridge' ) . '</button>';
+	$html .= '</div>';
+	$html .= '<p class="description">' . esc_html__( 'Select or upload an image from your Media Library.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( '', __( 'Background Image', 'xpressui-bridge' ), $html );
 
 	$pack_font = (string) ( $pack_theme['font_family'] ?? 'inherit' );
 	$ov_font   = (string) ( $ov_theme['font_family'] ?? '' );
-	$html  = '<input type="text" name="xpressui_overlay_theme[font_family]" class="regular-text" value="' . esc_attr( $ov_font ) . '" placeholder="' . esc_attr( $pack_font ) . '" />';
-	$html .= '<p class="description">' . esc_html__( 'Leave empty to inherit the WordPress theme font. E.g. "Roboto, sans-serif".', 'xpressui-bridge' ) . '</p>';
+
+	$fonts_list = [
+		''                          => __( 'Inherit from Theme', 'xpressui-bridge' ),
+		'Inter, sans-serif'         => 'Inter',
+		'Outfit, sans-serif'        => 'Outfit',
+		'Poppins, sans-serif'       => 'Poppins',
+		'Roboto, sans-serif'        => 'Roboto',
+		'Montserrat, sans-serif'    => 'Montserrat',
+		'Playfair Display, serif'   => 'Playfair Display',
+	];
+
+	$is_custom = $ov_font !== '' && ! isset( $fonts_list[ $ov_font ] );
+	$selected_font = $is_custom ? 'custom' : $ov_font;
+
+	$html  = '<select id="xpressui_font_family_select" style="max-width:420px; width:100%;">';
+	foreach ( $fonts_list as $val => $label ) {
+		$html .= '<option value="' . esc_attr( $val ) . '"' . selected( $selected_font, $val, false ) . '>' . esc_html( $label ) . '</option>';
+	}
+	$html .= '<option value="custom"' . selected( $selected_font, 'custom', false ) . '>' . esc_html__( 'Custom CSS font family...', 'xpressui-bridge' ) . '</option>';
+	$html .= '</select>';
+	$html .= '<input type="hidden" id="xpressui_overlay_theme_font_family" name="xpressui_overlay_theme[font_family]" value="' . esc_attr( $ov_font ) . '" />';
+
+	$custom_style = $is_custom ? 'display:block; margin-top:8px;' : 'display:none; margin-top:8px;';
+	$html .= '<input type="text" id="xpressui_custom_font_family_input" class="regular-text" style="' . $custom_style . '" value="' . esc_attr( $is_custom ? $ov_font : '' ) . '" placeholder="e.g. \'Open Sans\', sans-serif" />';
+	$html .= '<p class="description">' . esc_html__( 'Choose a font family from the list or define a custom CSS font stack.', 'xpressui-bridge' ) . '</p>';
 	xpressui_pro_row( '', __( 'Typography (Font Family)', 'xpressui-bridge' ), $html );
 
 	echo '<tr><td colspan="2"><hr style="border:none;border-top:1px solid #eee;margin:4px 0 8px"></td></tr>';
@@ -290,6 +317,14 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 		'border'          => __( 'Border color', 'xpressui-bridge' ),
 	];
 
+	$swatches = [
+		'primary'         => [ '#2563eb', '#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#0f172a' ],
+		'surface'         => [ '#ffffff', '#f8fafc', '#f1f5f9' ],
+		'page_background' => [ '#f1f5f9', '#eff6ff', '#f0fdf4', '#fafaf9', '#ffffff' ],
+		'text'            => [ '#0f172a', '#334155', '#1e293b' ],
+		'border'          => [ '#e2e8f0', '#cbd5e1', '#e5e7eb' ],
+	];
+
 	foreach ( $colors as $key => $label ) {
 		$pack_val    = (string) ( $pack_theme['colors'][ $key ] ?? '' );
 		$ov_val      = (string) ( $ov_theme['colors'][ $key ] ?? '' );
@@ -299,6 +334,15 @@ function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme
 		$html .= '<input type="color" value="' . esc_attr( $display_val ) . '" oninput="this.nextElementSibling.value=this.value; this.nextElementSibling.dispatchEvent(new Event(\'input\', { bubbles: true }));" />';
 		$html .= '<input type="text" name="xpressui_overlay_theme[colors][' . esc_attr( $key ) . ']" class="regular-text" style="width:100px;" value="' . esc_attr( $ov_val ) . '" placeholder="' . esc_attr( $pack_val ) . '" oninput="this.previousElementSibling.value=this.value || this.placeholder;" />';
 		$html .= '</div>';
+
+		if ( isset( $swatches[ $key ] ) ) {
+			$html .= '<div class="xpressui-color-swatches" style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">';
+			foreach ( $swatches[ $key ] as $swatch_color ) {
+				$html .= '<button type="button" class="xpressui-swatch" data-color="' . esc_attr( $swatch_color ) . '" style="width:20px; height:20px; border-radius:50%; background:' . esc_attr( $swatch_color ) . '; border:1px solid rgba(0,0,0,0.15); cursor:pointer;" title="' . esc_attr( $swatch_color ) . '"></button>';
+			}
+			$html .= '</div>';
+		}
+
 		if ( $pack_val !== '' ) {
 			$html .= '<p class="description">' . esc_html__( 'Pack default:', 'xpressui-bridge' ) . ' <code style="display:inline-block;width:12px;height:12px;background:' . esc_attr( $pack_val ) . ';border-radius:2px;vertical-align:middle;margin-right:4px;border:1px solid #ccc;"></code>' . esc_html( $pack_val ) . '</p>';
 		}
@@ -514,85 +558,99 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			$html .= '<textarea name="' . $field_prefix . '[desc]" class="large-text" rows="2">' . esc_textarea( $ov_desc ) . '</textarea>';
 			$html .= '</div>';
 
+			// ------------------ ADVANCED / VALIDATION SETTINGS ------------------
+			$adv_html = '';
+
 			// Error message.
 			$pack_errmsg = (string) ( $field['error_message'] ?? '' );
-			$html .= '<div class="xpressui-field-control is-full">';
-			$html .= '<label>' . esc_html__( 'Error message', 'xpressui-bridge' ) . '</label>';
-			$html .= '<input type="text" name="' . $field_prefix . '[error_message]" class="large-text" value="' . esc_attr( $ov_errmsg ) . '" placeholder="' . esc_attr( $pack_errmsg ) . '" />';
-			$html .= '</div>';
+			$adv_html .= '<div class="xpressui-field-control is-full">';
+			$adv_html .= '<label>' . esc_html__( 'Custom error message', 'xpressui-bridge' ) . '</label>';
+			$adv_html .= '<input type="text" name="' . $field_prefix . '[error_message]" class="large-text" value="' . esc_attr( $ov_errmsg ) . '" placeholder="' . esc_attr( $pack_errmsg ) . '" />';
+			$adv_html .= '</div>';
 
 			if ( in_array( $ftype, $text_validation_types, true ) ) {
-				$html .= '<div class="xpressui-field-control-row">';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Min length', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_len" name="' . $field_prefix . '[min_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_len ) . '" placeholder="" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max length', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_len" name="' . $field_prefix . '[max_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_len ) . '" placeholder="" />';
-				$html .= '</div>';
-				$html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control-row">';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Min length', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_len" name="' . $field_prefix . '[min_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_len ) . '" placeholder="" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Max length', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_len" name="' . $field_prefix . '[max_len]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_len', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_len ) . '" placeholder="" />';
+				$adv_html .= '</div>';
+				$adv_html .= '</div>';
 				if ( in_array( $ftype, $pattern_validation_types, true ) ) {
-					$html .= '<div class="xpressui-field-control is-full">';
-					$html .= '<label>' . esc_html__( 'Pattern', 'xpressui-bridge' ) . '</label>';
-					$html .= '<input type="text" name="' . $field_prefix . '[pattern]" class="large-text" value="' . esc_attr( $ov_pattern ) . '" placeholder="' . esc_attr( (string) ( $field['pattern'] ?? '' ) ) . '" />';
-					$html .= '<p class="description">' . esc_html__( 'Optional regex pattern enforced by the runtime schema. Use ^...$ if you want to match the whole value.', 'xpressui-bridge' ) . '</p>';
-					$html .= '</div>';
+					$adv_html .= '<div class="xpressui-field-control is-full">';
+					$adv_html .= '<label>' . esc_html__( 'Pattern (Regex)', 'xpressui-bridge' ) . '</label>';
+					$adv_html .= '<input type="text" name="' . $field_prefix . '[pattern]" class="large-text" value="' . esc_attr( $ov_pattern ) . '" placeholder="' . esc_attr( (string) ( $field['pattern'] ?? '' ) ) . '" />';
+					$adv_html .= '<p class="description">' . esc_html__( 'Optional regex pattern enforced by the runtime schema. Use ^...$ to match the whole value.', 'xpressui-bridge' ) . '</p>';
+					$adv_html .= '</div>';
 				}
 			}
 
 			if ( in_array( $ftype, $numeric_validation_types, true ) ) {
-				$html .= '<div class="xpressui-field-control-row">';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Min value', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_value" name="' . $field_prefix . '[min_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_value ) . '" placeholder="' . esc_attr( (string) ( $field['min_value'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max value', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_value" name="' . $field_prefix . '[max_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_value ) . '" placeholder="' . esc_attr( (string) ( $field['max_value'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Step', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_step_value" name="' . $field_prefix . '[step_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_step_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_step_value ) . '" placeholder="' . esc_attr( (string) ( $field['step_value'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control-row">';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Min value', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_value" name="' . $field_prefix . '[min_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_value ) . '" placeholder="' . esc_attr( (string) ( $field['min_value'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Max value', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_value" name="' . $field_prefix . '[max_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_value ) . '" placeholder="' . esc_attr( (string) ( $field['max_value'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Step size', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_step_value" name="' . $field_prefix . '[step_value]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_step_value', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_step_value ) . '" placeholder="' . esc_attr( (string) ( $field['step_value'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '</div>';
 			}
 
 			if ( $supports_choice_limits ) {
-				$html .= '<div class="xpressui-field-control-row">';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Minimum choices', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_choices" name="' . $field_prefix . '[min_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_choices ) . '" placeholder="' . esc_attr( (string) ( $field['min_choices'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Maximum choices', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_choices" name="' . $field_prefix . '[max_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_choices ) . '" placeholder="' . esc_attr( (string) ( $field['max_choices'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control-row">';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Minimum choices', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_min_choices" name="' . $field_prefix . '[min_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_min_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_min_choices ) . '" placeholder="' . esc_attr( (string) ( $field['min_choices'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Maximum choices', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="number" min="0" step="1" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_choices" name="' . $field_prefix . '[max_choices]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_choices', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_choices ) . '" placeholder="' . esc_attr( (string) ( $field['max_choices'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '</div>';
 			}
 
 			if ( in_array( $ftype, $upload_validation_types, true ) ) {
-				$html .= '<div class="xpressui-field-control">';
-				$html .= '<label>' . esc_html__( 'Max file size (MB)', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_file_size_mb" name="' . $field_prefix . '[max_file_size_mb]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_file_size_mb', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_file_size_mb ) . '" placeholder="' . esc_attr( (string) ( $field['maxFileSizeMb'] ?? '' ) ) . '" />';
+				$adv_html .= '<div class="xpressui-field-control-row">';
+				$adv_html .= '<div class="xpressui-field-control">';
+				$adv_html .= '<label>' . esc_html__( 'Max file size (MB)', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" id="xpressui_overlay_fields_' . esc_attr( $fname ) . '_max_file_size_mb" name="' . $field_prefix . '[max_file_size_mb]" class="small-text' . ( in_array( 'xpressui_overlay_fields_' . $fname . '_max_file_size_mb', $invalid_fields, true ) ? ' xpressui-input-invalid' : '' ) . '" value="' . esc_attr( $ov_max_file_size_mb ) . '" placeholder="' . esc_attr( (string) ( $field['maxFileSizeMb'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control is-full">';
+				$adv_html .= '<label>' . esc_html__( 'Accepted file types', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" name="' . $field_prefix . '[accept]" class="large-text" value="' . esc_attr( $ov_accept ) . '" placeholder="' . esc_attr( (string) ( $field['accept'] ?? '' ) ) . '" />';
+				$adv_html .= '<p class="description">' . esc_html__( 'Example: image/*,application/pdf', 'xpressui-bridge' ) . '</p>';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control is-full">';
+				$adv_html .= '<label>' . esc_html__( 'Accepted file types label', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" name="' . $field_prefix . '[upload_accept_label]" class="large-text" value="' . esc_attr( $ov_upload_accept_label ) . '" placeholder="' . esc_attr( (string) ( $field['upload_accept_label'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control is-full">';
+				$adv_html .= '<label>' . esc_html__( 'File type error message', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" name="' . $field_prefix . '[file_type_error_message]" class="large-text" value="' . esc_attr( $ov_file_type_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileTypeErrorMsg'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+				$adv_html .= '<div class="xpressui-field-control is-full">';
+				$adv_html .= '<label>' . esc_html__( 'File size error message', 'xpressui-bridge' ) . '</label>';
+				$adv_html .= '<input type="text" name="' . $field_prefix . '[file_size_error_message]" class="large-text" value="' . esc_attr( $ov_file_size_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileSizeErrorMsg'] ?? '' ) ) . '" />';
+				$adv_html .= '</div>';
+			}
+
+			if ( $adv_html !== '' ) {
+				$html .= '<details class="xpressui-field-advanced-settings" style="grid-column: 1 / -1; margin-top: 10px; border-top: 1px solid #eee; padding-top: 8px;">';
+				$html .= '<summary class="xpressui-field-advanced-summary" style="cursor:pointer; color:#183ea8; font-weight:600; font-size:11.5px; user-select:none;">' . esc_html__( '⚙️ Validation & Advanced Settings', 'xpressui-bridge' ) . '</summary>';
+				$html .= '<div class="xpressui-field-advanced-body" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px 12px; margin-top:10px;">';
+				$html .= $adv_html;
 				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'Accepted file types', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" name="' . $field_prefix . '[accept]" class="large-text" value="' . esc_attr( $ov_accept ) . '" placeholder="' . esc_attr( (string) ( $field['accept'] ?? '' ) ) . '" />';
-				$html .= '<p class="description">' . esc_html__( 'Example: image/*,application/pdf', 'xpressui-bridge' ) . '</p>';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'Accepted file types label', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" name="' . $field_prefix . '[upload_accept_label]" class="large-text" value="' . esc_attr( $ov_upload_accept_label ) . '" placeholder="' . esc_attr( (string) ( $field['upload_accept_label'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'File type error message', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" name="' . $field_prefix . '[file_type_error_message]" class="large-text" value="' . esc_attr( $ov_file_type_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileTypeErrorMsg'] ?? '' ) ) . '" />';
-				$html .= '</div>';
-				$html .= '<div class="xpressui-field-control is-full">';
-				$html .= '<label>' . esc_html__( 'File size error message', 'xpressui-bridge' ) . '</label>';
-				$html .= '<input type="text" name="' . $field_prefix . '[file_size_error_message]" class="large-text" value="' . esc_attr( $ov_file_size_error_message ) . '" placeholder="' . esc_attr( (string) ( $field['fileSizeErrorMsg'] ?? '' ) ) . '" />';
-				$html .= '</div>';
+				$html .= '</details>';
 			}
 
 			// Choice labels and enabled state.
