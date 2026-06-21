@@ -1,0 +1,269 @@
+/*
+ * Form Importer wizard (Tools → Form Importer tab) styles.
+ *
+ * Extracted from the inline <style> block previously emitted by
+ * xpressui_render_form_importer_tab() (includes/form-importer.php) and enqueued
+ * via xpressui_enqueue_admin_assets() so the admin page ships no inline CSS
+ * (WordPress.org compliance + smaller PHP). Selectors are unchanged.
+ */
+.xpui-wiz-container {
+	font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+	max-width: 700px;
+	margin-top: 15px;
+}
+.xpui-wiz-card {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 16px;
+	padding: 30px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+/* Step indicator */
+.xpui-wiz-steps {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 35px;
+	position: relative;
+}
+/*
+ * The connector line must start at the centre of the first badge and end at
+ * the centre of the last badge. With four flex:1 step items each item is 25%
+ * wide, so the badge centres sit at 12.5% and 87.5%. Anchoring the line to
+ * those points (left:12.5%, right:12.5%) keeps it terminating exactly at
+ * step 4 with no overflow into the empty space past the final circle.
+ */
+.xpui-wiz-line {
+	position: absolute;
+	top: 16px;
+	left: 12.5%;
+	right: 12.5%;
+	height: 3px;
+	background: #e2e8f0;
+	z-index: 1;
+}
+/*
+ * The progress fill shares the same left anchor and spans a percentage of the
+ * connector width (not the whole row), so a 100% fill stops at the last badge.
+ */
+.xpui-wiz-line-progress {
+	position: absolute;
+	top: 16px;
+	left: 12.5%;
+	width: 0%;
+	max-width: 75%;
+	height: 3px;
+	background: #2563eb;
+	z-index: 2;
+	transition: width 0.3s ease;
+}
+.xpui-wiz-step-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	z-index: 3;
+	flex: 1;
+}
+.xpui-wiz-badge {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: #ffffff;
+	border: 3px solid #cbd5e1;
+	color: #64748b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 13px;
+	transition: all 0.3s ease;
+}
+.xpui-wiz-step-item.active .xpui-wiz-badge {
+	border-color: #2563eb;
+	color: #2563eb;
+	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+.xpui-wiz-step-item.completed .xpui-wiz-badge {
+	background: #2563eb;
+	border-color: #2563eb;
+	color: #ffffff;
+}
+.xpui-wiz-step-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: #64748b;
+	margin-top: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.xpui-wiz-step-item.active .xpui-wiz-step-label {
+	color: #0f172a;
+}
+.xpui-wiz-step-item.completed .xpui-wiz-step-label {
+	color: #2563eb;
+}
+
+/* Step bodies */
+.xpui-wiz-step-body {
+	display: none;
+}
+.xpui-wiz-step-body.active {
+	display: block;
+	animation: xpui-fade-in 0.3s ease;
+}
+@keyframes xpui-fade-in {
+	from { opacity: 0; transform: translateY(5px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress indicator */
+.xpui-wiz-progress-container {
+	margin: 25px 0;
+}
+.xpui-wiz-progress-bar {
+	width: 100%;
+	height: 12px;
+	background: #e2e8f0;
+	border-radius: 9999px;
+	overflow: hidden;
+	position: relative;
+}
+.xpui-wiz-progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+	width: 0%;
+	border-radius: 9999px;
+	transition: width 0.5s ease;
+}
+.xpui-wiz-progress-steps {
+	margin-top: 20px;
+	list-style: none;
+	padding: 0;
+}
+.xpui-wiz-progress-step {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13.5px;
+	color: #64748b;
+	margin-bottom: 10px;
+	font-weight: 500;
+}
+.xpui-wiz-progress-step.done {
+	color: #16a34a;
+}
+.xpui-wiz-progress-step.active {
+	color: #2563eb;
+	font-weight: 600;
+}
+.xpui-wiz-progress-step-icon {
+	width: 18px;
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: bold;
+}
+
+/* Finish card */
+.xpui-wiz-success-card {
+	text-align: center;
+	padding: 15px 0;
+}
+.xpui-wiz-success-icon {
+	width: 56px;
+	height: 56px;
+	background: #dcfce7;
+	color: #15803d;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 28px;
+	margin-bottom: 15px;
+}
+.xpui-wiz-code-box {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 12px 15px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	max-width: 450px;
+	margin: 20px 0;
+	box-sizing: border-box;
+}
+.xpui-wiz-code {
+	font-family: monospace;
+	font-size: 13px;
+	font-weight: 700;
+	color: #0f172a;
+}
+.xpui-wiz-copy-btn {
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+.xpui-wiz-copy-btn:hover {
+	border-color: #2563eb;
+	color: #2563eb;
+}
+
+/* Buttons */
+.xpui-wiz-buttons {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 30px;
+	border-top: 1px solid #f1f5f9;
+	padding-top: 20px;
+}
+.xpui-wiz-btn {
+	height: 38px;
+	font-weight: 600;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 0 16px;
+	box-sizing: border-box;
+	font-size: 13px;
+	text-decoration: none;
+}
+.xpui-wiz-btn:hover,
+.xpui-wiz-btn:focus {
+	text-decoration: none;
+}
+.xpui-wiz-btn-primary {
+	background: #2563eb;
+	border: 1px solid #2563eb;
+	color: #ffffff;
+}
+.xpui-wiz-btn-primary:hover,
+.xpui-wiz-btn-primary:focus {
+	background: #1d4ed8;
+	border-color: #1d4ed8;
+	color: #ffffff;
+}
+.xpui-wiz-btn-secondary {
+	background: #ffffff;
+	border: 1px solid #cbd5e1;
+	color: #475569;
+}
+.xpui-wiz-btn-secondary:hover {
+	border-color: #94a3b8;
+	color: #334155;
+}
+.xpui-wiz-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

@@ -181,6 +181,54 @@ function xpressui_enqueue_admin_assets( $hook ) {
 		);
 	}
 
+	// Form Importer wizard — only the bridge page's "import" tab renders the wizard
+	// markup (see xpressui_render_form_importer_tab()), so scope its CSS/JS to that tab.
+	$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'list';
+	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id && 'import' === $current_tab ) {
+		wp_enqueue_style(
+			'xpressui-bridge-admin-importer',
+			XPRESSUI_BRIDGE_URL . 'assets/admin-importer.css',
+			[],
+			XPRESSUI_BRIDGE_VERSION
+		);
+		wp_enqueue_script(
+			'xpressui-bridge-admin-importer',
+			XPRESSUI_BRIDGE_URL . 'assets/admin-importer.js',
+			[ 'jquery' ],
+			XPRESSUI_BRIDGE_VERSION,
+			true
+		);
+		wp_localize_script(
+			'xpressui-bridge-admin-importer',
+			'xpressuiImporter',
+			[
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'importNonce'     => wp_create_nonce( 'xpressui_import_form_wizard_nonce' ),
+				'syncNonce'       => wp_create_nonce( 'xpressui_console_sync_nonce' ),
+				'isSaasConnected' => xpressui_pro_is_license_active(),
+				'i18n'            => [
+					'next'             => __( 'Next', 'xpressui-bridge' ),
+					'convertSync'      => __( 'Convert & Sync', 'xpressui-bridge' ),
+					'copied'           => __( 'Copied!', 'xpressui-bridge' ),
+					'copy'             => __( 'Copy', 'xpressui-bridge' ),
+					'syncingToConsole' => __( 'Syncing to Console...', 'xpressui-bridge' ),
+					'syncFailed'       => __( 'Sync failed. Please try again.', 'xpressui-bridge' ),
+					'createdOnConsole' => __( 'Created on your IntakeFlow Console', 'xpressui-bridge' ),
+					'syncedBack'       => __( 'Synced back to this site and ready to embed.', 'xpressui-bridge' ),
+					'networkError'     => __( 'Network error. Please try again.', 'xpressui-bridge' ),
+					'uploadingProject' => __( 'Uploading and creating project in SaaS Console...', 'xpressui-bridge' ),
+					'downloadingFiles' => __( 'Downloading and synchronizing workflow files...', 'xpressui-bridge' ),
+					'generatingLocal'  => __( 'Generating local standalone workflow package...', 'xpressui-bridge' ),
+					'importComplete'   => __( 'Import complete!', 'xpressui-bridge' ),
+					'savedLocally'     => __( 'Saved Locally', 'xpressui-bridge' ),
+					'convertedRunning' => __( 'Your form was converted and is running on this site.', 'xpressui-bridge' ),
+					'details'          => __( 'Details:', 'xpressui-bridge' ),
+					'convertedWorkflow' => __( 'Your form was converted to an IntakeFlow Workflow.', 'xpressui-bridge' ),
+				],
+			]
+		);
+	}
+
 	if ( 'xpressui_submission_page_xpressui-console' === $screen->id ) {
 		wp_enqueue_script(
 			'xpressui-bridge-admin-console',
