@@ -49,7 +49,7 @@ function xpressui_pro_submission_license_gate( $gate, $project_slug, $payload = 
 		return $gate;
 	}
 
-	if ( function_exists( 'xpressui_pro_is_license_active' ) && xpressui_pro_is_license_active() ) {
+	if ( xpressui_is_saas_connected() ) {
 		return $gate;
 	}
 
@@ -108,7 +108,7 @@ function xpressui_pro_license_soft_notice() {
 		return;
 	}
 
-	if ( function_exists( 'xpressui_pro_is_license_active' ) && xpressui_pro_is_license_active() ) {
+	if ( xpressui_is_saas_connected() ) {
 		return;
 	}
 
@@ -116,7 +116,7 @@ function xpressui_pro_license_soft_notice() {
 		return;
 	}
 
-	$connect_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' );
+	$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission' ) );
 
 	printf(
 		'<div class="notice notice-warning is-dismissible"><p><strong>%1$s</strong> %2$s <a href="%3$s">%4$s</a></p></div>',

@@ -31,7 +31,7 @@ function xpressui_render_dashboard_widget_content() {
 		? xpressui_count_synced_submissions()
 		: 0;
 	$quota_limit = 100; // Free-tier cloud backup limit.
-	$is_pro = xpressui_pro_is_license_active();
+	$is_pro = xpressui_is_saas_connected();
 	$quota_exceeded = ! $is_pro && $sub_count >= $quota_limit;
 	$percentage  = min( 100, round( ( $sub_count / $quota_limit ) * 100 ) );
 

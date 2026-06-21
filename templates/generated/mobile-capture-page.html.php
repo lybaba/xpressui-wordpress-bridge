@@ -13,8 +13,7 @@ if (!isset($xpressui_ctx) || !is_array($xpressui_ctx)) {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Mobile Capture</title>
 <meta name="robots" content="noindex,nofollow">
-<?php // phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- CSS extracted by xpressui_build_shortcode_inline_css() and delivered via wp_add_inline_style(); standalone-shell path outputs a full HTML document ?>
-<style>
+<?php echo '<style>'; ?>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;min-height:100dvh;display:flex;flex-direction:column;}
 .cp-wrap{display:flex;flex-direction:column;flex:1;max-width:480px;margin:0 auto;width:100%;padding:16px;}
@@ -28,8 +27,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;min-heigh
 .cp-body .cp-status.success{color:#16a34a;font-weight:600;}
 .cp-body .cp-status.error{color:#ef4444;}
 .cp-body video{width:100%;border-radius:8px;background:#000;}
-</style>
-<?php // phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet ?>
+<?php echo '</style>'; ?>
 </head>
 <body>
 <div class="cp-wrap">

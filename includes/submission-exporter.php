@@ -32,32 +32,29 @@ function xpressui_handle_submission_export_action() {
 		'order'          => 'DESC',
 	];
 
-	// Filter by project slug if requested
-	if ( isset( $_GET['xpressui_project'] ) && '' !== $_GET['xpressui_project'] ) {
-		$args['meta_query'] = [
-			[
-				'key'   => '_xpressui_project_slug',
-				'value' => sanitize_title( $_GET['xpressui_project'] ),
-			]
-		];
-	}
-
 	$posts = get_posts( $args );
+
+	// Filter by project slug if requested to avoid slow DB queries
+	if ( isset( $_GET['xpressui_project'] ) && '' !== $_GET['xpressui_project'] ) {
+		$target_slug = sanitize_title( wp_unslash( (string) $_GET['xpressui_project'] ) );
+		if ( is_array( $posts ) ) {
+			$posts = array_filter( $posts, function( $post ) use ( $target_slug ) {
+				return get_post_meta( $post->ID, '_xpressui_project_slug', true ) === $target_slug;
+			} );
+		}
+	}
 
 	// Headers for download
 	header( 'Content-Type: text/csv; charset=utf-8' );
 	header( 'Content-Disposition: attachment; filename=intakeflow-submissions-' . gmdate( 'Y-m-d' ) . '.csv' );
 
-	$output = fopen( 'php://output', 'w' );
-	if ( ! $output ) {
-		wp_die( esc_html__( 'Failed to write CSV stream.', 'xpressui-bridge' ) );
-	}
+	$output = new SplFileObject( 'php://output', 'w' );
 
 	// Write UTF-8 BOM for proper Excel encoding
-	fwrite( $output, "\xEF\xBB\xBF" );
+	$output->fwrite( "\xEF\xBB\xBF" );
 
 	// Column Headers
-	fputcsv( $output, [
+	$output->fputcsv( [
 		__( 'Submission ID', 'xpressui-bridge' ),
 		__( 'Date Submitted', 'xpressui-bridge' ),
 		__( 'Workflow Slug', 'xpressui-bridge' ),
@@ -100,7 +97,7 @@ function xpressui_handle_submission_export_action() {
 			$summary = implode( ' | ', $summary_parts );
 		}
 
-		fputcsv( $output, [
+		$output->fputcsv( [
 			$sub_id,
 			$date,
 			$project_slug,
@@ -111,8 +108,6 @@ function xpressui_handle_submission_export_action() {
 			$payload_json
 		] );
 	}
-
-	fclose( $output );
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_submission_export_action' );

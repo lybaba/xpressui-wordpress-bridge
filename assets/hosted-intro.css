@@ -79,7 +79,7 @@ body.hosted-catalog-page .xpressui-splash-shell {
 }
 .xpressui-public-header {
   position: sticky;
-  top: var(--xpressui-header-offset, 0px);
+  top: 0;
   z-index: 10000;
   display: flex;
   align-items: center;
@@ -1277,7 +1277,7 @@ body.hosted-link-template-gallery-showcase:not(.hosted-catalog-page):not(.worksp
   max-width: 460px;
   padding-top: clamp(6px, 1.7vw, 24px);
   position: sticky;
-  top: calc(var(--xpressui-header-offset, 0px) + clamp(18px, 3vh, 36px));
+  top: clamp(18px, 3vh, 36px);
 }
 
 /* Category kicker — like template-product-landing-kicker */

@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Extract email from submission payload when a submission is first created.
  */
 function xpressui_save_submitter_email_on_created( $post_id, $project_slug, $payload ) {
+	if ( $post_id <= 0 ) {
+		return;
+	}
 	$email = xpressui_extract_email_from_payload( $payload );
 	if ( $email ) {
 		update_post_meta( $post_id, '_xpressui_submitter_email', $email );
@@ -124,7 +127,8 @@ function xpressui_handle_client_portal_actions() {
  */
 function xpressui_get_portal_client_email() {
 	if ( isset( $_COOKIE['xpressui_client_session'] ) ) {
-		$decoded = base64_decode( $_COOKIE['xpressui_client_session'] );
+		$cookie_val = sanitize_text_field( wp_unslash( (string) ( $_COOKIE['xpressui_client_session'] ?? '' ) ) );
+		$decoded    = base64_decode( $cookie_val );
 		if ( is_email( $decoded ) ) {
 			return sanitize_email( $decoded );
 		}
@@ -140,7 +144,6 @@ function xpressui_render_client_portal_view() {
 
 	// The legacy global Style Customizer was replaced by per-workflow overlays
 	// (includes/overlay.php), so there are no portal-level customizer overrides to inject.
-	$customizer_css = '';
 
 	echo '<style>';
 	?>
@@ -190,8 +193,6 @@ function xpressui_render_client_portal_view() {
 	.xpressui-client-portal .submission-item {
 		border-radius: var(--template-input-radius) !important;
 	}
-	<?php
-	echo $customizer_css;
 	echo '</style>';
 
 	echo '<div class="xpressui-client-portal">';
@@ -245,13 +246,16 @@ function xpressui_render_portal_login_form() {
  * Renders the OTP verification form.
  */
 function xpressui_render_portal_otp_form() {
-	$email = $_SESSION['xpressui_portal_pending_email'];
+	$email = isset( $_SESSION['xpressui_portal_pending_email'] ) ? sanitize_email( wp_unslash( (string) $_SESSION['xpressui_portal_pending_email'] ) ) : '';
 	?>
 	<div style="text-align: center; margin-bottom: 25px;">
 		<div style="font-size: 40px; margin-bottom: 10px;">✉️</div>
 		<h2 style="margin: 0; font-size: 22px; font-weight: 800;"><?php esc_html_e( 'Verify Your Identity', 'xpressui-bridge' ); ?></h2>
 		<p style="margin: 5px 0 0; color: #64748b; font-size: 14px;">
-			<?php printf( esc_html__( 'We\'ve sent a code to %s. Enter it below to authorize this session.', 'xpressui-bridge' ), '<code>' . esc_html( $email ) . '</code>' ); ?>
+			<?php
+			/* translators: %s: email address */
+			printf( esc_html__( 'We\'ve sent a code to %s. Enter it below to authorize this session.', 'xpressui-bridge' ), '<code>' . esc_html( $email ) . '</code>' );
+			?>
 		</p>
 	</div>
 
@@ -315,7 +319,12 @@ function xpressui_render_portal_dashboard( $client_email ) {
 	<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;">
 		<div>
 			<h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;"><?php esc_html_e( 'Your Submissions', 'xpressui-bridge' ); ?></h2>
-			<p style="margin: 3px 0 0; font-size: 13px; color: #64748b;"><?php printf( esc_html__( 'Signed in as %s', 'xpressui-bridge' ), '<strong>' . esc_html( $client_email ) . '</strong>' ); ?></p>
+			<p style="margin: 3px 0 0; font-size: 13px; color: #64748b;">
+				<?php
+				/* translators: %s: client email address */
+				printf( esc_html__( 'Signed in as %s', 'xpressui-bridge' ), '<strong>' . esc_html( $client_email ) . '</strong>' );
+				?>
+			</p>
 		</div>
 		<form method="post">
 			<input type="hidden" name="xpressui_client_action" value="logout">

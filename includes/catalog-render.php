@@ -28,13 +28,16 @@ function xpressui_get_hosted_link_catalog( $project_slug, $link_id ) {
 	if ( '' === $project_slug || '' === $link_id ) {
 		return null;
 	}
-	$uploads = wp_get_upload_dir();
-	$file    = trailingslashit( $uploads['basedir'] ) . 'xpressui/' . $project_slug
-		. '/hosted-links/' . $link_id . '/catalogs/catalog.json';
-	if ( ! is_readable( $file ) ) {
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	global $wp_filesystem;
+	if ( ! WP_Filesystem() ) {
 		return null;
 	}
-	$decoded = json_decode( (string) file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	$contents = $wp_filesystem->get_contents( $file );
+	if ( false === $contents ) {
+		return null;
+	}
+	$decoded = json_decode( $contents, true );
 	if ( ! is_array( $decoded ) ) {
 		return null;
 	}
@@ -313,7 +316,7 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 	$globals .= 'window.__xpuiCatalogGate=null;';
 
 	if ( '' !== $init_url ) {
-		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [ 'xpressui-header-offset' ], null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Cross-origin SaaS asset; the SaaS handles its own cache-busting.
+		wp_enqueue_script( 'xpressui-catalog-init', $init_url, [ 'xpressui-header-offset' ], XPRESSUI_BRIDGE_VERSION, true );
 		wp_add_inline_script( 'xpressui-catalog-init', $globals, 'before' );
 	}
 

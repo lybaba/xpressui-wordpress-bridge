@@ -230,7 +230,7 @@ function xpressui_pro_field_supports_pattern( array $field ): bool {
 function xpressui_pro_render_card_appearance( array $ov_theme, array $pack_theme, array $summary_stats, string $ov_project_bg, string $pack_project_bg ): void {
 	$customized = $summary_stats['has_theme'] ? '1' : '0';
 	$open       = ' open';
-	echo '<details class="xpressui-admin-card"' . $open . ' data-xpressui-card-type="appearance" data-xpressui-customized="' . esc_attr( $customized ) . '" data-xpressui-search-text="appearance design tokens colors primary background surface text border radius" data-xpressui-reset-scope="appearance" id="xpressui-pro-card-appearance">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+	echo wp_kses( '<details class="xpressui-admin-card"' . esc_attr( $open ) . ' data-xpressui-card-type="appearance" data-xpressui-customized="' . esc_attr( $customized ) . '" data-xpressui-search-text="appearance design tokens colors primary background surface text border radius" data-xpressui-reset-scope="appearance" id="xpressui-pro-card-appearance">', xpressui_get_shell_allowed_html() );
 	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Appearance & Design Tokens', 'xpressui-bridge' ) . '</h2><span class="xpressui-card-meta">';
 	if ( $summary_stats['has_theme'] ) {
 		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
@@ -380,7 +380,7 @@ function xpressui_pro_render_card_navigation( array $ov_navigation, array $pack_
 		'next'   => [ __( 'Continue button', 'xpressui-bridge' ), (string) ( $pack_nav['nextLabel'] ?? 'Continue' ) ],
 		'submit' => [ __( 'Submit button', 'xpressui-bridge' ), (string) ( $pack_nav['submitLabel'] ?? 'Submit' ) ],
 	];
-	echo '<details class="xpressui-admin-card"' . $nav_open . ' data-xpressui-card-type="navigation" data-xpressui-customized="' . ( ! empty( $ov_navigation ) ? '1' : '0' ) . '" data-xpressui-search-text="navigation labels back continue submit buttons" data-xpressui-reset-scope="navigation" id="xpressui-pro-card-navigation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $nav_open is a hardcoded HTML attribute built from a boolean
+	echo wp_kses( '<details class="xpressui-admin-card"' . esc_attr( $nav_open ) . ' data-xpressui-card-type="navigation" data-xpressui-customized="' . ( ! empty( $ov_navigation ) ? '1' : '0' ) . '" data-xpressui-search-text="navigation labels back continue submit buttons" data-xpressui-reset-scope="navigation" id="xpressui-pro-card-navigation">', xpressui_get_shell_allowed_html() );
 	echo '<summary class="xpressui-card-summary"><h2>' . esc_html__( 'Navigation Labels', 'xpressui-bridge' ) . '</h2><span class="xpressui-card-meta">';
 	if ( ! empty( $ov_navigation ) ) {
 		echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
@@ -444,7 +444,7 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 		}
 		$section_search_text = strtolower( trim( implode( ' ', array_filter( array_map( 'strval', $section_search_tokens ) ) ) ) );
 
-		echo '<details class="xpressui-admin-card"' . $card_open . ' data-xpressui-card-type="section" data-xpressui-customized="' . ( $section_has_custom ? '1' : '0' ) . '" data-xpressui-search-text="' . esc_attr( $section_search_text ) . '" data-xpressui-reset-scope="section-' . esc_attr( $section_name ) . '" id="xpressui-pro-card-' . esc_attr( $section_name ) . '">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $card_open is a hardcoded HTML attribute built from a boolean
+		echo wp_kses( '<details class="xpressui-admin-card"' . esc_attr( $card_open ) . ' data-xpressui-card-type="section" data-xpressui-customized="' . ( $section_has_custom ? '1' : '0' ) . '" data-xpressui-search-text="' . esc_attr( $section_search_text ) . '" data-xpressui-reset-scope="section-' . esc_attr( $section_name ) . '" id="xpressui-pro-card-' . esc_attr( $section_name ) . '">', xpressui_get_shell_allowed_html() );
 		echo '<summary class="xpressui-card-summary"><h2>' . esc_html( $section_label ) . '</h2><span class="xpressui-card-meta">';
 		if ( $section_has_custom ) {
 			echo '<span class="xpressui-card-badge is-customized">' . esc_html__( 'Customized', 'xpressui-bridge' ) . '</span>';
@@ -705,7 +705,7 @@ function xpressui_pro_render_card_sections( array $sections, array $ov_sections,
 			$html .= '</div></div>';
 
 			echo '<tr><td colspan="2" style="padding:0; padding-bottom: 12px;">';
-			echo $header . $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $header and $html are built exclusively with esc_attr()/esc_html() throughout the loop above
+			echo wp_kses( $header . $html, xpressui_get_shell_allowed_html() );
 			echo '</td></tr>';
 		}
 
@@ -729,7 +729,7 @@ function xpressui_pro_row( string $for, string $label, string $content ): void {
 		echo wp_kses_post( $label );
 	}
 	echo '</th>';
-	echo '<td>' . $content . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $content is escaped at every call site before being passed here
+	echo '<td>' . wp_kses( $content, xpressui_get_shell_allowed_html() ) . '</td>';
 	echo '</tr>';
 }
 
@@ -987,7 +987,7 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 
 	$nav = [];
 	foreach ( [ 'prev', 'next', 'submit' ] as $nav_key ) {
-		$v = sanitize_text_field( wp_unslash( (string) ( $_POST[ 'xpressui_overlay_nav_' . $nav_key ] ?? '' ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce verified by caller (xpressui_render_workflow_settings_page)
+		$v = sanitize_text_field( wp_unslash( (string) ( $_POST[ 'xpressui_overlay_nav_' . $nav_key ] ?? '' ) ) );
 		if ( $v !== '' ) {
 			$nav[ $nav_key ] = $v;
 		}
@@ -999,19 +999,19 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 	}
 
 	$theme_overlay = isset( $overlay['theme'] ) && is_array( $overlay['theme'] ) ? $overlay['theme'] : [];
-	$bg_style = sanitize_key( wp_unslash( $_POST['xpressui_overlay_theme']['background_style'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$bg_style = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_overlay_theme']['background_style'] ?? '' ) ) );
 	if ( in_array( $bg_style, [ 'none', 'panel', 'full-bleed' ], true ) ) {
 		$theme_overlay['background_style'] = $bg_style;
 	} else {
 		unset( $theme_overlay['background_style'] );
 	}
-	$frame_style = sanitize_key( wp_unslash( $_POST['xpressui_overlay_theme']['frame_style'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$frame_style = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_overlay_theme']['frame_style'] ?? '' ) ) );
 	if ( in_array( $frame_style, [ 'card', 'plain' ], true ) ) {
 		$theme_overlay['frame_style'] = $frame_style;
 	} else {
 		unset( $theme_overlay['frame_style'] );
 	}
-	$font_family = sanitize_text_field( wp_unslash( $_POST['xpressui_overlay_theme']['font_family'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$font_family = sanitize_text_field( wp_unslash( (string) ( $_POST['xpressui_overlay_theme']['font_family'] ?? '' ) ) );
 	if ( $font_family !== '' ) {
 		$theme_overlay['font_family'] = $font_family;
 	} else {
@@ -1019,7 +1019,7 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 	}
 	$colors = [ 'primary', 'surface', 'page_background', 'text', 'border' ];
 	foreach ( $colors as $c ) {
-		$val = sanitize_hex_color( wp_unslash( $_POST['xpressui_overlay_theme']['colors'][ $c ] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$val = sanitize_hex_color( wp_unslash( (string) ( $_POST['xpressui_overlay_theme']['colors'][ $c ] ?? '' ) ) );
 		if ( $val !== '' && $val !== null ) {
 			$theme_overlay['colors'][ $c ] = $val;
 		} else {
@@ -1043,7 +1043,7 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 		unset( $overlay['theme'] );
 	}
 
-	$bg_image_url = esc_url_raw( wp_unslash( $_POST['xpressui_overlay_project_background_image_url'] ?? '' ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$bg_image_url = esc_url_raw( wp_unslash( (string) ( $_POST['xpressui_overlay_project_background_image_url'] ?? '' ) ) );
 	if ( $bg_image_url !== '' ) {
 		$overlay['project_background_image_url'] = $bg_image_url;
 	} else {

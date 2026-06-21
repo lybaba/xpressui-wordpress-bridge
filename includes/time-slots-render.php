@@ -172,7 +172,7 @@ function xpressui_render_time_slots_list( $catalog, $detail_base = '' ) {
 	$days   = ( isset( $catalog['calendar_days'] ) && is_array( $catalog['calendar_days'] ) ) ? $catalog['calendar_days'] : [];
 
 	ob_start();
-	echo xpressui_render_time_slots_grid_open( $catalog ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- internal markup, escaped at source.
+	echo wp_kses( xpressui_render_time_slots_grid_open( $catalog ), xpressui_get_shell_allowed_html() );
 	?>
 	<div class="template-time-slot-date-anchors" aria-hidden="true">
 		<?php foreach ( $days as $day ) : ?>
@@ -231,7 +231,7 @@ function xpressui_render_time_slots_list( $catalog, $detail_base = '' ) {
 					<div class="template-time-slot-day-column" data-time-slot-date="<?php echo esc_attr( (string) ( $day['date'] ?? '' ) ); ?>" data-time-slot-window-day>
 						<?php if ( ! empty( $slots ) ) : ?>
 							<?php foreach ( array_slice( $slots, 0, 4 ) as $slot ) : ?>
-								<?php echo xpressui_render_time_slot_pill( $slot ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source. ?>
+								<?php echo wp_kses( xpressui_render_time_slot_pill( $slot ), xpressui_get_shell_allowed_html() ); ?>
 							<?php endforeach; ?>
 							<?php if ( count( $slots ) > 4 ) : ?><span class="template-time-slot-more">+<?php echo esc_html( (string) ( count( $slots ) - 4 ) ); ?></span><?php endif; ?>
 						<?php else : ?>
@@ -241,7 +241,7 @@ function xpressui_render_time_slots_list( $catalog, $detail_base = '' ) {
 					<?php endforeach; ?>
 				</div>
 				<?php if ( count( $day_slots ) > 5 ) : ?>
-					<?php echo xpressui_render_time_slots_window_nav(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source. ?>
+					<?php echo wp_kses( xpressui_render_time_slots_window_nav(), xpressui_get_shell_allowed_html() ); ?>
 				<?php endif; ?>
 			</div>
 		</article>
@@ -269,7 +269,7 @@ function xpressui_render_time_slots_resource_detail( $catalog, $resource ) {
 	$image     = trim( (string) ( $resource['image_url'] ?? '' ) );
 
 	ob_start();
-	echo xpressui_render_time_slots_grid_open( $catalog, 'template-time-slot-availability-list' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source.
+	echo wp_kses( xpressui_render_time_slots_grid_open( $catalog, 'template-time-slot-availability-list' ), xpressui_get_shell_allowed_html() );
 	?>
 	<section class="template-time-slot-resource-detail">
 		<div class="template-time-slot-resource-detail-layout">
@@ -294,7 +294,7 @@ function xpressui_render_time_slots_resource_detail( $catalog, $resource ) {
 						<div class="template-time-slot-detail-pills">
 							<?php if ( ! empty( $slots ) ) : ?>
 								<?php foreach ( $slots as $slot ) : ?>
-									<?php echo xpressui_render_time_slot_pill( $slot ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source. ?>
+									<?php echo wp_kses( xpressui_render_time_slot_pill( $slot ), xpressui_get_shell_allowed_html() ); ?>
 								<?php endforeach; ?>
 							<?php else : ?>
 							<span class="template-time-slot-empty">-</span>
@@ -304,7 +304,7 @@ function xpressui_render_time_slots_resource_detail( $catalog, $resource ) {
 					<?php endforeach; ?>
 				</div>
 				<?php if ( count( $day_slots ) > 5 ) : ?>
-					<?php echo xpressui_render_time_slots_window_nav(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source. ?>
+					<?php echo wp_kses( xpressui_render_time_slots_window_nav(), xpressui_get_shell_allowed_html() ); ?>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -530,7 +530,7 @@ function xpressui_render_time_slots_embed( $catalog, $link_id, $grid_url, $check
 				data-time-slot-catalog-return-url="<?php echo esc_url( $grid_url ); ?>"
 			>
 				<section class="template-catalog-slots-body">
-					<?php echo $inner; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped at source. ?>
+					<?php echo wp_kses( $inner, xpressui_get_shell_allowed_html() ); ?>
 				</section>
 			</div>
 		</main>

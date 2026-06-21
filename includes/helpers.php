@@ -750,11 +750,25 @@ function xpressui_get_workflow_manifest_meta( $slug ) {
 	$needs_project_name  = empty( $entry['projectName'] );
 
 	if ( ! $needs_listing_group && ! $needs_listing_title && ! $needs_project_name ) {
+		if ( ! empty( $entry['isBundled'] ) || xpressui_is_bundled_workflow( $slug ) ) {
+			if ( ! xpressui_is_saas_connected() ) {
+				$entry['runtimeTier'] = 'trial';
+			} else {
+				$manifest = xpressui_load_bundled_workflow_manifest( $slug );
+				if ( ! empty( $manifest ) ) {
+					$runtime_requirements = is_array( $manifest['runtimeRequirements'] ?? null ) ? $manifest['runtimeRequirements'] : [];
+					$manifest_tier = sanitize_key( (string) ( $runtime_requirements['tier'] ?? $manifest['runtimeTier'] ?? 'light' ) );
+					$entry['runtimeTier'] = $manifest_tier !== 'trial' ? $manifest_tier : 'light';
+				} else {
+					$entry['runtimeTier'] = 'light';
+				}
+			}
+		}
 		return $entry;
 	}
 
 	$manifest = [];
-	if ( ! empty( $entry['isBundled'] ) ) {
+	if ( ! empty( $entry['isBundled'] ) || xpressui_is_bundled_workflow( $slug ) ) {
 		$manifest = xpressui_load_bundled_workflow_manifest( $slug );
 	}
 
@@ -763,6 +777,11 @@ function xpressui_get_workflow_manifest_meta( $slug ) {
 	}
 
 	if ( empty( $manifest ) ) {
+		if ( ! empty( $entry['isBundled'] ) || xpressui_is_bundled_workflow( $slug ) ) {
+			if ( ! xpressui_is_saas_connected() ) {
+				$entry['runtimeTier'] = 'trial';
+			}
+		}
 		return $entry;
 	}
 
@@ -775,6 +794,16 @@ function xpressui_get_workflow_manifest_meta( $slug ) {
 	}
 	if ( $needs_project_name && ! empty( $manifest['projectName'] ) ) {
 		$entry['projectName'] = sanitize_text_field( (string) $manifest['projectName'] );
+	}
+
+	if ( ! empty( $entry['isBundled'] ) || xpressui_is_bundled_workflow( $slug ) ) {
+		if ( ! xpressui_is_saas_connected() ) {
+			$entry['runtimeTier'] = 'trial';
+		} else {
+			$runtime_requirements = is_array( $manifest['runtimeRequirements'] ?? null ) ? $manifest['runtimeRequirements'] : [];
+			$manifest_tier = sanitize_key( (string) ( $runtime_requirements['tier'] ?? $manifest['runtimeTier'] ?? 'light' ) );
+			$entry['runtimeTier'] = $manifest_tier !== 'trial' ? $manifest_tier : 'light';
+		}
 	}
 
 	return $entry;
@@ -799,7 +828,7 @@ function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
 		'projectName'   => sanitize_text_field( (string) ( $manifest['projectName'] ?? '' ) ),
 		'generatedAt'   => sanitize_text_field( (string) ( $manifest['generatedAt'] ?? '' ) ),
 		'runtimeVersion' => sanitize_text_field( (string) ( $manifest['xpressui']['version'] ?? '' ) ),
-		'runtimeTier'   => sanitize_key( (string) ( $runtime_requirements['tier'] ?? '' ) ),
+		'runtimeTier'   => sanitize_key( (string) ( $runtime_requirements['tier'] ?? $manifest['runtimeTier'] ?? '' ) ),
 		'bridgeMode'    => sanitize_key( (string) ( $compatibility['bridgeMode'] ?? '' ) ),
 		'shortcodeMode' => sanitize_key( (string) ( $compatibility['shortcodeMode'] ?? '' ) ),
 		'templateProfile' => sanitize_key( (string) ( $compatibility['templateProfile'] ?? '' ) ),
@@ -1586,18 +1615,20 @@ function xpressui_store_config_snapshot( $project_id, $project_slug, $config_ver
 	return $normalized;
 }
 
-function xpressui_get_config_snapshot( $post_id ) {
-	$json = get_post_meta( $post_id, '_xpressui_project_config_json', true );
-	if ( is_string( $json ) && trim( $json ) !== '' ) {
-		$stored = json_decode( $json, true );
-		if ( is_array( $stored ) ) {
-			return $stored;
+function xpressui_get_config_snapshot( $post_id, $project_slug = '' ) {
+	if ( $post_id > 0 ) {
+		$json = get_post_meta( $post_id, '_xpressui_project_config_json', true );
+		if ( is_string( $json ) && trim( $json ) !== '' ) {
+			$stored = json_decode( $json, true );
+			if ( is_array( $stored ) ) {
+				return $stored;
+			}
 		}
 	}
 	$registry       = get_option( 'xpressui_project_config_registry', [] );
-	$project_id     = (string) get_post_meta( $post_id, '_xpressui_project_id', true );
-	$project_slug   = (string) get_post_meta( $post_id, '_xpressui_project_slug', true );
-	$config_version = (string) get_post_meta( $post_id, '_xpressui_project_config_version', true );
+	$project_id     = $post_id > 0 ? (string) get_post_meta( $post_id, '_xpressui_project_id', true ) : '';
+	$project_slug   = $project_slug !== '' ? $project_slug : ( $post_id > 0 ? (string) get_post_meta( $post_id, '_xpressui_project_slug', true ) : '' );
+	$config_version = $post_id > 0 ? (string) get_post_meta( $post_id, '_xpressui_project_config_version', true ) : '';
 
 	$key   = $config_version !== ''
 		? 'config:' . $config_version
@@ -3083,33 +3114,26 @@ function xpressui_get_submission_console_project_id( $slug ): string {
 		return '';
 	}
 
-	$query = new WP_Query( [
+	$posts = get_posts( [
 		'post_type'      => 'xpressui_submission',
 		'post_status'    => 'any',
-		'posts_per_page' => 1,
+		'posts_per_page' => 250,
 		'orderby'        => 'date',
 		'order'          => 'DESC',
-		'fields'         => 'ids',
-		'no_found_rows'  => true,
-		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-		'meta_query'     => [
-			'relation' => 'AND',
-			[
-				'key'   => '_xpressui_project_slug',
-				'value' => $slug,
-			],
-			[
-				'key'     => '_xpressui_project_id',
-				'compare' => 'EXISTS',
-			],
-		],
 	] );
 
-	if ( empty( $query->posts ) ) {
-		return '';
+	if ( is_array( $posts ) ) {
+		foreach ( $posts as $post ) {
+			if ( get_post_meta( $post->ID, '_xpressui_project_slug', true ) === $slug ) {
+				$pid = get_post_meta( $post->ID, '_xpressui_project_id', true );
+				if ( ! empty( $pid ) ) {
+					return (string) $pid;
+				}
+			}
+		}
 	}
 
-	return (string) get_post_meta( (int) $query->posts[0], '_xpressui_project_id', true );
+	return '';
 }
 
 /**
@@ -3135,3 +3159,5 @@ function xpressui_workflow_is_local_only( $slug ): bool {
 
 	return '' === xpressui_get_workflow_console_project_id( $slug );
 }
+
+

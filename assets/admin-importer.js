@@ -58,7 +58,8 @@
 				$( '#xpui-wiz-next' ).show().html( i18n.next + arrowIcon ).prop( 'disabled', ! sourceFormVal );
 			} else if ( currentStep === 2 ) {
 				$( '#xpui-wiz-prev' ).show();
-				$( '#xpui-wiz-next' ).show().html( i18n.convertSync + arrowIcon ).prop( 'disabled', false );
+				var btnText = isSaasConnected ? i18n.convertSync : i18n.convertSave;
+				$( '#xpui-wiz-next' ).show().html( btnText + arrowIcon ).prop( 'disabled', false );
 			} else {
 				// Step 3 (Processing) and Step 4 (Finish) hide the footer buttons row
 				$( '#xpui-wiz-buttons-row' ).hide();

@@ -93,7 +93,7 @@ function xpressui_render_builder_block_callback( $attributes ) {
  * @param \Elementor\Widgets_Manager $widgets_manager Elementor widgets manager.
  */
 function xpressui_register_elementor_widget_class( $widgets_manager ) {
-	class Elementor_XPressUI_Widget extends \Elementor\Widget_Base {
+	class XPressUI_Elementor_Widget extends \Elementor\Widget_Base {
 		public function get_name() {
 			return 'xpressui-workflow-embed';
 		}
@@ -164,5 +164,5 @@ function xpressui_register_elementor_widget_class( $widgets_manager ) {
 		}
 	}
 
-	$widgets_manager->register( new Elementor_XPressUI_Widget() );
+	$widgets_manager->register( new XPressUI_Elementor_Widget() );
 }

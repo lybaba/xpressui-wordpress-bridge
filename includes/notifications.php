@@ -408,6 +408,10 @@ function xpressui_notification_skip_fields() {
  * @return string HTML email body.
  */
 function xpressui_build_notification_body( $post_id, $project_slug, $payload, $include_admin_link = true ) {
+	$post_id     = (int) $post_id;
+	if ( $post_id <= 0 ) {
+		$include_admin_link = false;
+	}
 	$site_name   = esc_html( get_bloginfo( 'name' ) );
 	$date        = esc_html( wp_date( 'Y-m-d H:i T' ) );
 	$admin_url   = esc_url( add_query_arg( [ 'post' => $post_id, 'action' => 'edit' ], admin_url( 'post.php' ) ) );
@@ -415,7 +419,7 @@ function xpressui_build_notification_body( $post_id, $project_slug, $payload, $i
 	$skip        = xpressui_notification_skip_fields();
 
 	// Build label index from the config snapshot attached to this submission.
-	$config      = xpressui_get_config_snapshot( $post_id );
+	$config      = xpressui_get_config_snapshot( $post_id, $project_slug );
 	$field_index = ! empty( $config ) ? xpressui_build_config_field_index( $config ) : [];
 
 	// ── Group payload keys by section ───────────────────────────────────────

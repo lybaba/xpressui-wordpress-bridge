@@ -28,6 +28,9 @@ add_action( 'template_redirect', 'xpressui_pro_handle_status_route', 1 );
 
 function xpressui_pro_generate_status_token( int $post_id, string $project_slug ): void {
 	unset( $project_slug );
+	if ( $post_id <= 0 ) {
+		return;
+	}
 	if ( '' !== (string) get_post_meta( $post_id, '_xpressui_status_token', true ) ) {
 		return;
 	}

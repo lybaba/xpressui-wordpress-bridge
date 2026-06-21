@@ -220,7 +220,7 @@ function xpressui_render_workflows_page() {
 
 	echo '<div class="wrap xpressui-wrap xpressui-wrap--workflows">';
 	echo '<h1 class="wp-heading-inline">' . esc_html__( 'Workflows', 'xpressui-bridge' ) . '</h1>';
-	if ( 'list' === $current_tab && xpressui_pro_is_license_active() ) {
+	if ( 'list' === $current_tab && xpressui_is_saas_connected() ) {
 		echo '<button type="button" id="xpressui-global-sync-btn" class="page-title-action button button-primary" style="margin-left: 10px;">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
 	}
 	echo '<hr class="wp-header-end">';
@@ -234,7 +234,7 @@ function xpressui_render_workflows_page() {
 	// Tabbed navigation
 	echo '<h2 class="nav-tab-wrapper" style="margin-bottom: 20px;">';
 	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=list' ) ) . '" class="nav-tab ' . ( 'list' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Installed Workflows', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Form Importer', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="' . esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) ) . '" class="nav-tab ' . ( 'import' === $current_tab ? 'nav-tab-active' : '' ) . '">' . esc_html__( 'Import', 'xpressui-bridge' ) . '</a>';
 	echo '</h2>';
 
 	if ( 'import' === $current_tab ) {
@@ -252,7 +252,7 @@ function xpressui_render_workflows_page() {
 		$inbox_by_slug[ $row['projectSlug'] ] = $row;
 	}
 
-	if ( ! xpressui_pro_is_license_active() ) {
+	if ( ! xpressui_is_saas_connected() ) {
 		echo '<div class="notice notice-warning inline" style="margin-top: 15px; max-width: 900px;"><p>';
 		printf(
 			/* translators: %s: Settings page URL */
@@ -270,19 +270,33 @@ function xpressui_render_workflows_page() {
 	// --- List controls: search → sort → paginate -----------------------------
 	// Query args (all on the Installed Workflows tab):
 	//   wf_s       search string (title or slug substring)
-	//   wf_orderby title | submissions | version  (whitelisted)
+	//   wf_orderby title | submissions  (whitelisted)
 	//   wf_order   asc | desc
 	//   wf_paged   1-based page number
+	//   wf_status  all | active | archived
+	$archived_slugs = get_option( 'xpressui_archived_workflows', [] );
+	if ( ! is_array( $archived_slugs ) ) {
+		$archived_slugs = [];
+	}
+	$all_count      = count( $installed_slugs );
+	$archived_count = count( array_intersect( $installed_slugs, $archived_slugs ) );
+	$active_count   = $all_count - $archived_count;
+
+	$status_filter  = isset( $_GET['wf_status'] ) ? sanitize_key( wp_unslash( $_GET['wf_status'] ) ) : 'active';
+	if ( ! in_array( $status_filter, [ 'all', 'active', 'archived' ], true ) ) {
+		$status_filter = 'active';
+	}
+
 	$wf_search  = isset( $_GET['wf_s'] ) ? sanitize_text_field( wp_unslash( (string) $_GET['wf_s'] ) ) : '';
 	$wf_orderby = isset( $_GET['wf_orderby'] ) ? sanitize_key( wp_unslash( (string) $_GET['wf_orderby'] ) ) : '';
-	if ( ! in_array( $wf_orderby, [ 'title', 'submissions', 'version' ], true ) ) {
+	if ( ! in_array( $wf_orderby, [ 'title', 'submissions' ], true ) ) {
 		$wf_orderby = '';
 	}
 	$wf_order = isset( $_GET['wf_order'] ) ? strtolower( sanitize_key( wp_unslash( (string) $_GET['wf_order'] ) ) ) : 'asc';
 	if ( ! in_array( $wf_order, [ 'asc', 'desc' ], true ) ) {
 		$wf_order = 'asc';
 	}
-	$wf_paged   = isset( $_GET['wf_paged'] ) ? max( 1, absint( $_GET['wf_paged'] ) ) : 1;
+	$wf_paged   = isset( $_REQUEST['wf_paged'] ) ? max( 1, absint( $_REQUEST['wf_paged'] ) ) : 1;
 	$wf_per_page = 20;
 
 	// Build a metadata row for every installed workflow (display name, submission
@@ -302,6 +316,20 @@ function xpressui_render_workflows_page() {
 			'submissions' => $submissions,
 		];
 	}
+
+	// Filter based on status filter first
+	$workflow_rows = array_values( array_filter(
+		$workflow_rows,
+		function ( $row ) use ( $status_filter, $archived_slugs ) {
+			$is_archived = in_array( $row['slug'], $archived_slugs, true );
+			if ( 'archived' === $status_filter ) {
+				return $is_archived;
+			} elseif ( 'active' === $status_filter ) {
+				return ! $is_archived;
+			}
+			return true;
+		}
+	) );
 
 	// Filter (search) on the full set, before sort + paginate.
 	if ( $wf_search !== '' ) {
@@ -323,9 +351,6 @@ function xpressui_render_workflows_page() {
 			function ( $a, $b ) use ( $wf_orderby ) {
 				if ( 'submissions' === $wf_orderby ) {
 					return $a['submissions'] <=> $b['submissions'];
-				}
-				if ( 'version' === $wf_orderby ) {
-					return version_compare( (string) $a['version'], (string) $b['version'] );
 				}
 				return strcasecmp( (string) $a['title'], (string) $b['title'] );
 			}
@@ -349,6 +374,9 @@ function xpressui_render_workflows_page() {
 		'page'      => 'xpressui-bridge',
 		'tab'       => 'list',
 	];
+	if ( $status_filter !== 'active' ) {
+		$wf_base_args['wf_status'] = $status_filter;
+	}
 	if ( $wf_search !== '' ) {
 		$wf_base_args['wf_s'] = $wf_search;
 	}
@@ -378,13 +406,12 @@ function xpressui_render_workflows_page() {
 		echo '</th>';
 	};
 
-	$render_workflow_table = function ( array $slugs ) use ( $inbox_by_slug, $render_sortable_th ) {
+	$render_workflow_table = function ( array $slugs ) use ( $inbox_by_slug, $render_sortable_th, $status_filter ) {
 		echo '<table class="wp-list-table widefat fixed striped xpressui-table xpressui-table--workflows">';
 		echo '<thead><tr>';
+		echo '<th scope="col" id="cb" class="manage-column column-cb check-column" style="width: 30px; padding: 8px 10px; vertical-align: middle;"><input id="cb-select-all-1" type="checkbox" /></th>';
 		$render_sortable_th( 'title', __( 'Workflow', 'xpressui-bridge' ), '', 'column-title column-primary' );
 		$render_sortable_th( 'submissions', __( 'Submissions', 'xpressui-bridge' ), 'width: 150px;' );
-		$render_sortable_th( 'version', __( 'Version', 'xpressui-bridge' ), 'width: 100px;' );
-		echo '<th style="font-weight: 700; width: 150px;">' . esc_html__( 'Steps / Fields', 'xpressui-bridge' ) . '</th>';
 		echo '</tr></thead><tbody>';
 		foreach ( $slugs as $slug ) {
 			$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
@@ -424,6 +451,7 @@ function xpressui_render_workflows_page() {
 			);
 			
 			echo '<tr class="xpressui-workflow-row" data-slug="' . esc_attr( $slug ) . '">';
+			echo '<th scope="row" class="check-column" style="padding: 8px 10px; vertical-align: middle;"><input id="cb-select-' . esc_attr( $slug ) . '" type="checkbox" name="xpressui_workflow_checkboxes[]" value="' . esc_attr( $slug ) . '" /></th>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			$display_name = $project_name !== '' ? $project_name : $slug;
 			
@@ -464,11 +492,31 @@ function xpressui_render_workflows_page() {
 			// "Create on Console" — only for not-yet-synced (local-only) workflows, and
 			// only when an active Console API token is configured. Wired to AJAX via
 			// assets/admin-workflows.js (nonce in window.xpressuiBridgeAdmin).
-			if ( xpressui_pro_is_license_active() && xpressui_workflow_is_local_only( $slug ) ) {
+			if ( xpressui_is_saas_connected() && xpressui_workflow_is_local_only( $slug ) ) {
 				$actions_html[] = '<span class="xpressui-create-on-console"><a href="#" class="xpressui-create-on-console-link" data-slug="' . esc_attr( $slug ) . '">' . esc_html__( 'Create on Console', 'xpressui-bridge' ) . '</a></span>';
+			}
+			if ( xpressui_is_saas_connected() && ! xpressui_workflow_is_local_only( $slug ) ) {
+				$sync_link = wp_nonce_url(
+					add_query_arg( [ 'xpressui_action' => 'sync_workflow_item', 'xpressui_slug' => $slug ] ),
+					'xpressui_sync_workflow_' . $slug
+				);
+				$actions_html[] = '<span class="xpressui-sync-from-console"><a href="' . esc_url( $sync_link ) . '">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</a></span>';
 			}
 			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
 				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
+			}
+			if ( 'archived' !== $status_filter ) {
+				$archive_link = wp_nonce_url(
+					add_query_arg( [ 'xpressui_action' => 'archive_workflow_item', 'xpressui_slug' => $slug ] ),
+					'xpressui_archive_workflow_' . $slug
+				);
+				$actions_html[] = '<span class="archive"><a href="' . esc_url( $archive_link ) . '" style="color: #b32d2e;">' . esc_html__( 'Archive', 'xpressui-bridge' ) . '</a></span>';
+			} else {
+				$restore_link = wp_nonce_url(
+					add_query_arg( [ 'xpressui_action' => 'restore_workflow_item', 'xpressui_slug' => $slug ] ),
+					'xpressui_restore_workflow_' . $slug
+				);
+				$actions_html[] = '<span class="restore"><a href="' . esc_url( $restore_link ) . '">' . esc_html__( 'Restore', 'xpressui-bridge' ) . '</a></span>';
 			}
 			echo wp_kses_post( implode( ' | ', $actions_html ) );
 			echo '</div>';
@@ -490,25 +538,6 @@ function xpressui_render_workflows_page() {
 			}
 			echo '</td>';
 			
-			// Version Column
-			$version = ! empty( $manifest_meta['runtimeVersion'] ) ? sanitize_text_field( $manifest_meta['runtimeVersion'] ) : '1.0.0';
-			echo '<td style="vertical-align: middle;"><code>' . esc_html( $version ) . '</code></td>';
-			
-			// Steps / Fields Column
-			$steps  = isset( $manifest_meta['stepCount'] ) ? (int) $manifest_meta['stepCount'] : 0;
-			$fields = isset( $manifest_meta['fieldCount'] ) ? (int) $manifest_meta['fieldCount'] : 0;
-			echo '<td style="vertical-align: middle; font-size: 13px;">';
-			if ( $steps > 0 || $fields > 0 ) {
-				/* translators: %d: number of steps in the workflow */
-				$steps_text  = sprintf( _n( '%d step', '%d steps', $steps, 'xpressui-bridge' ), $steps );
-				/* translators: %d: number of fields in the workflow */
-				$fields_text = sprintf( _n( '%d field', '%d fields', $fields, 'xpressui-bridge' ), $fields );
-				echo esc_html( $steps_text . ', ' . $fields_text );
-			} else {
-				echo '<span style="color: #888; font-style: italic;">&mdash;</span>';
-			}
-			echo '</td>';
-			
 			echo '</tr>';
 		}
 		echo '</tbody></table>';
@@ -522,6 +551,25 @@ function xpressui_render_workflows_page() {
 			return;
 		}
 		echo '<div class="tablenav ' . esc_attr( $position ) . '">';
+
+		// Bulk actions dropdown inside .tablenav
+		$select_id = 'top' === $position ? 'bulk-action-selector-top' : 'bulk-action-selector-bottom';
+		$select_name = 'top' === $position ? 'xpressui_bulk_action_select' : 'xpressui_bulk_action_select2';
+		$submit_id = 'top' === $position ? 'doaction' : 'doaction2';
+
+		echo '<div class="alignleft actions bulkactions">';
+		echo '<label for="' . esc_attr( $select_id ) . '" class="screen-reader-text">' . esc_html__( 'Select bulk action', 'xpressui-bridge' ) . '</label>';
+		echo '<select name="' . esc_attr( $select_name ) . '" id="' . esc_attr( $select_id ) . '">';
+		echo '<option value="-1">' . esc_html__( 'Bulk actions', 'xpressui-bridge' ) . '</option>';
+		if ( xpressui_is_saas_connected() ) {
+			echo '<option value="sync">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</option>';
+		}
+		echo '<option value="archive">' . esc_html__( 'Archive', 'xpressui-bridge' ) . '</option>';
+		echo '<option value="restore">' . esc_html__( 'Restore', 'xpressui-bridge' ) . '</option>';
+		echo '</select>';
+		echo '<input type="submit" id="' . esc_attr( $submit_id ) . '" class="button action" value="' . esc_attr__( 'Apply', 'xpressui-bridge' ) . '" name="xpressui_bulk_workflows_action" />';
+		echo '</div>';
+
 		echo '<div class="tablenav-pages">';
 		echo '<span class="displaying-num">' . esc_html( sprintf(
 			/* translators: %s: number of workflow items */
@@ -529,31 +577,96 @@ function xpressui_render_workflows_page() {
 			number_format_i18n( $total_items )
 		) ) . '</span>';
 		if ( $total_pages > 1 ) {
-			$links = paginate_links(
-				[
-					'base'      => add_query_arg( 'wf_paged', '%#%', $wf_base_url ),
-					'format'    => '',
-					'prev_text' => '&laquo;',
-					'next_text' => '&raquo;',
-					'total'     => $total_pages,
-					'current'   => $wf_paged,
-					'type'      => 'array',
-				]
-			);
-			if ( $links ) {
-				echo '<span class="pagination-links">' . wp_kses_post( implode( "\n", $links ) ) . '</span>';
+			$disable_first = $disable_prev = $disable_next = $disable_last = false;
+			if ( $wf_paged === 1 ) {
+				$disable_first = true;
+				$disable_prev  = true;
 			}
+			if ( $wf_paged === $total_pages ) {
+				$disable_next = true;
+				$disable_last = true;
+			}
+
+			$first_page_url = add_query_arg( 'wf_paged', 1, $wf_base_url );
+			$prev_page_url  = add_query_arg( 'wf_paged', max( 1, $wf_paged - 1 ), $wf_base_url );
+			$next_page_url  = add_query_arg( 'wf_paged', min( $total_pages, $wf_paged + 1 ), $wf_base_url );
+			$last_page_url  = add_query_arg( 'wf_paged', $total_pages, $wf_base_url );
+
+			echo '<span class="pagination-links">';
+			if ( $disable_first ) {
+				echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">&laquo;</span> ';
+			} else {
+				echo '<a class="first-page button" title="' . esc_attr__( 'Go to the first page', 'xpressui-bridge' ) . '" href="' . esc_url( $first_page_url ) . '">&laquo;</a> ';
+			}
+
+			if ( $disable_prev ) {
+				echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">&lsaquo;</span> ';
+			} else {
+				echo '<a class="prev-page button" title="' . esc_attr__( 'Go to the previous page', 'xpressui-bridge' ) . '" href="' . esc_url( $prev_page_url ) . '">&lsaquo;</a> ';
+			}
+
+			echo '<span class="paging-input">';
+			echo '<span class="tablenav-paging-text">';
+			echo '<label for="' . esc_attr( $select_id ) . '-current-page" class="screen-reader-text">' . esc_html__( 'Current Page', 'xpressui-bridge' ) . '</label>';
+			echo '<input class="current-page" id="' . esc_attr( $select_id ) . '-current-page" type="text" name="wf_paged" value="' . esc_attr( (string) $wf_paged ) . '" size="' . esc_attr( (string) strlen( (string) $total_pages ) ) . '" aria-describedby="table-paging" /> ';
+			echo esc_html__( 'of', 'xpressui-bridge' ) . ' <span class="total-pages">' . esc_html( (string) $total_pages ) . '</span>';
+			echo '</span>';
+			echo '</span> ';
+
+			if ( $disable_next ) {
+				echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">&rsaquo;</span> ';
+			} else {
+				echo '<a class="next-page button" title="' . esc_attr__( 'Go to the next page', 'xpressui-bridge' ) . '" href="' . esc_url( $next_page_url ) . '">&rsaquo;</a> ';
+			}
+
+			if ( $disable_last ) {
+				echo '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">&raquo;</span>';
+			} else {
+				echo '<a class="last-page button" title="' . esc_attr__( 'Go to the last page', 'xpressui-bridge' ) . '" href="' . esc_url( $last_page_url ) . '">&raquo;</a>';
+			}
+			echo '</span>';
 		}
 		echo '</div>';
 		echo '<br class="clear">';
 		echo '</div>';
 	};
 
+	// --- Subsubsub filters ----------------------------------------------------
+	$all_link_args = [
+		'post_type' => 'xpressui_submission',
+		'page'      => 'xpressui-bridge',
+		'tab'       => 'list',
+		'wf_status' => 'all',
+	];
+	if ( $wf_search !== '' ) {
+		$all_link_args['wf_s'] = $wf_search;
+	}
+	if ( $wf_orderby !== '' ) {
+		$all_link_args['wf_orderby'] = $wf_orderby;
+		$all_link_args['wf_order']   = $wf_order;
+	}
+	$all_link = add_query_arg( $all_link_args, admin_url( 'edit.php' ) );
+
+	$active_link_args = $all_link_args;
+	$active_link_args['wf_status'] = 'active';
+	$active_link = add_query_arg( $active_link_args, admin_url( 'edit.php' ) );
+
+	$archived_link_args = $all_link_args;
+	$archived_link_args['wf_status'] = 'archived';
+	$archived_link = add_query_arg( $archived_link_args, admin_url( 'edit.php' ) );
+
+	echo '<ul class="subsubsub">';
+	echo '<li class="all"><a href="' . esc_url( $all_link ) . '" class="' . ( 'all' === $status_filter ? 'current' : '' ) . '">' . esc_html__( 'All', 'xpressui-bridge' ) . ' <span class="count">(' . (int) $all_count . ')</span></a> |</li>';
+	echo '<li class="active"><a href="' . esc_url( $active_link ) . '" class="' . ( 'active' === $status_filter ? 'current' : '' ) . '">' . esc_html__( 'Active', 'xpressui-bridge' ) . ' <span class="count">(' . (int) $active_count . ')</span></a> |</li>';
+	echo '<li class="archived"><a href="' . esc_url( $archived_link ) . '" class="' . ( 'archived' === $status_filter ? 'current' : '' ) . '">' . esc_html__( 'Archived', 'xpressui-bridge' ) . ' <span class="count">(' . (int) $archived_count . ')</span></a></li>';
+	echo '</ul>';
+
 	// --- Search box (WP .search-box) -----------------------------------------
 	echo '<form method="get" class="search-form" style="margin: 12px 0;">';
 	echo '<input type="hidden" name="post_type" value="xpressui_submission" />';
 	echo '<input type="hidden" name="page" value="xpressui-bridge" />';
 	echo '<input type="hidden" name="tab" value="list" />';
+	echo '<input type="hidden" name="wf_status" value="' . esc_attr( $status_filter ) . '" />';
 	if ( $wf_orderby !== '' ) {
 		echo '<input type="hidden" name="wf_orderby" value="' . esc_attr( $wf_orderby ) . '" />';
 		echo '<input type="hidden" name="wf_order" value="' . esc_attr( $wf_order ) . '" />';
@@ -588,13 +701,16 @@ function xpressui_render_workflows_page() {
 	} elseif ( empty( $visible_installed_slugs ) ) {
 		echo '<div class="card xpressui-admin-card xpressui-empty-state"><p class="xpressui-empty-state__title">' . esc_html__( 'No workflows match your search.', 'xpressui-bridge' ) . '</p></div>';
 	} else {
+		echo '<form id="xpressui-workflows-form" method="post">';
+		wp_nonce_field( 'xpressui_bulk_workflows_nonce_action', 'xpressui_bulk_workflows_nonce' );
 		$render_wf_pagination( 'top' );
 		$render_workflow_table( $visible_installed_slugs );
 		$render_wf_pagination( 'bottom' );
+		echo '</form>';
 	}
 
 	// Inline javascript to handle the global sync button
-	if ( xpressui_pro_is_license_active() ) {
+	if ( xpressui_is_saas_connected() ) {
 		$nonce = wp_create_nonce( 'xpressui_console_sync_nonce' );
 		$sync_script = sprintf(
 			<<<'JS'
@@ -1158,11 +1274,16 @@ function xpressui_render_settings_page() {
 	echo '<h2>' . esc_html__( 'Console Connection', 'xpressui-bridge' ) . '</h2>';
 	echo '<p class="description">' . esc_html__( 'Connect your site to the IntakeFlow Console to synchronize workflows.', 'xpressui-bridge' ) . '</p>';
 
+	// Generate a random state token to secure connection redirects against CSRF.
+	$connect_state = wp_generate_password( 24, false );
+	set_transient( 'xpressui_connect_state', $connect_state, 3600 );
+
 	$conn = xpressui_get_console_connection();
 	$console_url = ! empty( $conn['apiUrl'] ) ? $conn['apiUrl'] : 'https://app.intakeflow.dev';
 	$connect_url = trailingslashit( $console_url ) . 'wordpress-connect?' . http_build_query([
 		'site_url'   => site_url(),
 		'site_name'  => get_bloginfo( 'name' ),
+		'state'      => $connect_state,
 		'return_url' => admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' )
 	]);
 
@@ -1382,7 +1503,7 @@ function xpressui_render_workflow_settings_page() {
 	}
 
 	echo '<div class="xpressui-sticky-actions">';
-	echo '<span class="' . esc_attr( $status_class ) . '" data-xpressui-dirty-status' . $extra_attrs . '>' . esc_html( $status_text ) . '</span>';
+	echo wp_kses( '<span class="' . esc_attr( $status_class ) . '" data-xpressui-dirty-status' . $extra_attrs . '>' . esc_html( $status_text ) . '</span>', xpressui_get_shell_allowed_html() );
 	echo '<div class="xpressui-sticky-actions-buttons">';
 	submit_button( __( 'Save Customizations', 'xpressui-bridge' ), 'primary', 'xpressui_save_workflow_settings', false );
 	echo '</div>';
@@ -1463,7 +1584,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 	echo '</div>';
 
-	if ( xpressui_pro_is_license_active() ) {
+	if ( xpressui_is_saas_connected() ) {
 		echo '<div style="margin: 20px 0; display: flex; align-items: center; gap: 10px;">';
 		echo '<button type="button" id="xpressui-single-sync-btn" class="button button-primary">' . esc_html__( 'Sync from Console', 'xpressui-bridge' ) . '</button>';
 		echo '</div>';
@@ -1573,7 +1694,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 		);
 
 		$edit_link_html = '';
-		if ( xpressui_pro_is_license_active() ) {
+		if ( xpressui_is_saas_connected() ) {
 			$conn = xpressui_get_console_connection();
 			$link_edit_url = xpressui_console_hosted_link_url( (string) ( $link['id'] ?? '' ) );
 			$edit_link_html = ' <a href="' . esc_url( $link_edit_url ) . '" target="_blank" rel="noopener" style="text-decoration:none;" title="' . esc_attr__( 'Edit on IntakeFlow', 'xpressui-bridge' ) . '"><span class="dashicons dashicons-external" style="font-size: 14px; width: 14px; height: 14px; vertical-align: middle; margin-left: 4px; color: #2271b1;"></span></a>';
@@ -1614,7 +1735,7 @@ function xpressui_render_workflow_detail_page( $slug ) {
 
 	echo '</div>'; // .wrap
 
-	if ( xpressui_pro_is_license_active() ) {
+	if ( xpressui_is_saas_connected() ) {
 		$single_sync_script = sprintf(
 			<<<'JS'
 (function () {
@@ -1743,3 +1864,195 @@ function xpressui_handle_save_workflow_settings() {
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_save_workflow_settings' );
+
+/**
+ * Handles workflow bulk and individual actions (Archive, Restore, Sync).
+ */
+function xpressui_handle_workflow_bulk_actions() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	// 1) Individual actions via GET
+	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( wp_unslash( $_GET['xpressui_action'] ) ) : '';
+	$slug   = isset( $_GET['xpressui_slug'] ) ? sanitize_title( wp_unslash( (string) $_GET['xpressui_slug'] ) ) : '';
+
+	if ( $action !== '' && $slug !== '' ) {
+		if ( 'archive_workflow_item' === $action ) {
+			check_admin_referer( 'xpressui_archive_workflow_' . $slug );
+			$archived = get_option( 'xpressui_archived_workflows', [] );
+			if ( ! is_array( $archived ) ) {
+				$archived = [];
+			}
+			if ( ! in_array( $slug, $archived, true ) ) {
+				$archived[] = $slug;
+				update_option( 'xpressui_archived_workflows', $archived );
+			}
+			/* translators: %s: workflow slug */
+			xpressui_set_admin_notice( sprintf( __( 'Workflow "%s" has been archived.', 'xpressui-bridge' ), $slug ), 'success' );
+			wp_safe_redirect( remove_query_arg( [ 'xpressui_action', 'xpressui_slug', '_wpnonce' ] ) );
+			exit;
+		}
+
+		if ( 'restore_workflow_item' === $action ) {
+			check_admin_referer( 'xpressui_restore_workflow_' . $slug );
+			$archived = get_option( 'xpressui_archived_workflows', [] );
+			if ( is_array( $archived ) ) {
+				$key = array_search( $slug, $archived, true );
+				if ( $key !== false ) {
+					unset( $archived[ $key ] );
+					update_option( 'xpressui_archived_workflows', array_values( $archived ) );
+				}
+			}
+			/* translators: %s: workflow slug */
+			xpressui_set_admin_notice( sprintf( __( 'Workflow "%s" has been restored.', 'xpressui-bridge' ), $slug ), 'success' );
+			wp_safe_redirect( remove_query_arg( [ 'xpressui_action', 'xpressui_slug', '_wpnonce' ] ) );
+			exit;
+		}
+		if ( 'sync_workflow_item' === $action ) {
+			check_admin_referer( 'xpressui_sync_workflow_' . $slug );
+			if ( ! xpressui_is_saas_connected() ) {
+				xpressui_set_admin_notice( __( 'Synchronization failed: Active Console Connection required.', 'xpressui-bridge' ), 'error' );
+			} else {
+				$project_id = xpressui_get_workflow_console_project_id( $slug );
+				if ( $project_id === '' ) {
+					/* translators: %s: workflow slug */
+					xpressui_set_admin_notice( sprintf( __( 'Workflow "%s" is local-only and cannot be synced.', 'xpressui-bridge' ), $slug ), 'error' );
+				} else {
+					$sync_res = xpressui_sync_project( $project_id );
+					if ( is_wp_error( $sync_res ) ) {
+						/* translators: 1: workflow slug, 2: error message details */
+						xpressui_set_admin_notice( sprintf( __( 'Failed to sync "%1$s": %2$s', 'xpressui-bridge' ), $slug, $sync_res->get_error_message() ), 'error' );
+					} else {
+						/* translators: %s: workflow slug */
+						xpressui_set_admin_notice( sprintf( __( 'Workflow "%s" has been synced from the Console.', 'xpressui-bridge' ), $slug ), 'success' );
+					}
+				}
+			}
+			wp_safe_redirect( remove_query_arg( [ 'xpressui_action', 'xpressui_slug', '_wpnonce' ] ) );
+			exit;
+		}
+	}
+
+	// 2) Bulk actions via POST
+	if ( ! isset( $_POST['xpressui_bulk_workflows_action'] ) ) {
+		return;
+	}
+
+	check_admin_referer( 'xpressui_bulk_workflows_nonce_action', 'xpressui_bulk_workflows_nonce' );
+
+	$bulk_action = sanitize_key( $_POST['xpressui_bulk_action_select'] ?? '' );
+	if ( $bulk_action === '-1' || $bulk_action === '' ) {
+		$bulk_action = sanitize_key( $_POST['xpressui_bulk_action_select2'] ?? '' );
+	}
+	$selected    = isset( $_POST['xpressui_workflow_checkboxes'] ) && is_array( $_POST['xpressui_workflow_checkboxes'] )
+		? array_map( 'sanitize_title', wp_unslash( $_POST['xpressui_workflow_checkboxes'] ) )
+		: [];
+
+	if ( empty( $selected ) || ! in_array( $bulk_action, [ 'sync', 'archive', 'restore' ], true ) ) {
+		return;
+	}
+
+	if ( 'archive' === $bulk_action ) {
+		$archived = get_option( 'xpressui_archived_workflows', [] );
+		if ( ! is_array( $archived ) ) {
+			$archived = [];
+		}
+		$count = 0;
+		foreach ( $selected as $s_slug ) {
+			if ( ! in_array( $s_slug, $archived, true ) ) {
+				$archived[] = $s_slug;
+				$count++;
+			}
+		}
+		update_option( 'xpressui_archived_workflows', $archived );
+		/* translators: %d: number of archived workflows */
+		xpressui_set_admin_notice( sprintf( _n( '%d workflow has been archived.', '%d workflows have been archived.', $count, 'xpressui-bridge' ), $count ), 'success' );
+	} elseif ( 'restore' === $bulk_action ) {
+		$archived = get_option( 'xpressui_archived_workflows', [] );
+		if ( ! is_array( $archived ) ) {
+			$archived = [];
+		}
+		$count = 0;
+		foreach ( $selected as $s_slug ) {
+			$key = array_search( $s_slug, $archived, true );
+			if ( $key !== false ) {
+				unset( $archived[ $key ] );
+				$count++;
+			}
+		}
+		update_option( 'xpressui_archived_workflows', array_values( $archived ) );
+		/* translators: %d: number of restored workflows */
+		xpressui_set_admin_notice( sprintf( _n( '%d workflow has been restored.', '%d workflows have been restored.', $count, 'xpressui-bridge' ), $count ), 'success' );
+	} elseif ( 'sync' === $bulk_action ) {
+		if ( ! xpressui_is_saas_connected() ) {
+			xpressui_set_admin_notice( __( 'Synchronization failed: Active Console Connection required.', 'xpressui-bridge' ), 'error' );
+		} else {
+			$count  = 0;
+			$errors = [];
+			foreach ( $selected as $s_slug ) {
+				$project_id = xpressui_get_workflow_console_project_id( $s_slug );
+				if ( $project_id === '' ) {
+					/* translators: %s: workflow slug */
+					$errors[] = sprintf( __( 'Workflow "%s" is local-only and cannot be synced.', 'xpressui-bridge' ), $s_slug );
+					continue;
+				}
+				$sync_res = xpressui_sync_project( $project_id );
+				if ( is_wp_error( $sync_res ) ) {
+					/* translators: 1: workflow slug, 2: error message details */
+					$errors[] = sprintf( __( 'Failed to sync "%1$s": %2$s', 'xpressui-bridge' ), $s_slug, $sync_res->get_error_message() );
+				} else {
+					$count++;
+				}
+			}
+			/* translators: %d: number of synced workflows */
+			$msg = sprintf( _n( '%d workflow has been synced.', '%d workflows have been synced.', $count, 'xpressui-bridge' ), $count );
+			if ( ! empty( $errors ) ) {
+				$msg .= '<br />' . implode( '<br />', $errors );
+				xpressui_set_admin_notice( $msg, 'warning' );
+			} else {
+				xpressui_set_admin_notice( $msg, 'success' );
+			}
+		}
+	}
+
+	wp_safe_redirect( remove_query_arg( [ 'xpressui_action', 'xpressui_slug', '_wpnonce' ] ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_workflow_bulk_actions' );
+
+function xpressui_submissions_trial_notice() {
+	if ( ! function_exists( 'get_current_screen' ) ) {
+		return;
+	}
+	$screen = get_current_screen();
+	if ( ! $screen || 'edit-xpressui_submission' !== $screen->id ) {
+		return;
+	}
+
+	if ( xpressui_is_saas_connected() ) {
+		return;
+	}
+
+	// Only show if there is at least one workflow installed/imported
+	$workflows = xpressui_get_installed_workflow_slugs();
+	if ( empty( $workflows ) ) {
+		return;
+	}
+
+	$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission' ) );
+	?>
+	<div class="notice notice-info" style="border-left-color: #3b82f6; padding: 15px; border-radius: 8px; margin-top: 15px;">
+		<h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-weight: 700; font-size: 14px;"><?php esc_html_e( 'Trial Workflows: Local Storage Disabled', 'xpressui-bridge' ); ?></h4>
+		<p style="margin: 0 0 12px 0; font-size: 13px; color: #475569; max-width: 800px; line-height: 1.5;">
+			<?php esc_html_e( 'Submissions for trial (unconnected) workflows are sent directly to the administrator by email. To store, view, and manage submissions locally in this dashboard, connect your site to the IntakeFlow Console.', 'xpressui-bridge' ); ?>
+		</p>
+		<p style="margin: 0;">
+			<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary" style="background: #2563eb; border-color: #2563eb; box-shadow: none; text-shadow: none;">
+				<?php esc_html_e( 'Connect to Console', 'xpressui-bridge' ); ?>
+			</a>
+		</p>
+	</div>
+	<?php
+}
+add_action( 'admin_notices', 'xpressui_submissions_trial_notice' );

@@ -96,51 +96,40 @@ function xpressui_render_dashboard_page() {
 		'fields'         => 'ids',
 	] ) );
 
-	$pending_info_count = count( get_posts( [
+	$posts = get_posts( [
 		'post_type'      => 'xpressui_submission',
 		'post_status'    => 'private',
 		'posts_per_page' => -1,
-		'fields'         => 'ids',
-		'meta_key'       => '_xpressui_submission_status',
-		'meta_value'     => 'pending_info',
-	] ) );
+	] );
 
-	$in_review_count = count( get_posts( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-		'meta_key'       => '_xpressui_submission_status',
-		'meta_value'     => 'in-review',
-	] ) );
+	$pending_info_count = 0;
+	$in_review_count    = 0;
+	$done_count         = 0;
+	$corrections_count  = 0;
 
-	$done_count = count( get_posts( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-		'meta_key'       => '_xpressui_submission_status',
-		'meta_value'     => 'done',
-	] ) );
+	if ( is_array( $posts ) ) {
+		foreach ( $posts as $post ) {
+			$status = get_post_meta( $post->ID, '_xpressui_submission_status', true );
+			if ( 'pending_info' === $status ) {
+				$pending_info_count++;
+			} elseif ( 'in-review' === $status ) {
+				$in_review_count++;
+			} elseif ( 'done' === $status ) {
+				$done_count++;
+			}
 
-	$corrections_count = count( get_posts( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-		'meta_query'     => [
-			[
-				'key'     => '_xpressui_flagged_fields',
-				'compare' => 'EXISTS',
-			],
-		],
-	] ) );
+			$flagged = get_post_meta( $post->ID, '_xpressui_flagged_fields', true );
+			if ( ! empty( $flagged ) ) {
+				$corrections_count++;
+			}
+		}
+	}
 
 	$hours_saved = $total_submissions > 0 ? max( 0.5, round( ( $total_submissions * 15 + $corrections_count * 20 ) / 60, 1 ) ) : 0;
 	$quota_limit = 100;
 	$quota_percentage = min( 100, round( ( $synced_backups / $quota_limit ) * 100 ) );
 
-	$is_pro      = xpressui_pro_is_license_active();
+	$is_pro      = xpressui_is_saas_connected();
 	$conn        = xpressui_get_console_connection();
 	$console_url = ! empty( $conn['apiUrl'] ) ? $conn['apiUrl'] : 'https://app.intakeflow.dev';
 	$upgrade_url = trailingslashit( $console_url ) . 'billing';
@@ -399,7 +388,7 @@ function xpressui_render_dashboard_page() {
 					
 					<!-- Progress Bar -->
 					<div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 14px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-						<div style="width: <?php echo (int) $quota_percentage; ?>%; height: 100%; background: <?php echo $bar_bg; ?>; border-radius: 999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+						<div style="width: <?php echo (int) $quota_percentage; ?>%; height: 100%; background: <?php echo esc_attr( $bar_bg ); ?>; border-radius: 999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
 					</div>
 				</div>
 				
@@ -509,7 +498,18 @@ function xpressui_render_dashboard_page() {
 				</a>
 			</h2>
 
-			<?php if ( empty( $latest_posts ) ) : ?>
+			<?php if ( ! xpressui_is_saas_connected() ) : ?>
+				<?php
+				$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-dashboard' ) );
+				?>
+				<div style="padding: 40px; text-align: center; color: #64748b;">
+					<p style="font-size: 15px; font-weight: 600; margin: 0; color: #1e3a8a;"><?php esc_html_e( 'Submissions for trial forms are sent by email.', 'xpressui-bridge' ); ?></p>
+					<p style="font-size: 13px; margin: 8px 0 20px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;"><?php esc_html_e( 'To store, display, and manage your submissions in this dashboard, connect your site to the IntakeFlow Console.', 'xpressui-bridge' ); ?></p>
+					<a href="<?php echo esc_url( $connect_url ); ?>" class="xpui-gradient-btn" style="padding: 8px 20px !important; font-size: 13px !important;">
+						<?php esc_html_e( 'Connect to Console', 'xpressui-bridge' ); ?>
+					</a>
+				</div>
+			<?php elseif ( empty( $latest_posts ) ) : ?>
 				<div style="padding: 40px; text-align: center; color: #64748b;">
 					<p style="font-size: 15px; font-weight: 600; margin: 0;"><?php esc_html_e( 'No submissions received yet.', 'xpressui-bridge' ); ?></p>
 					<p style="font-size: 13px; margin: 5px 0 0;"><?php esc_html_e( 'Embed a workflow on your pages to start collecting client files and details.', 'xpressui-bridge' ); ?></p>
@@ -634,7 +634,7 @@ function xpressui_render_dashboard_page() {
 				<ul style="margin: 15px 0 0; padding: 0; list-style: none; line-height: 1.8;">
 					<li>
 						<strong><?php esc_html_e( 'Cloud Sync:', 'xpressui-bridge' ); ?></strong> 
-						<?php echo $enable_sync ? '<span style="color: #16a34a; font-weight: bold;">' . esc_html__( 'Active', 'xpressui-bridge' ) . '</span>' : '<span style="color: #64748b; font-weight: bold;">' . esc_html__( 'Inactive', 'xpressui-bridge' ) . '</span>'; ?>
+						<?php echo ( $is_pro && $enable_sync ) ? '<span style="color: #16a34a; font-weight: bold;">' . esc_html__( 'Active', 'xpressui-bridge' ) . '</span>' : '<span style="color: #64748b; font-weight: bold;">' . esc_html__( 'Inactive', 'xpressui-bridge' ) . '</span>'; ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'License Tier:', 'xpressui-bridge' ); ?></strong> 

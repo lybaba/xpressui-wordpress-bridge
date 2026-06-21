@@ -56,7 +56,7 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 	$synced_count = xpressui_count_synced_submissions();
 	$quota_limit  = 100;
 
-	$is_pro = xpressui_pro_is_license_active();
+	$is_pro = xpressui_is_saas_connected();
 	if ( ! $is_pro && $synced_count >= $quota_limit ) {
 		update_post_meta( $post_id, '_xpressui_webhook_status', 'local_only_quota_exceeded' );
 		update_post_meta( $post_id, '_xpressui_webhook_error', __( 'Cloud sync paused: backup quota exceeded on Free Plan.', 'xpressui-bridge' ) );
@@ -220,22 +220,26 @@ function xpressui_build_submission_ingest_body( $post_id, $project_slug, $payloa
  * @return int
  */
 function xpressui_count_synced_submissions() {
-	$synced = get_posts(
+	$posts = get_posts(
 		[
 			'post_type'      => 'xpressui_submission',
 			'post_status'    => 'private',
 			'posts_per_page' => -1,
-			'fields'         => 'ids',
-			'meta_query'     => [
-				[
-					'key'     => '_xpressui_webhook_status',
-					'value'   => [ 'synced', 'sent' ],
-					'compare' => 'IN',
-				],
-			],
 		]
 	);
-	return is_array( $synced ) ? count( $synced ) : 0;
+
+	if ( ! is_array( $posts ) ) {
+		return 0;
+	}
+
+	$count = 0;
+	foreach ( $posts as $post ) {
+		$status = get_post_meta( $post->ID, '_xpressui_webhook_status', true );
+		if ( in_array( $status, [ 'synced', 'sent' ], true ) ) {
+			$count++;
+		}
+	}
+	return $count;
 }
 
 /**

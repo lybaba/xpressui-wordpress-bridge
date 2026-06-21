@@ -17,9 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only isset() presence check; triggers an idempotent opcache_reset only. No form data is read, sanitized, or stored, and this runs at plugin load before pluggable functions exist (so a capability check is not possible here).
-if ( ( isset( $_GET['xpressui_clear_cache'] ) || isset( $_GET['nocache'] ) ) && function_exists( 'opcache_reset' ) ) {
-	opcache_reset();
+if ( isset( $_SERVER['QUERY_STRING'] ) ) {
+	$xpressui_query = [];
+	parse_str( sanitize_text_field( wp_unslash( (string) $_SERVER['QUERY_STRING'] ) ), $xpressui_query );
+	if ( ( isset( $xpressui_query['xpressui_clear_cache'] ) || isset( $xpressui_query['nocache'] ) ) && function_exists( 'opcache_reset' ) ) {
+		opcache_reset();
+	}
 }
 
 register_activation_hook( __FILE__, function() {
@@ -52,7 +55,6 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/shell.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/privacy.php';
 
 // --- SaaS / PRO Connection loading ---
-require_once XPRESSUI_BRIDGE_DIR . 'includes/license-handler.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/console-sync.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-sync.php';
 
@@ -183,7 +185,16 @@ function xpressui_enqueue_admin_assets( $hook ) {
 
 	// Form Importer wizard — only the bridge page's "import" tab renders the wizard
 	// markup (see xpressui_render_form_importer_tab()), so scope its CSS/JS to that tab.
-	$current_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'list';
+	$current_tab = 'list';
+	if ( ! empty( $_SERVER['REQUEST_URI'] ) ) {
+		$parsed_url = wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) );
+		if ( ! empty( $parsed_url['query'] ) ) {
+			parse_str( $parsed_url['query'], $parsed_query );
+			if ( isset( $parsed_query['tab'] ) && is_string( $parsed_query['tab'] ) ) {
+				$current_tab = sanitize_key( $parsed_query['tab'] );
+			}
+		}
+	}
 	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id && 'import' === $current_tab ) {
 		wp_enqueue_style(
 			'xpressui-bridge-admin-importer',
@@ -205,10 +216,11 @@ function xpressui_enqueue_admin_assets( $hook ) {
 				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 				'importNonce'     => wp_create_nonce( 'xpressui_import_form_wizard_nonce' ),
 				'syncNonce'       => wp_create_nonce( 'xpressui_console_sync_nonce' ),
-				'isSaasConnected' => xpressui_pro_is_license_active(),
+				'isSaasConnected' => xpressui_is_saas_connected(),
 				'i18n'            => [
 					'next'             => __( 'Next', 'xpressui-bridge' ),
-					'convertSync'      => __( 'Convert & Sync', 'xpressui-bridge' ),
+					'convertSync'      => __( 'Import & Sync', 'xpressui-bridge' ),
+					'convertSave'      => __( 'Import', 'xpressui-bridge' ),
 					'copied'           => __( 'Copied!', 'xpressui-bridge' ),
 					'copy'             => __( 'Copy', 'xpressui-bridge' ),
 					'syncingToConsole' => __( 'Syncing to Console...', 'xpressui-bridge' ),

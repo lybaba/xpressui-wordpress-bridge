@@ -1313,10 +1313,23 @@ function xpressui_render_shortcode( $atts ) {
 		}
 	}
 
+	$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+	$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
+
+	$trial_badge = '';
+	if ( 'trial' === $runtime_tier ) {
+		$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission' ) );
+		$trial_badge = '<div class="xpressui-trial-badge" style="text-align: center; margin-top: 16px; font-family: -apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif; font-size: 12px; color: #64748b;">'
+			. '<span style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9999px; font-weight: 500; box-shadow: 0 1px 2px rgba(15,23,42,.04);">'
+			. '⚡ ' . esc_html__( 'IntakeFlow Trial Form', 'xpressui-bridge' ) . ' · <a href="' . esc_url( $connect_url ) . '" target="_blank" rel="noopener" style="color: #2563eb; text-decoration: underline; font-weight: 600;">' . esc_html__( 'Connect to Console', 'xpressui-bridge' ) . '</a>'
+			. '</span></div>';
+	}
+
 	$html_out = '<div class="xpressui-embed-wrapper xpressui-inline-embed">'
 		. $intro_outside_html
 		. $fragment_html
 		. $config_tag
+		. $trial_badge
 		. '</div>';
 
 	if ( $is_preview ) {

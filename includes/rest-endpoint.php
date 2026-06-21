@@ -406,6 +406,49 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		return $submission_gate;
 	}
 
+	$is_trial = false;
+	if ( ! xpressui_is_saas_connected() ) {
+		$is_trial = true;
+	} else {
+		$meta = xpressui_get_workflow_manifest_meta( $project_slug );
+		$tier = is_array( $meta ) ? (string) ( $meta['runtimeTier'] ?? '' ) : '';
+		if ( 'trial' === $tier ) {
+			$is_trial = true;
+		}
+	}
+
+	if ( $is_trial ) {
+		// WPForms Lite / Trial connect model:
+		// Send notification emails but do not save to local WordPress database.
+		$stored_files       = xpressui_store_uploaded_files( 0, $request );
+		$payload_with_files = xpressui_attach_file_references( $payload, $stored_files );
+		$payload_with_files = xpressui_store_signature_attachments( 0, $payload_with_files );
+
+		xpressui_maybe_send_notification( 0, $project_slug, $payload_with_files );
+		xpressui_maybe_send_submitter_sample( 0, $project_slug, $payload_with_files );
+		xpressui_maybe_send_submit_confirmation( 0, $project_slug, $payload_with_files );
+
+		$redirect_url = xpressui_resolve_redirect_url( $project_slug, $payload_with_files );
+
+		$timing_summary = [
+			'totalMs' => (int) round( ( microtime( true ) - $timing_marks['start'] ) * 1000 ),
+		];
+
+		$response = [
+			'success'      => true,
+			'message'      => __( 'Submission received', 'xpressui-bridge' ),
+			'entryId'      => 0,
+			'submissionId' => $submission_id,
+			'files'        => $stored_files,
+			'timing'       => $timing_summary,
+		];
+		if ( $redirect_url !== '' ) {
+			$response['redirectUrl'] = $redirect_url;
+		}
+
+		return new WP_REST_Response( $response, 200 );
+	}
+
 	$post_id = wp_insert_post( [
 		'post_type'   => 'xpressui_submission',
 		'post_status' => 'private',
@@ -469,6 +512,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		'submitConfirmMs'     => $timing_diff_ms( 'notification_sent', 'submit_confirmation_sent' ),
 		'webhookMs'           => $timing_diff_ms( 'submit_confirmation_sent', 'webhook_sent' ),
 	];
+
 	update_post_meta( $post_id, '_xpressui_submit_timing', wp_json_encode( $timing_summary ) );
 	xpressui_record_submission_event(
 		$post_id,
@@ -1045,8 +1089,10 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 
 	remove_filter( 'intermediate_image_sizes_advanced', $xpressui_limit_sizes, 99 );
 
-	update_post_meta( $post_id, '_xpressui_uploaded_files', wp_json_encode( $stored_files ) );
-	update_post_meta( $post_id, '_xpressui_upload_debug', wp_json_encode( $debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+	if ( $post_id > 0 ) {
+		update_post_meta( $post_id, '_xpressui_uploaded_files', wp_json_encode( $stored_files ) );
+		update_post_meta( $post_id, '_xpressui_upload_debug', wp_json_encode( $debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+	}
 	return $stored_files;
 }
 

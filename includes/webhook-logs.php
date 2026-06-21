@@ -51,6 +51,7 @@ function xpressui_ajax_retry_sync() {
 		] );
 	} else {
 		wp_send_json_error( [
+			/* translators: 1: HTTP error code, 2: error message */
 			'message' => sprintf( __( 'Sync failed with code %1$s: %2$s', 'xpressui-bridge' ), $code, $error ),
 			'code'    => $code,
 			'status'  => 'failed',
@@ -70,7 +71,7 @@ add_action( 'wp_ajax_xpressui_retry_sync', 'xpressui_ajax_retry_sync' );
  * @return bool
  */
 function xpressui_cloud_sync_is_active() {
-	$connected = function_exists( 'xpressui_pro_is_license_active' ) && xpressui_pro_is_license_active();
+	$connected = xpressui_is_saas_connected();
 	$enabled   = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
 	return $connected && $enabled;
 }
@@ -129,7 +130,7 @@ function xpressui_any_webhook_endpoint_configured() {
  * webhook endpoint is configured — so the page never fills with meaningless rows.
  */
 function xpressui_render_sync_logs_empty_state() {
-	$settings_url  = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
+	$connect_url   = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-sync-logs' ) );
 	$workflows_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' );
 	?>
 	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 720px;">
@@ -145,7 +146,7 @@ function xpressui_render_sync_logs_empty_state() {
 			<?php esc_html_e( 'Connect the Console to back up submissions to the cloud (the Console then delivers any webhooks you configure), or set a webhook URL on a specific workflow.', 'xpressui-bridge' ); ?>
 		</p>
 		<p style="margin-top: 16px;">
-			<a href="<?php echo esc_url( $settings_url ); ?>" class="button button-primary">
+			<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary">
 				<?php esc_html_e( 'Connect to IntakeFlow Console', 'xpressui-bridge' ); ?>
 			</a>
 			<a href="<?php echo esc_url( $workflows_url ); ?>" class="button" style="margin-left: 8px;">

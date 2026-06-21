@@ -64,7 +64,7 @@ function xpressui_import_cf7_form( $form_id ) {
 	}
 
 	$title = $post->post_title;
-	$slug  = 'cf7-import-' . sanitize_title( $title ) . '-' . rand( 100, 999 );
+	$slug  = 'cf7-import-' . sanitize_title( $title ) . '-' . wp_rand( 100, 999 );
 	$content = $post->post_content;
 
 	// Parse CF7 shortcode tags
@@ -150,7 +150,7 @@ function xpressui_import_gravity_form( $form_id ) {
 	}
 
 	$title = $form['title'];
-	$slug  = 'gf-import-' . sanitize_title( $title ) . '-' . rand( 100, 999 );
+	$slug  = 'gf-import-' . sanitize_title( $title ) . '-' . wp_rand( 100, 999 );
 	$fields = [];
 
 	if ( ! empty( $form['fields'] ) && is_array( $form['fields'] ) ) {
@@ -573,7 +573,10 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 		'projectName'        => $title,
 		'projectSlug'        => $slug,
 		'configVersion'      => $config_version,
-		'runtimeTier'        => 'light', // Standalone offline execution
+		'runtimeTier'        => xpressui_is_saas_connected() ? 'light' : 'trial', // Standalone offline execution
+		'runtimeRequirements'=> [
+			'tier' => xpressui_is_saas_connected() ? 'light' : 'trial',
+		],
 		'isBundled'          => true,
 		'manifestFingerprint'=> md5( wp_json_encode( $fields ) ),
 		// Declare the on-disk artifacts so the list scan and the shortcode renderer
@@ -774,7 +777,7 @@ function xpressui_ajax_import_form_wizard() {
 	// Destination is decided automatically server-side (source of truth): if the
 	// Console connection has an active API token, create the workflow in the SaaS;
 	// otherwise save it locally as a standalone workflow. Any client-sent value is ignored.
-	$import_mode = xpressui_pro_is_license_active() ? 'saas' : 'local';
+	$import_mode = xpressui_is_saas_connected() ? 'saas' : 'local';
 
 	if ( empty( $source_type ) || ! $form_id ) {
 		wp_send_json_error( [ 'message' => __( 'Missing source form selection.', 'xpressui-bridge' ) ] );
@@ -916,7 +919,7 @@ function xpressui_ajax_import_form_wizard() {
 	if ( ! empty( $custom_name ) ) {
 		$title = $custom_name;
 	}
-	$slug = ! empty( $custom_slug ) ? $custom_slug : sanitize_title( $title ) . '-' . rand( 100, 999 );
+	$slug = ! empty( $custom_slug ) ? $custom_slug : sanitize_title( $title ) . '-' . wp_rand( 100, 999 );
 
 	// Split file fields to a dedicated step
 	$file_fields = [];
@@ -994,6 +997,7 @@ function xpressui_ajax_import_form_wizard() {
 		// NOT create a duplicate local workflow — we report it as a warning.
 		$sync_res = xpressui_sync_project( $api_project_id );
 		if ( is_wp_error( $sync_res ) ) {
+			/* translators: %s: error message details */
 			wp_send_json_error( [ 'message' => sprintf( __( 'SaaS project created, but local sync failed: %s', 'xpressui-bridge' ), $sync_res->get_error_message() ) ] );
 		}
 
@@ -1053,7 +1057,7 @@ function xpressui_render_form_importer_tab() {
 	}
 
 	$has_forms = ! empty( $cf7_forms ) || ! empty( $gf_forms );
-	$is_saas_connected = xpressui_pro_is_license_active();
+	$is_saas_connected = xpressui_is_saas_connected();
 
 	// CTA target for the local-import conversion nudge. Point at the Settings page's
 	// Console Connection section (the same 1-Click "Connect IntakeFlow Account" entry
@@ -1140,11 +1144,24 @@ function xpressui_render_form_importer_tab() {
 						</div>
 					</div>
 				<?php else : ?>
-					<div style="display:flex; align-items:flex-start; gap:10px; padding:14px 16px; border:1px solid #e2e8f0; background:#f8fafc; border-radius:10px; margin-bottom:20px;">
-						<span style="font-size:18px; line-height:1.2;">💾</span>
-						<div style="font-size:13px; color:#475569; line-height:1.5;">
-							<strong><?php esc_html_e( 'Destination: Local (Standalone)', 'xpressui-bridge' ); ?></strong><br>
-							<?php esc_html_e( 'Saved locally in WordPress (no Console connection). Connect your API token in the General Settings tab to create workflows in the Console instead.', 'xpressui-bridge' ); ?>
+					<div style="display:flex; flex-direction:column; gap:12px; padding:16px; border:1px solid #fed7aa; background:#fff7ed; border-radius:10px; margin-bottom:20px;">
+						<div style="display:flex; align-items:flex-start; gap:10px;">
+							<span style="font-size:18px; line-height:1.2;">⚠️</span>
+							<div style="font-size:13px; color:#7c2d12; line-height:1.5;">
+								<strong><?php esc_html_e( 'Destination: Local (Standalone)', 'xpressui-bridge' ); ?></strong><br>
+								<?php esc_html_e( 'This form will be saved locally. Connect your site to an IntakeFlow account to synchronize workflows and unlock SaaS features like notifications, cloud backups, and PDF/OCR generation.', 'xpressui-bridge' ); ?>
+							</div>
+						</div>
+						<div style="margin-left: 28px;">
+							<?php
+							$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' ) );
+							?>
+							<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary" style="background:#2563eb; border-color:#2563eb; color:#fff; font-weight:600; padding:4px 14px; height:auto; line-height:1.8; border-radius:6px; display:inline-block; text-decoration:none;">
+								<?php esc_html_e( 'Connect IntakeFlow Account', 'xpressui-bridge' ); ?>
+							</a>
+							<span style="font-size:12px; color:#6b7280; margin-left:10px; display:inline-block; vertical-align:middle;">
+								<?php esc_html_e( 'Sign up is free and takes less than a minute.', 'xpressui-bridge' ); ?>
+							</span>
 						</div>
 					</div>
 				<?php endif; ?>
