@@ -210,31 +210,191 @@ function xpressui_render_quota_roi_dashboard() {
 	$upgrade_url = trailingslashit($console_url) . 'billing';
 
 	?>
+	<style>
+	.xpressui-quota-roi-container {
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+	}
+	.xpui-dashboard-card {
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+		border: 1px solid #e2e8f0 !important;
+		box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02) !important;
+	}
+	.xpui-dashboard-card:hover {
+		transform: translateY(-3px) !important;
+		box-shadow: 0 10px 15px -3px rgba(15,23,42,0.08), 0 4px 6px -2px rgba(15,23,42,0.04) !important;
+		border-color: #cbd5e1 !important;
+	}
+	.xpui-badge-status {
+		font-size: 11px !important;
+		font-weight: 700 !important;
+		padding: 3px 10px !important;
+		border-radius: 9999px !important;
+		text-transform: uppercase !important;
+		letter-spacing: 0.05em !important;
+		display: inline-block !important;
+	}
+	.xpui-badge-pro {
+		background: #dcfce7 !important;
+		color: #166534 !important;
+		border: 1px solid #bbf7d0 !important;
+	}
+	.xpui-badge-free {
+		background: #eff6ff !important;
+		color: #1e40af !important;
+		border: 1px solid #bfdbfe !important;
+	}
+	.xpui-badge-disabled {
+		background: #f1f5f9 !important;
+		color: #475569 !important;
+		border: 1px solid #e2e8f0 !important;
+	}
+	.xpui-badge-exceeded {
+		background: #fee2e2 !important;
+		color: #991b1b !important;
+		border: 1px solid #fca5a5 !important;
+	}
+	.xpui-gradient-btn {
+		background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+		color: white !important;
+		border: none !important;
+		font-weight: 700 !important;
+		border-radius: 8px !important;
+		padding: 6px 16px !important;
+		text-decoration: none !important;
+		box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+		transition: all 0.2s !important;
+		cursor: pointer !important;
+		display: inline-block !important;
+		font-size: 11px !important;
+		line-height: 20px !important;
+	}
+	.xpui-gradient-btn:hover {
+		opacity: 0.95 !important;
+		transform: translateY(-1px) !important;
+		box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3) !important;
+	}
+	.xpui-roi-gradient {
+		background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+		border: 1px solid #bbf7d0 !important;
+	}
+	.xpui-roi-gradient:hover {
+		border-color: #86efac !important;
+	}
+	.xpui-roi-icon-container {
+		background: #ffffff !important;
+		border: 1px solid #e2e8f0 !important;
+		box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.08) !important;
+		border-radius: 12px !important;
+		padding: 8px !important;
+		flex-shrink: 0 !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		width: 48px !important;
+		height: 48px !important;
+		box-sizing: border-box !important;
+		animation: xpui-pulse 2s infinite ease-in-out !important;
+	}
+	@keyframes xpui-pulse {
+		0% { transform: scale(1); }
+		50% { transform: scale(1.05); }
+		100% { transform: scale(1); }
+	}
+	
+	/* Premium table customization */
+	.xpressui-table--workflows {
+		border: 1px solid #e2e8f0 !important;
+		border-radius: 12px !important;
+		overflow: hidden !important;
+		box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.02) !important;
+		border-collapse: separate !important;
+		border-spacing: 0 !important;
+		margin-top: 25px !important;
+		background: #ffffff !important;
+	}
+	.xpressui-table--workflows thead th {
+		background: #f8fafc !important;
+		border-bottom: 1px solid #e2e8f0 !important;
+		padding: 14px 18px !important;
+		font-weight: 700 !important;
+		color: #475569 !important;
+		text-transform: uppercase !important;
+		font-size: 11px !important;
+		letter-spacing: 0.05em !important;
+	}
+	.xpressui-table--workflows tbody td {
+		padding: 16px 18px !important;
+		vertical-align: middle !important;
+		border-bottom: 1px solid #f1f5f9 !important;
+	}
+	.xpressui-table--workflows tbody tr:last-child td {
+		border-bottom: none !important;
+	}
+	.xpressui-table--workflows tbody tr:hover td {
+		background: #fafafa !important;
+	}
+	.xpressui-table--workflows a {
+		color: #2563eb !important;
+		font-weight: 700 !important;
+		text-decoration: none !important;
+	}
+	.xpressui-table--workflows a:hover {
+		color: #1d4ed8 !important;
+		text-decoration: underline !important;
+	}
+	</style>
+
 	<div class="xpressui-quota-roi-container" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0 30px; max-width: 1000px;">
 		
+		<?php
+		$enable_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
+		$quota_exceeded = ! $is_pro && $current_month_submissions > $quota_limit;
+
+		$status_label = __( 'Free Plan', 'xpressui-bridge' );
+		$status_class = 'xpui-badge-free';
+		if ( $is_pro ) {
+			$status_label = __( 'Pro Active', 'xpressui-bridge' );
+			$status_class = 'xpui-badge-pro';
+		} elseif ( ! $enable_sync ) {
+			$status_label = __( 'Sync Off', 'xpressui-bridge' );
+			$status_class = 'xpui-badge-disabled';
+		} elseif ( $quota_exceeded ) {
+			$status_label = __( 'Local Only (Quota Exceeded)', 'xpressui-bridge' );
+			$status_class = 'xpui-badge-exceeded';
+		}
+
+		$bar_bg = $quota_exceeded 
+			? 'linear-gradient(90deg, #f87171 0%, #ef4444 100%)' 
+			: 'linear-gradient(90deg, #60a5fa 0%, #2563eb 100%)';
+		?>
+
 		<!-- Quota Widget -->
-		<div class="card xpressui-admin-card xpressui-quota-card" style="flex: 1; min-width: 280px; margin: 0; padding: 20px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+		<div class="card xpressui-admin-card xpui-dashboard-card xpressui-quota-card" style="flex: 1; min-width: 320px; margin: 0; padding: 22px; border-radius: 16px; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
 			<div>
-				<h3 style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #0f172a; display: flex; align-items: center; justify-content: space-between;">
-					<span><?php esc_html_e( 'Monthly Submission Quota', 'xpressui-bridge' ); ?></span>
-					<span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px;">
-						<?php echo $is_pro ? esc_html__( 'Pro Active', 'xpressui-bridge' ) : esc_html__( 'Free Plan', 'xpressui-bridge' ); ?>
+				<h3 style="margin: 0 0 12px; font-size: 13px; font-weight: 750; color: #475569; display: flex; align-items: center; justify-content: space-between;">
+					<span><?php esc_html_e( 'Cloud Sync Backup Quota', 'xpressui-bridge' ); ?></span>
+					<span class="xpui-badge-status <?php echo esc_attr( $status_class ); ?>">
+						<?php echo esc_html( $status_label ); ?>
 					</span>
 				</h3>
-				<p style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 12px;">
-					<?php echo (int) $current_month_submissions; ?> <span style="font-size: 14px; font-weight: 500; color: #64748b;">/ <?php echo (int) $quota_limit; ?> <?php esc_html_e( 'submissions', 'xpressui-bridge' ); ?></span>
+				<p style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 0 0 14px; letter-spacing: -0.02em;">
+					<?php echo (int) $current_month_submissions; ?> <span style="font-size: 15px; font-weight: 500; color: #64748b;">/ <?php echo (int) $quota_limit; ?> <?php esc_html_e( 'cloud backups', 'xpressui-bridge' ); ?></span>
 				</p>
 				
 				<!-- Progress Bar -->
-				<div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
-					<div style="width: <?php echo (int) $quota_percentage; ?>%; height: 100%; background: <?php echo $quota_percentage > 85 ? '#ef4444' : '#3b82f6'; ?>; border-radius: 999px; transition: width 0.4s ease-out;"></div>
+				<div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 14px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+					<div style="width: <?php echo (int) $quota_percentage; ?>%; height: 100%; background: <?php echo $bar_bg; ?>; border-radius: 999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
 				</div>
 			</div>
 			
-			<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-				<span style="font-size: 12px; color: #64748b;">
+			<div style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+				<span style="font-size: 12px; color: #64748b; font-weight: 500;">
 					<?php 
-					if ( $quota_percentage > 85 ) {
+					if ( ! $enable_sync ) {
+						esc_html_e( 'Cloud backup is disabled. Live forms remain functional.', 'xpressui-bridge' );
+					} elseif ( $quota_exceeded ) {
+						esc_html_e( 'Cloud sync paused. Submissions continue saving locally.', 'xpressui-bridge' );
+					} elseif ( $quota_percentage > 85 ) {
 						esc_html_e( 'Approaching limit! Please upgrade soon.', 'xpressui-bridge' );
 					} else {
 						esc_html_e( 'Resets on the 1st of next month.', 'xpressui-bridge' );
@@ -242,11 +402,11 @@ function xpressui_render_quota_roi_dashboard() {
 					?>
 				</span>
 				<?php if ( ! $is_pro ) : ?>
-					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) ); ?>" class="button button-secondary" style="font-size: 11px; height: 28px; line-height: 26px; border-radius: 6px; font-weight: 600; padding: 0 10px;">
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) ); ?>" class="xpui-gradient-btn">
 						<?php esc_html_e( 'Connect to Upgrade', 'xpressui-bridge' ); ?>
 					</a>
 				<?php else : ?>
-					<a href="<?php echo esc_url( $upgrade_url ); ?>" target="_blank" rel="noopener noreferrer" class="button button-secondary" style="font-size: 11px; height: 28px; line-height: 26px; border-radius: 6px; font-weight: 600; padding: 0 10px;">
+					<a href="<?php echo esc_url( $upgrade_url ); ?>" target="_blank" rel="noopener noreferrer" class="xpui-gradient-btn">
 						<?php esc_html_e( 'Upgrade Plan', 'xpressui-bridge' ); ?>
 					</a>
 				<?php endif; ?>
@@ -254,15 +414,15 @@ function xpressui_render_quota_roi_dashboard() {
 		</div>
 
 		<!-- ROI Widget -->
-		<div class="card xpressui-admin-card xpressui-roi-card" style="flex: 1.2; min-width: 320px; margin: 0; padding: 20px; border-radius: 12px; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; gap: 15px; align-items: flex-start;">
-			<div style="font-size: 32px; flex-shrink: 0; line-height: 1; padding: 8px; background: #f0fdf4; border-radius: 10px; color: #16a34a; font-weight: bold;">
+		<div class="card xpressui-admin-card xpui-dashboard-card xpui-roi-gradient xpressui-roi-card" style="flex: 1.2; min-width: 340px; margin: 0; padding: 22px; border-radius: 16px; display: flex; gap: 18px; align-items: flex-start;">
+			<div class="xpui-roi-icon-container" style="font-size: 24px;">
 				⚡
 			</div>
 			<div>
-				<h3 style="margin: 0 0 5px; font-size: 15px; font-weight: 700; color: #0f172a;">
+				<h3 style="margin: 0 0 6px; font-size: 15px; font-weight: 800; color: #14532d; letter-spacing: -0.01em;">
 					<?php esc_html_e( 'IntakeFlow Productivity ROI', 'xpressui-bridge' ); ?>
 				</h3>
-				<p style="font-size: 13px; color: #64748b; margin: 0 0 12px; line-height: 1.4;">
+				<p style="font-size: 13.5px; color: #15803d; margin: 0 0 16px; line-height: 1.5; font-weight: 500;">
 					<?php 
 					printf(
 						/* translators: 1: total submissions, 2: corrections count */
@@ -273,10 +433,10 @@ function xpressui_render_quota_roi_dashboard() {
 					?>
 				</p>
 				<div style="display: flex; gap: 15px; align-items: baseline;">
-					<span style="font-size: 28px; font-weight: 850; color: #16a34a; letter-spacing: -0.02em;">
+					<span style="font-size: 34px; font-weight: 900; color: #16a34a; letter-spacing: -0.03em; line-height: 1;">
 						<?php echo esc_html( (string) $hours_saved ); ?>
 					</span>
-					<span style="font-size: 13px; font-weight: 600; color: #16a34a;">
+					<span style="font-size: 12px; font-weight: 750; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em;">
 						<?php esc_html_e( 'Hours of admin work saved', 'xpressui-bridge' ); ?>
 					</span>
 				</div>
