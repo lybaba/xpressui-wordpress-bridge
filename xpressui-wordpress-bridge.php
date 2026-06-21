@@ -57,10 +57,8 @@ require_once XPRESSUI_BRIDGE_DIR . 'includes/console-sync.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-sync.php';
 
 // --- IntakeFlow Plugin Add-ons & Integrations ---
-require_once XPRESSUI_BRIDGE_DIR . 'includes/woocommerce-bridge.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/page-builder-widgets.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/client-portal.php';
-require_once XPRESSUI_BRIDGE_DIR . 'includes/sandbox-preview-features.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/form-importer.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/submission-exporter.php';
 require_once XPRESSUI_BRIDGE_DIR . 'includes/webhook-logs.php';
@@ -176,6 +174,8 @@ function xpressui_enqueue_admin_assets( $hook ) {
 					'networkError'  => __( 'Network error.', 'xpressui-bridge' ),
 					'toggleSection' => __( 'Toggle section', 'xpressui-bridge' ),
 					'outOfSync'     => __( 'Out of Sync', 'xpressui-bridge' ),
+					'creating'      => __( 'Creating…', 'xpressui-bridge' ),
+					'created'       => __( 'Workflow created on your IntakeFlow Console.', 'xpressui-bridge' ),
 				],
 			]
 		);

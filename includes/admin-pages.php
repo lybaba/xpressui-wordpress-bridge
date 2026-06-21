@@ -352,6 +352,12 @@ function xpressui_render_workflows_page() {
 				'xpressui_view_nonce'
 			);
 			$actions_html[] = '<span class="edit"><a href="' . esc_url( $customize_url ) . '">' . esc_html__( 'Customize', 'xpressui-bridge' ) . '</a></span>';
+			// "Create on Console" — only for not-yet-synced (local-only) workflows, and
+			// only when an active Console API token is configured. Wired to AJAX via
+			// assets/admin-workflows.js (nonce in window.xpressuiBridgeAdmin).
+			if ( xpressui_pro_is_license_active() && xpressui_workflow_is_local_only( $slug ) ) {
+				$actions_html[] = '<span class="xpressui-create-on-console"><a href="#" class="xpressui-create-on-console-link" data-slug="' . esc_attr( $slug ) . '">' . esc_html__( 'Create on Console', 'xpressui-bridge' ) . '</a></span>';
+			}
 			if ( isset( $inbox_by_slug[ $slug ] ) && (int) $inbox_by_slug[ $slug ]['total'] > 0 ) {
 				$actions_html[] = '<span class="submissions"><a href="' . esc_url( $all_submissions_url ) . '">' . esc_html__( 'Submissions', 'xpressui-bridge' ) . '</a></span>';
 			}
@@ -904,7 +910,7 @@ function xpressui_render_sync_logs_page() {
 
 	echo '<div class="wrap xpressui-wrap">';
 	echo '<h1>' . esc_html__( 'Sync Logs', 'xpressui-bridge' ) . '</h1>';
-	echo '<p class="xpressui-page-intro">' . esc_html__( 'Monitor outgoing webhook deliveries of form submissions sent to the console, and retry failed syncs.', 'xpressui-bridge' ) . '</p>';
+	echo '<p class="xpressui-page-intro">' . esc_html__( 'Track how form submissions are backed up to the IntakeFlow Console, where any configured webhooks are then delivered. Retry failed syncs from here.', 'xpressui-bridge' ) . '</p>';
 
 	if ( function_exists( 'xpressui_render_sync_logs_tab' ) ) {
 		xpressui_render_sync_logs_tab();
@@ -1036,31 +1042,6 @@ JS,
 	);
 	wp_print_inline_script_tag( $connection_form_script );
 
-	// 3. Branding Settings Card
-	$is_pro = xpressui_pro_is_license_active();
-	$hide_branding = get_option( 'xpressui_hide_branding', '0' ) === '1';
-
-	echo '<div class="card xpressui-admin-card" style="margin-top: 20px;">';
-	echo '<h2>' . esc_html__( 'Branding Settings', 'xpressui-bridge' ) . '</h2>';
-	echo '<p class="description">' . esc_html__( 'Manage branding settings for your embedded forms.', 'xpressui-bridge' ) . '</p>';
-	
-	echo '<form id="xpressui-branding-form" method="post" style="margin-top: 15px;">';
-	wp_nonce_field( 'xpressui_branding_settings_action', 'xpressui_branding_settings_nonce' );
-	echo '<input type="hidden" name="xpressui_save_branding_settings" value="1">';
-	
-	echo '<label style="display: block; margin-bottom: 12px; font-weight: 500;">';
-	echo '<input type="checkbox" name="xpressui_hide_branding" value="1" ' . checked( $hide_branding, true, false ) . ' ' . ( ! $is_pro ? 'disabled' : '' ) . ' />';
-	echo ' ' . esc_html__( 'Hide "Powered by IntakeFlow" footer under forms', 'xpressui-bridge' );
-	echo '</label>';
-	
-	if ( ! $is_pro ) {
-		echo '<p style="color: #0284c7; background: #e0f2fe; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: 5px; max-width: 500px;">' . esc_html__( '💡 Connecting your site to the IntakeFlow Console (Pro) will allow you to hide the branding footer.', 'xpressui-bridge' ) . '</p>';
-	}
-	
-	submit_button( __( 'Save Branding Settings', 'xpressui-bridge' ), 'secondary', 'submit_branding', true, [ 'disabled' => ! $is_pro ] );
-	echo '</form>';
-	echo '</div>';
-
 	// 4. Cloud Sync & Backup Card
 	$enable_cloud_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
 
@@ -1084,36 +1065,6 @@ JS,
 	submit_button( __( 'Save Cloud Sync Settings', 'xpressui-bridge' ), 'secondary', 'submit_cloud_sync' );
 	echo '</form>';
 	echo '</div>';
-
-	// 5. WooCommerce Settings Card
-	$enable_woocommerce = get_option( 'xpressui_enable_woocommerce', '0' ) === '1';
-	$has_woocommerce = class_exists( 'WooCommerce' );
-
-	echo '<div class="card xpressui-admin-card" style="margin-top: 20px;">';
-	echo '<h2>' . esc_html__( 'WooCommerce Integration', 'xpressui-bridge' ) . '</h2>';
-	echo '<p class="description">' . esc_html__( 'Redirect IntakeFlow storefront checkout to the native WooCommerce checkout.', 'xpressui-bridge' ) . '</p>';
-
-	echo '<form id="xpressui-woocommerce-settings-form" method="post" style="margin-top: 15px;">';
-	wp_nonce_field( 'xpressui_woocommerce_settings_action', 'xpressui_woocommerce_settings_nonce' );
-	echo '<input type="hidden" name="xpressui_save_woocommerce_settings" value="1">';
-
-	echo '<label style="display: block; margin-bottom: 12px; font-weight: 500;">';
-	echo '<input type="checkbox" name="xpressui_enable_woocommerce" value="1" ' . checked( $enable_woocommerce, true, false ) . ' ' . ( ! $has_woocommerce ? 'disabled' : '' ) . ' />';
-	echo ' ' . esc_html__( 'Enable WooCommerce checkout redirection', 'xpressui-bridge' );
-	echo '</label>';
-
-	if ( ! $has_woocommerce ) {
-		echo '<p style="color: #dc2626; background: #fef2f2; padding: 10px; border-radius: 6px; font-size: 12px; margin-top: 5px; max-width: 500px;">' . esc_html__( '⚠️ WooCommerce is not active. Install and activate WooCommerce first.', 'xpressui-bridge' ) . '</p>';
-	}
-
-	submit_button( __( 'Save WooCommerce Settings', 'xpressui-bridge' ), 'secondary', 'submit_woocommerce', true, [ 'disabled' => ! $has_woocommerce ] );
-	echo '</form>';
-	echo '</div>';
-
-	// 5. Sandbox Features Cards (Google Drive / OCR simulator)
-	if ( function_exists( 'xpressui_render_sandbox_features_cards' ) ) {
-		xpressui_render_sandbox_features_cards();
-	}
 
 	echo '</div>'; // .wrap
 }
@@ -1159,8 +1110,13 @@ function xpressui_render_workflow_settings_page() {
 		}
 	}
 
-	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance">';
-	
+	// Local-only workflows (local import / bundled starter, no Console project) get a
+	// deliberately limited editing surface: basic appearance stays editable, but the
+	// advanced field editor and integrations are gated behind connecting the Console.
+	$is_local_only = xpressui_workflow_is_local_only( $slug );
+
+	echo '<div class="wrap xpressui-wrap xpressui-admin-wrap xpressui-active-tab-appearance' . ( $is_local_only ? ' xpressui-local-only' : '' ) . '">';
+
 	// Header
 	echo '<div class="xpressui-pro-header">';
 	echo '<div class="xpressui-pro-header-left">';
@@ -1173,11 +1129,27 @@ function xpressui_render_workflow_settings_page() {
 	echo '</div>';
 	echo '</div>';
 
+	// Upsell gate for local-only workflows.
+	if ( $is_local_only ) {
+		$connect_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
+		echo '<div class="xpressui-admin-card xpressui-upsell-gate" style="border-left:4px solid #2563eb;padding:18px 20px;margin-bottom:18px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;">';
+		echo '<div style="flex:1;min-width:320px;">';
+		echo '<h2 style="margin:0 0 6px;font-size:15px;">🔒 ' . esc_html__( 'This workflow lives only on this site', 'xpressui-bridge' ) . '</h2>';
+		echo '<p style="margin:0;color:#475569;max-width:640px;">' . esc_html__( 'Connect your IntakeFlow account to unlock the full editor — visual multi-step builder, steps & logic, fields, and advanced design. Basic appearance tweaks stay available here.', 'xpressui-bridge' ) . '</p>';
+		echo '</div>';
+		echo '<a href="' . esc_url( $connect_url ) . '" class="button button-primary button-hero">' . esc_html__( 'Connect IntakeFlow Account', 'xpressui-bridge' ) . '</a>';
+		echo '</div>';
+	}
+
 	// Tabs navigation
 	echo '<h2 class="nav-tab-wrapper xpressui-customizer-tabs" style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 0;">';
 	echo '<a href="#tab-appearance" class="nav-tab nav-tab-active" data-tab="appearance">🎨 ' . esc_html__( 'Style & Appearance', 'xpressui-bridge' ) . '</a>';
 	echo '<a href="#tab-navigation" class="nav-tab" data-tab="navigation">🗺️ ' . esc_html__( 'Navigation Buttons', 'xpressui-bridge' ) . '</a>';
-	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' ) . '</a>';
+	echo '<a href="#tab-fields" class="nav-tab" data-tab="fields">📝 ' . esc_html__( 'Form Fields & Overrides', 'xpressui-bridge' );
+	if ( $is_local_only ) {
+		echo ' <span class="xpressui-pro-badge" style="background:#e2e8f0;color:#475569;">🔒</span>';
+	}
+	echo '</a>';
 	echo '<a href="#tab-settings" class="nav-tab" data-tab="settings">⚙️ ' . esc_html__( 'Settings', 'xpressui-bridge' ) . '</a>';
 	echo '</h2>';
 
@@ -1552,52 +1524,6 @@ JS,
 		wp_print_inline_script_tag( $single_sync_script );
 	}
 }
-
-/**
- * Saves the branding settings. Locked if not Pro.
- */
-function xpressui_handle_save_branding_settings() {
-	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
-		return;
-	}
-	if ( ! isset( $_POST['xpressui_save_branding_settings'] ) ) {
-		return;
-	}
-	check_admin_referer( 'xpressui_branding_settings_action', 'xpressui_branding_settings_nonce' );
-
-	if ( ! xpressui_pro_is_license_active() ) {
-		return; // block tampering if not pro
-	}
-
-	$hide = isset( $_POST['xpressui_hide_branding'] ) ? '1' : '0';
-	update_option( 'xpressui_hide_branding', $hide );
-
-	xpressui_set_admin_notice( __( 'Branding settings saved.', 'xpressui-bridge' ), 'success' );
-	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
-	exit;
-}
-add_action( 'admin_init', 'xpressui_handle_save_branding_settings' );
-
-/**
- * Saves the WooCommerce integration settings.
- */
-function xpressui_handle_save_woocommerce_settings() {
-	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
-		return;
-	}
-	if ( ! isset( $_POST['xpressui_save_woocommerce_settings'] ) ) {
-		return;
-	}
-	check_admin_referer( 'xpressui_woocommerce_settings_action', 'xpressui_woocommerce_settings_nonce' );
-
-	$enable = isset( $_POST['xpressui_enable_woocommerce'] ) ? '1' : '0';
-	update_option( 'xpressui_enable_woocommerce', $enable );
-
-	xpressui_set_admin_notice( __( 'WooCommerce integration settings saved.', 'xpressui-bridge' ), 'success' );
-	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
-	exit;
-}
-add_action( 'admin_init', 'xpressui_handle_save_woocommerce_settings' );
 
 /**
  * Saves the Cloud Sync Settings.

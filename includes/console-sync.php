@@ -341,6 +341,17 @@ function xpressui_sync_project( string $project_id ) {
 		return $unzip_result;
 	}
 
+	// Record the workflow in the manifest registry (real Console projectId,
+	// runtime tier, capabilities, generatedAt, …). Without this a synced workflow
+	// had no registry entry, so its projectId resolved to empty/slug and it was
+	// misclassified as "local only" — wrongly offering "Create on Console" and
+	// suppressing the "Out of Sync" badge. The on-disk manifest.json carries the
+	// real projectId stamped by the Console export.
+	$synced_manifest = xpressui_load_workflow_manifest( $slug );
+	if ( ! empty( $synced_manifest ) ) {
+		xpressui_store_workflow_manifest_meta( $slug, $synced_manifest );
+	}
+
 	// Fetch and save hosted link configurations
 	$configs_response = wp_remote_get(
 		trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $slug ) . '/hosted-links/configs',
@@ -454,6 +465,91 @@ function xpressui_ajax_console_sync_project(): void {
 		'message' => sprintf( __( 'Synced! Embed with: [xpressui id="%s"]', 'xpressui-bridge' ), $res['slug'] ),
 	] );
 }
+
+/**
+ * AJAX: (re)create a LOCAL / out-of-sync workflow on the SaaS Console.
+ *
+ * Loads the workflow's local package (title + fields + steps from manifest.json),
+ * creates the project on the Console via the importer's create helper, then pulls
+ * the newly created project back to WordPress so its stored projectId / sync state
+ * flips from local-only to synced. Failures never mutate local state.
+ */
+function xpressui_ajax_console_create_local_workflow(): void {
+	check_ajax_referer( 'xpressui_console_sync_nonce', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => __( 'Insufficient permissions.', 'xpressui-bridge' ) ], 403 );
+	}
+
+	if ( ! function_exists( 'xpressui_pro_is_license_active' ) || ! xpressui_pro_is_license_active() ) {
+		wp_send_json_error( [ 'message' => __( 'Connect your IntakeFlow Console (configure an API Token) first.', 'xpressui-bridge' ) ] );
+	}
+
+	$slug = sanitize_title( wp_unslash( (string) ( $_POST['slug'] ?? '' ) ) );
+	if ( '' === $slug ) {
+		wp_send_json_error( [ 'message' => __( 'Missing workflow slug.', 'xpressui-bridge' ) ] );
+	}
+
+	if ( ! xpressui_workflow_is_local_only( $slug ) ) {
+		wp_send_json_error( [ 'message' => __( 'This workflow is already on your Console.', 'xpressui-bridge' ) ] );
+	}
+
+	$manifest = xpressui_load_workflow_manifest( $slug );
+	if ( empty( $manifest ) ) {
+		$manifest = xpressui_load_bundled_workflow_manifest( $slug );
+	}
+
+	$fields = is_array( $manifest['fields'] ?? null ) ? $manifest['fields'] : [];
+	$steps  = is_array( $manifest['steps'] ?? null ) ? $manifest['steps'] : [];
+	if ( empty( $fields ) ) {
+		wp_send_json_error( [ 'message' => __( 'Could not read this workflow’s fields from its local package.', 'xpressui-bridge' ) ] );
+	}
+
+	$title = sanitize_text_field( (string) ( $manifest['projectName'] ?? '' ) );
+	if ( '' === $title ) {
+		$title = $slug;
+	}
+
+	if ( empty( $steps ) ) {
+		$steps = [
+			[
+				'id'     => 'step_1',
+				'title'  => __( 'General Details', 'xpressui-bridge' ),
+				'fields' => array_column( $fields, 'id' ),
+			],
+		];
+	}
+
+	$create_result = xpressui_console_create_project( $slug, $title, $fields, $steps );
+	if ( is_wp_error( $create_result ) ) {
+		$reason = xpressui_console_failure_reason( $create_result );
+		wp_send_json_error( [
+			/* translators: %s: short human-readable reason the Console could not be reached. */
+			'message' => sprintf( __( 'Couldn’t create the workflow on your Console (%s). Your local workflow was left unchanged.', 'xpressui-bridge' ), $reason ),
+		] );
+	}
+
+	// Console create succeeded — pull the new project back so the stored projectId /
+	// sync state flips from local-only to synced. A sync failure here is NOT a
+	// "Console unreachable" condition (the SaaS project exists), so we report it as
+	// a warning and leave the local package as-is.
+	$api_project_id = $create_result['projectId'];
+	$final_slug     = $create_result['slug'];
+
+	$sync_res = xpressui_sync_project( $api_project_id );
+	if ( is_wp_error( $sync_res ) ) {
+		wp_send_json_error( [
+			/* translators: %s: error message from the sync attempt. */
+			'message' => sprintf( __( 'Workflow created on your Console, but the local sync failed: %s', 'xpressui-bridge' ), $sync_res->get_error_message() ),
+		] );
+	}
+
+	wp_send_json_success( [
+		'slug'    => $sync_res['slug'] ?? $final_slug,
+		'message' => __( 'Workflow created on your IntakeFlow Console.', 'xpressui-bridge' ),
+	] );
+}
+add_action( 'wp_ajax_xpressui_console_create_local_workflow', 'xpressui_ajax_console_create_local_workflow' );
 
 // ---------------------------------------------------------------------------
 // UI section — injected into the free plugin's Workflows page

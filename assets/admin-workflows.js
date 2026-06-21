@@ -112,6 +112,54 @@
 		});
 	});
 
+	// --- "Create on Console" per-row action ----------------------------------
+	if (cfg && cfg.nonce) {
+		document.querySelectorAll('.xpressui-create-on-console-link').forEach(function (link) {
+			link.addEventListener('click', function (e) {
+				e.preventDefault();
+				if (link.dataset.busy === '1') { return; }
+				var slug = link.dataset.slug;
+				if (!slug) { return; }
+
+				link.dataset.busy = '1';
+				var originalText = link.textContent;
+				link.textContent = i18n.creating || 'Creating…';
+				link.style.pointerEvents = 'none';
+				link.style.opacity = '0.6';
+
+				var data = new URLSearchParams();
+				data.set('action', 'xpressui_console_create_local_workflow');
+				data.set('nonce', cfg.nonce);
+				data.set('slug', slug);
+
+				fetch(ajaxUrl, { method: 'POST', body: data, credentials: 'same-origin' })
+					.then(function (r) { return r.json(); })
+					.then(function (res) {
+						if (res && res.success) {
+							// Highlight the synced row after reload, then refresh state.
+							var syncedSlug = (res.data && res.data.slug) ? res.data.slug : slug;
+							try { sessionStorage.setItem('xpressui_synced_slug', syncedSlug); } catch (err) {}
+							window.alert((res.data && res.data.message) ? res.data.message : (i18n.created || 'Workflow created on your IntakeFlow Console.'));
+							window.location.reload();
+							return;
+						}
+						link.dataset.busy = '';
+						link.textContent = originalText;
+						link.style.pointerEvents = '';
+						link.style.opacity = '';
+						window.alert((res && res.data && res.data.message) ? res.data.message : (i18n.error || 'Error.'));
+					})
+					.catch(function () {
+						link.dataset.busy = '';
+						link.textContent = originalText;
+						link.style.pointerEvents = '';
+						link.style.opacity = '';
+						window.alert(i18n.networkError || 'Network error.');
+					});
+			});
+		});
+	}
+
 	// --- Async freshness check ------------------------------------------------
 	if (cfg && cfg.localWorkflows && cfg.nonce) {
 		var localWorkflows = cfg.localWorkflows;

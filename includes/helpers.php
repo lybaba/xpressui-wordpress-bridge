@@ -2965,9 +2965,173 @@ function xpressui_get_local_workflows_metadata(): array {
 	$meta = [];
 	foreach ( $slugs as $slug ) {
 		$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
+		$generated_at  = (string) ( $manifest_meta['generatedAt'] ?? '' );
+
+		// The manifest registry entry can be missing/stale (notably for workflows
+		// pulled in via "Sync from Console" before their projectId was recorded),
+		// which would leave generatedAt empty and silently disable the client-side
+		// "Out of Sync" freshness check. Fall back to the on-disk manifest.json,
+		// which a Console export always stamps with a real generatedAt timestamp.
+		if ( '' === $generated_at ) {
+			$manifest      = xpressui_load_workflow_manifest( $slug );
+			$generated_at  = is_array( $manifest ) ? (string) ( $manifest['generatedAt'] ?? '' ) : '';
+		}
+
 		$meta[ $slug ] = [
-			'generatedAt' => $manifest_meta['generatedAt'] ?? '',
+			'generatedAt' => $generated_at,
 		];
 	}
 	return $meta;
+}
+
+/**
+ * Whether a recorded identifier is a *real* SaaS Console project id, as opposed
+ * to one of the synthetic placeholders the plugin uses when a workflow has never
+ * been created on the Console:
+ *
+ *  - ''                       — no id recorded
+ *  - the workflow slug itself — the safe REST-skip fallback (helpers.php ~1807)
+ *  - "import_<uniqid>"        — a locally imported / offline workflow
+ *  - "<slug>-starter"         — a bundled starter template shipped with the plugin
+ *
+ * Anything else (the modern "proj_…" ids and legacy alphanumeric Console ids)
+ * counts as a real Console project id.
+ *
+ * @param string $project_id Candidate identifier.
+ * @param string $slug       Workflow slug it belongs to.
+ * @return bool True when the id identifies a real Console project.
+ */
+function xpressui_is_real_console_project_id( $project_id, $slug ): bool {
+	$project_id = (string) $project_id;
+	$slug       = sanitize_title( (string) $slug );
+
+	if ( '' === $project_id ) {
+		return false;
+	}
+	if ( $project_id === $slug ) {
+		return false;
+	}
+	if ( 0 === strpos( $project_id, 'import_' ) ) {
+		return false;
+	}
+	if ( '' !== $slug && $project_id === $slug . '-starter' ) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Resolves the real SaaS Console project id backing a workflow, looking across
+ * every reliable local signal, or '' when the workflow has no Console backing.
+ *
+ * The manifest registry option can be stale or missing entirely — notably a
+ * workflow pulled in via "Sync from Console" historically never had its registry
+ * entry written, so its recorded projectId defaulted to empty/slug even though
+ * the workflow is plainly Console-backed. To classify robustly we consult, in
+ * order of trust:
+ *
+ *  1. the manifest registry entry (fast, in-memory option);
+ *  2. the on-disk manifest.json, which a Console export always stamps with the
+ *     real project id (`document.project.id`);
+ *  3. the `_xpressui_project_id` post meta stored on this workflow's submissions
+ *     — a recorded "proj_…" there is hard evidence the form was created on, and
+ *     submitted through, the Console.
+ *
+ * @param string $slug Workflow slug.
+ * @return string The real Console project id, or '' when none is known.
+ */
+function xpressui_get_workflow_console_project_id( $slug ): string {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	// 1) Manifest registry entry.
+	$meta       = xpressui_get_workflow_manifest_meta( $slug );
+	$project_id = isset( $meta['projectId'] ) ? (string) $meta['projectId'] : '';
+	if ( xpressui_is_real_console_project_id( $project_id, $slug ) ) {
+		return $project_id;
+	}
+
+	// 2) On-disk manifest.json (authoritative for synced/exported workflows).
+	$manifest      = xpressui_load_workflow_manifest( $slug );
+	$manifest_pid  = is_array( $manifest ) ? (string) ( $manifest['projectId'] ?? '' ) : '';
+	if ( xpressui_is_real_console_project_id( $manifest_pid, $slug ) ) {
+		return $manifest_pid;
+	}
+
+	// 3) A real project id recorded on this workflow's submissions.
+	$submission_pid = xpressui_get_submission_console_project_id( $slug );
+	if ( xpressui_is_real_console_project_id( $submission_pid, $slug ) ) {
+		return $submission_pid;
+	}
+
+	return '';
+}
+
+/**
+ * Returns the `_xpressui_project_id` recorded on the most recent submission for
+ * a workflow slug, or '' when the slug has no submissions / no recorded id.
+ *
+ * @param string $slug Workflow slug.
+ * @return string The recorded project id, or ''.
+ */
+function xpressui_get_submission_console_project_id( $slug ): string {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return '';
+	}
+
+	$query = new WP_Query( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'any',
+		'posts_per_page' => 1,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+		// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+		'meta_query'     => [
+			'relation' => 'AND',
+			[
+				'key'   => '_xpressui_project_slug',
+				'value' => $slug,
+			],
+			[
+				'key'     => '_xpressui_project_id',
+				'compare' => 'EXISTS',
+			],
+		],
+	] );
+
+	if ( empty( $query->posts ) ) {
+		return '';
+	}
+
+	return (string) get_post_meta( (int) $query->posts[0], '_xpressui_project_id', true );
+}
+
+/**
+ * Whether a workflow exists only locally and has never been created on the SaaS
+ * Console. A locally imported workflow (or the importer's "Local" fallback)
+ * stores a synthetic projectId of the form "import_<uniqid>" instead of a real
+ * Console project id, and bundled starters ("<slug>-starter") are never
+ * SaaS-backed either. Such a workflow can be (re)created on the Console.
+ *
+ * A workflow is treated as Console-backed (NOT local-only) as soon as a real
+ * Console project id is found in ANY reliable source — see
+ * {@see xpressui_get_workflow_console_project_id()} — even when the manifest
+ * registry entry is missing or its projectId defaulted to the slug.
+ *
+ * @param string $slug Workflow slug.
+ * @return bool True when the workflow is not backed by a real Console project.
+ */
+function xpressui_workflow_is_local_only( $slug ): bool {
+	$slug = sanitize_title( (string) $slug );
+	if ( '' === $slug ) {
+		return false;
+	}
+
+	return '' === xpressui_get_workflow_console_project_id( $slug );
 }

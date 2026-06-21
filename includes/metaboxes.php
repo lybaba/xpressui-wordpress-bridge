@@ -428,7 +428,7 @@ function xpressui_render_delivery_metabox( $post ) {
 
 	$badge = static function( string $status ): string {
 		$cls = 'xpressui-badge';
-		if ( in_array( $status, [ 'sent', 'ok', 'success' ], true ) ) {
+		if ( in_array( $status, [ 'synced', 'sent', 'ok', 'success' ], true ) ) {
 			$cls .= ' xpressui-badge--green';
 		} elseif ( $status === '' || $status === 'not-set' ) {
 			$cls .= ' xpressui-badge--gray';
@@ -498,9 +498,9 @@ function xpressui_render_delivery_metabox( $post ) {
 
 	// Webhook delivery.
 	echo '<div class="xpressui-delivery-card">';
-	echo '<h4>' . esc_html__( 'Webhook delivery', 'xpressui-bridge' ) . '</h4>';
+	echo '<h4>' . esc_html__( 'Cloud sync', 'xpressui-bridge' ) . '</h4>';
 	if ( $webhook_status === '' || $webhook_status === 'not-set' ) {
-		echo '<p class="xpressui-hint">' . esc_html__( 'No webhook configured.', 'xpressui-bridge' ) . '</p>';
+		echo '<p class="xpressui-hint">' . esc_html__( 'Not synced to the cloud.', 'xpressui-bridge' ) . '</p>';
 	} else {
 		echo '<div class="xpressui-delivery-dl">';
 			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . wp_kses( $badge( $webhook_status ), $badge_allowed_html ) . '</span></div>';

@@ -43,11 +43,11 @@ function xpressui_ajax_retry_sync() {
 	$code   = get_post_meta( $post_id, '_xpressui_webhook_code', true );
 	$error  = get_post_meta( $post_id, '_xpressui_webhook_error', true );
 
-	if ( 'sent' === $status ) {
+	if ( 'synced' === $status || 'sent' === $status ) {
 		wp_send_json_success( [
 			'message' => __( 'Sync successful!', 'xpressui-bridge' ),
 			'code'    => $code,
-			'status'  => 'sent',
+			'status'  => 'synced',
 		] );
 	} else {
 		wp_send_json_error( [
@@ -61,9 +61,114 @@ function xpressui_ajax_retry_sync() {
 add_action( 'wp_ajax_xpressui_retry_sync', 'xpressui_ajax_retry_sync' );
 
 /**
+ * Whether submissions are actually being backed up to the IntakeFlow Console.
+ *
+ * "Cloud subscription active" means the site is connected to the Console (a stored
+ * developer apiToken) AND cloud sync is enabled — the exact combination under which
+ * a submission gets uploaded to the SaaS (see xpressui_maybe_send_webhook()).
+ *
+ * @return bool
+ */
+function xpressui_cloud_sync_is_active() {
+	$connected = function_exists( 'xpressui_pro_is_license_active' ) && xpressui_pro_is_license_active();
+	$enabled   = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
+	return $connected && $enabled;
+}
+
+/**
+ * Whether ANY webhook endpoint is configured across installed workflows.
+ *
+ * Mirrors the two webhook sources the shortcode render resolves: the local
+ * per-workflow override (xpressui_project_settings[*]['webhookUrl']) and any synced
+ * hosted-link config (link.config.json → payload.webhookUrl). A non-empty match in
+ * either source counts as "a webhook endpoint is defined".
+ *
+ * @return bool
+ */
+function xpressui_any_webhook_endpoint_configured() {
+	// 1. Local per-workflow overrides.
+	$all_settings = get_option( 'xpressui_project_settings', [] );
+	if ( is_array( $all_settings ) ) {
+		foreach ( $all_settings as $project_settings ) {
+			if ( is_array( $project_settings ) && ! empty( $project_settings['webhookUrl'] ) ) {
+				return true;
+			}
+		}
+	}
+
+	// 2. Synced hosted-link configs (payload.webhookUrl).
+	if ( function_exists( 'xpressui_get_installed_workflow_slugs' ) && function_exists( 'xpressui_get_workflows_base_dir' ) ) {
+		$base_dir = xpressui_get_workflows_base_dir();
+		if ( $base_dir !== '' ) {
+			foreach ( xpressui_get_installed_workflow_slugs() as $slug ) {
+				$links_dir = trailingslashit( $base_dir ) . $slug . '/hosted-links/';
+				if ( ! is_dir( $links_dir ) ) {
+					continue;
+				}
+				$configs = glob( trailingslashit( $links_dir ) . '*/link.config.json' );
+				foreach ( (array) $configs as $config_file ) {
+					$raw = file_get_contents( $config_file );
+					if ( ! is_string( $raw ) || $raw === '' ) {
+						continue;
+					}
+					$config  = json_decode( $raw, true );
+					$payload = ( is_array( $config ) && is_array( $config['payload'] ?? null ) ) ? $config['payload'] : [];
+					if ( ! empty( $payload['webhookUrl'] ) ) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Renders the clean empty / setup state shown when neither cloud sync nor any
+ * webhook endpoint is configured — so the page never fills with meaningless rows.
+ */
+function xpressui_render_sync_logs_empty_state() {
+	$settings_url  = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
+	$workflows_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' );
+	?>
+	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 720px;">
+		<h2><?php esc_html_e( 'No sync activity yet', 'xpressui-bridge' ); ?></h2>
+		<p class="description" style="font-size: 13px; line-height: 1.6;">
+			<?php esc_html_e( 'Sync and delivery logs appear here once form submissions start flowing to a destination. Right now nothing is being delivered because:', 'xpressui-bridge' ); ?>
+		</p>
+		<ul style="list-style: disc; margin: 12px 0 16px 20px; color: #475569; font-size: 13px; line-height: 1.7;">
+			<li><?php esc_html_e( 'this site is not connected to the IntakeFlow Console (cloud backup is off), and', 'xpressui-bridge' ); ?></li>
+			<li><?php esc_html_e( 'no workflow has a webhook endpoint configured.', 'xpressui-bridge' ); ?></li>
+		</ul>
+		<p class="description" style="font-size: 13px; line-height: 1.6;">
+			<?php esc_html_e( 'Connect the Console to back up submissions to the cloud (the Console then delivers any webhooks you configure), or set a webhook URL on a specific workflow.', 'xpressui-bridge' ); ?>
+		</p>
+		<p style="margin-top: 16px;">
+			<a href="<?php echo esc_url( $settings_url ); ?>" class="button button-primary">
+				<?php esc_html_e( 'Connect to IntakeFlow Console', 'xpressui-bridge' ); ?>
+			</a>
+			<a href="<?php echo esc_url( $workflows_url ); ?>" class="button" style="margin-left: 8px;">
+				<?php esc_html_e( 'Configure a workflow webhook', 'xpressui-bridge' ); ?>
+			</a>
+		</p>
+	</div>
+	<?php
+}
+
+/**
  * Renders the Sync Logs panel.
  */
 function xpressui_render_sync_logs_tab() {
+	// No cloud subscription AND no webhook endpoint anywhere → show the clean
+	// setup state instead of a wall of meaningless "no destination" rows.
+	$cloud_active   = xpressui_cloud_sync_is_active();
+	$webhook_set    = xpressui_any_webhook_endpoint_configured();
+	if ( ! $cloud_active && ! $webhook_set ) {
+		xpressui_render_sync_logs_empty_state();
+		return;
+	}
+
 	// Query recent submissions
 	$args = [
 		'post_type'      => 'xpressui_submission',
@@ -74,18 +179,30 @@ function xpressui_render_sync_logs_tab() {
 	];
 	$posts = get_posts( $args );
 
+	$destination_label = $cloud_active
+		? __( 'IntakeFlow Console (cloud backup + webhook delivery)', 'xpressui-bridge' )
+		: __( 'Configured workflow webhook', 'xpressui-bridge' );
+
 	?>
 	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 100%;">
-		<h2><?php esc_html_e( 'Sync Logs (Webhook Deliveries)', 'xpressui-bridge' ); ?></h2>
-		<p class="description"><?php esc_html_e( 'View the outgoing sync history of form submissions sent to the console/webhook destination, and retry failed syncs.', 'xpressui-bridge' ); ?></p>
-		
+		<h2><?php esc_html_e( 'Sync Logs', 'xpressui-bridge' ); ?></h2>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: sync destination label. */
+				esc_html__( 'Per-submission backup status. Destination: %s.', 'xpressui-bridge' ),
+				'<strong>' . esc_html( $destination_label ) . '</strong>'
+			);
+			?>
+		</p>
+
 		<table class="wp-list-table widefat fixed striped" style="margin-top: 20px;">
 			<thead>
 				<tr>
 					<th style="width: 80px;"><?php esc_html_e( 'ID', 'xpressui-bridge' ); ?></th>
 					<th><?php esc_html_e( 'Workflow', 'xpressui-bridge' ); ?></th>
 					<th><?php esc_html_e( 'Date', 'xpressui-bridge' ); ?></th>
-					<th><?php esc_html_e( 'Webhook URL', 'xpressui-bridge' ); ?></th>
+					<th><?php esc_html_e( 'Destination', 'xpressui-bridge' ); ?></th>
 					<th><?php esc_html_e( 'Status', 'xpressui-bridge' ); ?></th>
 					<th><?php esc_html_e( 'HTTP Code', 'xpressui-bridge' ); ?></th>
 					<th><?php esc_html_e( 'Error Message', 'xpressui-bridge' ); ?></th>
@@ -104,46 +221,46 @@ function xpressui_render_sync_logs_tab() {
 						<?php
 						$post_id      = $post->ID;
 						$project_slug = get_post_meta( $post_id, '_xpressui_project_slug', true );
-						$status       = get_post_meta( $post_id, '_xpressui_webhook_status', true ) ?: 'not_configured';
+						$status       = (string) get_post_meta( $post_id, '_xpressui_webhook_status', true );
 						$code         = get_post_meta( $post_id, '_xpressui_webhook_code', true );
 						$error        = get_post_meta( $post_id, '_xpressui_webhook_error', true );
 						$date         = get_the_date( 'Y-m-d H:i', $post_id );
 
-						$payload_json = get_post_meta( $post_id, '_xpressui_payload_json', true );
-						$payload      = json_decode( $payload_json, true );
-						$webhook_url  = '';
-						if ( function_exists( 'xpressui_resolve_webhook_url' ) ) {
-							$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
-						}
-						if ( empty( $webhook_url ) ) {
-							$webhook_url = __( 'No Webhook Configured', 'xpressui-bridge' );
-						}
+						// Submissions sync to the IntakeFlow Console, which persists the
+						// backup and delivers any configured webhook(s) itself.
+						$destination = __( 'IntakeFlow Console', 'xpressui-bridge' );
 
-						// Nice badge styles
-						$badge_style = 'background: #cbd5e1; color: #475569;';
-						$status_label = __( 'None', 'xpressui-bridge' );
-						if ( 'sent' === $status ) {
-							$badge_style = 'background: #dcfce7; color: #15803d;';
-							$status_label = __( 'Sent', 'xpressui-bridge' );
+						// Map the real sync status to a meaningful badge. Submissions with
+						// no status meta predate cloud sync (stored locally only).
+						$badge_style  = 'background: #e2e8f0; color: #475569;';
+						$status_label = __( 'Local only', 'xpressui-bridge' );
+						if ( 'synced' === $status || 'sent' === $status ) {
+							$badge_style  = 'background: #dcfce7; color: #15803d;';
+							$status_label = __( 'Synced', 'xpressui-bridge' );
 						} elseif ( 'failed' === $status ) {
-							$badge_style = 'background: #fee2e2; color: #b91c1c;';
+							$badge_style  = 'background: #fee2e2; color: #b91c1c;';
 							$status_label = __( 'Failed', 'xpressui-bridge' );
 						} elseif ( 'queued' === $status ) {
-							$badge_style = 'background: #fef9c3; color: #a16207;';
+							$badge_style  = 'background: #fef9c3; color: #a16207;';
 							$status_label = __( 'Queued', 'xpressui-bridge' );
 						} elseif ( 'local_only' === $status ) {
-							$badge_style = 'background: #cbd5e1; color: #475569;';
-							$status_label = __( 'Local Only', 'xpressui-bridge' );
+							$badge_style  = 'background: #e2e8f0; color: #475569;';
+							$status_label = __( 'Local only', 'xpressui-bridge' );
 						} elseif ( 'local_only_quota_exceeded' === $status ) {
-							$badge_style = 'background: #fee2e2; color: #b91c1c;';
-							$status_label = __( 'Local Only (Quota Exceeded)', 'xpressui-bridge' );
+							$badge_style  = 'background: #ffedd5; color: #c2410c;';
+							$status_label = __( 'Local only (quota reached)', 'xpressui-bridge' );
 						}
+
+						// Retry only helps when a sync was attempted/queued but did not
+						// land — i.e. failed or quota-paused. Already-synced rows and rows
+						// that were never eligible to sync get no retry button.
+						$can_retry = in_array( $status, [ 'failed', 'queued', 'local_only_quota_exceeded' ], true );
 						?>
 						<tr id="xpressui-sync-row-<?php echo esc_attr( $post_id ); ?>">
 							<td><code>#<?php echo esc_html( $post_id ); ?></code></td>
 							<td><strong><?php echo esc_html( $project_slug ); ?></strong></td>
 							<td><?php echo esc_html( $date ); ?></td>
-							<td style="word-break: break-all; font-size: 11px;"><code><?php echo esc_html( $webhook_url ); ?></code></td>
+							<td style="font-size: 12px;"><?php echo esc_html( $destination ); ?></td>
 							<td>
 								<span class="xpressui-status-badge" style="padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; <?php echo esc_attr( $badge_style ); ?>">
 									<?php echo esc_html( $status_label ); ?>
@@ -152,9 +269,9 @@ function xpressui_render_sync_logs_tab() {
 							<td class="sync-code"><code><?php echo esc_html( $code ?: '-' ); ?></code></td>
 							<td class="sync-error" style="font-size: 11px; color: #dc2626;"><?php echo esc_html( $error ?: '-' ); ?></td>
 							<td style="text-align: center;">
-								<?php if ( 'not_configured' !== $status ) : ?>
-									<button 
-										class="button xpressui-retry-sync-btn" 
+								<?php if ( $can_retry ) : ?>
+									<button
+										class="button xpressui-retry-sync-btn"
 										data-post-id="<?php echo esc_attr( $post_id ); ?>"
 										data-nonce="<?php echo esc_attr( wp_create_nonce( 'xpressui_retry_sync_nonce' ) ); ?>"
 									>
@@ -192,10 +309,12 @@ function xpressui_render_sync_logs_tab() {
 					success: function(response) {
 						if (response.success) {
 							$row.find('.xpressui-status-badge')
-								.text('<?php esc_html_e( 'Sent', 'xpressui-bridge' ); ?>')
+								.text('<?php echo esc_js( __( 'Synced', 'xpressui-bridge' ) ); ?>')
 								.attr('style', 'padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: #dcfce7; color: #15803d;');
 							$row.find('.sync-code code').text(response.data.code);
 							$row.find('.sync-error').text('-');
+							// Synced rows are no longer retryable.
+							$btn.remove();
 							alert(response.data.message);
 						} else {
 							$row.find('.xpressui-status-badge')

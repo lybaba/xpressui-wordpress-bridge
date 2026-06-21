@@ -1,8 +1,18 @@
 <?php
 /**
- * Outbound webhook dispatcher for XPressUI submissions.
+ * Submission cloud-sync dispatcher.
  *
- * Best-effort: a webhook failure never blocks submission storage or the REST response.
+ * The plugin no longer fires outbound webhooks directly. Instead, after a
+ * submission is persisted locally it is uploaded (values + file references, not
+ * file contents) to the IntakeFlow Console ingest endpoint server-to-server with
+ * the stored developer API token. The Console persists it as a real backup AND
+ * delivers any configured webhook(s) itself — so webhook delivery is owned by the
+ * SaaS, not WordPress.
+ *
+ * Best-effort: a sync failure never blocks submission storage or the REST
+ * response. The per-submission status meta (`_xpressui_webhook_status`) now
+ * reflects the SaaS-sync result: local_only, local_only_quota_exceeded, queued,
+ * synced, or failed.
  *
  * @package XPressUI_Bridge
  */
@@ -14,37 +24,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_action( 'xpressui_dispatch_webhook_async', 'xpressui_dispatch_webhook_async', 10, 3 );
 
 /**
- * Send an outbound webhook for a submission if a webhook URL is configured.
+ * Resolves the hosted-link id carried on a submission payload, if any.
+ *
+ * @param array|string $payload Submission payload.
+ * @return string Hosted link id, or '' when project-scoped.
+ */
+function xpressui_resolve_submission_link_id( $payload ) {
+	return is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+}
+
+/**
+ * Queue (or synchronously fall back) the cloud sync of a stored submission.
+ *
+ * Gated by the `xpressui_enable_cloud_sync` option and the Free-tier backup
+ * quota — when sync is off or the quota is exceeded the submission stays
+ * local-only and no upload happens.
  *
  * @param int    $post_id      WordPress post ID of the stored submission.
  * @param string $project_slug Workflow project slug.
  * @param mixed  $payload      Submission payload (array or JSON string).
  */
-/**
- * Resolves the webhook URL for a submission from the synced Hosted Link config.
- *
- * Configuration lives on the SaaS Hosted Link and is synced down to
- * link.config.json; the legacy local `xpressui_project_settings` webhookUrl is no
- * longer consulted. Submissions without a hosted link have no webhook.
- *
- * @param string       $project_slug Project slug.
- * @param array|string $payload      Submission payload (carries `hostedLinkId`).
- * @return string Webhook URL, or '' when none is configured.
- */
-function xpressui_resolve_webhook_url( $project_slug, $payload ) {
-	$all_settings = get_option( 'xpressui_project_settings', [] );
-	if ( is_array( $all_settings ) && ! empty( $all_settings[ $project_slug ]['webhookUrl'] ) ) {
-		return trim( (string) $all_settings[ $project_slug ]['webhookUrl'] );
-	}
-	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
-	if ( $hosted_link_id === '' ) {
-		return '';
-	}
-	$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
-	$link_payload = ( is_array( $config ) && is_array( $config['payload'] ?? null ) ) ? $config['payload'] : [];
-	return trim( (string) ( $link_payload['webhookUrl'] ?? '' ) );
-}
-
 function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 	$enable_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
 	if ( ! $enable_sync ) {
@@ -53,30 +52,26 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 		return;
 	}
 
-	// Count submissions to check quota (100 free tier limit)
-	$args = [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-	];
-	$local_subs = get_posts( $args );
-	$sub_count  = is_array( $local_subs ) ? count( $local_subs ) : 0;
-	$quota_limit = 100;
+	// Count synced submissions to check quota (100 free tier backups).
+	$synced_count = xpressui_count_synced_submissions();
+	$quota_limit  = 100;
 
 	$is_pro = xpressui_pro_is_license_active();
-	if ( ! $is_pro && $sub_count > $quota_limit ) {
+	if ( ! $is_pro && $synced_count >= $quota_limit ) {
 		update_post_meta( $post_id, '_xpressui_webhook_status', 'local_only_quota_exceeded' );
 		update_post_meta( $post_id, '_xpressui_webhook_error', __( 'Cloud sync paused: backup quota exceeded on Free Plan.', 'xpressui-bridge' ) );
 		return;
 	}
 
-	$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
-	if ( $webhook_url === '' ) {
+	// Without a Console connection there is nothing to sync to.
+	$conn = xpressui_get_console_connection();
+	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
+		update_post_meta( $post_id, '_xpressui_webhook_status', 'local_only' );
+		update_post_meta( $post_id, '_xpressui_webhook_error', __( 'Console connection is not configured.', 'xpressui-bridge' ) );
 		return;
 	}
 
-	// Queue webhook dispatch to keep submit response fast for end users.
+	// Queue the upload to keep the submit response fast for end users.
 	$event_args = [ (int) $post_id, (string) $project_slug, is_array( $payload ) ? $payload : [] ];
 	update_post_meta( $post_id, '_xpressui_webhook_status', 'queued' );
 	update_post_meta( $post_id, '_xpressui_webhook_code', '' );
@@ -101,7 +96,11 @@ function xpressui_maybe_send_webhook( $post_id, $project_slug, $payload ) {
 }
 
 /**
- * Async webhook worker (WP-Cron).
+ * Async cloud-sync worker (WP-Cron).
+ *
+ * Uploads the submission to the Console ingest endpoint. The Console persists the
+ * backup and delivers any configured webhook(s); this worker no longer makes any
+ * direct external webhook call.
  *
  * @param int    $post_id      Submission post ID.
  * @param string $project_slug Workflow project slug.
@@ -115,66 +114,132 @@ function xpressui_dispatch_webhook_async( $post_id, $project_slug, $payload ) {
 		return;
 	}
 
-	$webhook_url = xpressui_resolve_webhook_url( $project_slug, $payload );
-	if ( $webhook_url === '' ) {
-		return;
-	}
-
-	$body   = xpressui_build_webhook_payload( $post_id, $project_slug, $payload );
-	$result = wp_remote_post(
-		$webhook_url,
-		[
-			'timeout'     => 5,
-			'redirection' => 0,
-			'headers'     => [
-				'Content-Type'     => 'application/json',
-				'X-XPressUI-Event' => 'xpressui.submission.created',
-			],
-			'body'        => wp_json_encode( $body ),
-		]
-	);
-
+	$result = xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload );
 	xpressui_store_webhook_result( $post_id, $result );
 }
 
 /**
- * Build the JSON payload sent to the webhook endpoint.
+ * Upload a stored submission to the Console ingest endpoint.
+ *
+ * Server-to-server with the stored developer API token (mirrors the catalog-order
+ * proxy). Sends submission VALUES + FILE REFERENCES — never file contents.
+ *
+ * @param int    $post_id      Submission post ID.
+ * @param string $project_slug Workflow project slug.
+ * @param array  $payload      Submission payload.
+ * @return array|WP_Error Return value from wp_remote_post().
+ */
+function xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload ) {
+	$conn = xpressui_get_console_connection();
+	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
+		return new WP_Error(
+			'xpressui_no_connection',
+			__( 'Console connection is not configured.', 'xpressui-bridge' )
+		);
+	}
+
+	$body    = xpressui_build_submission_ingest_body( $post_id, $project_slug, $payload );
+	$link_id = (string) ( $body['hostedLinkId'] ?? '' );
+
+	$endpoint = trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $project_slug );
+	if ( $link_id !== '' ) {
+		$endpoint .= '/hosted-links/' . rawurlencode( $link_id );
+	}
+	$endpoint .= '/submissions';
+
+	return wp_remote_post(
+		$endpoint,
+		[
+			'timeout'     => 15,
+			'redirection' => 0,
+			'headers'     => [
+				'X-Api-Token'  => $conn['apiToken'],
+				'Content-Type' => 'application/json',
+				'Accept'       => 'application/json',
+			],
+			'body'        => wp_json_encode( $body ),
+		]
+	);
+}
+
+/**
+ * Build the ingest request body for the Console submission endpoint.
+ *
+ * Mirrors the data the previous direct-webhook payload assembled (values + file
+ * references + project/submission ids + hostedLinkId) in the shape the SaaS
+ * ingest endpoint expects.
  *
  * @param int    $post_id      Submission post ID.
  * @param string $project_slug Workflow project slug.
  * @param mixed  $payload      Raw submission values.
  * @return array<string, mixed>
  */
-function xpressui_build_webhook_payload( $post_id, $project_slug, $payload ) {
-	$project_id           = (string) get_post_meta( $post_id, '_xpressui_project_id', true );
+function xpressui_build_submission_ingest_body( $post_id, $project_slug, $payload ) {
 	$project_config_version = (string) get_post_meta( $post_id, '_xpressui_project_config_version', true );
-	$submission_id        = (string) get_post_meta( $post_id, '_xpressui_submission_id', true );
-	$uploaded_files       = json_decode( (string) get_post_meta( $post_id, '_xpressui_uploaded_files', true ), true );
-	$values               = is_array( $payload ) ? $payload : [];
+	$submission_id          = (string) get_post_meta( $post_id, '_xpressui_submission_id', true );
+	$uploaded_files         = json_decode( (string) get_post_meta( $post_id, '_xpressui_uploaded_files', true ), true );
+	$values                 = is_array( $payload ) ? $payload : [];
+	$link_id                = xpressui_resolve_submission_link_id( $payload );
+
+	// Fall back to the entry id so the SaaS always has a stable idempotency key.
+	if ( $submission_id === '' ) {
+		$submission_id = 'wp-' . (string) $post_id;
+	}
+
+	$submitter_email = '';
+	foreach ( [ 'email', 'Email', 'e-mail', 'emailAddress' ] as $key ) {
+		if ( ! empty( $values[ $key ] ) && is_string( $values[ $key ] ) ) {
+			$submitter_email = sanitize_email( $values[ $key ] );
+			break;
+		}
+	}
 
 	return [
-		'event'   => 'xpressui.submission.created',
-		'sentAt'  => gmdate( 'Y-m-d\TH:i:s\Z' ),
-		'project' => [
-			'id'            => $project_id,
-			'slug'          => $project_slug,
-			'configVersion' => $project_config_version,
-		],
-		'submission' => [
-			'entryId'      => (int) $post_id,
-			'submissionId' => $submission_id,
-		],
-		'site' => [
+		'event'                => 'xpressui.submission.created',
+		'submissionId'         => $submission_id,
+		'projectConfigVersion' => $project_config_version,
+		'hostedLinkId'         => $link_id,
+		'submittedAt'          => gmdate( 'Y-m-d\TH:i:s\Z' ),
+		'submitterEmail'       => $submitter_email,
+		'site'                 => [
 			'name' => get_bloginfo( 'name' ),
 			'url'  => home_url( '/' ),
 		],
-		'values' => $values,
-		'files'  => is_array( $uploaded_files ) ? $uploaded_files : [],
+		'values'               => $values,
+		'files'                => is_array( $uploaded_files ) ? $uploaded_files : [],
 	];
 }
 
 /**
- * Store minimal webhook delivery metadata on the submission post.
+ * Count submissions that have actually been synced to the cloud.
+ *
+ * Used both for the Free-tier quota guard and the dashboard "cloud backups"
+ * counter, so the number reflects real backups rather than every local
+ * submission.
+ *
+ * @return int
+ */
+function xpressui_count_synced_submissions() {
+	$synced = get_posts(
+		[
+			'post_type'      => 'xpressui_submission',
+			'post_status'    => 'private',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[
+					'key'     => '_xpressui_webhook_status',
+					'value'   => [ 'synced', 'sent' ],
+					'compare' => 'IN',
+				],
+			],
+		]
+	);
+	return is_array( $synced ) ? count( $synced ) : 0;
+}
+
+/**
+ * Store minimal cloud-sync delivery metadata on the submission post.
  *
  * @param int                      $post_id Submission post ID.
  * @param array|WP_Error           $result  Return value from wp_remote_post().
@@ -201,7 +266,7 @@ function xpressui_store_webhook_result( $post_id, $result ) {
 
 	$code = (int) wp_remote_retrieve_response_code( $result );
 	if ( $code >= 200 && $code < 300 ) {
-		update_post_meta( $post_id, '_xpressui_webhook_status', 'sent' );
+		update_post_meta( $post_id, '_xpressui_webhook_status', 'synced' );
 		xpressui_record_submission_event(
 			$post_id,
 			'delivery.webhook.sent',
@@ -212,8 +277,13 @@ function xpressui_store_webhook_result( $post_id, $result ) {
 			[]
 		);
 	} else {
+		$detail = wp_remote_retrieve_response_message( $result );
+		$raw    = json_decode( (string) wp_remote_retrieve_body( $result ), true );
+		if ( is_array( $raw ) && ! empty( $raw['detail'] ) && is_string( $raw['detail'] ) ) {
+			$detail = $raw['detail'];
+		}
 		update_post_meta( $post_id, '_xpressui_webhook_status', 'failed' );
-		update_post_meta( $post_id, '_xpressui_webhook_error', wp_remote_retrieve_response_message( $result ) );
+		update_post_meta( $post_id, '_xpressui_webhook_error', $detail );
 		xpressui_record_submission_event(
 			$post_id,
 			'delivery.webhook.failed',
@@ -222,7 +292,7 @@ function xpressui_store_webhook_result( $post_id, $result ) {
 				'http_code' => $code,
 			],
 			[
-				'error_message' => (string) wp_remote_retrieve_response_message( $result ),
+				'error_message' => (string) $detail,
 			]
 		);
 	}

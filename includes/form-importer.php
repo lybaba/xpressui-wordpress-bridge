@@ -373,6 +373,14 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 		];
 	}
 
+	// Build the XPressUI form config (same shape the SaaS Console export produces)
+	// so the local package carries a real form.config.json. Without it the package
+	// has only manifest.json, which fails xpressui_workflow_directory_has_required_artifacts()
+	// (it requires the config artifact too) — so the workflow never appears in the
+	// Installed Workflows list and the shortcode cannot render it.
+	$import_document = xpressui_build_import_document( $slug, $title, $fields, $steps );
+	$form_config     = is_array( $import_document['config'] ?? null ) ? $import_document['config'] : [];
+
 	$manifest = [
 		'projectId'          => 'import_' . uniqid(),
 		'projectName'        => $title . ' (' . __( 'Imported', 'xpressui-bridge' ) . ')',
@@ -381,6 +389,11 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 		'runtimeTier'        => 'light', // Standalone offline execution
 		'isBundled'          => true,
 		'manifestFingerprint'=> md5( wp_json_encode( $fields ) ),
+		// Declare the on-disk artifacts so the list scan and the shortcode renderer
+		// resolve form.config.json (xpressui_get_workflow_artifact_path()).
+		'artifacts'          => [
+			'config' => 'form.config.json',
+		],
 		'fields'             => $fields,
 		'steps'              => $steps,
 		'schema'             => [
@@ -394,6 +407,17 @@ function xpressui_create_imported_workflow_package( $slug, $title, $fields ) {
 			),
 		]
 	];
+
+	// Write form.config.json FIRST — it is a required artifact for the package to be
+	// considered installed. If it cannot be written, fail before leaving a half-built
+	// (invisible) package behind.
+	$config_written = file_put_contents(
+		trailingslashit( $target_dir ) . 'form.config.json',
+		wp_json_encode( $form_config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES )
+	);
+	if ( false === $config_written ) {
+		return new WP_Error( 'write_failed', __( 'Could not write form.config.json configuration.', 'xpressui-bridge' ) );
+	}
 
 	// Write manifest.json
 	$written = file_put_contents(
@@ -830,6 +854,12 @@ function xpressui_render_form_importer_tab() {
 	$has_forms = ! empty( $cf7_forms ) || ! empty( $gf_forms );
 	$is_saas_connected = xpressui_pro_is_license_active();
 
+	// CTA target for the local-import conversion nudge. Point at the Settings page's
+	// Console Connection section (the same 1-Click "Connect IntakeFlow Account" entry
+	// point) — robust for a brand-new, never-connected site where the Console URL may
+	// not be configured yet, so we can't safely pre-build the wordpress-connect URL.
+	$connect_settings_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
+
 	?>
 	<style>
 	.xpui-wiz-container {
@@ -1209,7 +1239,7 @@ function xpressui_render_form_importer_tab() {
 						<button type="button" class="xpui-wiz-copy-btn" id="xpui-wiz-copy-btn" data-clipboard-text=""><?php esc_html_e( 'Copy', 'xpressui-bridge' ); ?></button>
 					</div>
 
-					<p style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+					<p style="margin-top:15px; display:flex; gap:10px; justify-content:center;" id="xpui-wiz-success-actions">
 						<a href="" target="_blank" rel="noopener noreferrer" class="xpui-wiz-btn xpui-wiz-btn-primary" id="xpui-wiz-edit-btn" style="display:none;">
 							⚡ <?php esc_html_e( 'Edit in SaaS Console', 'xpressui-bridge' ); ?>
 						</a>
@@ -1217,6 +1247,51 @@ function xpressui_render_form_importer_tab() {
 							📂 <?php esc_html_e( 'View Workflows', 'xpressui-bridge' ); ?>
 						</a>
 					</p>
+
+					<!--
+						Conversion nudge — shown ONLY when the import landed LOCALLY (no
+						Console account, or fallback-to-local). Hidden by default; the JS
+						reveals it on the Success step when response.data.saas is falsy.
+						When connected (SaaS), this stays hidden and the normal success shows.
+					-->
+					<div id="xpui-wiz-connect-nudge" style="display:none; text-align:left; margin:24px auto 0; max-width:520px; border:1px solid #bfdbfe; background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%); border-radius:14px; padding:22px 24px; box-shadow:0 4px 6px -1px rgba(37,99,235,0.08);">
+						<h3 style="margin:0 0 6px; font-size:16px; font-weight:800; color:#1e3a8a;">
+							🚀 <?php esc_html_e( 'Workflow created locally — connect to unlock the full product', 'xpressui-bridge' ); ?>
+						</h3>
+						<p style="margin:0 0 14px; font-size:13px; color:#475569; line-height:1.5;">
+							<?php esc_html_e( 'Your workflow runs right now on this site. Connect a free IntakeFlow account to unlock the rest:', 'xpressui-bridge' ); ?>
+						</p>
+						<ul style="list-style:none; margin:0 0 18px; padding:0;">
+							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
+								<span style="font-size:15px; line-height:1.3;">☁️</span>
+								<span><strong><?php esc_html_e( 'Cloud backup of submissions', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'every entry safely stored off your server.', 'xpressui-bridge' ); ?></span>
+							</li>
+							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
+								<span style="font-size:15px; line-height:1.3;">🎨</span>
+								<span><strong><?php esc_html_e( 'Visual multi-step editor', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'redesign and re-order steps without touching code.', 'xpressui-bridge' ); ?></span>
+							</li>
+							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
+								<span style="font-size:15px; line-height:1.3;">🔗</span>
+								<span><strong><?php esc_html_e( 'Reliable integrations & webhooks', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'delivered server-side by the Console.', 'xpressui-bridge' ); ?></span>
+							</li>
+							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:9px; font-size:13px; color:#334155; line-height:1.45;">
+								<span style="font-size:15px; line-height:1.3;">⏰</span>
+								<span><strong><?php esc_html_e( 'Automated reminders', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'follow up with people automatically.', 'xpressui-bridge' ); ?></span>
+							</li>
+							<li style="display:flex; gap:10px; align-items:flex-start; margin-bottom:0; font-size:13px; color:#334155; line-height:1.45;">
+								<span style="font-size:15px; line-height:1.3;">📊</span>
+								<span><strong><?php esc_html_e( 'Analytics', 'xpressui-bridge' ); ?></strong> — <?php esc_html_e( 'see completion rates and where people drop off.', 'xpressui-bridge' ); ?></span>
+							</li>
+						</ul>
+						<a href="<?php echo esc_url( $connect_settings_url ); ?>" class="xpui-wiz-btn xpui-wiz-btn-primary" style="width:100%; box-sizing:border-box;">
+							🔌 <?php esc_html_e( 'Connect IntakeFlow Account', 'xpressui-bridge' ); ?>
+						</a>
+						<p style="margin:12px 0 0; text-align:center;">
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge' ) ); ?>" style="font-size:12px; color:#64748b; text-decoration:underline;">
+								<?php esc_html_e( 'Not now — continue to my workflow', 'xpressui-bridge' ); ?>
+							</a>
+						</p>
+					</div>
 				</div>
 			</div>
 
@@ -1424,6 +1499,21 @@ function xpressui_render_form_importer_tab() {
 									$('#xpui-wiz-edit-btn').attr('href', response.data.edit_url).show();
 								} else {
 									$('#xpui-wiz-edit-btn').hide();
+								}
+
+								// Conversion nudge: show it ONLY for a LOCAL import (no SaaS
+								// account, or fallback-to-local). On a connected SaaS import
+								// keep the normal success unchanged. response.data.saas is
+								// true only when the workflow was created on the Console.
+								if (response.data.saas) {
+									$('#xpui-wiz-connect-nudge').hide();
+									$('#xpui-wiz-success-actions').show();
+								} else {
+									// The nudge carries its own primary CTA + "continue to my
+									// workflow" link, so hide the default action row to avoid
+									// a duplicate "View Workflows" button.
+									$('#xpui-wiz-success-actions').hide();
+									$('#xpui-wiz-connect-nudge').show();
 								}
 							}, 800);
 						}, 600);

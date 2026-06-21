@@ -25,18 +25,14 @@ add_action( 'wp_dashboard_setup', 'xpressui_register_dashboard_widget' );
  * Render the dashboard widget content.
  */
 function xpressui_render_dashboard_widget_content() {
-	// Query local submissions count
-	$args = [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => -1,
-		'fields'         => 'ids',
-	];
-	$local_subs = get_posts( $args );
-	$sub_count  = is_array( $local_subs ) ? count( $local_subs ) : 0;
-	$quota_limit = 100; // Simulated Trial Limit
+	// Cloud backup volume counts only submissions that actually synced to the
+	// Console, not every local submission, so the figure reflects real backups.
+	$sub_count   = function_exists( 'xpressui_count_synced_submissions' )
+		? xpressui_count_synced_submissions()
+		: 0;
+	$quota_limit = 100; // Free-tier cloud backup limit.
 	$is_pro = xpressui_pro_is_license_active();
-	$quota_exceeded = ! $is_pro && $sub_count > $quota_limit;
+	$quota_exceeded = ! $is_pro && $sub_count >= $quota_limit;
 	$percentage  = min( 100, round( ( $sub_count / $quota_limit ) * 100 ) );
 
 	$bar_background = $quota_exceeded 

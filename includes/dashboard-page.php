@@ -83,6 +83,12 @@ function xpressui_render_dashboard_page() {
 		],
 	] ) );
 
+	// Cloud backups counts only submissions that actually synced to the Console,
+	// not every local submission, so the "N / 100 cloud backups" figure is honest.
+	$synced_backups = function_exists( 'xpressui_count_synced_submissions' )
+		? xpressui_count_synced_submissions()
+		: 0;
+
 	$total_submissions = count( get_posts( [
 		'post_type'      => 'xpressui_submission',
 		'post_status'    => 'private',
@@ -132,7 +138,7 @@ function xpressui_render_dashboard_page() {
 
 	$hours_saved = $total_submissions > 0 ? max( 0.5, round( ( $total_submissions * 15 + $corrections_count * 20 ) / 60, 1 ) ) : 0;
 	$quota_limit = 100;
-	$quota_percentage = min( 100, round( ( $current_month_submissions / $quota_limit ) * 100 ) );
+	$quota_percentage = min( 100, round( ( $synced_backups / $quota_limit ) * 100 ) );
 
 	$is_pro      = xpressui_pro_is_license_active();
 	$conn        = xpressui_get_console_connection();
@@ -358,7 +364,7 @@ function xpressui_render_dashboard_page() {
 		<div class="xpui-top-grid">
 			<?php
 			$enable_sync = get_option( 'xpressui_enable_cloud_sync', '1' ) === '1';
-			$quota_exceeded = ! $is_pro && $current_month_submissions > $quota_limit;
+			$quota_exceeded = ! $is_pro && $synced_backups >= $quota_limit;
 
 			$status_label = __( 'Free Plan', 'xpressui-bridge' );
 			$status_class = 'xpui-badge-free';
@@ -388,7 +394,7 @@ function xpressui_render_dashboard_page() {
 						</span>
 					</h3>
 					<p style="font-size: 28px; font-weight: 900; color: #0f172a; margin: 0 0 14px; letter-spacing: -0.02em;">
-						<?php echo (int) $current_month_submissions; ?> <span style="font-size: 15px; font-weight: 500; color: #64748b;">/ <?php echo (int) $quota_limit; ?> <?php esc_html_e( 'cloud backups', 'xpressui-bridge' ); ?></span>
+						<?php echo (int) $synced_backups; ?> <span style="font-size: 15px; font-weight: 500; color: #64748b;">/ <?php echo (int) $quota_limit; ?> <?php esc_html_e( 'cloud backups', 'xpressui-bridge' ); ?></span>
 					</p>
 					
 					<!-- Progress Bar -->
@@ -513,11 +519,10 @@ function xpressui_render_dashboard_page() {
 					<thead>
 						<tr>
 							<th><?php esc_html_e( 'Submitter', 'xpressui-bridge' ); ?></th>
-							<th><?php esc_html_e( 'Workflow Slug', 'xpressui-bridge' ); ?></th>
+							<th><?php esc_html_e( 'Workflow', 'xpressui-bridge' ); ?></th>
 							<th><?php esc_html_e( 'Date', 'xpressui-bridge' ); ?></th>
 							<th><?php esc_html_e( 'Status', 'xpressui-bridge' ); ?></th>
 							<th><?php esc_html_e( 'Sync State', 'xpressui-bridge' ); ?></th>
-							<th style="width: 120px; text-align: center;"><?php esc_html_e( 'Actions', 'xpressui-bridge' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -575,7 +580,7 @@ function xpressui_render_dashboard_page() {
 								$sync_label = __( 'Local Only', 'xpressui-bridge' );
 							}
 							?>
-							<tr>
+							<tr class="xpui-clickable-row" data-href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>" style="cursor: pointer;">
 								<td>
 									<strong>
 										<a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>">
@@ -595,15 +600,21 @@ function xpressui_render_dashboard_page() {
 										<?php echo esc_html( $sync_label ); ?>
 									</span>
 								</td>
-								<td style="text-align: center;">
-									<a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>" class="button button-small" style="border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;">
-										<?php esc_html_e( 'View Details', 'xpressui-bridge' ); ?>
-									</a>
-								</td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				<script>
+				( function () {
+					document.querySelectorAll( '.xpui-clickable-row' ).forEach( function ( row ) {
+						row.addEventListener( 'click', function ( e ) {
+							if ( e.target.closest( 'a' ) ) { return; }
+							var href = row.getAttribute( 'data-href' );
+							if ( href ) { window.location.href = href; }
+						} );
+					} );
+				} )();
+				</script>
 			<?php endif; ?>
 		</div>
 
@@ -624,10 +635,6 @@ function xpressui_render_dashboard_page() {
 					<li>
 						<strong><?php esc_html_e( 'Cloud Sync:', 'xpressui-bridge' ); ?></strong> 
 						<?php echo $enable_sync ? '<span style="color: #16a34a; font-weight: bold;">' . esc_html__( 'Active', 'xpressui-bridge' ) . '</span>' : '<span style="color: #64748b; font-weight: bold;">' . esc_html__( 'Inactive', 'xpressui-bridge' ) . '</span>'; ?>
-					</li>
-					<li>
-						<strong><?php esc_html_e( 'WooCommerce Checkout:', 'xpressui-bridge' ); ?></strong> 
-						<?php echo get_option( 'xpressui_enable_woocommerce', '0' ) === '1' ? '<span style="color: #16a34a; font-weight: bold;">' . esc_html__( 'Enabled', 'xpressui-bridge' ) . '</span>' : '<span style="color: #64748b; font-weight: bold;">' . esc_html__( 'Disabled', 'xpressui-bridge' ) . '</span>'; ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'License Tier:', 'xpressui-bridge' ); ?></strong> 
