@@ -627,7 +627,7 @@ function xpressui_render_dashboard_page() {
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'License Tier:', 'xpressui-bridge' ); ?></strong> 
-						<?php echo $is_pro ? '<span style="color: #16a34a; font-weight: bold;">Pro Active</span>' : '<span style="color: #2563eb; font-weight: bold;">Free / Trial</span>'; ?>
+						<?php echo $is_pro ? '<span style="color: #16a34a; font-weight: bold;">' . esc_html__( 'Pro Active', 'xpressui-bridge' ) . '</span>' : '<span style="color: #2563eb; font-weight: bold;">' . esc_html__( 'Free / Trial', 'xpressui-bridge' ) . '</span>'; ?>
 					</li>
 				</ul>
 			</div>
