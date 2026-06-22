@@ -99,8 +99,9 @@ add_action( 'save_post_xpressui_submission', 'xpressui_save_submission_status' )
 // --- List filters & row actions ---
 add_action( 'restrict_manage_posts', 'xpressui_render_submission_filters' );
 add_action( 'pre_get_posts', 'xpressui_apply_submission_filters' );
-add_filter( 'post_row_actions', 'xpressui_add_submission_row_actions', 10, 2 );
-add_action( 'admin_init', 'xpressui_handle_submission_status_action' );
+// Submission status is owned by the IntakeFlow Console (SaaS) and is READ-ONLY in
+// WordPress, so the inline "Mark <status>" row actions and their handler are not
+// registered. The list status FILTER stays (it only filters, it never mutates).
 
 // --- Admin pages ---
 add_action( 'admin_menu', 'xpressui_register_admin_page' );

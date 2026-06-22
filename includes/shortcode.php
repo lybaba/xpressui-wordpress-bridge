@@ -1245,33 +1245,14 @@ function xpressui_render_shortcode( $atts ) {
 				// form card, parity with the SaaS).
 				$ts_checkout            = xpressui_render_time_slots_checkout();
 				$checkout_order_summary = $ts_checkout['summary'];
-				// Persist the booking in the WP submission: catalog-checkout.js intercepts the
-				// runtime submit and merges the slot (read from the URL params) into the payload
-				// — the runtime only serializes config fields, so DOM hidden inputs won't do.
-				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
-				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
-				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
-				wp_localize_script(
-					'xpressui-catalog-checkout',
-					'xpressuiCatalogCheckout',
-					[
-						'slug'      => $slug,
-						'returnUrl' => $co_grid,
-					]
-				);
-			}
-			// Product catalogs use a localStorage cart + order summary + payment selector.
-			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
-				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
-				// Payment-method block intentionally omitted: the WP checkout no longer renders
-				// the manual/Stripe "Payment method" selector. The submit handler tolerates an
-				// absent xpui_payment_method field (rest-endpoint.php sanitizes it to a string).
-
-				// Save the catalog order in WordPress by default: inject the localStorage
-				// cart + chosen payment method into the form as hidden fields so the normal
-				// submit to xpressui/v1/submit stores the order in the WP submission inbox.
-				// (A future opt-in paid "bypass" can POST to the SaaS orders endpoint
-				// instead — the REST proxy is already in place.)
+				// Payment-method selector (parity with products): the chosen method routes the
+				// booking order to the SaaS (Stripe redirect / manual pending).
+				$co_payment = is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [];
+				$checkout_order_summary .= xpressui_render_checkout_payment_methods( $co_payment );
+				// The booking still creates a LOCAL WP entry (catalog-checkout.js merges the
+				// slot from the URL params into the submit payload), but PAYMENT + processing
+				// are owned by the SaaS — the submit handler pushes it synchronously and
+				// returns any Stripe checkout URL to redirect to.
 				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
 				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
 				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
@@ -1280,8 +1261,39 @@ function xpressui_render_shortcode( $atts ) {
 					'xpressuiCatalogCheckout',
 					[
 						'slug'       => $slug,
+						'linkId'     => $link_attr,
+						'returnUrl'  => $co_grid,
+						'successUrl' => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
+						'cancelUrl'  => $co_grid,
+					]
+				);
+			}
+			// Product catalogs use a localStorage cart + order summary + payment selector.
+			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
+				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
+				// Payment-method selector (Stripe card + manual methods) — the chosen method
+				// (xpui_payment_method) decides routing: Stripe → SaaS Checkout redirect,
+				// manual → SaaS order recorded as pending. Read by catalog-checkout.js.
+				$co_payment = is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [];
+				$checkout_order_summary .= xpressui_render_checkout_payment_methods( $co_payment );
+
+				// The order still creates a LOCAL WP entry (catalog-checkout.js injects the
+				// cart into the submit payload), but PAYMENT + processing are owned by the
+				// SaaS: the submit handler pushes the order synchronously and returns the
+				// Stripe checkout URL for the browser to redirect to.
+				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
+				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
+				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
+				wp_localize_script(
+					'xpressui-catalog-checkout',
+					'xpressuiCatalogCheckout',
+					[
+						'slug'       => $slug,
+						'linkId'     => $link_attr,
 						'storageKey' => xpressui_catalog_cart_storage_key( $link_attr, (string) ( $co_catalog['catalog_id'] ?? '' ) ),
 						'returnUrl'  => $co_grid,
+						'successUrl' => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
+						'cancelUrl'  => add_query_arg( 'xpui_checkout', '1', $co_grid ),
 					]
 				);
 			}

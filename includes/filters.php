@@ -148,50 +148,6 @@ function xpressui_get_filtered_submission_ids( $status, $project, $assignee ) {
 	return $ids;
 }
 
-function xpressui_add_submission_row_actions( $actions, $post ) {
-	if ( ( $post->post_type ?? '' ) !== 'xpressui_submission' ) {
-		return $actions;
-	}
-	$current_status = (string) get_post_meta( $post->ID, '_xpressui_submission_status', true );
-	foreach ( xpressui_get_status_options() as $status => $label ) {
-		if ( $status === $current_status ) {
-			continue;
-		}
-		$url = wp_nonce_url(
-			add_query_arg( [
-				'post_type'            => 'xpressui_submission',
-				'xpressui_submission_id' => $post->ID,
-				'xpressui_mark_status' => $status,
-			], admin_url( 'edit.php' ) ),
-			'xpressui_mark_submission_status_' . $post->ID . '_' . $status
-		);
-		/* translators: %s: status label */
-		$actions[ 'xpressui_mark_' . $status ] = '<a href="' . esc_url( $url ) . '">' . esc_html( sprintf( __( 'Mark %s', 'xpressui-bridge' ), $label ) ) . '</a>';
-	}
-	return $actions;
-}
-
-function xpressui_handle_submission_status_action() {
-	if ( ! is_admin() || ! isset( $_GET['xpressui_submission_id'] ) || ! isset( $_GET['xpressui_mark_status'] ) ) {
-		return;
-	}
-
-	$post_id = absint( wp_unslash( (string) $_GET['xpressui_submission_id'] ) );
-
-	$status  = sanitize_text_field( wp_unslash( (string) $_GET['xpressui_mark_status'] ) );
-	$options = xpressui_get_status_options();
-
-	if ( $post_id <= 0 || ! isset( $options[ $status ] ) ) {
-		return;
-	}
-	if ( ! current_user_can( 'edit_post', $post_id ) ) {
-		return;
-	}
-	check_admin_referer( 'xpressui_mark_submission_status_' . $post_id . '_' . $status );
-	xpressui_set_submission_status( $post_id, $status );
-	wp_safe_redirect( add_query_arg( [
-		'post_type'               => 'xpressui_submission',
-		'xpressui_status_updated' => 1,
-	], admin_url( 'edit.php' ) ) );
-	exit;
-}
+// Submission status is owned by the IntakeFlow Console (SaaS) and is READ-ONLY in
+// WordPress: the inline "Mark <status>" row actions and their admin_init handler were
+// removed (the status FILTER above stays — it only filters the list, never mutates).
