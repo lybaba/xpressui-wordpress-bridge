@@ -799,9 +799,14 @@ function xpressui_render_checkout_payment_methods( $payment ) {
 				continue;
 			}
 			$mid   = (string) ( $method['id'] ?? '' );
-			$label = (string) ( $method['label'] ?? $mid );
 			if ( '' === $mid ) {
 				continue;
+			}
+			// Never leave the radio blank: when the merchant didn't name the method,
+			// fall back to a humanized id (e.g. "orange_money" → "Orange Money").
+			$label = trim( (string) ( $method['label'] ?? '' ) );
+			if ( '' === $label ) {
+				$label = ucwords( str_replace( [ '-', '_' ], ' ', $mid ) );
 			}
 			$checked = ( ! $stripe && 0 === $i ) ? ' checked' : '';
 			?>
