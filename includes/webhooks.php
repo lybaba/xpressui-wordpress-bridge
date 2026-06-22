@@ -127,9 +127,11 @@ function xpressui_dispatch_webhook_async( $post_id, $project_slug, $payload ) {
  * @param int    $post_id      Submission post ID.
  * @param string $project_slug Workflow project slug.
  * @param array  $payload      Submission payload.
+ * @param array  $extra        Optional extra body fields (e.g. returnUrl/cancelUrl
+ *                             for a headless catalog order checkout).
  * @return array|WP_Error Return value from wp_remote_post().
  */
-function xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload ) {
+function xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload, $extra = [] ) {
 	$conn = xpressui_get_console_connection();
 	if ( empty( $conn['apiUrl'] ) || empty( $conn['apiToken'] ) ) {
 		return new WP_Error(
@@ -138,7 +140,10 @@ function xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload ) {
 		);
 	}
 
-	$body    = xpressui_build_submission_ingest_body( $post_id, $project_slug, $payload );
+	$body = xpressui_build_submission_ingest_body( $post_id, $project_slug, $payload );
+	if ( is_array( $extra ) && ! empty( $extra ) ) {
+		$body = array_merge( $body, $extra );
+	}
 	$link_id = (string) ( $body['hostedLinkId'] ?? '' );
 
 	$endpoint = trailingslashit( $conn['apiUrl'] ) . 'api/v1/projects/' . rawurlencode( $project_slug );
@@ -302,4 +307,53 @@ function xpressui_store_webhook_result( $post_id, $result ) {
 	}
 	update_post_meta( $post_id, '_xpressui_webhook_code', (string) $code );
 	update_post_meta( $post_id, '_xpressui_webhook_sent_at', $sent_at );
+}
+
+/**
+ * Whether a stored submission payload carries a headless catalog ORDER (a product
+ * cart + a chosen payment method). Such submissions are pushed to the SaaS
+ * synchronously so the SaaS can re-price and (for Stripe) return a Checkout URL.
+ *
+ * @param mixed $payload Submission payload (array) or JSON string.
+ * @return bool
+ */
+function xpressui_submission_is_catalog_order( $payload ) {
+	if ( is_string( $payload ) ) {
+		$payload = json_decode( $payload, true );
+	}
+	if ( ! is_array( $payload ) ) {
+		return false;
+	}
+	if ( '' === trim( (string) ( $payload['xpressuiPaymentMethod'] ?? '' ) ) ) {
+		return false;
+	}
+	$cart = $payload['xpressuiProductCart'] ?? '';
+	if ( is_string( $cart ) ) {
+		$cart = json_decode( $cart, true );
+	}
+	return is_array( $cart ) && ! empty( $cart );
+}
+
+/**
+ * Returns the URL only if it is an absolute http(s) URL on this site's own host
+ * (same origin as home_url()), else ''. Guards the Stripe return/cancel URLs
+ * against open-redirect to a foreign host.
+ *
+ * @param mixed $url Candidate URL.
+ * @return string Validated same-origin URL, or ''.
+ */
+function xpressui_validate_same_origin_url( $url ) {
+	$url = esc_url_raw( trim( (string) $url ) );
+	if ( '' === $url ) {
+		return '';
+	}
+	$parts  = wp_parse_url( $url );
+	$home   = wp_parse_url( home_url( '/' ) );
+	$scheme = strtolower( (string) ( $parts['scheme'] ?? '' ) );
+	if ( ! in_array( $scheme, [ 'http', 'https' ], true ) ) {
+		return '';
+	}
+	$host      = strtolower( (string) ( $parts['host'] ?? '' ) );
+	$home_host = strtolower( (string) ( $home['host'] ?? '' ) );
+	return ( '' !== $host && $host === $home_host ) ? $url : '';
 }

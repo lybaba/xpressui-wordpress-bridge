@@ -283,6 +283,30 @@ function xpressui_render_hosted_catalog_embed( $catalog, $project_slug, $link_id
 		$ok .= '<p class="cs-kicker">' . esc_html__( 'Thank you', 'xpressui-bridge' ) . '</p>';
 		$ok .= '<h1 class="cs-title">' . esc_html__( 'Order received', 'xpressui-bridge' ) . '</h1></div></div></div>';
 		$ok .= '<div class="cs-empty">' . esc_html__( 'Your order has been received. Thank you for your purchase.', 'xpressui-bridge' ) . '</div>';
+
+		// Manual method (Wave/OM/bank): show how to pay. The chosen method id is carried in
+		// the return URL (?xpuiMethod=…); its instructions live in the catalog payment block.
+		$chosen_method = sanitize_key( (string) filter_input( INPUT_GET, 'xpuiMethod', FILTER_SANITIZE_FULL_SPECIAL_CHARS ) );
+		if ( '' !== $chosen_method ) {
+			$pay_methods = ( isset( $catalog['payment']['methods'] ) && is_array( $catalog['payment']['methods'] ) ) ? $catalog['payment']['methods'] : [];
+			foreach ( $pay_methods as $method ) {
+				if ( ! is_array( $method ) || sanitize_key( (string) ( $method['id'] ?? '' ) ) !== $chosen_method ) {
+					continue;
+				}
+				$merchant     = trim( (string) ( $method['merchant_name'] ?? '' ) );
+				$phone        = trim( (string) ( $method['merchant_phone'] ?? '' ) );
+				$iban         = trim( (string) ( $method['iban'] ?? '' ) );
+				$instructions = trim( (string) ( $method['instructions'] ?? '' ) );
+				$ok .= '<div class="xpui-payment-instructions" data-payment-instructions="' . esc_attr( $chosen_method ) . '">';
+				$ok .= '<p class="xpui-payment-method-title">' . esc_html( (string) ( $method['label'] ?? $chosen_method ) ) . '</p>';
+				if ( '' !== $merchant ) { $ok .= '<p class="xpui-payment-merchant">' . esc_html( $merchant ) . ( '' !== $phone ? ' — ' . esc_html( $phone ) : '' ) . '</p>'; }
+				if ( '' !== $iban ) { $ok .= '<p class="xpui-payment-iban">' . esc_html( $iban ) . '</p>'; }
+				if ( '' !== $instructions ) { $ok .= '<p class="xpui-payment-instructions-text">' . esc_html( $instructions ) . '</p>'; }
+				$ok .= '</div>';
+				break;
+			}
+		}
+
 		$ok .= '<div class="cs-footer"><a class="cs-cta" href="' . esc_url( $grid_url ) . '">' . esc_html__( 'Back to the store', 'xpressui-bridge' ) . '</a></div>';
 		$ok .= '</div></div></div>';
 		return wp_kses( $ok, xpressui_get_shell_allowed_html() );

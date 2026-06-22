@@ -497,8 +497,30 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payload_with_files );
 	$mark_timing( 'submit_confirmation_sent' );
 
-	// Send outbound webhook (best-effort — failure does not affect submission response).
-	xpressui_maybe_send_webhook( $post_id, $project_slug, $payload_with_files );
+	// Delivery to the SaaS. For a headless catalog ORDER, push SYNCHRONOUSLY so the
+	// SaaS can re-price the cart and (for Stripe) create the Checkout Session, returning
+	// its URL for the browser to redirect to — payment + status are owned by the SaaS.
+	// Non-order submissions keep the fast async (WP-Cron) delivery.
+	$order_checkout_url   = '';
+	$order_payment_status = '';
+	if ( xpressui_submission_is_catalog_order( $payload_with_files ) ) {
+		$order_extra = array_filter( [
+			'returnUrl' => xpressui_validate_same_origin_url( $request->get_param( 'returnUrl' ) ),
+			'cancelUrl' => xpressui_validate_same_origin_url( $request->get_param( 'cancelUrl' ) ),
+		] );
+		$order_result = xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload_with_files, $order_extra );
+		xpressui_store_webhook_result( $post_id, $order_result );
+		if ( ! is_wp_error( $order_result ) ) {
+			$decoded = json_decode( (string) wp_remote_retrieve_body( $order_result ), true );
+			if ( is_array( $decoded ) ) {
+				$order_checkout_url   = isset( $decoded['checkoutUrl'] ) ? esc_url_raw( (string) $decoded['checkoutUrl'] ) : '';
+				$order_payment_status = isset( $decoded['paymentStatus'] ) ? sanitize_text_field( (string) $decoded['paymentStatus'] ) : '';
+			}
+		}
+	} else {
+		// Send outbound webhook (best-effort — failure does not affect submission response).
+		xpressui_maybe_send_webhook( $post_id, $project_slug, $payload_with_files );
+	}
 	$mark_timing( 'webhook_sent' );
 
 	$timing_summary = [
@@ -544,6 +566,14 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	];
 	if ( $redirect_url !== '' ) {
 		$response['redirectUrl'] = $redirect_url;
+	}
+	// Headless catalog order: hand the browser the Stripe Checkout URL (card) so it can
+	// redirect; manual methods carry the pending status. catalog-checkout.js reads these.
+	if ( $order_checkout_url !== '' ) {
+		$response['checkoutUrl'] = $order_checkout_url;
+	}
+	if ( $order_payment_status !== '' ) {
+		$response['paymentStatus'] = $order_payment_status;
 	}
 
 	return new WP_REST_Response( $response, 200 );
