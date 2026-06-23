@@ -789,14 +789,15 @@ function xpressui_build_checkout_payment_proof_field( $payment ) {
 			continue;
 		}
 		$providers[] = [
-			'id'                  => $mid,
-			'merchantName'        => (string) ( $m['merchant_name'] ?? '' ),
-			'merchantPhone'       => (string) ( $m['merchant_phone'] ?? '' ),
-			'merchantQrCode'      => (string) ( $m['merchant_qr'] ?? '' ),
-			'paymentIban'         => (string) ( $m['iban'] ?? '' ),
-			'paymentBic'          => (string) ( $m['bic'] ?? '' ),
-			'paymentRib'          => (string) ( $m['rib'] ?? '' ),
-			'paymentInstructions' => (string) ( $m['instructions'] ?? '' ),
+			'id'                     => $mid,
+			'merchantName'           => (string) ( $m['merchant_name'] ?? '' ),
+			'merchantPhone'          => (string) ( $m['merchant_phone'] ?? '' ),
+			'merchantQrCode'         => (string) ( $m['merchant_qr'] ?? '' ),
+			'paymentIban'            => (string) ( $m['iban'] ?? '' ),
+			'paymentBic'             => (string) ( $m['bic'] ?? '' ),
+			'paymentRib'             => (string) ( $m['rib'] ?? '' ),
+			'paymentReferencePrefix' => (string) ( $m['payment_reference_prefix'] ?? '' ),
+			'paymentInstructions'    => (string) ( $m['instructions'] ?? '' ),
 		];
 	}
 	if ( empty( $providers ) ) {
