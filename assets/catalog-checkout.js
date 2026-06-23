@@ -185,6 +185,48 @@
     };
   }
 
+  // A submission that carries a FILE field (e.g. the manual payment-proof upload) is sent
+  // by the runtime via XMLHttpRequest (multipart), NOT fetch — so the fetch wrap above
+  // never sees it. Wrap XHR too, or the order/cart is dropped from the WP entry.
+  var XHR = window.XMLHttpRequest;
+  if (XHR && XHR.prototype && !window.__xpuiCheckoutXhrWrapped) {
+    window.__xpuiCheckoutXhrWrapped = true;
+    var origOpen = XHR.prototype.open;
+    var origSend = XHR.prototype.send;
+    XHR.prototype.open = function (method, url) {
+      this.__xpuiUrl = url;
+      this.__xpuiMethod = method;
+      return origOpen.apply(this, arguments);
+    };
+    XHR.prototype.send = function (body) {
+      try {
+        if (String(this.__xpuiMethod || '').toUpperCase() === 'POST' && isSubmitUrl(this.__xpuiUrl || '')) {
+          var order = resolveOrder();
+          if (order && order.items && order.items.length && typeof FormData !== 'undefined' && body instanceof FormData) {
+            var pf = body.get('payload');
+            if (typeof pf === 'string') {
+              try { var pj = JSON.parse(pf); injectOrder(pj, order); body.set('payload', JSON.stringify(pj)); } catch (_e) {}
+            } else {
+              injectOrderFormData(body, order);
+            }
+            applyOrderRouting(function (k, v) { body.set(k, v); });
+            // Mirror the fetch path's response handling: redirect to Stripe (checkoutUrl)
+            // or to the success page (manual → paymentStatus) once the submit resolves.
+            this.addEventListener('load', function () {
+              try {
+                var data = JSON.parse(this.responseText || 'null');
+                if (!data) { return; }
+                if (data.checkoutUrl) { window.location.assign(data.checkoutUrl); return; }
+                if (data.paymentStatus) { window.location.assign(successRedirectUrl()); }
+              } catch (_e) {}
+            });
+          }
+        }
+      } catch (_e) {}
+      return origSend.apply(this, arguments);
+    };
+  }
+
   // Redirect to catalog storefront / services page if the checkout cart/booking is empty.
   try {
     var current = resolveOrder();
