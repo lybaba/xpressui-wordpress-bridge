@@ -32,6 +32,27 @@
     }
   } catch (_e) {}
 
+  // Move the payment-method selector into the LAST step (next to Submit), mirroring the
+  // SaaS hosted checkout. It is server-rendered into a hidden holder at the top of the
+  // form; the runtime shows one .template-section (step) at a time, so appending it to
+  // the last section makes it appear only on the final/submit step.
+  function relocatePaymentMethods() {
+    var holder = document.querySelector('[data-xpui-payment-holder]');
+    if (!holder) { return; }
+    var block = holder.querySelector('.xpui-checkout-payment');
+    var form = document.querySelector('form.template-runtime-shell');
+    if (!block || !form) { return; }
+    var sections = form.querySelectorAll('.template-section');
+    var target = sections.length ? sections[sections.length - 1] : form;
+    target.appendChild(block);
+    if (holder.parentNode) { holder.parentNode.removeChild(holder); }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', relocatePaymentMethods);
+  } else {
+    relocatePaymentMethods();
+  }
+
   if (window.__xpuiCheckoutFetchWrapped) { return; }
 
   function readProductCart() {
