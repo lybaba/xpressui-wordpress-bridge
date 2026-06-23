@@ -47,11 +47,35 @@
     target.appendChild(block);
     if (holder.parentNode) { holder.parentNode.removeChild(holder); }
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', relocatePaymentMethods);
-  } else {
-    relocatePaymentMethods();
+
+  function selectedPaymentMethodValue() {
+    var r = document.querySelector('input[name="xpui_payment_method"]:checked');
+    return r ? r.value : '';
   }
+
+  // Manual methods (Wave/OM/bank) require a payment-proof upload; Stripe (card) does
+  // not. Show/hide the proof field based on the chosen method — parity with the SaaS.
+  function togglePaymentProof() {
+    var proof = document.querySelector('[data-payment-proof]');
+    if (!proof) { return; }
+    var pm = selectedPaymentMethodValue();
+    var show = !! pm && pm !== 'stripe';
+    proof.hidden = ! show;
+    proof.style.display = show ? '' : 'none';
+  }
+
+  function initCheckoutPaymentUi() {
+    relocatePaymentMethods();
+    togglePaymentProof();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCheckoutPaymentUi);
+  } else {
+    initCheckoutPaymentUi();
+  }
+  document.addEventListener('change', function ( e ) {
+    if ( e.target && e.target.name === 'xpui_payment_method' ) { togglePaymentProof(); }
+  });
 
   if (window.__xpuiCheckoutFetchWrapped) { return; }
 
@@ -197,6 +221,15 @@
                 injectOrderFormData(init.body, order);
               }
               applyOrderRouting(function (k, v) { init.body.set(k, v); });
+              // Manual payment: attach the uploaded proof to the multipart submission
+              // (stored in WP; the SaaS order gets the file reference). Stripe needs none.
+              var pmSel = selectedPaymentMethodValue();
+              if (pmSel && pmSel !== 'stripe') {
+                var proofInput = document.querySelector('[data-payment-proof-input]');
+                if (proofInput && proofInput.files && proofInput.files[0]) {
+                  init.body.set('payment_proof', proofInput.files[0]);
+                }
+              }
             }
           }
         }

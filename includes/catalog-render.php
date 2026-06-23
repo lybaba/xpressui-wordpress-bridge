@@ -836,6 +836,13 @@ function xpressui_render_checkout_payment_methods( $payment ) {
 		<?php if ( '' !== $instructions ) : ?><p class="xpui-payment-instructions-text"><?php echo esc_html( $instructions ); ?></p><?php endif; ?>
 	</div>
 	<?php endforeach; ?>
+	<?php if ( ! empty( $methods ) ) : ?>
+	<div class="xpui-payment-proof" data-payment-proof hidden style="display:none">
+		<label class="xpui-payment-proof-label" for="xpui_payment_proof"><?php esc_html_e( 'Upload payment proof', 'xpressui-bridge' ); ?></label>
+		<input type="file" id="xpui_payment_proof" name="payment_proof" accept="image/*,application/pdf" data-payment-proof-input />
+		<p class="xpui-payment-proof-hint"><?php esc_html_e( 'After paying with the selected method, upload your receipt or screenshot.', 'xpressui-bridge' ); ?></p>
+	</div>
+	<?php endif; ?>
 </div>
 	<?php
 	return wp_kses( (string) ob_get_clean(), xpressui_get_shell_allowed_html() );
