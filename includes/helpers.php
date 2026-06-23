@@ -2108,7 +2108,22 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				$has_new_format  = isset( $field['mobileMoneyProvider'] ) || ! empty( $bank_cfg ) || ! empty( $manual_cfg );
 
 				$payment_providers = [];
-				if ( ! $has_new_format ) {
+				// Workspace-providers list shape (as injected by the SaaS
+				// _apply_workspace_payment_methods): a flat `paymentProviders` array of
+				// { id, merchantName, merchantPhone, paymentIban, paymentBic, merchantQrCode,
+				// paymentInstructions, ... }. Each maps 1:1 to $make_prov's expected cfg.
+				$providers_list = ( isset( $field['paymentProviders'] ) && is_array( $field['paymentProviders'] ) ) ? $field['paymentProviders'] : [];
+				foreach ( $providers_list as $prov_cfg ) {
+					if ( ! is_array( $prov_cfg ) ) {
+						continue;
+					}
+					$pid = (string) ( $prov_cfg['id'] ?? $prov_cfg['provider'] ?? 'manual' );
+					$payment_providers[] = $make_prov( $pid, $prov_cfg, $global_amount, $global_instr, $currency );
+				}
+				if ( ! empty( $payment_providers ) ) {
+					// Providers already resolved from the list — skip the legacy/new-format paths.
+					$has_new_format = true;
+				} elseif ( ! $has_new_format ) {
 					$legacy_provider = (string) ( $field['paymentProvider'] ?? $field['subType'] ?? $field['payment_provider'] ?? 'manual' );
 					$legacy_cfg      = array_merge( [
 						'merchantPhone'       => $field['merchantPhone'] ?? $field['merchant_phone'] ?? '',
