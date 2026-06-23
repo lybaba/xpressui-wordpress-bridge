@@ -2166,6 +2166,20 @@ function xpressui_build_rendered_form_from_config( array $form_config ): array {
 				$field['payment_iban_display']   = $first['payment_iban_display'];
 				$field['payment_bic']            = $first['payment_bic'];
 				$field['payment_reference_prefix'] = $first['payment_reference_prefix'];
+				// Render the bank reference server-side so it never depends on runtime
+				// hydration (parity with the SaaS, but robust even if JS does not run).
+				if ( 'bank-transfer' === $first['provider'] ) {
+					$ref_prefix = strtoupper( trim( (string) $first['payment_reference_prefix'] ) );
+					if ( '' === $ref_prefix ) {
+						$ref_prefix = 'REF';
+					}
+					$ref_chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+					$ref_rand  = '';
+					for ( $ref_i = 0; $ref_i < 4; $ref_i++ ) {
+						$ref_rand .= $ref_chars[ random_int( 0, strlen( $ref_chars ) - 1 ) ];
+					}
+					$field['payment_reference'] = $ref_prefix . '-' . gmdate( 'Ymd' ) . '-' . $ref_rand;
+				}
 			}
 			if ( $type === 'camera-photo-list' ) {
 				$min_files                        = (int) ( $field['minFiles'] ?? 2 );

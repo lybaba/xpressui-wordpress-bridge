@@ -1197,3 +1197,43 @@ function bootXPressUI() {
 }
 
 bootXPressUI();
+
+// ---------------------------------------------------------------------------
+// Payment-proof copy buttons — robust delegated handler.
+//
+// The runtime normally wires the IBAN/BIC/reference copy buttons during
+// payment-proof hydration. To stay resilient regardless of hydration timing on
+// the embed, wire them here too via a single document-level delegated listener
+// (idempotent: copying the same value twice is harmless).
+// ---------------------------------------------------------------------------
+(function attachPaymentProofCopy() {
+  if (window.__xpressuiPaymentProofCopyBound) {
+    return;
+  }
+  window.__xpressuiPaymentProofCopyBound = true;
+  document.addEventListener('click', function (event) {
+    var target = event.target;
+    var btn = target && target.closest ? target.closest('.template-payment-proof-copy-btn') : null;
+    if (!btn) {
+      return;
+    }
+    var value = btn.getAttribute('data-copy-value');
+    if (value == null) {
+      var refName = btn.getAttribute('data-copy-reference');
+      if (refName) {
+        var refEl = document.querySelector('[data-payment-proof-reference="' + refName + '"]');
+        value = refEl ? (refEl.textContent || '').trim() : '';
+      }
+    }
+    if (!value || value === '—' || value === '-') {
+      return;
+    }
+    var done = function () {
+      btn.classList.add('is-copied');
+      window.setTimeout(function () { btn.classList.remove('is-copied'); }, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(function () {});
+    }
+  });
+})();
