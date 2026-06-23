@@ -407,7 +407,10 @@ function xpressui_get_shell_allowed_html() {
 		'img'      => array_merge( $global_attrs, [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true, 'loading' => true, 'decoding' => true, 'hidden' => true ] ),
 		'details'  => array_merge( $global_attrs, [ 'open' => true ] ),
 		'summary'  => $global_attrs,
-		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewBox' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true, 'aria-hidden' => true, 'width' => true, 'height' => true ] ),
+		// NOTE: wp_kses lowercases attribute names before matching, so the key MUST be
+		// 'viewbox' (lowercase) — a 'viewBox' key never matches and the attribute is
+		// stripped, which collapses every inline SVG icon (clipped to its top-left).
+		'svg'      => array_merge( $global_attrs, [ 'xmlns' => true, 'viewbox' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true, 'aria-hidden' => true, 'width' => true, 'height' => true ] ),
 		'path'     => [ 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
 		'polyline' => [ 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ],
 		'circle'   => [ 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ],
