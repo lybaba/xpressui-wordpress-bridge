@@ -128,6 +128,9 @@ function xpressui_activate() {
 	xpressui_register_submission_post_type();
 	xpressui_install_bundled_workflows();
 	flush_rewrite_rules();
+	// First-run: land the admin on the IntakeFlow Dashboard (quick start + import +
+	// quota) instead of the empty submissions list. Handled in dashboard-page.php.
+	set_transient( 'xpressui_activation_redirect', 1, 60 );
 }
 
 function xpressui_enqueue_admin_assets( $hook ) {

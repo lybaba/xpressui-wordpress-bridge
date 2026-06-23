@@ -25,6 +25,28 @@ function xpressui_register_dashboard_page() {
 add_action( 'admin_menu', 'xpressui_register_dashboard_page' );
 
 /**
+ * First-run: redirect to the IntakeFlow Dashboard once, right after activation, so a
+ * new user lands on the quick-start (import / embed / quota) instead of the empty
+ * submissions list. Skips bulk/network activations.
+ */
+function xpressui_maybe_activation_redirect() {
+	if ( ! get_transient( 'xpressui_activation_redirect' ) ) {
+		return;
+	}
+	delete_transient( 'xpressui_activation_redirect' );
+	// Don't hijack bulk plugin activation or network admin.
+	if ( isset( $_GET['activate-multi'] ) || is_network_admin() ) {
+		return;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-dashboard' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_maybe_activation_redirect' );
+
+/**
  * Reorder submenu so Dashboard is the first page loaded under IntakeFlow menu.
  */
 function xpressui_reorder_dashboard_submenu() {
