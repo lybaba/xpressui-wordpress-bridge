@@ -534,12 +534,31 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		] );
 		$order_result = xpressui_sync_submission_to_saas( $post_id, $project_slug, $payload_with_files, $order_extra );
 		xpressui_store_webhook_result( $post_id, $order_result );
-		if ( ! is_wp_error( $order_result ) ) {
-			$decoded = json_decode( (string) wp_remote_retrieve_body( $order_result ), true );
-			if ( is_array( $decoded ) ) {
-				$order_checkout_url   = isset( $decoded['checkoutUrl'] ) ? esc_url_raw( (string) $decoded['checkoutUrl'] ) : '';
-				$order_payment_status = isset( $decoded['paymentStatus'] ) ? sanitize_text_field( (string) $decoded['paymentStatus'] ) : '';
-			}
+		if ( is_wp_error( $order_result ) ) {
+			wp_delete_post( $post_id, true );
+			return new WP_Error(
+				'xpressui_order_failed',
+				$order_result->get_error_message(),
+				[ 'status' => 502 ]
+			);
+		}
+		$code = (int) wp_remote_retrieve_response_code( $order_result );
+		if ( $code < 200 || $code >= 300 ) {
+			$body   = json_decode( wp_remote_retrieve_body( $order_result ), true );
+			$detail = ( is_array( $body ) && ! empty( $body['detail'] ) && is_string( $body['detail'] ) )
+				? $body['detail']
+				: __( 'Sync order with console failed.', 'xpressui-bridge' );
+			wp_delete_post( $post_id, true );
+			return new WP_Error(
+				'xpressui_order_failed',
+				$detail,
+				[ 'status' => ( $code >= 400 && $code < 600 ) ? $code : 502 ]
+			);
+		}
+		$decoded = json_decode( (string) wp_remote_retrieve_body( $order_result ), true );
+		if ( is_array( $decoded ) ) {
+			$order_checkout_url   = isset( $decoded['checkoutUrl'] ) ? esc_url_raw( (string) $decoded['checkoutUrl'] ) : '';
+			$order_payment_status = isset( $decoded['paymentStatus'] ) ? sanitize_text_field( (string) $decoded['paymentStatus'] ) : '';
 		}
 	} else {
 		// Send outbound webhook (best-effort — failure does not affect submission response).
