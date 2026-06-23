@@ -760,6 +760,61 @@ function xpressui_render_cart_summary_embed( $catalog, $link_id, $grid_url, $che
 }
 
 /**
+ * Builds a native `payment-proof` field config for the checkout's last step from a
+ * catalog payment block (catalog.json `payment`). Returns null unless the link collects
+ * MANUAL payment with at least one method — Stripe-collection links use the Stripe flow
+ * and get no proof field. The field is injected into the form config before render, so it
+ * renders via the compiled upload template and is hydrated + file-serialised by the
+ * runtime — full parity with the SaaS payment-proof field (no hand-rolled HTML).
+ *
+ * @param array $payment The catalog.json `payment` block.
+ * @return array|null Field config (camelCase) or null.
+ */
+function xpressui_build_checkout_payment_proof_field( $payment ) {
+	if ( ! is_array( $payment ) ) {
+		return null;
+	}
+	$collection = (string) ( $payment['collection'] ?? 'none' );
+	$methods    = ( isset( $payment['methods'] ) && is_array( $payment['methods'] ) ) ? $payment['methods'] : [];
+	if ( ! in_array( $collection, [ 'at_checkout', 'manual' ], true ) || empty( $methods ) ) {
+		return null;
+	}
+	$providers = [];
+	foreach ( $methods as $m ) {
+		if ( ! is_array( $m ) ) {
+			continue;
+		}
+		$mid = (string) ( $m['id'] ?? '' );
+		if ( '' === $mid ) {
+			continue;
+		}
+		$providers[] = [
+			'id'                  => $mid,
+			'merchantName'        => (string) ( $m['merchant_name'] ?? '' ),
+			'merchantPhone'       => (string) ( $m['merchant_phone'] ?? '' ),
+			'merchantQrCode'      => (string) ( $m['merchant_qr'] ?? '' ),
+			'paymentIban'         => (string) ( $m['iban'] ?? '' ),
+			'paymentBic'          => (string) ( $m['bic'] ?? '' ),
+			'paymentRib'          => (string) ( $m['rib'] ?? '' ),
+			'paymentInstructions' => (string) ( $m['instructions'] ?? '' ),
+		];
+	}
+	if ( empty( $providers ) ) {
+		return null;
+	}
+	return [
+		'type'                => 'payment-proof',
+		'name'                => 'payment_proof',
+		'label'               => __( 'Payment', 'xpressui-bridge' ),
+		'required'            => false,
+		'accept'              => '.pdf,application/pdf,.jpg,.jpeg,image/jpeg,.png,image/png',
+		'paymentAmountSource' => 'cart_total',
+		'paymentCurrency'     => (string) ( $payment['currency'] ?? '' ),
+		'paymentProviders'    => $providers,
+	];
+}
+
+/**
  * Renders the payment-method selector shown inside the WP checkout form.
  *
  * Mirrors the SaaS hosted checkout: a card option (when Stripe is enabled on a

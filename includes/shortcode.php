@@ -857,6 +857,33 @@ function xpressui_render_shortcode( $atts ) {
 			$form_config['workflowConfig']['webhookUrl'] = $project_settings['webhookUrl'];
 		}
 
+		// Headless catalog checkout: inject the workspace payment-proof field as the LAST
+		// step (manual collection only) so it renders via the compiled upload template and
+		// is hydrated + file-serialised by the runtime — parity with the SaaS, no
+		// hand-rolled HTML. Stripe-collection links get no field (handled by the Stripe flow).
+		if ( $is_catalog_checkout && $link_attr !== '' && is_array( $form_config ) ) {
+			$co_checkout_catalog = xpressui_get_hosted_link_catalog( $slug, $link_attr );
+			$co_checkout_payment = ( is_array( $co_checkout_catalog ) && is_array( $co_checkout_catalog['payment'] ?? null ) ) ? $co_checkout_catalog['payment'] : [];
+			$co_proof_field = xpressui_build_checkout_payment_proof_field( $co_checkout_payment );
+			if ( is_array( $co_proof_field ) ) {
+				$sections = is_array( $form_config['sections'] ?? null ) ? $form_config['sections'] : [];
+				$custom   = is_array( $sections['custom'] ?? null ) ? $sections['custom'] : [];
+				$has_pay_section = false;
+				foreach ( $custom as $s ) {
+					if ( is_array( $s ) && 'workspace_payment' === ( $s['name'] ?? '' ) ) {
+						$has_pay_section = true;
+						break;
+					}
+				}
+				if ( ! $has_pay_section ) {
+					$custom[] = [ 'type' => 'section', 'subType' => 'section', 'name' => 'workspace_payment', 'label' => __( 'Payment', 'xpressui-bridge' ), 'adminLabel' => 'Payment' ];
+				}
+				$sections['custom'] = $custom;
+				$sections['workspace_payment'] = [ $co_proof_field ];
+				$form_config['sections'] = $sections;
+			}
+		}
+
 		$fresh_rendered_form = xpressui_build_rendered_form_from_config( $form_config );
 		// Refresh rendered_form sections from the live form config so shortcode output
 		// stays aligned with the current runtime even when template.context.json is stale.
@@ -1232,7 +1259,6 @@ function xpressui_render_shortcode( $atts ) {
 	// catalog-cart-summary.js; nothing is fetched from the SaaS for this block.
 	$checkout_order_summary = '';
 	$checkout_form_fields   = '';
-	$checkout_payment_html  = '';
 	if ( $is_catalog_checkout && $link_attr !== '' && is_array( $link_config ) ) {
 		$co_grid = remove_query_arg( [ 'xpui_product', 'xpui_cart', 'xpui_checkout' ], get_permalink() ? get_permalink() : home_url( '/' ) );
 		$co_presentation = is_array( $link_config['presentation'] ?? null ) ? $link_config['presentation'] : [];
@@ -1246,15 +1272,10 @@ function xpressui_render_shortcode( $atts ) {
 				// form card, parity with the SaaS).
 				$ts_checkout            = xpressui_render_time_slots_checkout();
 				$checkout_order_summary = $ts_checkout['summary'];
-				// Payment-method selector (parity with products): the chosen method routes the
-				// booking order to the SaaS (Stripe redirect / manual pending). Rendered into
-				// the LAST step (next to Submit) by catalog-checkout.js, mirroring the SaaS.
+				// Manual payment (proof upload) renders natively as a payment-proof field
+				// injected into the LAST step before render (see above). Stripe-collection
+				// links route to the SaaS Stripe flow. Booking still creates a LOCAL WP entry.
 				$co_payment = is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [];
-				$checkout_payment_html = xpressui_render_checkout_payment_methods( $co_payment );
-				// The booking still creates a LOCAL WP entry (catalog-checkout.js merges the
-				// slot from the URL params into the submit payload), but PAYMENT + processing
-				// are owned by the SaaS — the submit handler pushes it synchronously and
-				// returns any Stripe checkout URL to redirect to.
 				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
 				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
 				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
@@ -1262,28 +1283,22 @@ function xpressui_render_shortcode( $atts ) {
 					'xpressui-catalog-checkout',
 					'xpressuiCatalogCheckout',
 					[
-						'slug'       => $slug,
-						'linkId'     => $link_attr,
-						'returnUrl'  => $co_grid,
-						'successUrl' => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
-						'cancelUrl'  => $co_grid,
+						'slug'              => $slug,
+						'linkId'            => $link_attr,
+						'paymentCollection' => (string) ( $co_payment['collection'] ?? '' ),
+						'returnUrl'         => $co_grid,
+						'successUrl'        => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
+						'cancelUrl'         => $co_grid,
 					]
 				);
 			}
 			// Product catalogs use a localStorage cart + order summary + payment selector.
 			if ( is_array( $co_catalog ) && 'time_slots' !== $co_kind ) {
 				$checkout_order_summary = xpressui_render_checkout_order_summary( $co_catalog, $link_attr, $co_grid );
-				// Payment-method selector (Stripe card + manual methods) — the chosen method
-				// (xpui_payment_method) decides routing: Stripe → SaaS Checkout redirect,
-				// manual → SaaS order recorded as pending. Read by catalog-checkout.js, which
-				// also moves it into the LAST step (next to Submit), mirroring the SaaS.
+				// Manual payment (proof upload) renders natively as a payment-proof field
+				// injected into the LAST step before render (see above). Stripe-collection
+				// links route to the SaaS Stripe flow. The order still creates a LOCAL WP entry.
 				$co_payment = is_array( $co_catalog['payment'] ?? null ) ? $co_catalog['payment'] : [];
-				$checkout_payment_html = xpressui_render_checkout_payment_methods( $co_payment );
-
-				// The order still creates a LOCAL WP entry (catalog-checkout.js injects the
-				// cart into the submit payload), but PAYMENT + processing are owned by the
-				// SaaS: the submit handler pushes the order synchronously and returns the
-				// Stripe checkout URL for the browser to redirect to.
 				$co_checkout_path = XPRESSUI_BRIDGE_DIR . 'assets/catalog-checkout.js';
 				$co_checkout_ver  = file_exists( $co_checkout_path ) ? (string) filemtime( $co_checkout_path ) : XPRESSUI_BRIDGE_VERSION;
 				wp_enqueue_script( 'xpressui-catalog-checkout', XPRESSUI_BRIDGE_URL . 'assets/catalog-checkout.js', [], $co_checkout_ver, true );
@@ -1291,12 +1306,13 @@ function xpressui_render_shortcode( $atts ) {
 					'xpressui-catalog-checkout',
 					'xpressuiCatalogCheckout',
 					[
-						'slug'       => $slug,
-						'linkId'     => $link_attr,
-						'storageKey' => xpressui_catalog_cart_storage_key( $link_attr, (string) ( $co_catalog['catalog_id'] ?? '' ) ),
-						'returnUrl'  => $co_grid,
-						'successUrl' => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
-						'cancelUrl'  => add_query_arg( 'xpui_checkout', '1', $co_grid ),
+						'slug'              => $slug,
+						'linkId'            => $link_attr,
+						'paymentCollection' => (string) ( $co_payment['collection'] ?? '' ),
+						'storageKey'        => xpressui_catalog_cart_storage_key( $link_attr, (string) ( $co_catalog['catalog_id'] ?? '' ) ),
+						'returnUrl'         => $co_grid,
+						'successUrl'        => add_query_arg( 'xpuiCheckout', 'success', $co_grid ),
+						'cancelUrl'         => add_query_arg( 'xpui_checkout', '1', $co_grid ),
 					]
 				);
 			}
@@ -1313,21 +1329,6 @@ function xpressui_render_shortcode( $atts ) {
 			$fragment_html = substr( $fragment_html, 0, $co_form_pos ) . $checkout_prelude . substr( $fragment_html, $co_form_pos );
 		} else {
 			$fragment_html = $checkout_prelude . $fragment_html;
-		}
-	}
-
-	// Payment-method selector: inject a HIDDEN holder just inside the <form> (after the
-	// opening tag). catalog-checkout.js moves the .xpui-checkout-payment block into the
-	// LAST step (next to Submit) and reveals it — parity with the SaaS hosted checkout,
-	// where payment lives on the final step rather than at the top of the form.
-	if ( '' !== $checkout_payment_html ) {
-		$payment_holder = '<div data-xpui-payment-holder hidden style="display:none">' . $checkout_payment_html . '</div>';
-		$co_form_open   = strpos( $fragment_html, '<form' );
-		if ( false !== $co_form_open ) {
-			$co_form_gt = strpos( $fragment_html, '>', $co_form_open );
-			if ( false !== $co_form_gt ) {
-				$fragment_html = substr( $fragment_html, 0, $co_form_gt + 1 ) . $payment_holder . substr( $fragment_html, $co_form_gt + 1 );
-			}
 		}
 	}
 

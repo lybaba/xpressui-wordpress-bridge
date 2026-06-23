@@ -32,51 +32,6 @@
     }
   } catch (_e) {}
 
-  // Move the payment-method selector into the LAST step (next to Submit), mirroring the
-  // SaaS hosted checkout. It is server-rendered into a hidden holder at the top of the
-  // form; the runtime shows one .template-section (step) at a time, so appending it to
-  // the last section makes it appear only on the final/submit step.
-  function relocatePaymentMethods() {
-    var holder = document.querySelector('[data-xpui-payment-holder]');
-    if (!holder) { return; }
-    var block = holder.querySelector('.xpui-checkout-payment');
-    var form = document.querySelector('form.template-runtime-shell');
-    if (!block || !form) { return; }
-    var sections = form.querySelectorAll('.template-section');
-    var target = sections.length ? sections[sections.length - 1] : form;
-    target.appendChild(block);
-    if (holder.parentNode) { holder.parentNode.removeChild(holder); }
-  }
-
-  function selectedPaymentMethodValue() {
-    var r = document.querySelector('input[name="xpui_payment_method"]:checked');
-    return r ? r.value : '';
-  }
-
-  // Manual methods (Wave/OM/bank) require a payment-proof upload; Stripe (card) does
-  // not. Show/hide the proof field based on the chosen method — parity with the SaaS.
-  function togglePaymentProof() {
-    var proof = document.querySelector('[data-payment-proof]');
-    if (!proof) { return; }
-    var pm = selectedPaymentMethodValue();
-    var show = !! pm && pm !== 'stripe';
-    proof.hidden = ! show;
-    proof.style.display = show ? '' : 'none';
-  }
-
-  function initCheckoutPaymentUi() {
-    relocatePaymentMethods();
-    togglePaymentProof();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCheckoutPaymentUi);
-  } else {
-    initCheckoutPaymentUi();
-  }
-  document.addEventListener('change', function ( e ) {
-    if ( e.target && e.target.name === 'xpui_payment_method' ) { togglePaymentProof(); }
-  });
-
   if (window.__xpuiCheckoutFetchWrapped) { return; }
 
   function readProductCart() {
@@ -123,9 +78,11 @@
 
   function resolveOrder() { return readProductCart() || readBookingFromUrl(); }
 
+  // Routing key for the SaaS order: a link collects EITHER Stripe OR manual payment.
+  // Stripe → the SaaS creates a Checkout Session; manual → the native payment-proof field
+  // (last step) collects the upload and the order is recorded as pending.
   function selectedPaymentMethod() {
-    var r = document.querySelector('input[name="xpui_payment_method"]:checked');
-    return r ? r.value : '';
+    return cfg.paymentCollection === 'stripe' ? 'stripe' : 'manual';
   }
 
   // Merge the order fields into the submission payload (so the WP entry records the order).
@@ -173,21 +130,14 @@
   }
 
   // After a Stripe order submit, the SaaS returns { checkoutUrl } → redirect to Stripe.
-  // A manual order returns { paymentStatus: 'pending' } (no checkoutUrl) → success page,
-  // carrying the chosen method so the page can show its payment instructions.
+  // A manual order returns { paymentStatus: 'pending' } (no checkoutUrl) → success page
+  // (the manual payment instructions were shown on the native payment-proof step).
   function handleOrderResponse(resp) {
     try {
       resp.clone().json().then(function (data) {
         if (!data) { return; }
         if (data.checkoutUrl) { window.location.assign(data.checkoutUrl); return; }
-        if (data.paymentStatus) {
-          var url = successRedirectUrl();
-          var pm = selectedPaymentMethod();
-          if (pm && pm !== 'stripe') {
-            url += (url.indexOf('?') === -1 ? '?' : '&') + 'xpuiMethod=' + encodeURIComponent(pm);
-          }
-          window.location.assign(url);
-        }
+        if (data.paymentStatus) { window.location.assign(successRedirectUrl()); }
       }).catch(function () {});
     } catch (_e) {}
     return resp;
@@ -221,15 +171,8 @@
                 injectOrderFormData(init.body, order);
               }
               applyOrderRouting(function (k, v) { init.body.set(k, v); });
-              // Manual payment: attach the uploaded proof to the multipart submission
-              // (stored in WP; the SaaS order gets the file reference). Stripe needs none.
-              var pmSel = selectedPaymentMethodValue();
-              if (pmSel && pmSel !== 'stripe') {
-                var proofInput = document.querySelector('[data-payment-proof-input]');
-                if (proofInput && proofInput.files && proofInput.files[0]) {
-                  init.body.set('payment_proof', proofInput.files[0]);
-                }
-              }
+              // The payment-proof upload (manual) is a native config field, so the runtime
+              // already serialised it into this FormData — nothing to attach here.
             }
           }
         }
