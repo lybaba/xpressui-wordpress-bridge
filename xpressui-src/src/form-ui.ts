@@ -2405,7 +2405,13 @@ export class HydratedFormHost extends HTMLElement {
 
     const pills = Array.from(this.querySelectorAll<HTMLElement>(`[data-provider-pill="${fieldConfig.name}"]`));
     const selects = Array.from(this.querySelectorAll<HTMLSelectElement>(`[data-provider-select="${fieldConfig.name}"]`));
-    if (pills.length < 2 && selects.length < 1) return;
+    if (pills.length < 2 && selects.length < 1) {
+      // Single provider: no pills/select to drive activateProvider, but a bank-transfer
+      // field still needs its reference generated + its copy buttons wired. Seed it
+      // directly (ensurePaymentProofBankReference self-guards on the bank-transfer type).
+      this.ensurePaymentProofBankReference(fieldConfig, inputElement);
+      return;
+    }
 
     const activateProvider = (provider: string, source: HTMLElement) => {
       pills.forEach((p) => {
@@ -2484,12 +2490,20 @@ export class HydratedFormHost extends HTMLElement {
     if (fieldConfig.type !== PAYMENT_PROOF_TYPE) {
       return;
     }
-    const provider = String(
+    let provider = String(
       (fieldConfig as any).subType || (fieldConfig as any).paymentProvider || (fieldConfig as any).payment_provider ||
       // Multi-provider payment fields carry no fixed provider; fall back to the
       // currently active provider (set on the input by activateProvider).
       (inputElement?.dataset?.paymentProvider) || "",
     ).trim();
+    if (!provider) {
+      // Single-provider fields don't set data-payment-provider on the input, but the
+      // rendered provider block always carries data-provider. Resolve from it.
+      const blocks = this.querySelectorAll<HTMLElement>(`[data-provider-block="${fieldConfig.name}"]`);
+      if (blocks.length === 1) {
+        provider = String(blocks[0].dataset.provider || "").trim();
+      }
+    }
     if (provider !== "bank-transfer") {
       return;
     }
@@ -2510,15 +2524,23 @@ export class HydratedFormHost extends HTMLElement {
     }
 
     if (!reference) {
-      const prefix = (
-        (inputElement?.dataset?.paymentReferencePrefix) ||
-        String((fieldConfig as any).paymentReferencePrefix || (fieldConfig as any).payment_reference_prefix || "").toUpperCase()
-      ).trim() || "REF";
-      const now = new Date();
-      const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-      reference = `${prefix}-${ymd}-${rand}`;
+      // Prefer a server-rendered reference (the template may already print one) so the
+      // displayed + submitted value stays stable and matches the SSR render. Only
+      // generate one client-side when the server left the placeholder.
+      const rendered = (refEl.textContent || "").trim();
+      if (rendered && rendered !== "—" && rendered !== "-") {
+        reference = rendered;
+      } else {
+        const prefix = (
+          (inputElement?.dataset?.paymentReferencePrefix) ||
+          String((fieldConfig as any).paymentReferencePrefix || (fieldConfig as any).payment_reference_prefix || "").toUpperCase()
+        ).trim() || "REF";
+        const now = new Date();
+        const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        const rand = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+        reference = `${prefix}-${ymd}-${rand}`;
+      }
       try {
         sessionStorage.setItem(storageKey, reference);
       } catch {
@@ -2553,8 +2575,11 @@ export class HydratedFormHost extends HTMLElement {
 
     this.querySelectorAll(`[data-copy-value]`).forEach((node) => {
       if (!(node instanceof HTMLElement)) return;
-      const dropZone = node.closest(`[data-file-drop-zone="${fieldConfig.name}"]`);
-      if (!dropZone) return;
+      // The IBAN/BIC copy buttons live in the provider block; the dropzone may also host
+      // copy buttons. Accept either scope so both are wired for this field.
+      const scope = node.closest(`[data-file-drop-zone="${fieldConfig.name}"]`) ||
+        node.closest(`[data-provider-block="${fieldConfig.name}"]`);
+      if (!scope) return;
       if (node.dataset.copyListenerAttached) return;
       node.dataset.copyListenerAttached = "1";
       node.addEventListener("click", () => {

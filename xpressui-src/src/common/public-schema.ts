@@ -320,7 +320,7 @@ export function migratePublicFormConfig(input: Record<string, any>): TFormConfig
         filtered[sectionKey] = sectionFields;
       } else {
         filtered[sectionKey] = (sectionFields as Array<Record<string, unknown>>).filter(
-          (field) => typeof field.name !== 'string' || allowed.has(field.name),
+          (field) => typeof field.name !== 'string' || allowed.has(field.name) || field.type === 'payment-proof',
         );
       }
     }
