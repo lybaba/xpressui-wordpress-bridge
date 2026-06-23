@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection
- * Description:       Receives and manages submissions from exported IntakeFlow workflow packages. Embed any IntakeFlow form on your site with a shortcode and review submissions in wp-admin.
+ * Plugin Name:       IntakeFlow Forms – Multi-Step Form Builder, File Upload & Client Intake
+ * Description:       Multi-step form builder for WordPress: contact forms, file upload, client intake & document collection. Import from Contact Form 7 / Gravity Forms, embed with a shortcode, and manage submissions in a wp-admin inbox.
  * Version:           1.0.99
  * Requires at least: 6.0
  * Requires PHP:      8.0

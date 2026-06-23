@@ -1230,3 +1230,89 @@ function xpressui_render_form_importer_tab() {
 	<?php
 }
 
+// ---------------------------------------------------------------------------
+// Migration nudge: when Contact Form 7 or Gravity Forms is active, invite the
+// admin to import their existing forms. This is the plugin's main acquisition
+// on-ramp, so it is surfaced once (dismissable, per-user) on the Dashboard,
+// Plugins screen and the plugin's own screens — never on the Import tab itself.
+// ---------------------------------------------------------------------------
+
+/**
+ * Whether the CF7/Gravity Forms import nudge should render on the current screen.
+ *
+ * @return bool
+ */
+function xpressui_import_nudge_should_show() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return false;
+	}
+	if ( get_user_meta( get_current_user_id(), 'xpressui_import_nudge_dismissed', true ) ) {
+		return false;
+	}
+	if ( ! post_type_exists( 'wpcf7_contact_form' ) && ! class_exists( 'GFAPI' ) ) {
+		return false;
+	}
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( ! $screen ) {
+		return false;
+	}
+	$allowed = [ 'dashboard', 'plugins', 'edit-xpressui_submission', 'xpressui_submission_page_xpressui-bridge' ];
+	if ( ! in_array( $screen->id, $allowed, true ) ) {
+		return false;
+	}
+	// Don't nag on the Import tab itself. Read-only navigation var; no nonce needed.
+	$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id && 'import' === $tab ) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Renders the CF7/Gravity Forms migration nudge admin notice.
+ */
+function xpressui_render_import_nudge() {
+	if ( ! xpressui_import_nudge_should_show() ) {
+		return;
+	}
+	$source      = post_type_exists( 'wpcf7_contact_form' ) ? __( 'Contact Form 7', 'xpressui-bridge' ) : __( 'Gravity Forms', 'xpressui-bridge' );
+	$import_url  = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' );
+	$dismiss_url = wp_nonce_url( add_query_arg( 'xpressui_dismiss', 'import-nudge' ), 'xpressui_dismiss_import_nudge' );
+	?>
+	<div class="notice notice-info is-dismissible" style="border-left-color:#2563eb;">
+		<p style="font-size:13px;">
+			<?php
+			/* translators: %s: the detected form plugin name (Contact Form 7 / Gravity Forms). */
+			printf( esc_html__( 'IntakeFlow detected %s forms on your site. Import and convert them into IntakeFlow workflows in a few clicks — field types, choices and required rules are preserved.', 'xpressui-bridge' ), '<strong>' . esc_html( $source ) . '</strong>' );
+			?>
+		</p>
+		<p>
+			<?php /* translators: %s: the detected form plugin name. */ ?>
+			<a href="<?php echo esc_url( $import_url ); ?>" class="button button-primary"><?php printf( esc_html__( 'Import my %s forms', 'xpressui-bridge' ), esc_html( $source ) ); ?></a>
+			<a href="<?php echo esc_url( $dismiss_url ); ?>" style="margin-left:8px; color:#64748b; text-decoration:underline;"><?php esc_html_e( 'Dismiss', 'xpressui-bridge' ); ?></a>
+		</p>
+	</div>
+	<?php
+}
+add_action( 'admin_notices', 'xpressui_render_import_nudge' );
+
+/**
+ * Persists dismissal of the import nudge (per-user).
+ */
+function xpressui_handle_import_nudge_dismiss() {
+	if ( ! is_admin() || ! isset( $_GET['xpressui_dismiss'] ) ) {
+		return;
+	}
+	if ( 'import-nudge' !== sanitize_key( wp_unslash( $_GET['xpressui_dismiss'] ) ) ) {
+		return;
+	}
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_dismiss_import_nudge' );
+	update_user_meta( get_current_user_id(), 'xpressui_import_nudge_dismissed', 1 );
+	wp_safe_redirect( remove_query_arg( [ 'xpressui_dismiss', '_wpnonce' ] ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_import_nudge_dismiss' );
+

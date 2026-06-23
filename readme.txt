@@ -1,6 +1,6 @@
-=== IntakeFlow – Client Intake, Multi-Step Forms & Secure Document Collection ===
+=== IntakeFlow Forms – Multi-Step Form Builder, File Upload & Client Intake ===
 Contributors: iakpressteam
-Tags: document collection, client portal, file upload, intake form, multi-step form
+Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
@@ -8,18 +8,22 @@ Stable tag: 1.0.99
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Collect files, documents, and client intake form submissions directly in WordPress. Inline rendering, team inbox, and workflow tracking included.
+Multi-step form builder for WordPress: contact forms, file upload, client intake & document collection, with a built-in submission inbox.
 
 == Description ==
 
-**IntakeFlow** lets you embed multi-step forms and document-intake workflows built with the [IntakeFlow console](https://intakeflow.dev/) directly in your WordPress pages.
+**IntakeFlow** is a multi-step form builder for WordPress for contact forms, file uploads, client intake and document-collection workflows — with a built-in submission inbox so you manage everything inside wp-admin.
 
-Export a workflow package from the IntakeFlow console as a `.zip` file, upload it to WordPress in one click, then embed it anywhere using the `[xpressui]` shortcode. The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
+**Already using Contact Form 7 or Gravity Forms?** Import and convert any existing CF7 or Gravity Forms form into an IntakeFlow workflow in a few clicks (field types, choices and required rules are preserved), then embed it with a shortcode.
 
-If you need advanced field types, direct Console Sync, or cloud workflow management, those are available by connecting the plugin to your IntakeFlow SaaS account at intakeflow.dev.
+Embed any form anywhere using the `[xpressui]` shortcode (or the Gutenberg block / Elementor widget). The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
+
+If you need advanced field types, direct Console Sync, or cloud workflow management, those are available by connecting the plugin to your IntakeFlow account at intakeflow.dev.
 
 = Key features =
 
+* **Import from Contact Form 7 & Gravity Forms** — migrate your existing forms in a few clicks; field types, choices and required rules are preserved.
+* **Works with the block editor & page builders** — embed via the `[xpressui]` shortcode, the native Gutenberg block, or the Elementor widget.
 * **One-click installation** — upload the exported `.zip` file from the IntakeFlow console directly inside wp-admin.
 * **Shortcode embed** — `[xpressui id="your-project-slug"]` works in any page, post, or block-editor paragraph block. The form renders inline, inheriting your theme's page layout.
 * **Submission inbox** — all submissions land in a private wp-admin post list with status badges, filtering by project, status, and assignee, and detailed review metaboxes.
@@ -52,6 +56,14 @@ Unlike generic form builders (like Contact Form 7, WPForms, or Gravity Forms), I
 6. Insert `[xpressui id="your-project-slug"]` in any page or post to embed the form.
 
 == Frequently Asked Questions ==
+
+= Is IntakeFlow free? =
+
+Yes. The WordPress plugin is free and open-source. You can build, import and embed forms and review submissions in your wp-admin inbox at no cost. A free or paid account at intakeflow.dev is optional and only needed for cloud sync and advanced field types (signatures, document scanning, time-slot booking). Free accounts include up to 100 cloud-synced submissions per month.
+
+= Can I import my Contact Form 7 or Gravity Forms forms? =
+
+Yes. Go to **Submissions › Workflows › Import**, pick any Contact Form 7 or Gravity Forms form, and convert it to an IntakeFlow workflow. Field types (text, email, phone, number, date, URL, file, select, checkbox, radio), choices and required rules are preserved, and you get a ready-to-embed shortcode. It works with or without a Console connection.
 
 = How do I import my workflows from the Console? =
 
