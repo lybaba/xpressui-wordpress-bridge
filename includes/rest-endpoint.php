@@ -23,13 +23,37 @@ function xpressui_register_rest_routes() {
 	register_rest_route( 'xpressui/v1', '/catalog-order', [
 		'methods'             => 'POST',
 		'callback'            => 'xpressui_handle_catalog_order',
-		'permission_callback' => '__return_true',
+		'permission_callback' => 'xpressui_catalog_order_permissions_check',
 	] );
 	register_rest_route( 'xpressui/v1', '/sync', [
 		'methods'             => 'POST',
 		'callback'            => 'xpressui_handle_sync_webhook',
 		'permission_callback' => 'xpressui_sync_permissions_check',
 	] );
+}
+
+/**
+ * Permission check for the public catalog-order proxy — parity with the submit
+ * endpoint: the workflow must be installed, and the per-project rate limit applies
+ * (the endpoint proxies to the SaaS server-to-server, so it must not be spammable).
+ *
+ * @param WP_REST_Request $request
+ * @return true|WP_Error
+ */
+function xpressui_catalog_order_permissions_check( WP_REST_Request $request ) {
+	$project_slug = sanitize_title( (string) $request->get_param( 'projectSlug' ) );
+	if ( $project_slug === '' || ! xpressui_is_installed_workflow( $project_slug ) ) {
+		return new WP_Error(
+			'xpressui_invalid_project',
+			__( 'Unknown workflow project.', 'xpressui-bridge' ),
+			[ 'status' => 400 ]
+		);
+	}
+	$rate_limit = xpressui_check_submission_rate_limit( $project_slug );
+	if ( is_wp_error( $rate_limit ) ) {
+		return $rate_limit;
+	}
+	return true;
 }
 
 /**
