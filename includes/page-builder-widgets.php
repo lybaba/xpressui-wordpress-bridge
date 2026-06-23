@@ -49,7 +49,7 @@ function xpressui_enqueue_block_editor_assets() {
 	wp_register_script(
 		'xpressui-block-editor-stub',
 		plugins_url( 'assets/block-editor-stub.js', __DIR__ ),
-		[ 'wp-blocks', 'wp-element', 'wp-editor', 'wp-components' ],
+		[ 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render' ],
 		XPRESSUI_BRIDGE_VERSION,
 		true
 	);
