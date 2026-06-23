@@ -46,17 +46,49 @@ function xpressui_enqueue_block_editor_assets() {
 		];
 	}
 
+	// Hosted links across all installed workflows — embedded with the `link` attribute
+	// (`[xpressui link="<id>"]`), which resolves its own workflow. Without these in the
+	// dropdown the block could only embed bare workflows, not hosted-link pages.
+	$links    = [];
+	$base_dir = xpressui_get_workflows_base_dir();
+	if ( '' !== $base_dir && is_dir( $base_dir ) ) {
+		$subdirs = glob( trailingslashit( $base_dir ) . '*', GLOB_ONLYDIR );
+		if ( is_array( $subdirs ) ) {
+			foreach ( $subdirs as $subdir ) {
+				$slug      = basename( $subdir );
+				$wf_meta   = xpressui_get_workflow_manifest_meta( $slug );
+				$wf_label  = ! empty( $wf_meta['projectName'] ) ? $wf_meta['projectName'] : $slug;
+				$link_dirs = glob( trailingslashit( $subdir ) . 'hosted-links/*', GLOB_ONLYDIR );
+				if ( ! is_array( $link_dirs ) ) {
+					continue;
+				}
+				foreach ( $link_dirs as $link_dir ) {
+					$link_id = basename( $link_dir );
+					$cfg     = xpressui_get_hosted_link_config( $slug, $link_id );
+					$present = ( is_array( $cfg ) && isset( $cfg['presentation'] ) && is_array( $cfg['presentation'] ) ) ? $cfg['presentation'] : [];
+					$link_lbl = trim( (string) ( $present['title'] ?? $present['label'] ?? ( is_array( $cfg ) ? ( $cfg['label'] ?? '' ) : '' ) ) );
+					$links[] = [
+						'value' => $link_id,
+						'label' => $wf_label . ' — ' . ( '' !== $link_lbl ? $link_lbl : $link_id ),
+					];
+				}
+			}
+		}
+	}
+
 	wp_register_script(
 		'xpressui-block-editor-stub',
 		plugins_url( 'assets/block-editor-stub.js', __DIR__ ),
-		[ 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render' ],
+		[ 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ],
 		XPRESSUI_BRIDGE_VERSION,
 		true
 	);
 
 	wp_localize_script( 'xpressui-block-editor-stub', 'xpressuiEditorData', [
-		'workflows' => $workflows,
-		'placeholder' => __( 'Select a workflow...', 'xpressui-bridge' ),
+		'workflows'   => $workflows,
+		'links'       => $links,
+		'placeholder' => __( 'Select a form or hosted link…', 'xpressui-bridge' ),
+		'renderNote'  => __( 'This form renders on the published page.', 'xpressui-bridge' ),
 	] );
 
 	wp_enqueue_script( 'xpressui-block-editor-stub' );

@@ -1,17 +1,16 @@
 /**
  * Gutenberg block script for the IntakeFlow Form embed.
  *
- * Shows a live server-rendered preview of the selected workflow in the editor
- * (via wp.serverSideRender) instead of a bare placeholder, plus an inspector
- * control to pick the workflow / hosted link.
+ * A single dropdown lists installed workflows AND hosted links. Selecting one shows a
+ * clean preview card with the exact shortcode that will render on the published page.
+ * (No live form render in the editor — the runtime is front-end only, so a server
+ * render here would show an unstyled, non-interactive form.)
  */
-( function( blocks, element, blockEditor, components, serverSideRender ) {
+( function( blocks, element, blockEditor, components ) {
     var el = element.createElement;
     var InspectorControls = blockEditor.InspectorControls;
     var PanelBody = components.PanelBody;
     var SelectControl = components.SelectControl;
-    var ToggleControl = components.ToggleControl;
-    var ServerSideRender = serverSideRender; // wp.serverSideRender (default export)
 
     blocks.registerBlockType( 'xpressui/workflow-embed', {
         title: 'IntakeFlow Form',
@@ -26,9 +25,25 @@
             var setAttributes = props.setAttributes;
             var data = window.xpressuiEditorData || {};
             var workflows = data.workflows || [];
-            var placeholder = data.placeholder || 'Select a workflow...';
+            var links = data.links || [];
 
-            var options = [ { value: '', label: placeholder } ].concat( workflows );
+            // Encode the type in the option value so one dropdown covers both:
+            //   wf:<slug>   → [xpressui id="<slug>"]
+            //   link:<id>   → [xpressui link="<id>"]
+            var options = [ { value: '', label: data.placeholder || 'Select…' } ];
+            workflows.forEach( function( w ) { options.push( { value: 'wf:' + w.value, label: w.label } ); } );
+            links.forEach( function( l ) { options.push( { value: 'link:' + l.value, label: '🔗 ' + l.label } ); } );
+
+            var current = attributes.workflowId
+                ? ( ( attributes.isHostedLink ? 'link:' : 'wf:' ) + attributes.workflowId )
+                : '';
+            var currentLabel = '';
+            options.forEach( function( o ) { if ( o.value === current ) { currentLabel = o.label; } } );
+            var shortcode = attributes.workflowId
+                ? ( attributes.isHostedLink
+                    ? '[xpressui link="' + attributes.workflowId + '"]'
+                    : '[xpressui id="' + attributes.workflowId + '"]' )
+                : '';
 
             var inspector = el(
                 InspectorControls,
@@ -37,36 +52,40 @@
                     PanelBody,
                     { title: 'Form Configuration', initialOpen: true },
                     el( SelectControl, {
-                        label: 'Select Workflow',
-                        value: attributes.workflowId,
+                        label: 'Select form or hosted link',
+                        value: current,
                         options: options,
                         onChange: function( val ) {
-                            setAttributes( { workflowId: val } );
-                        }
-                    } ),
-                    el( ToggleControl, {
-                        label: 'Is Hosted Link?',
-                        checked: attributes.isHostedLink,
-                        onChange: function( val ) {
-                            setAttributes( { isHostedLink: val } );
+                            if ( ! val ) {
+                                setAttributes( { workflowId: '', isHostedLink: false } );
+                                return;
+                            }
+                            var isLink = val.indexOf( 'link:' ) === 0;
+                            setAttributes( {
+                                workflowId: val.replace( /^(wf:|link:)/, '' ),
+                                isHostedLink: isLink
+                            } );
                         }
                     } )
                 )
             );
 
             var body;
-            if ( attributes.workflowId && ServerSideRender ) {
-                // Live preview of the actual rendered form (server-rendered).
-                body = el( ServerSideRender, {
-                    block: 'xpressui/workflow-embed',
-                    attributes: attributes
-                } );
+            if ( attributes.workflowId ) {
+                body = el(
+                    'div',
+                    { style: { border: '1px solid #38bdf8', padding: '18px 20px', background: '#f0f9ff', borderRadius: '10px', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif' } },
+                    el( 'strong', { style: { color: '#0369a1', fontSize: '15px' } }, 'IntakeFlow Form' ),
+                    el( 'div', { style: { fontSize: '13px', color: '#0f172a', marginTop: '4px', fontWeight: 600 } }, currentLabel || attributes.workflowId ),
+                    el( 'code', { style: { display: 'inline-block', marginTop: '10px', padding: '4px 8px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', color: '#334155' } }, shortcode ),
+                    el( 'div', { style: { fontSize: '12px', color: '#64748b', marginTop: '8px' } }, data.renderNote || 'This form renders on the published page.' )
+                );
             } else {
                 body = el(
                     'div',
                     { style: { border: '2px dashed #38bdf8', padding: '24px', background: '#f0f9ff', borderRadius: '10px', textAlign: 'center', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif' } },
                     el( 'strong', { style: { color: '#0369a1', fontSize: '15px' } }, 'IntakeFlow Form' ),
-                    el( 'div', { style: { fontSize: '13px', color: '#64748b', marginTop: '6px' } }, 'Select a workflow in the block settings to preview it here.' )
+                    el( 'div', { style: { fontSize: '13px', color: '#64748b', marginTop: '6px' } }, 'Select a form or hosted link in the block settings.' )
                 );
             }
 
@@ -80,6 +99,5 @@
     window.wp.blocks,
     window.wp.element,
     window.wp.blockEditor,
-    window.wp.components,
-    window.wp.serverSideRender
+    window.wp.components
 );
