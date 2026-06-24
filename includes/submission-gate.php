@@ -102,9 +102,14 @@ function xpressui_pro_license_soft_notice() {
 		return;
 	}
 
-	// Don't nag on the connection screen itself.
+	// Don't nag on any IntakeFlow admin page — each already surfaces a contextual connect
+	// prompt (the dashboard's "Get started" panel, the Settings connection form, etc.).
+	// The notice's job is to remind on OTHER admin screens, not to pile up here.
 	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
-	if ( $screen && false !== strpos( (string) $screen->id, 'xpressui-bridge' ) ) {
+	if ( $screen && (
+		false !== strpos( (string) $screen->id, 'xpressui' )
+		|| 'xpressui_submission' === (string) ( $screen->post_type ?? '' )
+	) ) {
 		return;
 	}
 

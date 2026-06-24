@@ -379,7 +379,9 @@ function xpressui_render_dashboard_page() {
 		// wall; the Console connection is framed as the upgrade, not the gate.
 		$gs_cf7_or_gf       = post_type_exists( 'wpcf7_contact_form' ) || class_exists( 'GFAPI' );
 		$gs_total_subs      = array_sum( (array) wp_count_posts( 'xpressui_submission' ) );
-		if ( ! $is_pro && $gs_total_subs < 1 ) :
+		// Reused below to suppress redundant "Connect" CTAs while the onboarding panel leads.
+		$gs_show_onboarding = ! $is_pro && $gs_total_subs < 1;
+		if ( $gs_show_onboarding ) :
 			$gs_import_url    = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' );
 			$gs_connect_url   = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
 			$gs_workflows_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=list' );
@@ -562,9 +564,11 @@ function xpressui_render_dashboard_page() {
 				<div style="padding: 40px; text-align: center; color: #64748b;">
 					<p style="font-size: 15px; font-weight: 600; margin: 0; color: #1e3a8a;"><?php esc_html_e( 'Submissions for trial forms are sent by email.', 'xpressui-bridge' ); ?></p>
 					<p style="font-size: 13px; margin: 8px 0 20px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;"><?php esc_html_e( 'To store, display, and manage your submissions in this dashboard, connect your site to the IntakeFlow Console.', 'xpressui-bridge' ); ?></p>
+					<?php if ( empty( $gs_show_onboarding ) ) : // The "Get started" panel above already leads the connect action for brand-new sites. ?>
 					<a href="<?php echo esc_url( $connect_url ); ?>" class="xpui-gradient-btn" style="padding: 8px 20px !important; font-size: 13px !important;">
 						<?php esc_html_e( 'Connect to Console', 'xpressui-bridge' ); ?>
 					</a>
+					<?php endif; ?>
 				</div>
 			<?php elseif ( empty( $latest_posts ) ) : ?>
 				<div style="padding: 40px; text-align: center; color: #64748b;">
