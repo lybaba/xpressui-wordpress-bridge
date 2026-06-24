@@ -4,7 +4,7 @@ Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.99
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -159,6 +159,16 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.1.0 =
+* New: Manual payment step at checkout — bank-transfer details with a server-generated payment reference and one-click copy for IBAN / BIC / reference, plus a proof-of-payment upload (parity with the IntakeFlow Console checkout).
+* New: Send admin notification and submitter confirmation emails via the IntakeFlow Console (SaaS) for better deliverability (SPF/DKIM/DMARC), with a per-workflow "Send emails via SaaS" toggle. Submission delivery now shows the mail recipient and a "SaaS cloud" status.
+* New: Embed a hosted link from the Gutenberg block or the Elementor / page-builder widget via the project + link selector.
+* Improve: Catalog orders are now recorded on the WordPress submission (cart items, total, payment method) even when paying by file upload.
+* Fix: Payment-proof copy / info icons now render correctly (SVG viewBox preserved through sanitization).
+* Fix: Submission JSON metadata (payload, status history, event log, uploaded files) is stored without slash corruption.
+* Fix: Remove orphaned hosted-link configurations left under a previous project after a link moves between projects.
+* Fix: Resolve all Plugin Check / PHPCS nonce findings with proper fixes (no suppressions).
 
 = 1.0.99 =
 * Fix: Resolve a fatal error ("Path cannot be empty") that could occur when rendering an [xpressui] shortcode, caused by a missing catalog file path after the 1.0.98 filesystem refactor. Workflows without a fronted catalog now render normally again.
