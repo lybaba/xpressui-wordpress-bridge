@@ -450,7 +450,7 @@ function xpressui_render_workflows_page() {
 				'xpressui_filter_nonce'
 			);
 			
-			echo '<tr class="xpressui-workflow-row" data-slug="' . esc_attr( $slug ) . '">';
+			echo '<tr class="xpressui-workflow-row" data-slug="' . esc_attr( $slug ) . '" data-bundled="' . ( $is_bundled ? '1' : '0' ) . '">';
 			echo '<th scope="row" class="check-column" style="padding: 8px 10px; vertical-align: middle;"><input id="cb-select-' . esc_attr( $slug ) . '" type="checkbox" name="xpressui_workflow_checkboxes[]" value="' . esc_attr( $slug ) . '" /></th>';
 			$project_name = sanitize_text_field( (string) ( $manifest_meta['projectName'] ?? '' ) );
 			$display_name = $project_name !== '' ? $project_name : $slug;

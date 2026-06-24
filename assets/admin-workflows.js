@@ -182,6 +182,9 @@
 							if (remoteTime > localTime + 2000) { // Add a small buffer of 2s for clock skew
 								// Find the row and append an "Out of Sync" warning badge
 								var row = document.querySelector('.xpressui-workflow-row[data-slug="' + slug + '"]');
+									// Bundled starters already show a precise version-based "Update available"
+									// badge — skip the noisy timestamp "Out of Sync" for them.
+									if (row && row.getAttribute('data-bundled') === '1') { return; }
 								if (row) {
 									var titleCell = row.querySelector('.column-title strong');
 									if (titleCell && !titleCell.querySelector('.xpressui-badge--out-of-sync')) {
