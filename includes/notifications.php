@@ -10,6 +10,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action( 'xpressui_send_mail_async', 'xpressui_dispatch_async_mail', 10, 5 );
+add_action( 'wp_mail_failed', 'xpressui_wp_mail_failed_handler' );
+
+/**
+ * Handle wp_mail failures to record detailed error message in submission meta.
+ *
+ * @param WP_Error $error
+ */
+function xpressui_wp_mail_failed_handler( $error ) {
+	global $xpressui_current_email_post_id;
+	if ( ! empty( $xpressui_current_email_post_id ) && is_wp_error( $error ) ) {
+		update_post_meta( $xpressui_current_email_post_id, '_xpressui_mail_error', $error->get_error_message() );
+	}
+}
 
 /**
  * Queue an email for asynchronous delivery via WP-Cron.
@@ -38,6 +51,7 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 
 	if ( $post_id > 0 ) {
 		update_post_meta( $post_id, '_xpressui_mail_status', 'queued' );
+		update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
 		update_post_meta( $post_id, '_xpressui_mail_error', '' );
 		update_post_meta( $post_id, '_xpressui_mail_sent_at', '' );
 		update_post_meta( $post_id, '_xpressui_mail_fallback_used', '0' );
@@ -53,13 +67,20 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 	}
 
 	if ( ! $scheduled ) {
+		global $xpressui_current_email_post_id;
+		$xpressui_current_email_post_id = $post_id;
 		$sent = wp_mail( $to, $subject, $body, $headers );
+		$xpressui_current_email_post_id = 0;
 		if ( $post_id > 0 ) {
+			update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
 			update_post_meta( $post_id, '_xpressui_mail_fallback_used', '1' );
 			update_post_meta( $post_id, '_xpressui_mail_sent_at', gmdate( 'Y-m-d\TH:i:s\Z' ) );
 			update_post_meta( $post_id, '_xpressui_mail_status', $sent ? 'sent' : 'failed' );
 			if ( ! $sent ) {
-				update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() fallback failed' );
+				$current_error = get_post_meta( $post_id, '_xpressui_mail_error', true );
+				if ( empty( $current_error ) ) {
+					update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() fallback failed' );
+				}
 			}
 			xpressui_record_submission_event(
 				$post_id,
@@ -93,12 +114,19 @@ function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [], $pos
 		return;
 	}
 
+	global $xpressui_current_email_post_id;
+	$xpressui_current_email_post_id = $post_id;
 	$sent = wp_mail( $to, $subject, $body, $headers );
+	$xpressui_current_email_post_id = 0;
 	if ( $post_id > 0 ) {
+		update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
 		update_post_meta( $post_id, '_xpressui_mail_status', $sent ? 'sent' : 'failed' );
 		update_post_meta( $post_id, '_xpressui_mail_sent_at', gmdate( 'Y-m-d\TH:i:s\Z' ) );
 		if ( ! $sent ) {
-			update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() async dispatch failed' );
+			$current_error = get_post_meta( $post_id, '_xpressui_mail_error', true );
+			if ( empty( $current_error ) ) {
+				update_post_meta( $post_id, '_xpressui_mail_error', 'wp_mail() async dispatch failed' );
+			}
 		}
 		xpressui_record_submission_event(
 			$post_id,
@@ -177,6 +205,50 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
 // ---------------------------------------------------------------------------
 
 /**
+ * Determines whether WordPress should handle email sending, or defer to the SaaS.
+ *
+ * For SaaS cloud Hosted Link submissions, sending is managed by the SaaS by default
+ * to guarantee high deliverability (SPF/DKIM/DMARC), unless the user explicitly
+ * configures it to send via WordPress (e.g. via sendEmailsViaWordpress config option).
+ * Submissions without a Hosted Link (local/native) always send via WordPress.
+ *
+ * @param string       $project_slug Project slug.
+ * @param array|string $payload      Submitted payload.
+ * @return bool True if WordPress should send, false if SaaS should handle it.
+ */
+function xpressui_should_send_email_via_wordpress( $project_slug, $payload ) {
+	$local_via_saas = xpressui_get_project_setting_flag( $project_slug, 'sendEmailsViaSaas', true );
+	if ( ! $local_via_saas ) {
+		return true;
+	}
+
+	$hosted_link_id = is_array( $payload ) ? trim( (string) ( $payload['hostedLinkId'] ?? '' ) ) : '';
+	if ( $hosted_link_id === '' ) {
+		return true;
+	}
+
+	$config       = xpressui_get_hosted_link_config( $project_slug, $hosted_link_id );
+	$link_payload = ( is_array( $config ) && is_array( $config['payload'] ?? null ) ) ? $config['payload'] : [];
+	$pres         = is_array( $link_payload['presentation'] ?? null ) ? $link_payload['presentation'] : [];
+
+	// Check if user explicitly chose to send emails via WordPress, or explicitly disabled SaaS sending.
+	$via_wp   = $link_payload['sendEmailsViaWordpress'] ?? $link_payload['sendNotificationViaWordpress'] ??
+	            $pres['sendEmailsViaWordpress'] ?? $pres['sendNotificationViaWordpress'] ?? null;
+	$via_saas = $link_payload['sendEmailsViaSaas'] ?? $link_payload['sendNotificationViaSaas'] ??
+	            $pres['sendEmailsViaSaas'] ?? $pres['sendNotificationViaSaas'] ?? null;
+
+	if ( null !== $via_wp ) {
+		return in_array( $via_wp, [ true, 1, '1', 'true', 'yes', 'on' ], true );
+	}
+	if ( null !== $via_saas ) {
+		return ! in_array( $via_saas, [ true, 1, '1', 'true', 'yes', 'on' ], true );
+	}
+
+	// Default behavior: SaaS handles it, WordPress skips.
+	return false;
+}
+
+/**
  * Resolves the admin notification recipients for a submission.
  *
  * Single source of truth is the synced Hosted Link config (link.config.json):
@@ -191,6 +263,9 @@ function xpressui_get_project_setting_choice( $project_slug, $key, $allowed, $de
  * @return string Comma-separated recipient list, or '' when no notification is due.
  */
 function xpressui_resolve_notification_recipients( $project_slug, $payload ) {
+	if ( ! xpressui_should_send_email_via_wordpress( $project_slug, $payload ) ) {
+		return '';
+	}
 	$all_settings = get_option( 'xpressui_project_settings', [] );
 	if ( is_array( $all_settings ) && ! empty( $all_settings[ $project_slug ]['notifyEmail'] ) ) {
 		$emails = array_values( array_filter( array_map( 'trim', explode( ',', $all_settings[ $project_slug ]['notifyEmail'] ) ), 'is_email' ) );
@@ -210,7 +285,9 @@ function xpressui_resolve_notification_recipients( $project_slug, $payload ) {
 		}
 		$emails = isset( $link_payload['notifyEmails'] ) ? (array) $link_payload['notifyEmails'] : [];
 		$emails = array_values( array_filter( array_map( 'trim', $emails ), 'is_email' ) );
-		return implode( ',', $emails );
+		if ( ! empty( $emails ) ) {
+			return implode( ',', $emails );
+		}
 	}
 
 	// No hosted link (default render): notify the WordPress site admin.
@@ -250,6 +327,9 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
  */
 function xpressui_maybe_send_submitter_sample( $post_id, $project_slug, $payload ) {
 	if ( ! is_array( $payload ) ) {
+		return;
+	}
+	if ( ! xpressui_should_send_email_via_wordpress( $project_slug, $payload ) ) {
 		return;
 	}
 	$opt_in = $payload['emailMeCopy'] ?? false;
@@ -796,6 +876,9 @@ function xpressui_build_submitter_email_html( $site_name, $header_label, $accent
  * @param array|string $payload      Submitted payload (already stored).
  */
 function xpressui_maybe_send_submit_confirmation( $post_id, $project_slug, $payload ) {
+	if ( ! xpressui_should_send_email_via_wordpress( $project_slug, $payload ) ) {
+		return;
+	}
 	if ( ! xpressui_get_project_setting_flag( $project_slug, 'notifySubmitterOnSubmit', false ) ) {
 		return;
 	}

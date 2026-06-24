@@ -199,6 +199,13 @@ function xpressui_build_submission_ingest_body( $post_id, $project_slug, $payloa
 		}
 	}
 
+	$config_override = [];
+	if ( function_exists( 'xpressui_should_send_email_via_wordpress' ) ) {
+		if ( xpressui_should_send_email_via_wordpress( $project_slug, $payload ) ) {
+			$config_override['sendEmailsViaWordpress'] = true;
+		}
+	}
+
 	return [
 		'event'                => 'xpressui.submission.created',
 		'submissionId'         => $submission_id,
@@ -212,6 +219,7 @@ function xpressui_build_submission_ingest_body( $post_id, $project_slug, $payloa
 		],
 		'values'               => $values,
 		'files'                => is_array( $uploaded_files ) ? $uploaded_files : [],
+		'configOverride'       => $config_override,
 	];
 }
 
