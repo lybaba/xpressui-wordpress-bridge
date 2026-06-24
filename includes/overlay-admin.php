@@ -751,6 +751,7 @@ function xpressui_pro_render_card_settings( string $slug ): void {
 	$s             = is_array( $all_settings[ $slug ] ?? null ) ? $all_settings[ $slug ] : [];
 
 	$notify_email                = (string) ( $s['notifyEmail'] ?? '' );
+	$send_emails_via_saas        = (string) ( $s['sendEmailsViaSaas'] ?? '1' );
 	$redirect_url                = (string) ( $s['redirectUrl'] ?? '' );
 	$webhook_url                 = (string) ( $s['webhookUrl'] ?? '' );
 	$booking_url                 = (string) ( $s['bookingUrl'] ?? '' );
@@ -775,6 +776,11 @@ function xpressui_pro_render_card_settings( string $slug ): void {
 	$html = '<input type="email" id="xpressui_notify_email" name="xpressui_notify_email" class="regular-text" placeholder="hello@example.com" value="' . esc_attr( $notify_email ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Receive an email on each new submission. Leave empty to disable.', 'xpressui-bridge' ) . '</p>';
 	xpressui_pro_row( 'xpressui_notify_email', __( 'Notification email', 'xpressui-bridge' ), $html );
+
+	$html = '<label><input type="checkbox" id="xpressui_send_emails_via_saas" name="xpressui_send_emails_via_saas" value="1"' . checked( '1', $send_emails_via_saas, false ) . '> ';
+	$html .= esc_html__( 'Send notification and confirmation emails via SaaS Cloud (highly recommended for deliverability).', 'xpressui-bridge' ) . '</label>';
+	$html .= '<p class="description">' . esc_html__( 'If disabled, emails will be sent directly by WordPress.', 'xpressui-bridge' ) . '</p>';
+	xpressui_pro_row( 'xpressui_send_emails_via_saas', __( 'Send emails via SaaS', 'xpressui-bridge' ), $html );
 
 	$html = '<input type="url" id="xpressui_redirect_url" name="xpressui_redirect_url" class="regular-text" placeholder="https://" value="' . esc_attr( $redirect_url ) . '">';
 	$html .= '<p class="description">' . esc_html__( 'Redirect after a successful submission. Leave empty to show the success message.', 'xpressui-bridge' ) . '</p>';
@@ -925,6 +931,7 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 
 	$show_project_title       = ! empty( $_POST['xpressui_show_project_title'] ) ? '1' : '0';
 	$show_required_note       = ! empty( $_POST['xpressui_show_required_fields_note'] ) ? '1' : '0';
+	$send_emails_via_saas     = ! empty( $_POST['xpressui_send_emails_via_saas'] ) ? '1' : '0';
 	$section_label_visibility = sanitize_key( wp_unslash( (string) ( $_POST['xpressui_section_label_visibility'] ?? 'auto' ) ) );
 	if ( ! in_array( $section_label_visibility, [ 'auto', 'show', 'hide' ], true ) ) {
 		$section_label_visibility = 'auto';
@@ -945,6 +952,7 @@ function xpressui_pro_extra_workflow_save( string $slug ): void {
 	}
 	$all_settings[ $slug ] = [
 		'notifyEmail'               => $notify_email,
+		'sendEmailsViaSaas'         => $send_emails_via_saas,
 		'redirectUrl'               => $redirect_url,
 		'webhookUrl'                => $webhook_url,
 		'bookingUrl'                => $booking_url,

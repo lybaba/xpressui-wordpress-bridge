@@ -423,6 +423,16 @@ function xpressui_render_delivery_metabox( $post ) {
 	$mail_error         = (string) get_post_meta( $post->ID, '_xpressui_mail_error', true );
 	$mail_sent_at       = (string) get_post_meta( $post->ID, '_xpressui_mail_sent_at', true );
 	$mail_fallback_used = (string) get_post_meta( $post->ID, '_xpressui_mail_fallback_used', true );
+	$mail_recipient     = (string) get_post_meta( $post->ID, '_xpressui_mail_recipient', true );
+
+	$payload        = xpressui_get_submission_payload( $post->ID );
+	$project_slug   = (string) get_post_meta( $post->ID, '_xpressui_project_slug', true );
+	$is_saas_handling = false;
+	if ( ! empty( $payload ) && ! empty( $project_slug ) && function_exists( 'xpressui_should_send_email_via_wordpress' ) ) {
+		if ( ! xpressui_should_send_email_via_wordpress( $project_slug, $payload ) ) {
+			$is_saas_handling = true;
+		}
+	}
 
 	$webhook_status  = (string) get_post_meta( $post->ID, '_xpressui_webhook_status', true );
 	$webhook_code    = (string) get_post_meta( $post->ID, '_xpressui_webhook_code', true );
@@ -430,8 +440,12 @@ function xpressui_render_delivery_metabox( $post ) {
 	$webhook_sent_at = (string) get_post_meta( $post->ID, '_xpressui_webhook_sent_at', true );
 	$event_log       = function_exists( 'xpressui_get_submission_events' ) ? xpressui_get_submission_events( $post->ID ) : [];
 
-	$badge = static function( string $status ): string {
+	$badge = static function( string $status, bool $is_saas_handling = false ): string {
 		$cls = 'xpressui-badge';
+		if ( $is_saas_handling && ( $status === '' || $status === 'not-set' ) ) {
+			$cls .= ' xpressui-badge--green';
+			return '<span class="' . esc_attr( $cls ) . '">' . esc_html__( 'SaaS cloud', 'xpressui-bridge' ) . '</span>';
+		}
 		if ( in_array( $status, [ 'synced', 'sent', 'ok', 'success' ], true ) ) {
 			$cls .= ' xpressui-badge--green';
 		} elseif ( $status === '' || $status === 'not-set' ) {
@@ -488,7 +502,10 @@ function xpressui_render_delivery_metabox( $post ) {
 	echo '<h4>' . esc_html__( 'Mail delivery', 'xpressui-bridge' ) . '</h4>';
 	echo '<div class="xpressui-delivery-dl">';
 
-		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . wp_kses( $badge( $mail_status !== '' ? $mail_status : 'not-set' ), $badge_allowed_html ) . '</span></div>';
+		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . wp_kses( $badge( $mail_status !== '' ? $mail_status : 'not-set', $is_saas_handling ), $badge_allowed_html ) . '</span></div>';
+		if ( $mail_recipient !== '' ) {
+			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Recipient', 'xpressui-bridge' ) . '</span><span><code>' . esc_html( $mail_recipient ) . '</code></span></div>';
+		}
 		echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Sent at', 'xpressui-bridge' ) . '</span><span>' . esc_html( $fmt_date( $mail_sent_at ) ) . '</span></div>';
 		if ( $mail_fallback_used === '1' ) {
 			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Fallback', 'xpressui-bridge' ) . '</span><span>' . wp_kses( $badge( 'yes' ), $badge_allowed_html ) . '</span></div>';
