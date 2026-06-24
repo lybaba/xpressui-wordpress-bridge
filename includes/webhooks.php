@@ -219,7 +219,9 @@ function xpressui_build_submission_ingest_body( $post_id, $project_slug, $payloa
 		],
 		'values'               => $values,
 		'files'                => is_array( $uploaded_files ) ? $uploaded_files : [],
-		'configOverride'       => $config_override,
+		// Cast to object so an empty override serialises as {} (a JSON object), not [] —
+		// otherwise PHP encodes the empty array as a list and the SaaS dict field rejects it.
+		'configOverride'       => (object) $config_override,
 	];
 }
 
