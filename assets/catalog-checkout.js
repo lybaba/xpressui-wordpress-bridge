@@ -28,6 +28,7 @@
   try {
     if (new URLSearchParams(window.location.search).get('xpuiCheckout') === 'success') {
       if (cfg.storageKey) { try { window.localStorage.removeItem(cfg.storageKey); } catch (_e) {} }
+      if (cfg.slug) { try { window.localStorage.removeItem('xpui_draft_' + cfg.slug); } catch (_e) {} }
       return;
     }
   } catch (_e) {}
@@ -136,6 +137,10 @@
     try {
       resp.clone().json().then(function (data) {
         if (!data) { return; }
+        if (data.success || data.checkoutUrl || data.paymentStatus || (resp && resp.ok)) {
+          if (cfg.storageKey) { try { window.localStorage.removeItem(cfg.storageKey); } catch (_e) {} }
+          if (cfg.slug) { try { window.localStorage.removeItem('xpui_draft_' + cfg.slug); } catch (_e) {} }
+        }
         if (data.checkoutUrl) { window.location.assign(data.checkoutUrl); return; }
         if (data.paymentStatus) { window.location.assign(successRedirectUrl()); }
       }).catch(function () {});
@@ -216,6 +221,11 @@
               try {
                 var data = JSON.parse(this.responseText || 'null');
                 if (!data) { return; }
+                var isSuccess = (this.status >= 200 && this.status < 300) || (data && data.success);
+                if (isSuccess || data.checkoutUrl || data.paymentStatus) {
+                  if (cfg.storageKey) { try { window.localStorage.removeItem(cfg.storageKey); } catch (_e) {} }
+                  if (cfg.slug) { try { window.localStorage.removeItem('xpui_draft_' + cfg.slug); } catch (_e) {} }
+                }
                 if (data.checkoutUrl) { window.location.assign(data.checkoutUrl); return; }
                 if (data.paymentStatus) { window.location.assign(successRedirectUrl()); }
               } catch (_e) {}
