@@ -372,6 +372,34 @@ function xpressui_render_dashboard_page() {
 		<h1><?php esc_html_e( 'IntakeFlow Submissions Dashboard', 'xpressui-bridge' ); ?></h1>
 		<p class="description" style="margin-bottom: 20px;"><?php esc_html_e( 'Monitor your submission volumes, track administrative efficiency, and manage recent entries.', 'xpressui-bridge' ); ?></p>
 
+		<?php
+		// First-run activation panel: a brand-new site (not connected, no submissions yet)
+		// lands here. Lead with the zero-friction, no-account path (import an existing
+		// CF7 / Gravity Forms form into the inbox) so the user gets value BEFORE the account
+		// wall; the Console connection is framed as the upgrade, not the gate.
+		$gs_cf7_or_gf       = post_type_exists( 'wpcf7_contact_form' ) || class_exists( 'GFAPI' );
+		$gs_total_subs      = array_sum( (array) wp_count_posts( 'xpressui_submission' ) );
+		if ( ! $is_pro && $gs_total_subs < 1 ) :
+			$gs_import_url    = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=import' );
+			$gs_connect_url   = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' );
+			$gs_workflows_url = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-bridge&tab=list' );
+		?>
+		<div class="card xpressui-admin-card xpui-dashboard-card" style="margin: 0 0 20px; padding: 24px; border-radius: 16px; background: linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%); border: 1px solid #ddd6fe;">
+			<h2 style="margin:0 0 6px; font-size:18px; font-weight:800; color:#4c1d95;"><?php esc_html_e( 'Get started in 60 seconds', 'xpressui-bridge' ); ?></h2>
+			<p style="margin:0 0 18px; color:#5b21b6; font-size:13px; max-width:760px;"><?php esc_html_e( 'No account required to start — import an existing form and collect submissions in your inbox right away. Connect an IntakeFlow account later for product/booking catalogs, checkout, signatures and cloud sync.', 'xpressui-bridge' ); ?></p>
+			<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+				<?php if ( $gs_cf7_or_gf ) : ?>
+					<a href="<?php echo esc_url( $gs_import_url ); ?>" class="xpui-gradient-btn" style="height:40px; line-height:40px; padding:0 20px;"><?php esc_html_e( 'Import your Contact Form 7 / Gravity Forms form', 'xpressui-bridge' ); ?></a>
+					<a href="<?php echo esc_url( $gs_connect_url ); ?>" class="button button-secondary" style="height:40px; line-height:38px;"><?php esc_html_e( 'Or connect your account (1-click)', 'xpressui-bridge' ); ?></a>
+				<?php else : ?>
+					<a href="<?php echo esc_url( $gs_connect_url ); ?>" class="xpui-gradient-btn" style="height:40px; line-height:40px; padding:0 20px;"><?php esc_html_e( 'Connect your IntakeFlow account (1-click)', 'xpressui-bridge' ); ?></a>
+					<a href="<?php echo esc_url( $gs_workflows_url ); ?>" class="button button-secondary" style="height:40px; line-height:38px;"><?php esc_html_e( 'Or embed the starter workflow', 'xpressui-bridge' ); ?></a>
+				<?php endif; ?>
+			</div>
+			<p style="margin:16px 0 0; color:#6d28d9; font-size:12px;"><?php esc_html_e( 'Then embed anywhere with the [xpressui id="your-form"] shortcode, the Gutenberg block, or the Elementor widget.', 'xpressui-bridge' ); ?></p>
+		</div>
+		<?php endif; ?>
+
 		<!-- Grid for Quota and ROI Widgets -->
 		<div class="xpui-top-grid">
 			<?php
