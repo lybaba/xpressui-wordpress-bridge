@@ -500,11 +500,11 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 	$payload_with_files  = xpressui_attach_file_references( $payload, $stored_files );
 	$payload_with_files  = xpressui_store_signature_attachments( $post_id, $payload_with_files );
 
-	update_post_meta( $post_id, '_xpressui_payload_json',
-		is_string( $payload_with_files )
-			? $payload_with_files
-			: wp_json_encode( $payload_with_files )
-	);
+	$payload_json_str = is_string( $payload_with_files )
+		? $payload_with_files
+		: wp_json_encode( $payload_with_files );
+
+	update_post_meta( $post_id, '_xpressui_payload_json', wp_slash( $payload_json_str ) );
 	$mark_timing( 'payload_stored' );
 
 	// Allow extensions to react immediately after a brand-new submission is persisted.
@@ -578,7 +578,7 @@ function xpressui_handle_submission( WP_REST_Request $request ) {
 		'webhookMs'           => $timing_diff_ms( 'submit_confirmation_sent', 'webhook_sent' ),
 	];
 
-	update_post_meta( $post_id, '_xpressui_submit_timing', wp_json_encode( $timing_summary ) );
+	update_post_meta( $post_id, '_xpressui_submit_timing', wp_slash( wp_json_encode( $timing_summary ) ) );
 	xpressui_record_submission_event(
 		$post_id,
 		'submit.completed',
@@ -769,7 +769,7 @@ function xpressui_handle_resubmission_by_post_id( WP_REST_Request $request, $pay
 	// Invalidate token before status change (avoids any race on double-submit).
 	xpressui_invalidate_resume_token( $post_id );
 
-	update_post_meta( $post_id, '_xpressui_payload_json', wp_json_encode( $merged ) );
+	update_post_meta( $post_id, '_xpressui_payload_json', wp_slash( wp_json_encode( $merged ) ) );
 	update_post_meta( $post_id, '_xpressui_resubmitted_at', current_time( 'mysql' ) );
 
 	xpressui_set_submission_status( $post_id, 'in-review', __( 'Resubmitted by submitter', 'xpressui-bridge' ) );
@@ -1163,8 +1163,8 @@ function xpressui_store_uploaded_files( $post_id, WP_REST_Request $request ) {
 	remove_filter( 'intermediate_image_sizes_advanced', $xpressui_limit_sizes, 99 );
 
 	if ( $post_id > 0 ) {
-		update_post_meta( $post_id, '_xpressui_uploaded_files', wp_json_encode( $stored_files ) );
-		update_post_meta( $post_id, '_xpressui_upload_debug', wp_json_encode( $debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) );
+		update_post_meta( $post_id, '_xpressui_uploaded_files', wp_slash( wp_json_encode( $stored_files ) ) );
+		update_post_meta( $post_id, '_xpressui_upload_debug', wp_slash( wp_json_encode( $debug, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) ) );
 	}
 	return $stored_files;
 }
