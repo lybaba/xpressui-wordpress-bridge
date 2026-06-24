@@ -163,6 +163,9 @@ To rebuild the runtime from those sources:
 2. The submission detail view with payload fields, status workflow, and assignment panel.
 3. The Manage Workflows page showing installed packages and project settings.
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
+5. Product catalog storefront rendered natively in WordPress — server-side, SEO-friendly, no iframe.
+6. Checkout with the manual payment step: bank-transfer details, a generated payment reference, and proof-of-payment upload.
+7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
 
