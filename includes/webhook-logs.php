@@ -158,6 +158,79 @@ function xpressui_render_sync_logs_empty_state() {
 }
 
 /**
+ * Renders the local email-delivery log shown to sites that aren't connected to the Console.
+ *
+ * Free / unconnected sites send admin notification emails via WordPress (wp_mail), so instead
+ * of an empty "no sync activity" screen we surface proof that those emails are going out —
+ * subject, recipient, status and time, read from the per-submission mail meta.
+ */
+function xpressui_render_mail_delivery_log() {
+	$posts = get_posts( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => 30,
+		'orderby'        => 'date',
+		'order'          => 'DESC',
+		'meta_key'       => '_xpressui_mail_recipient',
+		'meta_compare'   => 'EXISTS',
+	] );
+	$date_fmt = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
+	?>
+	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 100%;">
+		<h2><?php esc_html_e( 'Email delivery log', 'xpressui-bridge' ); ?></h2>
+		<p class="description" style="font-size: 13px; line-height: 1.6;">
+			<?php esc_html_e( 'Admin notification emails this site sent for new submissions. Connect the IntakeFlow Console to send via the cloud for higher deliverability (SPF/DKIM/DMARC) and to back up submissions.', 'xpressui-bridge' ); ?>
+		</p>
+		<?php if ( empty( $posts ) ) : ?>
+			<div style="padding: 32px; text-align: center; color: #64748b;">
+				<p style="font-weight: 600; margin: 0;"><?php esc_html_e( 'No notification emails sent yet.', 'xpressui-bridge' ); ?></p>
+				<p style="font-size: 13px; margin: 6px 0 0;"><?php esc_html_e( 'They appear here once a submission arrives on a form that has a notification recipient configured.', 'xpressui-bridge' ); ?></p>
+			</div>
+		<?php else : ?>
+			<table class="wp-list-table widefat fixed striped" style="margin-top: 16px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Subject', 'xpressui-bridge' ); ?></th>
+						<th style="width: 230px;"><?php esc_html_e( 'Recipient', 'xpressui-bridge' ); ?></th>
+						<th style="width: 110px;"><?php esc_html_e( 'Status', 'xpressui-bridge' ); ?></th>
+						<th style="width: 180px;"><?php esc_html_e( 'Sent', 'xpressui-bridge' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php foreach ( $posts as $p ) :
+					$recipient = (string) get_post_meta( $p->ID, '_xpressui_mail_recipient', true );
+					if ( $recipient === '' ) {
+						continue;
+					}
+					$status  = (string) get_post_meta( $p->ID, '_xpressui_mail_status', true );
+					$sent_at = (string) get_post_meta( $p->ID, '_xpressui_mail_sent_at', true );
+					$subject = (string) get_post_meta( $p->ID, '_xpressui_mail_subject', true );
+					if ( $subject === '' ) {
+						/* translators: %s: submission title */
+						$subject = sprintf( __( 'New submission: %s', 'xpressui-bridge' ), get_the_title( $p ) );
+					}
+					$color = 'sent' === $status ? '#16a34a' : ( 'failed' === $status ? '#dc2626' : '#64748b' );
+					$status_label = $status !== '' ? $status : 'queued';
+					$when = '—';
+					if ( $sent_at !== '' ) {
+						$when = mysql2date( $date_fmt, get_date_from_gmt( str_replace( [ 'T', 'Z' ], [ ' ', '' ], $sent_at ) ) );
+					}
+				?>
+					<tr>
+						<td><a href="<?php echo esc_url( get_edit_post_link( $p->ID ) ); ?>"><?php echo esc_html( $subject ); ?></a></td>
+						<td><code><?php echo esc_html( $recipient ); ?></code></td>
+						<td><span style="display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600; color:#fff; background:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( $status_label ); ?></span></td>
+						<td><?php echo esc_html( $when ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
+/**
  * Renders the Sync Logs panel.
  */
 function xpressui_render_sync_logs_tab() {
@@ -166,7 +239,9 @@ function xpressui_render_sync_logs_tab() {
 	$cloud_active   = xpressui_cloud_sync_is_active();
 	$webhook_set    = xpressui_any_webhook_endpoint_configured();
 	if ( ! $cloud_active && ! $webhook_set ) {
-		xpressui_render_sync_logs_empty_state();
+		// Not connected + no webhook → show the local email-delivery log (proof admin
+		// notifications are going out) instead of an empty "no sync activity" screen.
+		xpressui_render_mail_delivery_log();
 		return;
 	}
 

@@ -52,6 +52,7 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 	if ( $post_id > 0 ) {
 		update_post_meta( $post_id, '_xpressui_mail_status', 'queued' );
 		update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
+		update_post_meta( $post_id, '_xpressui_mail_subject', wp_slash( $subject ) );
 		update_post_meta( $post_id, '_xpressui_mail_error', '' );
 		update_post_meta( $post_id, '_xpressui_mail_sent_at', '' );
 		update_post_meta( $post_id, '_xpressui_mail_fallback_used', '0' );
