@@ -1284,7 +1284,13 @@ function xpressui_render_settings_page() {
 		'site_url'   => site_url(),
 		'site_name'  => get_bloginfo( 'name' ),
 		'state'      => $connect_state,
-		'return_url' => admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' )
+		'return_url' => admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ),
+		// Acquisition attribution: lets the Console measure how many sign-ups / connections
+		// originate from the WordPress plugin (P0 funnel). Extra params are ignored by the
+		// connect page if unused.
+		'utm_source'     => 'wp-plugin',
+		'utm_medium'     => 'plugin',
+		'plugin_version' => XPRESSUI_BRIDGE_VERSION,
 	]);
 
 	echo '<div style="margin: 20px 0; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; max-width: 600px;">';
