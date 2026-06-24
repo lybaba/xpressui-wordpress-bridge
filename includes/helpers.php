@@ -2350,7 +2350,7 @@ function xpressui_append_status_history( $post_id, $status, $note = '' ) {
 		'at'     => current_time( 'mysql' ),
 		'actor'  => $actor,
 	];
-	update_post_meta( $post_id, '_xpressui_status_history', wp_json_encode( $history ) );
+	update_post_meta( $post_id, '_xpressui_status_history', wp_slash( wp_json_encode( $history ) ) );
 }
 
 function xpressui_set_submission_status( $post_id, $status, $note = '' ) {

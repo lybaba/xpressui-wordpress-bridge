@@ -81,7 +81,7 @@ function xpressui_record_submission_event( $post_id, $event_type, $source = 'bri
 		$events = array_slice( $events, -1 * $max_events );
 	}
 
-	update_post_meta( $post_id, '_xpressui_submission_events_json', wp_json_encode( $events ) );
+	update_post_meta( $post_id, '_xpressui_submission_events_json', wp_slash( wp_json_encode( $events ) ) );
 
 	/**
 	 * Fires after a submission event is recorded.
