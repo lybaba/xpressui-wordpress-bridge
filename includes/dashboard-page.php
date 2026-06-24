@@ -386,7 +386,13 @@ function xpressui_render_dashboard_page() {
 		?>
 		<div class="card xpressui-admin-card xpui-dashboard-card" style="margin: 0 0 20px; padding: 24px; border-radius: 16px; background: linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%); border: 1px solid #ddd6fe;">
 			<h2 style="margin:0 0 6px; font-size:18px; font-weight:800; color:#4c1d95;"><?php esc_html_e( 'Get started in 60 seconds', 'xpressui-bridge' ); ?></h2>
-			<p style="margin:0 0 18px; color:#5b21b6; font-size:13px; max-width:760px;"><?php esc_html_e( 'No account required to start — import an existing form and collect submissions in your inbox right away. Connect an IntakeFlow account later for product/booking catalogs, checkout, signatures and cloud sync.', 'xpressui-bridge' ); ?></p>
+			<p style="margin:0 0 18px; color:#5b21b6; font-size:13px; max-width:760px;"><?php
+			if ( $gs_cf7_or_gf ) {
+				esc_html_e( 'No account required to start — import your existing Contact Form 7 / Gravity Forms form and collect submissions in your inbox right away. Connect an IntakeFlow account later for product/booking catalogs, checkout, signatures and cloud sync.', 'xpressui-bridge' );
+			} else {
+				esc_html_e( 'Connect your IntakeFlow account to build multi-step forms, product/booking catalogs and checkout — all synced into this inbox. Already use Contact Form 7 or Gravity Forms? Install one to import your form here, no account needed.', 'xpressui-bridge' );
+			}
+			?></p>
 			<div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
 				<?php if ( $gs_cf7_or_gf ) : ?>
 					<a href="<?php echo esc_url( $gs_import_url ); ?>" class="xpui-gradient-btn" style="height:40px; line-height:40px; padding:0 20px;"><?php esc_html_e( 'Import your Contact Form 7 / Gravity Forms form', 'xpressui-bridge' ); ?></a>
