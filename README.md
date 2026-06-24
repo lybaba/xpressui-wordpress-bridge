@@ -9,6 +9,12 @@
 
 ---
 
+## Documentation & Live Walkthrough
+
+For a complete, interactive step-by-step guide with screenshots and video demonstrations on how to use IntakeFlow, check out the [Live Walkthrough Page](https://lybaba.github.io/xpressui-wordpress-bridge/).
+
+---
+
 ## What it does
 
 Build multi-step forms and document-intake workflows in the IntakeFlow Console,

@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntakeFlow - Client Intake, Multi-Step Forms & Inbox for WordPress</title>
+    <meta name="description" content="Import, embed, and manage multi-step forms and document collection workflows natively inside WordPress. 100% GDPR-compliant local database storage.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --surface-color: rgba(17, 22, 37, 0.7);
+            --surface-border: rgba(255, 255, 255, 0.08);
+            --primary-accent: #3b82f6;
+            --primary-accent-glow: rgba(59, 130, 246, 0.15);
+            --secondary-accent: #8b5cf6;
+            --secondary-accent-glow: rgba(139, 92, 246, 0.15);
+            --success-color: #10b981;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* Utility Components */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .glass-panel {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--surface-border);
+            border-radius: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.8rem 1.8rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--surface-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .section-tag {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--primary-accent);
+            margin-bottom: 0.75rem;
+            display: inline-block;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+            max-width: 700px;
+            margin-bottom: 3rem;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(11, 15, 25, 0.75);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--surface-border);
+            transition: all 0.3s ease;
+        }
+
+        header.scrolled {
+            padding: 0.5rem 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary-accent);
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #fff;
+        }
+
+        /* Hero */
+        .hero {
+            padding-top: 180px;
+            padding-bottom: 100px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 40%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 2.5rem auto;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 4rem;
+        }
+
+        /* Interactive Showcase Tabs */
+        .showcase {
+            padding: 80px 0;
+            border-top: 1px solid var(--surface-border);
+        }
+
+        .tabs-header {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--surface-border);
+            color: var(--text-muted);
+            padding: 0.8rem 1.5rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: #fff;
+            border-color: var(--primary-accent);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .tab-content.active {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        @media (max-width: 968px) {
+            .tab-content.active {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+
+        .media-container {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--surface-border);
+            position: relative;
+            background: #000;
+        }
+
+        .media-container img, .media-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .tab-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .tab-text h3 {
+            font-family: var(--font-display);
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .tab-text p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .feature-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .feature-bullets li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            color: var(--text-main);
+        }
+
+        .feature-bullets li::before {
+            content: "✓";
+            color: var(--success-color);
+            font-weight: 900;
+        }
+
+        /* Pillars Section */
+        .pillars {
+            padding: 80px 0;
+            background: rgba(17, 22, 37, 0.3);
+            border-top: 1px solid var(--surface-border);
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        @media (max-width: 968px) {
+            .pillars-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .pillar-card {
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.05);
+        }
+
+        .pillar-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: var(--primary-accent-glow);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-accent);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pillar-card:nth-child(2) .pillar-icon {
+            background: var(--secondary-accent-glow);
+            border-color: rgba(139, 92, 246, 0.2);
+            color: var(--secondary-accent);
+        }
+
+        .pillar-card h3 {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .pillar-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Product Deep Analysis */
+        .analysis {
+            padding: 80px 0;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .analysis-table th, .analysis-table td {
+            padding: 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid var(--surface-border);
+        }
+
+        .analysis-table th {
+            font-family: var(--font-display);
+            font-weight: 700;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .analysis-table td strong {
+            color: #fff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        /* FAQ Section */
+        .faq {
+            padding: 80px 0;
+            border-top: 1px solid var(--surface-border);
+        }
+
+        .faq-list {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .faq-item {
+            border: 1px solid var(--surface-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.01);
+            transition: all 0.3s ease;
+        }
+
+        .faq-question {
+            padding: 1.25rem 1.5rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .faq-question::after {
+            content: "+";
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item.open .faq-question::after {
+            transform: rotate(45deg);
+            color: #fff;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .faq-answer-content {
+            padding: 1.25rem 1.5rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            border-top: 1px solid var(--surface-border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        footer a {
+            color: var(--primary-accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header id="header">
+        <div class="container header-wrap">
+            <a href="#" class="logo">
+                <div class="logo-dot"></div>
+                IntakeFlow
+            </a>
+            <nav>
+                <a href="#showcase">Walkthrough</a>
+                <a href="#pillars">Pillars</a>
+                <a href="#analysis">Analysis</a>
+                <a href="#faq">FAQ</a>
+            </nav>
+            <a href="https://github.com/lybaba/xpressui-wordpress-bridge" target="_blank" class="btn btn-secondary">GitHub Repo</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <span class="section-tag">WordPress Form Revolution</span>
+            <h1 class="hero-title">Next-Gen Client Intake &<br><span>Document Collection</span></h1>
+            <p class="hero-subtitle">
+                Import, customize, and embed multi-step forms natively. Stop using slow iframe solutions—manage submissions directly inside your secure WordPress database with 100% data ownership.
+            </p>
+            <div class="hero-ctas">
+                <a href="#showcase" class="btn btn-primary">Start Interactive Demo</a>
+                <a href="#analysis" class="btn btn-secondary">Deep Technical Analysis</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Showcase Section -->
+    <section id="showcase" class="showcase">
+        <div class="container">
+            <div style="text-align: center;">
+                <span class="section-tag">How it works</span>
+                <h2 class="section-title">Interactive Walkthrough</h2>
+                <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+                    Follow the five simple stages of taking command of your client document intake workflows.
+                </p>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab(0)">1. Import CF7</button>
+                <button class="tab-btn" onclick="switchTab(1)">2. Workflows List</button>
+                <button class="tab-btn" onclick="switchTab(2)">3. Embed Anywhere</button>
+                <button class="tab-btn" onclick="switchTab(3)">4. Frontend Submission</button>
+                <button class="tab-btn" onclick="switchTab(4)">5. WordPress Inbox</button>
+            </div>
+
+            <!-- Tab Content 1 -->
+            <div class="tab-content active glass-panel" style="padding: 2.5rem;">
+                <div class="media-container">
+                    <img src="media/1_import_success.png" alt="CF7 Form Import">
+                </div>
+                <div class="tab-text">
+                    <h3>One-Click Migration</h3>
+                    <p>Convert your existing Contact Form 7 and Gravity Forms layouts in a few clicks. The importer analyzes the fields and retains all options, required validations, and logic.</p>
+                    <ul class="feature-bullets">
+                        <li>Preserves text, telephone, number, date, and URL validations</li>
+                        <li>Supports renaming form fields and editing slugs natively</li>
+                        <li>Generates standalone responsive layouts ready for frontend sync</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab Content 2 -->
+            <div class="tab-content glass-panel" style="padding: 2.5rem;">
+                <div class="media-container">
+                    <img src="media/2_workflows_synced.png" alt="WordPress Workflows List">
+                </div>
+                <div class="tab-text">
+                    <h3>Workflows Directory</h3>
+                    <p>Manage all form workflows inside the central Workflows dashboard in wp-admin. From here you can sync all structures with the IntakeFlow Console and manage settings per project.</p>
+                    <ul class="feature-bullets">
+                        <li>Sync schemas directly via secure API tokens</li>
+                        <li>Retrieve shortcodes, Gutenberg blocks, and Elementor widgets</li>
+                        <li>Manage emails and redirection paths independently</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab Content 3 -->
+            <div class="tab-content glass-panel" style="padding: 2.5rem;">
+                <div class="media-container">
+                    <video src="media/walkthrough_editing_page.webp" autoplay loop muted playsinline></video>
+                </div>
+                <div class="tab-text">
+                    <h3>Native Gutenberg Integration</h3>
+                    <p>Embed forms instantly anywhere using shortcodes like <code>[xpressui id="client-feedback-form"]</code>. Forms render server-side in fast HTML, inheriting your theme's active styles.</p>
+                    <ul class="feature-bullets">
+                        <li>Zero bloated iframes—100% search engine indexable</li>
+                        <li>Card and plain layout modes to avoid double card frames</li>
+                        <li>Full responsive formatting on mobile and tablet screens</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab Content 4 -->
+            <div class="tab-content glass-panel" style="padding: 2.5rem;">
+                <div class="media-container">
+                    <img src="media/3_frontend_form.png" alt="Frontend submission">
+                </div>
+                <div class="tab-text">
+                    <h3>Clean Submissions Flow</h3>
+                    <p>Forms submit instantly via the WordPress REST API endpoint (<code>/wp-json/xpressui/v1/submit</code>) with secure attachments upload handling.</p>
+                    <ul class="feature-bullets">
+                        <li>Instant visual validation and submission feedback</li>
+                        <li>Upload documents, image files, signatures, and PDFs</li>
+                        <li>Redirect support to thank-you pages on submission success</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tab Content 5 -->
+            <div class="tab-content glass-panel" style="padding: 2.5rem;">
+                <div class="media-container">
+                    <video src="media/walkthrough_wordpress_inbox.webp" autoplay loop muted playsinline></video>
+                </div>
+                <div class="tab-text">
+                    <h3>Collaborative Admin Inbox</h3>
+                    <p>All submissions arrive directly in your local WordPress database as private posts. Review files, assign reviews, update status badges, and track historical logs.</p>
+                    <ul class="feature-bullets">
+                        <li>GDPR compliant local database persistence</li>
+                        <li>Assign tasks to internal reviewers and manage team backlogs</li>
+                        <li>Detailed status history logs (New, In Review, Done)</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Pillars Section -->
+    <section id="pillars" class="pillars">
+        <div class="container">
+            <div style="text-align: center;">
+                <span class="section-tag">Core Architecture</span>
+                <h2 class="section-title">Why IntakeFlow is Different</h2>
+                <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+                    Built to address the shortcomings of traditional form plugins when managing complex client document collection.
+                </p>
+            </div>
+
+            <div class="pillars-grid">
+                <div class="pillar-card glass-panel">
+                    <div class="pillar-icon">⚡</div>
+                    <h3>Iframe-Free Native Rendering</h3>
+                    <p>Unlike Typeform or Jotform, forms load natively as HTML/CSS/JS inside your active theme wrapper. This ensures maximum load speed and SEO-friendliness.</p>
+                </div>
+                <div class="pillar-card glass-panel">
+                    <div class="pillar-icon">🔒</div>
+                    <h3>100% GDPR & Data Ownership</h3>
+                    <p>Submissions and uploaded files are saved as private WordPress custom post types in your database. No customer data leaves your servers unless you opt to sync with the console.</p>
+                </div>
+                <div class="pillar-card glass-panel">
+                    <div class="pillar-icon">👤</div>
+                    <h3>Team Collaboration Inbox</h3>
+                    <p>Manage submissions as actionable tasks. Assign specific team members, track review history, and customize statuses right within WordPress without paying per seat.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deep Analysis Section -->
+    <section id="analysis" class="analysis">
+        <div class="container">
+            <div style="text-align: center;">
+                <span class="section-tag">Deep Product Analysis</span>
+                <h2 class="section-title">Comparative Feature Analysis</h2>
+                <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+                    An overview of how IntakeFlow stacks up against other mainstream form solutions in the WordPress ecosystem.
+                </p>
+            </div>
+
+            <div class="glass-panel" style="overflow-x: auto; padding: 1.5rem;">
+                <table class="analysis-table">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>IntakeFlow Plugin</th>
+                            <th>Traditional Builders (CF7, WPForms)</th>
+                            <th>SaaS Builders (JotForm, Typeform)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Form Rendering</strong></td>
+                            <td>Native Inline (Fast HTML/JS)</td>
+                            <td>Inline HTML / CSS-heavy</td>
+                            <td>Heavy External Iframe (Slows site load)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Location</strong></td>
+                            <td>Local Database (Self-hosted)</td>
+                            <td>Local Database / Emails only</td>
+                            <td>Cloud servers (Third-party processor)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Review Workflows</strong></td>
+                            <td><span class="badge badge-green">Yes</span> (Status triggers + Assignees)</td>
+                            <td><span class="badge badge-red">No</span> (Emails/Plain lists only)</td>
+                            <td><span class="badge badge-green">Yes</span> (Paid subscription add-ons)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Multi-step Files Upload</strong></td>
+                            <td><span class="badge badge-green">Yes</span> (WordPress Media integration)</td>
+                            <td>Basic file controls</td>
+                            <td>Limits files storage on free tiers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>GDPR Compliance</strong></td>
+                            <td><span class="badge badge-green">100% Compliant</span> (Zero external leakage)</td>
+                            <td>Variable (Plugin dependent)</td>
+                            <td>Requires custom DPA (Complex)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Consolidated Inbox</strong></td>
+                            <td><span class="badge badge-green">Free</span> (Inclusive in core plugin)</td>
+                            <td>Needs addon plugins</td>
+                            <td>Gated behind expensive packages</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="faq">
+        <div class="container">
+            <div style="text-align: center;">
+                <span class="section-tag">Common Inquiries</span>
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-desc" style="margin-left: auto; margin-right: auto;">
+                    Everything you need to know about the IntakeFlow WordPress integration.
+                </p>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">Is the WordPress plugin completely free?</div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            Yes, the core plugin is open-source and entirely free. You can build, import, and embed forms, and review all customer submissions without any limitations. A connection to the Console (SaaS) is optional and only required if you need features like digital signatures, appointment scheduling, product checkouts, or cloud backups.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">How does the Contact Form 7 import work?</div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            IntakeFlow integrates with CF7 by parsing the tags in your contact forms. It converts inputs like text, email, tel, date, and textareas into modern mobile-friendly multi-step forms while preserving validation requirements.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Where are uploaded files stored?</div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            All uploaded files are written directly to your WordPress uploads folder using standard WordPress APIs (<code>media_handle_upload()</code>). They are registered as media attachments in your library and linked directly to their respective submissions for ease of review.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Can I assign submissions to specific team members?</div>
+                    <div class="faq-answer">
+                        <div class="faq-answer-content">
+                            Yes! Submissions are managed as private custom posts. You can assign any WordPress user on your site to a submission, change status levels (New, In Review, Done), and view assignment history logs inside the submission panel.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 IntakeFlow. Open-source under GPL-2.0-or-later.</p>
+            <p>Developed with passion by the <a href="https://github.com/lybaba" target="_blank">iakpressteam</a>.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Header transparency on scroll
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Tab switcher
+        function switchTab(index) {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabBtns.forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active');
+                    tabContents[i].classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                    tabContents[i].classList.remove('active');
+                }
+            });
+        }
+
+        // FAQ accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            const answer = item.querySelector('.faq-answer');
+
+            question.addEventListener('click', () => {
+                const isOpen = item.classList.contains('open');
+                
+                // Close all other items
+                faqItems.forEach(otherItem => {
+                    otherItem.classList.remove('open');
+                    otherItem.querySelector('.faq-answer').style.maxHeight = null;
+                });
+
+                if (!isOpen) {
+                    item.classList.add('open');
+                    answer.style.maxHeight = answer.scrollHeight + "px";
+                }
+            });
+        });
+    </script>
+</body>
+</html>

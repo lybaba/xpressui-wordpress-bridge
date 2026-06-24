@@ -67,6 +67,7 @@ cp -R "${PLUGIN_DIR}" "${STAGE_DIR}/${DIST_SLUG}"
 rm -rf "${STAGE_DIR:?}/${DIST_SLUG}/.git" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.github" \
        "${STAGE_DIR:?}/${DIST_SLUG}/.wordpress-org" \
+       "${STAGE_DIR:?}/${DIST_SLUG}/docs" \
        "${STAGE_DIR:?}/${DIST_SLUG}/scripts" \
        "${STAGE_DIR:?}/${DIST_SLUG}/node_modules" \
        "${STAGE_DIR:?}/${DIST_SLUG}/xpressui-src/dist" \
