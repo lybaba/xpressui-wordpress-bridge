@@ -3020,6 +3020,20 @@ function xpressui_build_structured_item_summary( $item, $choice_map = [] ) {
 }
 
 /**
+ * Asset cache-busting version: plugin version + the file's mtime, so any rebuild (even
+ * without a version bump) forces browsers to fetch the fresh file instead of serving a
+ * stale cached copy. Falls back to the plain plugin version when the file is unreadable.
+ *
+ * @param string $relative_path Path relative to the plugin directory, e.g. 'assets/admin-workflows.js'.
+ * @return string Version string for wp_enqueue_script/style.
+ */
+function xpressui_asset_ver( string $relative_path ): string {
+	$full  = XPRESSUI_BRIDGE_DIR . ltrim( $relative_path, '/' );
+	$mtime = is_readable( $full ) ? filemtime( $full ) : false;
+	return $mtime ? XPRESSUI_BRIDGE_VERSION . '.' . $mtime : XPRESSUI_BRIDGE_VERSION;
+}
+
+/**
  * Retrieve metadata for all locally installed workflows (generatedAt timestamp).
  *
  * @return array Map of workflow slug to metadata array.

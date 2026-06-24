@@ -153,7 +153,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			'xpressui-bridge-admin-submissions',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-submissions.js',
 			[],
-			XPRESSUI_BRIDGE_VERSION,
+			xpressui_asset_ver( 'assets/admin-submissions.js' ),
 			true
 		);
 	}
@@ -162,7 +162,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			'xpressui-bridge-admin-wf',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-workflows.js',
 			[],
-			XPRESSUI_BRIDGE_VERSION,
+			xpressui_asset_ver( 'assets/admin-workflows.js' ),
 			true
 		);
 		wp_localize_script(
@@ -210,7 +210,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			'xpressui-bridge-admin-importer',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-importer.js',
 			[ 'jquery' ],
-			XPRESSUI_BRIDGE_VERSION,
+			xpressui_asset_ver( 'assets/admin-importer.js' ),
 			true
 		);
 		wp_localize_script(
@@ -250,7 +250,7 @@ function xpressui_enqueue_admin_assets( $hook ) {
 			'xpressui-bridge-admin-console',
 			XPRESSUI_BRIDGE_URL . 'assets/admin-console.js',
 			[ 'jquery' ],
-			XPRESSUI_BRIDGE_VERSION,
+			xpressui_asset_ver( 'assets/admin-console.js' ),
 			true
 		);
 		$conn = xpressui_get_console_connection();
