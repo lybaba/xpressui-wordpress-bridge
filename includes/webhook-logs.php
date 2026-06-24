@@ -158,6 +158,51 @@ function xpressui_render_sync_logs_empty_state() {
 }
 
 /**
+ * Counts notification emails successfully sent for submissions (status = "sent").
+ * Uses WP_Query found_posts (no direct SQL) so it stays Plugin Check clean.
+ */
+function xpressui_count_notification_emails() {
+	$q = new WP_Query( [
+		'post_type'      => 'xpressui_submission',
+		'post_status'    => 'private',
+		'posts_per_page' => 1,
+		'fields'         => 'ids',
+		'no_found_rows'  => false,
+		'meta_key'       => '_xpressui_mail_status',
+		'meta_value'     => 'sent',
+	] );
+	return (int) $q->found_posts;
+}
+
+/**
+ * On the All Submissions list, surface a reassurance banner: how many notification emails
+ * have been sent + a link to the delivery log. Trial-form submissions are emailed (not always
+ * stored), so without this a user may think a test submission "did nothing".
+ */
+function xpressui_submissions_list_mail_notice() {
+	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+	if ( ! $screen || 'edit-xpressui_submission' !== $screen->id || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$count = xpressui_count_notification_emails();
+	$url   = admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-sync-logs' );
+	$msg   = $count > 0
+		? sprintf(
+			/* translators: %s: number of emails */
+			_n( '%s notification email sent for your submissions.', '%s notification emails sent for your submissions.', $count, 'xpressui-bridge' ),
+			number_format_i18n( $count )
+		)
+		: __( 'New submissions trigger an admin notification email from this site.', 'xpressui-bridge' );
+	printf(
+		'<div class="notice notice-info" style="display:flex; align-items:center; gap:12px;"><span class="dashicons dashicons-email-alt" style="color:#2563eb;"></span><p style="margin:.5em 0; flex:1;">%1$s</p><a href="%2$s" class="button" style="margin-right:8px;">%3$s</a></div>',
+		esc_html( $msg ),
+		esc_url( $url ),
+		esc_html__( 'View email delivery log', 'xpressui-bridge' )
+	);
+}
+add_action( 'admin_notices', 'xpressui_submissions_list_mail_notice' );
+
+/**
  * Renders the local email-delivery log shown to sites that aren't connected to the Console.
  *
  * Free / unconnected sites send admin notification emails via WordPress (wp_mail), so instead
@@ -177,7 +222,14 @@ function xpressui_render_mail_delivery_log() {
 	$date_fmt = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 	?>
 	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 100%;">
-		<h2><?php esc_html_e( 'Email delivery log', 'xpressui-bridge' ); ?></h2>
+		<h2 style="display:flex; align-items:center; gap:10px;"><?php esc_html_e( 'Email delivery log', 'xpressui-bridge' ); ?>
+			<?php $gs_sent = xpressui_count_notification_emails(); if ( $gs_sent > 0 ) : ?>
+				<span style="background:#dcfce7; color:#166534; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px;"><?php
+					/* translators: %s: number of emails */
+					echo esc_html( sprintf( __( '%s sent', 'xpressui-bridge' ), number_format_i18n( $gs_sent ) ) );
+				?></span>
+			<?php endif; ?>
+		</h2>
 		<p class="description" style="font-size: 13px; line-height: 1.6;">
 			<?php esc_html_e( 'Admin notification emails this site sent for new submissions. Connect the IntakeFlow Console to send via the cloud for higher deliverability (SPF/DKIM/DMARC) and to back up submissions.', 'xpressui-bridge' ); ?>
 		</p>
