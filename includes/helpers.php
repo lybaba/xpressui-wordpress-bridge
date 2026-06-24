@@ -830,6 +830,7 @@ function xpressui_store_workflow_manifest_meta( $slug, array $manifest ) {
 		'projectSlug'   => $slug,
 		'projectName'   => sanitize_text_field( (string) ( $manifest['projectName'] ?? '' ) ),
 		'generatedAt'   => sanitize_text_field( (string) ( $manifest['generatedAt'] ?? '' ) ),
+		'projectConfigVersion' => sanitize_text_field( (string) ( $manifest['projectConfigVersion'] ?? '' ) ),
 		'runtimeVersion' => sanitize_text_field( (string) ( $manifest['xpressui']['version'] ?? '' ) ),
 		'runtimeTier'   => sanitize_key( (string) ( $runtime_requirements['tier'] ?? $manifest['runtimeTier'] ?? '' ) ),
 		'bridgeMode'    => sanitize_key( (string) ( $compatibility['bridgeMode'] ?? '' ) ),
@@ -3027,21 +3028,33 @@ function xpressui_get_local_workflows_metadata(): array {
 	$slugs = xpressui_get_installed_workflow_slugs();
 	$meta = [];
 	foreach ( $slugs as $slug ) {
-		$manifest_meta = xpressui_get_workflow_manifest_meta( $slug );
-		$generated_at  = (string) ( $manifest_meta['generatedAt'] ?? '' );
+		$manifest_meta   = xpressui_get_workflow_manifest_meta( $slug );
+		$generated_at    = (string) ( $manifest_meta['generatedAt'] ?? '' );
+		$config_version  = (string) ( $manifest_meta['projectConfigVersion'] ?? '' );
 
 		// The manifest registry entry can be missing/stale (notably for workflows
-		// pulled in via "Sync from Console" before their projectId was recorded),
-		// which would leave generatedAt empty and silently disable the client-side
-		// "Out of Sync" freshness check. Fall back to the on-disk manifest.json,
-		// which a Console export always stamps with a real generatedAt timestamp.
-		if ( '' === $generated_at ) {
-			$manifest      = xpressui_load_workflow_manifest( $slug );
-			$generated_at  = is_array( $manifest ) ? (string) ( $manifest['generatedAt'] ?? '' ) : '';
+		// pulled in via "Sync from Console" before their projectId was recorded), which
+		// would leave these empty and silently disable the client-side freshness check.
+		// Fall back to the on-disk manifest.json, which a Console export always stamps.
+		if ( '' === $generated_at || '' === $config_version ) {
+			$manifest = xpressui_load_workflow_manifest( $slug );
+			if ( is_array( $manifest ) ) {
+				if ( '' === $generated_at ) {
+					$generated_at = (string) ( $manifest['generatedAt'] ?? '' );
+				}
+				if ( '' === $config_version ) {
+					$config_version = (string) ( $manifest['projectConfigVersion'] ?? '' );
+				}
+			}
 		}
 
 		$meta[ $slug ] = [
-			'generatedAt' => $generated_at,
+			'generatedAt'          => $generated_at,
+			// projectConfigVersion = "<projectId>:<project.updatedAt ISO>". The freshness
+			// check compares the embedded project updatedAt (NOT generatedAt, which is the
+			// export wall-clock) against the Console's current updatedAt, so it clears after
+			// a sync — same field on both sides.
+			'projectConfigVersion' => $config_version,
 		];
 	}
 	return $meta;

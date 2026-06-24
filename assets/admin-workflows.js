@@ -176,8 +176,12 @@
 					projects.forEach(function (p) {
 						var slug = p.slug;
 						var local = localWorkflows[slug];
-						if (local && local.generatedAt && p.updatedAt) {
-							var localTime = new Date(local.generatedAt).getTime();
+						// Compare the project's updatedAt embedded in projectConfigVersion ("<id>:<iso>")
+							// against the Console's current updatedAt — same field on both sides, so it
+							// clears after a sync. Fall back to generatedAt for legacy manifests.
+							var localStamp = (local && local.projectConfigVersion && local.projectConfigVersion.indexOf(':') !== -1) ? local.projectConfigVersion.slice(local.projectConfigVersion.indexOf(':') + 1) : (local ? local.generatedAt : '');
+							if (local && localStamp && p.updatedAt) {
+							var localTime = new Date(localStamp).getTime();
 							var remoteTime = new Date(p.updatedAt).getTime();
 							if (remoteTime > localTime + 2000) { // Add a small buffer of 2s for clock skew
 								// Find the row and append an "Out of Sync" warning badge
