@@ -4,7 +4,7 @@ Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -168,6 +168,13 @@ To rebuild the runtime from those sources:
 7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
+
+= 1.1.3 =
+* Fix: Imported forms (e.g. Contact Form 7) no longer disappear from the Workflows list after connecting the site to the IntakeFlow Console.
+* Improve: The Sync Logs "Email delivery log" now records admin notification emails for trial / unconnected forms too, so a test submission visibly confirms email is going out, with a sent counter on the Submissions screen.
+* Improve: Streamlined first-run onboarding guidance for new sites.
+* Improve: Removed noisy, unreliable status badges from the Workflows list pending a more accurate sync signal.
+* Fix: Admin scripts now cache-bust on update so changes load reliably.
 
 = 1.1.2 =
 * Improve: Plugin Directory listing — documented the product & service/time-slot booking catalogs with native WordPress checkout (new FAQ + feature), refreshed the banner and screenshots, and added screenshots of the catalog storefront, manual payment checkout, and booking.
