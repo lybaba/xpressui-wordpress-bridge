@@ -186,6 +186,22 @@ function xpressui_handle_webhook_sync_link( WP_REST_Request $request ): WP_REST_
 			);
 		}
 
+		// Clean up any old, orphaned hosted link configurations for this link_id in other projects.
+		if ( is_dir( $target_dir ) ) {
+			$subdirs = glob( trailingslashit( $target_dir ) . '*', GLOB_ONLYDIR );
+			if ( is_array( $subdirs ) ) {
+				foreach ( $subdirs as $subdir ) {
+					$potential_slug = basename( $subdir );
+					if ( $potential_slug !== $slug ) {
+						$old_link_dir = trailingslashit( $subdir ) . 'hosted-links/' . $link_id . '/';
+						if ( file_exists( $old_link_dir ) ) {
+							$wp_filesystem->delete( $old_link_dir, true );
+						}
+					}
+				}
+			}
+		}
+
 		if ( ! file_exists( $hosted_links_dir ) ) {
 			wp_mkdir_p( $hosted_links_dir );
 		}

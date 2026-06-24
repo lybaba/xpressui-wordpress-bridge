@@ -391,6 +391,24 @@ function xpressui_sync_project( string $project_id ) {
 				$link_id = sanitize_file_name( (string) ( $config['id'] ?? '' ) );
 				if ( '' !== $link_id ) {
 					$active_link_ids[] = $link_id;
+
+					// Clean up any old, orphaned hosted link configurations for this link_id in other projects.
+					$base_dir = xpressui_get_workflows_base_dir();
+					if ( $base_dir !== '' && is_dir( $base_dir ) ) {
+						$subdirs = glob( trailingslashit( $base_dir ) . '*', GLOB_ONLYDIR );
+						if ( is_array( $subdirs ) ) {
+							foreach ( $subdirs as $subdir ) {
+								$potential_slug = basename( $subdir );
+								if ( $potential_slug !== $slug ) {
+									$old_link_dir = trailingslashit( $subdir ) . 'hosted-links/' . $link_id . '/';
+									if ( file_exists( $old_link_dir ) ) {
+										$wp_filesystem->delete( $old_link_dir, true );
+									}
+								}
+							}
+						}
+					}
+
 					$link_dir = $hosted_links_dir . $link_id . '/';
 					if ( ! file_exists( $link_dir ) ) {
 						wp_mkdir_p( $link_dir );
