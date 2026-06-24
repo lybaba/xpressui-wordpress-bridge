@@ -4,7 +4,7 @@ Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -159,6 +159,9 @@ To rebuild the runtime from those sources:
 4. A workflow embedded in a page using the [xpressui] shortcode — inline rendering, no iframe.
 
 == Changelog ==
+
+= 1.1.1 =
+* Fix: The manual payment step at checkout now works end-to-end — proof-of-payment upload (drag & drop / browse), the generated payment reference, and the IBAN/BIC/reference copy buttons. The 1.1.0 build bundled an older runtime that broke these; this release ships the corrected runtime.
 
 = 1.1.0 =
 * New: Manual payment step at checkout — bank-transfer details with a server-generated payment reference and one-click copy for IBAN / BIC / reference, plus a proof-of-payment upload (parity with the IntakeFlow Console checkout).
