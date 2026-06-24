@@ -577,6 +577,30 @@ function xpressui_render_intro_welcome( $presentation, $locale = 'en', $style_ha
 }
 
 /**
+ * Renders a premium warning/error panel when a shortcode parameter is invalid or missing.
+ *
+ * @param string $message The error message to display.
+ * @return string HTML output.
+ */
+function xpressui_render_error_panel( $message ) {
+	ob_start();
+	?>
+	<div class="xpressui-embed-wrapper xpressui-inline-embed xpressui-error-panel" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; padding: 24px 0;">
+		<div class="xpressui-error-card" style="width: 100%; max-width: 580px; padding: 32px 24px; background: #fff5f5; border: 1.5px solid #feb2b2; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.05), 0 4px 6px -2px rgba(239, 68, 68, 0.02); text-align: center; transition: all 0.3s ease;">
+			<div class="xpressui-error-icon-wrapper" style="width: 56px; height: 56px; border-radius: 50%; background: #fed7d7; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: inset 0 2px 4px rgba(239,68,68,0.1);">
+				<svg style="width: 28px; height: 28px; color: #e53e3e;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+				</svg>
+			</div>
+			<h3 class="xpressui-error-title" style="margin: 0 0 10px; color: #9b2c2c; font-size: 20px; font-weight: 700; letter-spacing: -0.02em;"><?php esc_html_e( 'Configuration Error', 'xpressui-bridge' ); ?></h3>
+			<p class="xpressui-error-message" style="margin: 0; color: #c53030; font-size: 15px; line-height: 1.6; font-weight: 500;"><?php echo esc_html( $message ); ?></p>
+		</div>
+	</div>
+	<?php
+	return (string) ob_get_clean();
+}
+
+/**
  * Renders the [xpressui id="project-slug"] shortcode.
  *
  * Inline rendering: form HTML and CSS are output directly into the page.
@@ -602,38 +626,56 @@ function xpressui_render_shortcode( $atts ) {
 		? sanitize_file_name( (string) $atts['link'] )
 		: ( isset( $atts['link_id'] ) && '' !== $atts['link_id'] ? sanitize_file_name( (string) $atts['link_id'] ) : '' );
 
-	$slug = '';
+	$slug = isset( $atts['id'] ) && '' !== $atts['id'] ? sanitize_title( (string) $atts['id'] ) : '';
+
+	// 1. Validate that the ID (slug) is provided.
+	if ( $slug === '' ) {
+		return wp_kses_post(
+			xpressui_render_error_panel(
+				__( 'The "id" attribute (project slug) is required.', 'xpressui-bridge' )
+			)
+		);
+	}
+
 	$link_config = null;
 
 	if ( $link_attr !== '' ) {
 		$base_dir = xpressui_get_workflows_base_dir();
 		if ( $base_dir !== '' && is_dir( $base_dir ) ) {
-			$subdirs = glob( trailingslashit( $base_dir ) . '*', GLOB_ONLYDIR );
-			if ( is_array( $subdirs ) ) {
-				foreach ( $subdirs as $subdir ) {
-					$potential_slug = basename( $subdir );
-					$config_file = trailingslashit( $subdir ) . 'hosted-links/' . $link_attr . '/link.config.json';
-					if ( file_exists( $config_file ) ) {
-						$slug = $potential_slug;
-						$link_config_raw = file_get_contents( $config_file );
-						if ( is_string( $link_config_raw ) ) {
-							$link_config = json_decode( $link_config_raw, true );
-						}
-						break;
-					}
+			$config_file = trailingslashit( $base_dir ) . $slug . '/hosted-links/' . $link_attr . '/link.config.json';
+			if ( file_exists( $config_file ) ) {
+				$link_config_raw = file_get_contents( $config_file );
+				if ( is_string( $link_config_raw ) ) {
+					$link_config = json_decode( $link_config_raw, true );
 				}
 			}
 		}
-	} else {
-		$slug = sanitize_title( (string) $atts['id'] );
-	}
 
-	if ( $slug === '' ) {
-		return wp_kses_post(
-			'<p class="xpressui-embed-error">'
-			. esc_html__( '[xpressui] error: the "id" or "link" attribute is required.', 'xpressui-bridge' )
-			. '</p>'
-		);
+		// 2. Validate that the hosted link configuration was found.
+		if ( null === $link_config ) {
+			return wp_kses_post(
+				xpressui_render_error_panel(
+					sprintf(
+						/* translators: %s: project slug */
+						__( 'Hosted link configuration not found for project "%s". Please synchronize this project.', 'xpressui-bridge' ),
+						$slug
+					)
+				)
+			);
+		}
+	} else {
+		// 3. Validate that the workflow is installed/exists.
+		if ( ! xpressui_is_installed_workflow( $slug ) ) {
+			return wp_kses_post(
+				xpressui_render_error_panel(
+					sprintf(
+						/* translators: %s: project slug */
+						__( 'Workflow project "%s" is not installed or synchronized on this WordPress site.', 'xpressui-bridge' ),
+						$slug
+					)
+				)
+			);
+		}
 	}
 
 	// Headless product catalog: when this hosted link fronts a product catalog and the
@@ -1137,6 +1179,29 @@ function xpressui_render_shortcode( $atts ) {
 		. 'return res;'
 		. '});'
 		. '};'
+		. 'var XHR=window.XMLHttpRequest;'
+		. 'if(XHR&&XHR.prototype){'
+		. 'var origOpen=XHR.prototype.open;'
+		. 'var origSend=XHR.prototype.send;'
+		. 'XHR.prototype.open=function(method,url){'
+		. 'this.__xpuiUrl=url;'
+		. 'this.__xpuiMethod=method;'
+		. 'return origOpen.apply(this,arguments);'
+		. '};'
+		. 'XHR.prototype.send=function(body){'
+		. 'try{'
+		. 'if(String(this.__xpuiMethod||"").toUpperCase()==="POST"&&typeof this.__xpuiUrl==="string"&&this.__xpuiUrl.indexOf("/xpressui/v1/submit")!==-1){'
+		. 'this.addEventListener("load",function(){'
+		. 'try{'
+		. 'var isSuccess=(this.status>=200&&this.status<300);'
+		. 'if(isSuccess){localStorage.removeItem(storageKey);}'
+		. '}catch(_e){}'
+		. '});'
+		. '}'
+		. '}catch(_e){}'
+		. 'return origSend.apply(this,arguments);'
+		. '};'
+		. '}'
 		. 'document.addEventListener("DOMContentLoaded",function(){'
 		. 'var container=document.getElementById(mountId);'
 		. 'if(!container)return;'

@@ -18,7 +18,8 @@
         category: 'widgets',
         attributes: {
             workflowId: { type: 'string', default: '' },
-            isHostedLink: { type: 'boolean', default: false }
+            isHostedLink: { type: 'boolean', default: false },
+            projectSlug: { type: 'string', default: '' }
         },
         edit: function( props ) {
             var attributes = props.attributes;
@@ -28,20 +29,39 @@
             var links = data.links || [];
 
             // Encode the type in the option value so one dropdown covers both:
-            //   wf:<slug>   → [xpressui id="<slug>"]
-            //   link:<id>   → [xpressui link="<id>"]
+            //   wf:<slug>        → [xpressui id="<slug>"]
+            //   link:<slug>:<id> → [xpressui id="<slug>" link="<id>"]
             var options = [ { value: '', label: data.placeholder || 'Select…' } ];
             workflows.forEach( function( w ) { options.push( { value: 'wf:' + w.value, label: w.label } ); } );
             links.forEach( function( l ) { options.push( { value: 'link:' + l.value, label: '🔗 ' + l.label } ); } );
 
-            var current = attributes.workflowId
-                ? ( ( attributes.isHostedLink ? 'link:' : 'wf:' ) + attributes.workflowId )
-                : '';
+            var current = '';
+            if ( attributes.workflowId ) {
+                if ( attributes.isHostedLink ) {
+                    if ( attributes.projectSlug ) {
+                        current = 'link:' + attributes.projectSlug + ':' + attributes.workflowId;
+                    } else {
+                        // Legacy block: search options for a matching link ID suffix
+                        options.forEach( function( o ) {
+                            if ( o.value.indexOf( 'link:' ) === 0 && o.value.endsWith( ':' + attributes.workflowId ) ) {
+                                current = o.value;
+                            }
+                        } );
+                        // If still not found, fallback
+                        if ( ! current ) {
+                            current = 'link::' + attributes.workflowId;
+                        }
+                    }
+                } else {
+                    current = 'wf:' + attributes.workflowId;
+                }
+            }
+
             var currentLabel = '';
             options.forEach( function( o ) { if ( o.value === current ) { currentLabel = o.label; } } );
             var shortcode = attributes.workflowId
                 ? ( attributes.isHostedLink
-                    ? '[xpressui link="' + attributes.workflowId + '"]'
+                    ? '[xpressui id="' + (attributes.projectSlug || '') + '" link="' + attributes.workflowId + '"]'
                     : '[xpressui id="' + attributes.workflowId + '"]' )
                 : '';
 
@@ -57,14 +77,24 @@
                         options: options,
                         onChange: function( val ) {
                             if ( ! val ) {
-                                setAttributes( { workflowId: '', isHostedLink: false } );
+                                setAttributes( { workflowId: '', isHostedLink: false, projectSlug: '' } );
                                 return;
                             }
                             var isLink = val.indexOf( 'link:' ) === 0;
-                            setAttributes( {
-                                workflowId: val.replace( /^(wf:|link:)/, '' ),
-                                isHostedLink: isLink
-                            } );
+                            if ( isLink ) {
+                                var parts = val.replace( /^link:/, '' ).split( ':' );
+                                setAttributes( {
+                                    projectSlug: parts[0] || '',
+                                    workflowId: parts[1] || '',
+                                    isHostedLink: true
+                                } );
+                            } else {
+                                setAttributes( {
+                                    projectSlug: '',
+                                    workflowId: val.replace( /^wf:/, '' ),
+                                    isHostedLink: false
+                                } );
+                            }
                         }
                     } )
                 )

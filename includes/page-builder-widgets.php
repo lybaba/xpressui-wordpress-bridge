@@ -20,6 +20,7 @@ function xpressui_register_builder_widgets() {
 		'attributes'      => [
 			'workflowId'   => [ 'type' => 'string', 'default' => '' ],
 			'isHostedLink' => [ 'type' => 'boolean', 'default' => false ],
+			'projectSlug'  => [ 'type' => 'string', 'default' => '' ],
 		],
 	] );
 
@@ -68,7 +69,7 @@ function xpressui_enqueue_block_editor_assets() {
 					$present = ( is_array( $cfg ) && isset( $cfg['presentation'] ) && is_array( $cfg['presentation'] ) ) ? $cfg['presentation'] : [];
 					$link_lbl = trim( (string) ( $present['title'] ?? $present['label'] ?? ( is_array( $cfg ) ? ( $cfg['label'] ?? '' ) : '' ) ) );
 					$links[] = [
-						'value' => $link_id,
+						'value' => $slug . ':' . $link_id,
 						'label' => $wf_label . ' — ' . ( '' !== $link_lbl ? $link_lbl : $link_id ),
 					];
 				}
@@ -109,12 +110,21 @@ function xpressui_render_builder_block_callback( $attributes ) {
 			. '</div>';
 	}
 
-	$is_hosted = ! empty( $attributes['isHostedLink'] );
-	$shortcode = sprintf(
-		'[xpressui %s="%s"]',
-		$is_hosted ? 'link' : 'id',
-		esc_attr( $workflow_id )
-	);
+	$is_hosted   = ! empty( $attributes['isHostedLink'] );
+	$project_slug = isset( $attributes['projectSlug'] ) ? sanitize_title( $attributes['projectSlug'] ) : '';
+
+	if ( $is_hosted ) {
+		$shortcode = sprintf(
+			'[xpressui id="%s" link="%s"]',
+			esc_attr( $project_slug ),
+			esc_attr( $workflow_id )
+		);
+	} else {
+		$shortcode = sprintf(
+			'[xpressui id="%s"]',
+			esc_attr( $workflow_id )
+		);
+	}
 
 	return do_shortcode( $shortcode );
 }
@@ -187,11 +197,24 @@ function xpressui_register_elementor_widget_class( $widgets_manager ) {
 				return;
 			}
 			$is_hosted = $settings['is_hosted_link'] === 'yes';
-			$shortcode = sprintf(
-				'[xpressui %s="%s"]',
-				$is_hosted ? 'link' : 'id',
-				esc_attr( $workflow_id )
-			);
+			if ( $is_hosted ) {
+				$base_dir = xpressui_get_workflows_base_dir();
+				$link_dirs = glob( trailingslashit( $base_dir ) . $workflow_id . '/hosted-links/*', GLOB_ONLYDIR );
+				$link_id = '';
+				if ( is_array( $link_dirs ) && ! empty( $link_dirs ) ) {
+					$link_id = basename( $link_dirs[0] );
+				}
+				$shortcode = sprintf(
+					'[xpressui id="%s" link="%s"]',
+					esc_attr( $workflow_id ),
+					esc_attr( $link_id )
+				);
+			} else {
+				$shortcode = sprintf(
+					'[xpressui id="%s"]',
+					esc_attr( $workflow_id )
+				);
+			}
 			echo do_shortcode( $shortcode );
 		}
 	}
