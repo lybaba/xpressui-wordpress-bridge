@@ -1260,8 +1260,9 @@ function xpressui_import_nudge_should_show() {
 	if ( ! in_array( $screen->id, $allowed, true ) ) {
 		return false;
 	}
-	// Don't nag on the Import tab itself. Read-only navigation var; no nonce needed.
-	$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+	// Don't nag on the Import tab itself. Read the current admin tab via the input-filter
+	// API (no direct $_GET superglobal access — read-only navigation, no form processing).
+	$tab = sanitize_key( (string) filter_input( INPUT_GET, 'tab' ) );
 	if ( 'xpressui_submission_page_xpressui-bridge' === $screen->id && 'import' === $tab ) {
 		return false;
 	}

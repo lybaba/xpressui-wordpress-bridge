@@ -34,8 +34,9 @@ function xpressui_maybe_activation_redirect() {
 		return;
 	}
 	delete_transient( 'xpressui_activation_redirect' );
-	// Don't hijack bulk plugin activation or network admin.
-	if ( isset( $_GET['activate-multi'] ) || is_network_admin() ) {
+	// Don't hijack bulk plugin activation or network admin. filter_has_var checks presence
+	// of the core-set flag without touching the $_GET superglobal (read-only, no form data).
+	if ( filter_has_var( INPUT_GET, 'activate-multi' ) || is_network_admin() ) {
 		return;
 	}
 	if ( ! current_user_can( 'manage_options' ) ) {
