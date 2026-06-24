@@ -4,7 +4,7 @@ Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -168,6 +168,9 @@ To rebuild the runtime from those sources:
 7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
+
+= 1.1.2 =
+* Improve: Plugin Directory listing — documented the product & service/time-slot booking catalogs with native WordPress checkout (new FAQ + feature), refreshed the banner and screenshots, and added screenshots of the catalog storefront, manual payment checkout, and booking.
 
 = 1.1.1 =
 * Fix: The manual payment step at checkout now works end-to-end — proof-of-payment upload (drag & drop / browse), the generated payment reference, and the IBAN/BIC/reference copy buttons. The 1.1.0 build bundled an older runtime that broke these; this release ships the corrected runtime.
