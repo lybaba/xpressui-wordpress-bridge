@@ -885,6 +885,14 @@ const ensureSubmitMetadata = (values, formConfig, form) => {
     submissionId: resolveSubmissionIdValue(values, form) || buildSubmissionId(),
     projectConfigSnapshotJson: JSON.stringify(formConfig),
   };
+  // Carry the hosted-link id INTO the payload values so the WP submit handler's email
+  // routing (xpressui_should_send_email_via_wordpress reads payload.hostedLinkId) detects
+  // every hosted-link submission, not just catalog checkouts — otherwise plain hosted forms
+  // fall through to "WordPress sends" instead of delegating to the SaaS.
+  const hostedLinkId = formConfig.submit?.metadata?.hostedLinkId || '';
+  if (hostedLinkId) {
+    nextValues.hostedLinkId = hostedLinkId;
+  }
   const resumeToken = resolveResumeTokenValue(values, form);
   if (resumeToken) {
     nextValues.xpressui_resume_token = resumeToken;
@@ -930,6 +938,7 @@ const attachFallbackSubmitHandler = (form, mountNode, formConfig) => {
     if (!formData.get('projectId')) formData.append('projectId', formConfig.submit?.metadata?.projectId || '');
     if (!formData.get('projectSlug')) formData.append('projectSlug', formConfig.submit?.metadata?.projectSlug || '');
     if (!formData.get('projectConfigVersion')) formData.append('projectConfigVersion', formConfig.submit?.metadata?.projectConfigVersion || '');
+    if (!formData.get('hostedLinkId') && formConfig.submit?.metadata?.hostedLinkId) formData.append('hostedLinkId', formConfig.submit.metadata.hostedLinkId);
     if (!formData.get('projectConfigSnapshotJson')) formData.append('projectConfigSnapshotJson', JSON.stringify(formConfig));
 
     const configuredErrorMessage = formConfig.submitFeedback?.error_message || defaultErrorMessage;
