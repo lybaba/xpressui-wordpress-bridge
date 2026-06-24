@@ -161,7 +161,11 @@
 	}
 
 	// --- Async freshness check ------------------------------------------------
-	if (cfg && cfg.localWorkflows && cfg.nonce) {
+	// Temporarily disabled: the "Out of Sync" badge was unreliable (false positives that
+	// didn't clear after a sync). Flip to true to re-enable once the freshness signal is
+	// trustworthy (e.g. a config-version comparison surfaced by the Console list).
+	var XPRESSUI_SHOW_FRESHNESS_BADGE = false;
+	if (XPRESSUI_SHOW_FRESHNESS_BADGE && cfg && cfg.localWorkflows && cfg.nonce) {
 		var localWorkflows = cfg.localWorkflows;
 		var nonce = cfg.nonce;
 		var data = new URLSearchParams();

@@ -418,7 +418,10 @@ function xpressui_render_workflows_page() {
 			$runtime_tier  = (string) ( $manifest_meta['runtimeTier'] ?? 'light' );
 			$display_tier  = $runtime_tier !== '' ? $runtime_tier : 'light';
 			$is_bundled    = ! empty( $manifest_meta['isBundled'] ) || xpressui_is_bundled_workflow( $slug );
-			$update_available = $is_bundled && xpressui_is_bundled_workflow_update_available( $slug );
+			// Temporarily disabled alongside the "Out of Sync" badge — the update/freshness
+			// signals were noisy/unreliable. Restore by reinstating the computed value:
+			// $is_bundled && xpressui_is_bundled_workflow_update_available( $slug ).
+			$update_available = false;
 			$delete_url = wp_nonce_url(
 				add_query_arg(
 					[
