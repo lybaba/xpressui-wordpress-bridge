@@ -158,20 +158,60 @@ function xpressui_render_sync_logs_empty_state() {
 }
 
 /**
- * Counts notification emails successfully sent for submissions (status = "sent").
- * Uses WP_Query found_posts (no direct SQL) so it stays Plugin Check clean.
+ * Option key for the standalone admin-notification email delivery log. Stored independently
+ * of submission posts so it also captures emails for TRIAL/unconnected workflows, whose
+ * submissions are emailed but never stored locally (no post to hang mail meta on).
+ */
+const XPRESSUI_EMAIL_LOG_OPTION = 'xpressui_email_delivery_log';
+
+/**
+ * Append one admin-notification email to the delivery log (capped, newest-first).
+ *
+ * @param string $to      Recipient email.
+ * @param string $subject Email subject.
+ * @param string $status  'sent' | 'failed' | 'queued'.
+ * @param int    $post_id Submission post ID, or 0 for trial/unconnected workflows.
+ */
+function xpressui_log_notification_email( $to, $subject, $status, $post_id = 0 ) {
+	$to = trim( (string) $to );
+	if ( $to === '' ) {
+		return;
+	}
+	$log = get_option( XPRESSUI_EMAIL_LOG_OPTION, [] );
+	if ( ! is_array( $log ) ) {
+		$log = [];
+	}
+	array_unshift(
+		$log,
+		[
+			'subject'   => sanitize_text_field( (string) $subject ),
+			'recipient' => sanitize_email( $to ),
+			'status'    => in_array( $status, [ 'sent', 'failed', 'queued' ], true ) ? $status : 'queued',
+			'sent_at'   => gmdate( 'Y-m-d\TH:i:s\Z' ),
+			'post_id'   => (int) $post_id,
+		]
+	);
+	if ( count( $log ) > 50 ) {
+		$log = array_slice( $log, 0, 50 );
+	}
+	update_option( XPRESSUI_EMAIL_LOG_OPTION, $log, false );
+}
+
+/**
+ * Counts admin-notification emails successfully sent (status = "sent") from the delivery log.
  */
 function xpressui_count_notification_emails() {
-	$q = new WP_Query( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => 1,
-		'fields'         => 'ids',
-		'no_found_rows'  => false,
-		'meta_key'       => '_xpressui_mail_status',
-		'meta_value'     => 'sent',
-	] );
-	return (int) $q->found_posts;
+	$log = get_option( XPRESSUI_EMAIL_LOG_OPTION, [] );
+	if ( ! is_array( $log ) ) {
+		return 0;
+	}
+	$count = 0;
+	foreach ( $log as $entry ) {
+		if ( is_array( $entry ) && ( $entry['status'] ?? '' ) === 'sent' ) {
+			$count++;
+		}
+	}
+	return $count;
 }
 
 /**
@@ -210,15 +250,10 @@ add_action( 'admin_notices', 'xpressui_submissions_list_mail_notice' );
  * subject, recipient, status and time, read from the per-submission mail meta.
  */
 function xpressui_render_mail_delivery_log() {
-	$posts = get_posts( [
-		'post_type'      => 'xpressui_submission',
-		'post_status'    => 'private',
-		'posts_per_page' => 30,
-		'orderby'        => 'date',
-		'order'          => 'DESC',
-		'meta_key'       => '_xpressui_mail_recipient',
-		'meta_compare'   => 'EXISTS',
-	] );
+	$entries = get_option( XPRESSUI_EMAIL_LOG_OPTION, [] );
+	if ( ! is_array( $entries ) ) {
+		$entries = [];
+	}
 	$date_fmt = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 	?>
 	<div class="card xpressui-admin-card" style="margin-top: 15px; max-width: 100%;">
@@ -233,7 +268,7 @@ function xpressui_render_mail_delivery_log() {
 		<p class="description" style="font-size: 13px; line-height: 1.6;">
 			<?php esc_html_e( 'Admin notification emails this site sent for new submissions. Connect the IntakeFlow Console to send via the cloud for higher deliverability (SPF/DKIM/DMARC) and to back up submissions.', 'xpressui-bridge' ); ?>
 		</p>
-		<?php if ( empty( $posts ) ) : ?>
+		<?php if ( empty( $entries ) ) : ?>
 			<div style="padding: 32px; text-align: center; color: #64748b;">
 				<p style="font-weight: 600; margin: 0;"><?php esc_html_e( 'No notification emails sent yet.', 'xpressui-bridge' ); ?></p>
 				<p style="font-size: 13px; margin: 6px 0 0;"><?php esc_html_e( 'They appear here once a submission arrives on a form that has a notification recipient configured.', 'xpressui-bridge' ); ?></p>
@@ -249,17 +284,20 @@ function xpressui_render_mail_delivery_log() {
 					</tr>
 				</thead>
 				<tbody>
-				<?php foreach ( $posts as $p ) :
-					$recipient = (string) get_post_meta( $p->ID, '_xpressui_mail_recipient', true );
+				<?php foreach ( $entries as $entry ) :
+					if ( ! is_array( $entry ) ) {
+						continue;
+					}
+					$recipient = (string) ( $entry['recipient'] ?? '' );
 					if ( $recipient === '' ) {
 						continue;
 					}
-					$status  = (string) get_post_meta( $p->ID, '_xpressui_mail_status', true );
-					$sent_at = (string) get_post_meta( $p->ID, '_xpressui_mail_sent_at', true );
-					$subject = (string) get_post_meta( $p->ID, '_xpressui_mail_subject', true );
+					$status  = (string) ( $entry['status'] ?? '' );
+					$sent_at = (string) ( $entry['sent_at'] ?? '' );
+					$subject = (string) ( $entry['subject'] ?? '' );
+					$post_id = (int) ( $entry['post_id'] ?? 0 );
 					if ( $subject === '' ) {
-						/* translators: %s: submission title */
-						$subject = sprintf( __( 'New submission: %s', 'xpressui-bridge' ), get_the_title( $p ) );
+						$subject = __( 'New submission', 'xpressui-bridge' );
 					}
 					$color = 'sent' === $status ? '#16a34a' : ( 'failed' === $status ? '#dc2626' : '#64748b' );
 					$status_label = $status !== '' ? $status : 'queued';
@@ -267,9 +305,10 @@ function xpressui_render_mail_delivery_log() {
 					if ( $sent_at !== '' ) {
 						$when = mysql2date( $date_fmt, get_date_from_gmt( str_replace( [ 'T', 'Z' ], [ ' ', '' ], $sent_at ) ) );
 					}
+					$edit_link = $post_id > 0 ? get_edit_post_link( $post_id ) : '';
 				?>
 					<tr>
-						<td><a href="<?php echo esc_url( get_edit_post_link( $p->ID ) ); ?>"><?php echo esc_html( $subject ); ?></a></td>
+						<td><?php if ( $edit_link ) : ?><a href="<?php echo esc_url( $edit_link ); ?>"><?php echo esc_html( $subject ); ?></a><?php else : ?><?php echo esc_html( $subject ); ?><?php endif; ?></td>
 						<td><code><?php echo esc_html( $recipient ); ?></code></td>
 						<td><span style="display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600; color:#fff; background:<?php echo esc_attr( $color ); ?>;"><?php echo esc_html( $status_label ); ?></span></td>
 						<td><?php echo esc_html( $when ); ?></td>

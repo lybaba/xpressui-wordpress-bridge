@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-add_action( 'xpressui_send_mail_async', 'xpressui_dispatch_async_mail', 10, 5 );
+add_action( 'xpressui_send_mail_async', 'xpressui_dispatch_async_mail', 10, 6 );
 add_action( 'wp_mail_failed', 'xpressui_wp_mail_failed_handler' );
 
 /**
@@ -32,12 +32,13 @@ function xpressui_wp_mail_failed_handler( $error ) {
  * @param string          $body    Email HTML/text body.
  * @param array|string[]  $headers Optional headers.
  */
-function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 0 ) {
-	$to      = trim( (string) $to );
-	$subject = (string) $subject;
-	$body    = (string) $body;
-	$headers = is_array( $headers ) ? array_values( $headers ) : [];
-	$post_id = (int) $post_id;
+function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 0, $log_delivery = false ) {
+	$to           = trim( (string) $to );
+	$subject      = (string) $subject;
+	$body         = (string) $body;
+	$headers      = is_array( $headers ) ? array_values( $headers ) : [];
+	$post_id      = (int) $post_id;
+	$log_delivery = (bool) $log_delivery;
 
 	if ( $to === '' || ! is_email( $to ) ) {
 		return;
@@ -46,7 +47,7 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 	$scheduled = wp_schedule_single_event(
 		time() + 1,
 		'xpressui_send_mail_async',
-		[ $to, $subject, $body, $headers, $post_id ]
+		[ $to, $subject, $body, $headers, $post_id, $log_delivery ]
 	);
 
 	if ( $post_id > 0 ) {
@@ -72,6 +73,9 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
 		$xpressui_current_email_post_id = $post_id;
 		$sent = wp_mail( $to, $subject, $body, $headers );
 		$xpressui_current_email_post_id = 0;
+		if ( $log_delivery ) {
+			xpressui_log_notification_email( $to, $subject, $sent ? 'sent' : 'failed', $post_id );
+		}
 		if ( $post_id > 0 ) {
 			update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
 			update_post_meta( $post_id, '_xpressui_mail_fallback_used', '1' );
@@ -104,12 +108,13 @@ function xpressui_enqueue_mail( $to, $subject, $body, $headers = [], $post_id = 
  * @param string         $body    Email body.
  * @param array|string[] $headers Headers.
  */
-function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [], $post_id = 0 ) {
-	$to      = trim( (string) $to );
-	$subject = (string) $subject;
-	$body    = (string) $body;
-	$headers = is_array( $headers ) ? array_values( $headers ) : [];
-	$post_id = (int) $post_id;
+function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [], $post_id = 0, $log_delivery = false ) {
+	$to           = trim( (string) $to );
+	$subject      = (string) $subject;
+	$body         = (string) $body;
+	$headers      = is_array( $headers ) ? array_values( $headers ) : [];
+	$post_id      = (int) $post_id;
+	$log_delivery = (bool) $log_delivery;
 
 	if ( $to === '' || ! is_email( $to ) ) {
 		return;
@@ -119,6 +124,9 @@ function xpressui_dispatch_async_mail( $to, $subject, $body, $headers = [], $pos
 	$xpressui_current_email_post_id = $post_id;
 	$sent = wp_mail( $to, $subject, $body, $headers );
 	$xpressui_current_email_post_id = 0;
+	if ( $log_delivery ) {
+		xpressui_log_notification_email( $to, $subject, $sent ? 'sent' : 'failed', $post_id );
+	}
 	if ( $post_id > 0 ) {
 		update_post_meta( $post_id, '_xpressui_mail_recipient', $to );
 		update_post_meta( $post_id, '_xpressui_mail_status', $sent ? 'sent' : 'failed' );
@@ -313,7 +321,9 @@ function xpressui_maybe_send_notification( $post_id, $project_slug, $payload ) {
 	$body    = xpressui_build_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
-	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers, $post_id );
+	// log_delivery = true: record in the standalone email delivery log so it shows even for
+	// trial/unconnected workflows (post_id 0), whose submissions are emailed but not stored.
+	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers, $post_id, true );
 }
 
 /**
@@ -379,7 +389,7 @@ function xpressui_maybe_send_resubmitted_notification( $post_id, $project_slug, 
 	$body    = xpressui_build_resubmitted_notification_body( $post_id, $project_slug, $payload );
 	$headers = xpressui_build_notification_headers();
 
-	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers, $post_id );
+	xpressui_enqueue_mail( $notify_email, $subject, $body, $headers, $post_id, true );
 }
 
 // ---------------------------------------------------------------------------
