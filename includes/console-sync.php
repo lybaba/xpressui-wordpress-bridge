@@ -249,6 +249,13 @@ function xpressui_ajax_console_list_projects(): void {
 		if ( xpressui_is_bundled_workflow( $slug ) ) {
 			continue;
 		}
+		// Never prune locally-imported / offline workflows (Contact Form 7 / Gravity Forms
+		// imports, or the importer's "Local" fallback). They were never created on the
+		// Console, so their absence from the API list does NOT mean they were deleted there.
+		// Pruning them on first connect/sync silently lost the user's imported forms.
+		if ( xpressui_workflow_is_local_only( $slug ) ) {
+			continue;
+		}
 		if ( ! in_array( $slug, $api_slugs, true ) ) {
 			xpressui_delete_workflow( $slug, [
 				'preserve_project_settings' => false,
