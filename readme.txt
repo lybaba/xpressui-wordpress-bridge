@@ -34,6 +34,7 @@ If you need advanced field types, direct Console Sync, or cloud workflow managem
 * **File uploads** — uploaded files are stored as WordPress media attachments and linked back to their submission.
 * **REST API endpoint** — submissions are received via a standard WordPress REST route (`POST /wp-json/xpressui/v1/submit`). No extra server configuration required.
 * **Bundled runtime** — the XPressUI standard runtime is bundled inside the plugin. No JavaScript is loaded from the uploads directory or external CDNs.
+* **Product & booking catalogs** *(with a Console account)* — product and service / time-slot booking catalogs render server-side in WordPress (SEO-friendly, no iframe) with a built-in checkout step; orders are recorded in your submission inbox.
 
 = Who is this for? =
 
@@ -64,6 +65,10 @@ Yes. The WordPress plugin is free and open-source. You can build, import and emb
 = Can I import my Contact Form 7 or Gravity Forms forms? =
 
 Yes. Go to **Submissions › Workflows › Import**, pick any Contact Form 7 or Gravity Forms form, and convert it to an IntakeFlow workflow. Field types (text, email, phone, number, date, URL, file, select, checkbox, radio), choices and required rules are preserved, and you get a ready-to-embed shortcode. It works with or without a Console connection.
+
+= Can I take bookings or sell products? =
+
+Yes, with an IntakeFlow Console account. Product and service / time-slot booking catalogs render natively in your WordPress pages (server-side, SEO-friendly — no iframe) with a checkout step. Customers can pay by bank transfer / mobile money (uploading a payment proof) or by card (processed by the IntakeFlow Console via Stripe), and each order is recorded in your wp-admin submission inbox.
 
 = How do I import my workflows from the Console? =
 
@@ -117,6 +122,7 @@ When connected to IntakeFlow:
 * When you connect an account, the plugin sends the token to validate it and to look up the owner of the account.
 * When you use the Form Importer with an account connected, the structure of the imported Contact Form 7 / Gravity Forms form (field names, labels and types — not visitor submissions) is sent to the console to create the corresponding workflow, which is then downloaded back to this site.
 * No visitor or submission data is transmitted to the IntakeFlow console unless specifically configured by the administrator for cloud backup or webhook routing.
+* When you use a product / booking catalog with checkout, the order details (cart or chosen slot, and the payment proof or card payment) are sent to the IntakeFlow Console, which owns payment and order status; a copy of the order is also recorded locally in your wp-admin inbox.
 
 A connection is required to sync custom workflows. The bundled starter workflow functions fully offline without a connection.
 
