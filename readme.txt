@@ -4,7 +4,7 @@ Tags: client intake, document collection, file upload, multi-step form, form bui
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -175,6 +175,10 @@ To rebuild the runtime from those sources:
 7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
+
+= 1.1.7 =
+* Improve: The submission status is editable again from the Submission Workflow panel (New / In review / Done), persisted with status history.
+* Fix: Unconnected sites no longer show "Console connection is not configured" as a delivery error — local-only storage is shown as a normal state with a cloud-backup hint.
 
 = 1.1.6 =
 * Improve: Optimized search discoverability keywords and listing copy for WordPress.org.
