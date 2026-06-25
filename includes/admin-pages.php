@@ -2088,9 +2088,38 @@ function xpressui_handle_disconnect_console() {
 		return;
 	}
 	check_admin_referer( 'xpressui_disconnect_console' );
+
+	// Revoke the token on the Console first so it can no longer be used, then remove it
+	// locally. Best-effort: even if the remote revoke fails (token already expired, Console
+	// unreachable), we still clear the local connection so the site stops syncing.
+	$conn    = xpressui_get_console_connection();
+	$revoked = false;
+	if ( ! empty( $conn['apiToken'] ) && ! empty( $conn['apiUrl'] ) ) {
+		$revoke_response = wp_remote_request(
+			trailingslashit( $conn['apiUrl'] ) . 'api/v1/auth/api-tokens/self',
+			[
+				'method'  => 'DELETE',
+				'timeout' => 15,
+				'headers' => [
+					'X-Api-Token' => $conn['apiToken'],
+					'Accept'      => 'application/json',
+				],
+			]
+		);
+		if ( ! is_wp_error( $revoke_response ) ) {
+			$code    = (int) wp_remote_retrieve_response_code( $revoke_response );
+			// Only a 2xx confirms the Console revoked the token. (A 404 is ambiguous — it can
+			// also mean the endpoint isn't deployed yet — so we don't treat it as success.)
+			$revoked = ( $code >= 200 && $code < 300 );
+		}
+	}
+
 	delete_option( 'xpressui_console_connection' );
 	delete_option( 'xpressui_api_token' );
-	xpressui_set_admin_notice( __( 'Disconnected from the IntakeFlow Console. The stored API token has been removed from this site.', 'xpressui-bridge' ), 'success' );
+	$disconnect_message = $revoked
+		? __( 'Disconnected from the IntakeFlow Console — the API token was revoked on the Console and removed from this site.', 'xpressui-bridge' )
+		: __( 'Disconnected and the stored API token was removed from this site. The Console could not be reached to revoke it remotely — you can revoke it from the Console under API tokens.', 'xpressui-bridge' );
+	xpressui_set_admin_notice( $disconnect_message, $revoked ? 'success' : 'warning' );
 	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
 	exit;
 }
