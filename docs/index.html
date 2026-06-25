@@ -967,7 +967,7 @@
                         <div class="spinner"></div>
                         <span>Loading walkthrough...</span>
                     </div>
-                    <img data-src="media/walkthrough_editing_page.webp" src="" alt="Walkthrough: Editing WordPress page" onload="hideLoader(this)" onclick="openLightbox(this)">
+                    <img data-src="media/walkthrough_editing_page.webp" data-full="media/walkthrough_editing_page_full.webp" src="" alt="Walkthrough: Editing WordPress page" onload="hideLoader(this)" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Native Gutenberg Integration</h3>
@@ -1009,7 +1009,7 @@
                         <div class="spinner"></div>
                         <span>Loading walkthrough...</span>
                     </div>
-                    <img data-src="media/walkthrough_wordpress_inbox.webp" src="" alt="Walkthrough: WordPress Inbox review" onload="hideLoader(this)" onclick="openLightbox(this)">
+                    <img data-src="media/walkthrough_wordpress_inbox.webp" data-full="media/walkthrough_wordpress_inbox_full.webp" src="" alt="Walkthrough: WordPress Inbox review" onload="hideLoader(this)" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Collaborative Admin Inbox</h3>
@@ -1296,9 +1296,22 @@
             const modal = document.getElementById('lightbox-modal');
             const lightboxImg = document.getElementById('lightbox-img');
             const caption = document.getElementById('lightbox-caption');
+            const loader = document.getElementById('lightbox-loader');
             
-            // Use resolved src attribute
-            lightboxImg.src = imgElement.src || imgElement.getAttribute('src');
+            // Show loader initially if this is a lazy-loaded media
+            const fullSrc = imgElement.getAttribute('data-full') || imgElement.src || imgElement.getAttribute('src');
+            const isLazy = imgElement.hasAttribute('data-full');
+            
+            if (loader) {
+                if (isLazy) {
+                    loader.style.opacity = '1';
+                    loader.style.display = 'flex';
+                } else {
+                    loader.style.display = 'none';
+                }
+            }
+            
+            lightboxImg.src = fullSrc;
             caption.textContent = imgElement.alt || "";
             
             modal.style.display = 'flex';
@@ -1308,6 +1321,19 @@
             
             // Disable scrolling on body
             document.body.style.overflow = 'hidden';
+        }
+
+        // Hide lightbox loader when full image loads
+        function hideLightboxLoader() {
+            const loader = document.getElementById('lightbox-loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    if (loader.style.opacity === '0') {
+                        loader.style.display = 'none';
+                    }
+                }, 300);
+            }
         }
 
         // Lightbox close function
@@ -1343,7 +1369,11 @@
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" class="lightbox-modal" onclick="closeLightbox(event)">
         <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
-        <img class="lightbox-content" id="lightbox-img" alt="Zoomed view">
+        <div class="media-loader" id="lightbox-loader" style="display: none;">
+            <div class="spinner"></div>
+            <span>Loading full resolution...</span>
+        </div>
+        <img class="lightbox-content" id="lightbox-img" alt="Zoomed view" onload="hideLightboxLoader()">
         <div id="lightbox-caption" class="lightbox-caption"></div>
     </div>
 </body>
