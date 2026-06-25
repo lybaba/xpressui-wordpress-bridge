@@ -752,6 +752,120 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Lightbox Modal Styles */
+        .lightbox-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(5, 7, 15, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: zoom-out;
+        }
+
+        .lightbox-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 85%;
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: default;
+        }
+
+        .lightbox-modal.active .lightbox-content {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            color: var(--text-muted);
+            font-size: 2.5rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            z-index: 1001;
+            user-select: none;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+            border: 1px solid var(--surface-border);
+        }
+
+        .lightbox-close:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            color: var(--text-main);
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+            z-index: 1001;
+        }
+
+        .media-container {
+            cursor: zoom-in;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .media-container:hover {
+            transform: scale(1.01);
+            border-color: rgba(47, 101, 255, 0.3);
+        }
+        
+        .media-container::after {
+            content: "🔍 Click to zoom";
+            position: absolute;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            background: rgba(13, 17, 30, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--surface-border);
+            color: var(--text-main);
+            padding: 0.4rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all 0.25s ease;
+            z-index: 3;
+            pointer-events: none;
+            font-family: var(--font-display);
+        }
+        
+        .media-container:hover::after {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -815,7 +929,7 @@
             <!-- Tab Content 1 -->
             <div class="tab-content active glass-panel" style="padding: 2.75rem;">
                 <div class="media-container">
-                    <img src="media/1_import_success.png" alt="CF7 Form Import">
+                    <img src="media/1_import_success.png" alt="CF7 Form Import" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>One-Click Migration</h3>
@@ -831,7 +945,7 @@
             <!-- Tab Content 2 -->
             <div class="tab-content glass-panel" style="padding: 2.75rem;">
                 <div class="media-container">
-                    <img src="media/2_workflows_synced.png" alt="WordPress Workflows List">
+                    <img src="media/2_workflows_synced.png" alt="WordPress Workflows List" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Workflows Directory</h3>
@@ -851,7 +965,7 @@
                         <div class="spinner"></div>
                         <span>Loading walkthrough...</span>
                     </div>
-                    <img data-src="media/walkthrough_editing_page.webp" src="" alt="Walkthrough: Editing WordPress page" onload="hideLoader(this)">
+                    <img data-src="media/walkthrough_editing_page.webp" src="" alt="Walkthrough: Editing WordPress page" onload="hideLoader(this)" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Native Gutenberg Integration</h3>
@@ -873,7 +987,7 @@
             <!-- Tab Content 4 -->
             <div class="tab-content glass-panel" style="padding: 2.75rem;">
                 <div class="media-container">
-                    <img src="media/3_frontend_form.png" alt="Frontend submission">
+                    <img src="media/3_frontend_form.png" alt="Frontend submission" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Clean Submissions Flow</h3>
@@ -893,7 +1007,7 @@
                         <div class="spinner"></div>
                         <span>Loading walkthrough...</span>
                     </div>
-                    <img data-src="media/walkthrough_wordpress_inbox.webp" src="" alt="Walkthrough: WordPress Inbox review" onload="hideLoader(this)">
+                    <img data-src="media/walkthrough_wordpress_inbox.webp" src="" alt="Walkthrough: WordPress Inbox review" onload="hideLoader(this)" onclick="openLightbox(this)">
                 </div>
                 <div class="tab-text">
                     <h3>Collaborative Admin Inbox</h3>
@@ -1174,6 +1288,61 @@
                 });
             }, 100);
         });
+
+        // Lightbox open function
+        function openLightbox(imgElement) {
+            const modal = document.getElementById('lightbox-modal');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            
+            // Use resolved src attribute
+            lightboxImg.src = imgElement.src || imgElement.getAttribute('src');
+            caption.textContent = imgElement.alt || "";
+            
+            modal.style.display = 'flex';
+            // Trigger reflow for transition
+            modal.offsetHeight;
+            modal.classList.add('active');
+            
+            // Disable scrolling on body
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Lightbox close function
+        function closeLightbox(event) {
+            if (event.target.id === 'lightbox-modal' || event.target.classList.contains('lightbox-close')) {
+                const modal = document.getElementById('lightbox-modal');
+                modal.classList.remove('active');
+                
+                setTimeout(() => {
+                    if (!modal.classList.contains('active')) {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                }, 300);
+            }
+        }
+        
+        // Escape key to close lightbox
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('lightbox-modal');
+                if (modal.classList.contains('active')) {
+                    modal.classList.remove('active');
+                    setTimeout(() => {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }, 300);
+                }
+            }
+        });
     </script>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" class="lightbox-modal" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" alt="Zoomed view">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
 </body>
 </html>
