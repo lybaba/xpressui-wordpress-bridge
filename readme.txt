@@ -4,7 +4,7 @@ Tags: client intake, document collection, file upload, multi-step form, form bui
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.3
+Stable tag: 1.1.6
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -175,6 +175,11 @@ To rebuild the runtime from those sources:
 7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
+
+= 1.1.6 =
+* Improve: Optimized search discoverability keywords and listing copy for WordPress.org.
+* Improve: Added browser favicon and apple touch icon support to documentation.
+* Improve: Updated social sharing Open Graph preview images.
 
 = 1.1.5 =
 * New: Submissions are now saved to your wp-admin inbox even without an IntakeFlow account — review them, set status (New / In review / Done) and assign them to teammates locally, with your data kept in your own site database. Connecting the IntakeFlow Console adds automatic cloud backup, higher email deliverability (SPF/DKIM/DMARC), the visual multi-step builder, and product & booking catalogs with checkout.
