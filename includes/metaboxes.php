@@ -527,6 +527,10 @@ function xpressui_render_delivery_metabox( $post ) {
 	echo '<h4>' . esc_html__( 'Cloud sync', 'xpressui-bridge' ) . '</h4>';
 	if ( $webhook_status === '' || $webhook_status === 'not-set' ) {
 		echo '<p class="xpressui-hint">' . esc_html__( 'Not synced to the cloud.', 'xpressui-bridge' ) . '</p>';
+	} elseif ( $webhook_status === 'local_only' ) {
+		// Not an error: an unconnected site stores submissions locally by design. Present it
+		// as a neutral state with a soft upsell — never as a red error.
+		echo '<p class="xpressui-hint">' . esc_html__( 'Stored locally on this site. Connect the IntakeFlow Console to back up submissions to the cloud.', 'xpressui-bridge' ) . '</p>';
 	} else {
 		echo '<div class="xpressui-delivery-dl">';
 			echo '<div class="xpressui-dl-row"><span class="xpressui-dl-key">' . esc_html__( 'Status', 'xpressui-bridge' ) . '</span><span>' . wp_kses( $badge( $webhook_status ), $badge_allowed_html ) . '</span></div>';
