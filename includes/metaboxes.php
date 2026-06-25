@@ -102,14 +102,17 @@ function xpressui_render_status_metabox( $post ) {
 	}
 	wp_nonce_field( 'xpressui_save_submission_status', 'xpressui_submission_status_nonce' );
 
-	// Submission status is owned by the IntakeFlow Console (SaaS) and is READ-ONLY here:
-	// it is set on the SaaS (e.g. paid by the Stripe webhook) and mirrored to WordPress.
-	// Operators manage status on IntakeFlow, so WordPress shows it but offers no editor.
+	// Status is editable in WordPress: submissions are managed locally (the free/standalone
+	// inbox), and operators move them New → In review → Done here. On a Console-connected site
+	// a later sync from the Console can still update it.
 	$status_options = xpressui_get_status_options();
-	$status_label   = isset( $status_options[ $current_status ] ) ? $status_options[ $current_status ] : $current_status;
-	echo '<label><strong>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</strong></label><br />';
-	echo '<span class="xpressui-status-badge xpressui-status-' . esc_attr( $current_status ) . '">' . esc_html( $status_label ) . '</span>';
-	echo '<p class="xpressui-hint">' . esc_html__( 'Status is managed on your IntakeFlow Console and synced here.', 'xpressui-bridge' ) . '</p>';
+	echo '<label for="xpressui_submission_status"><strong>' . esc_html__( 'Status', 'xpressui-bridge' ) . '</strong></label><br />';
+	echo '<select id="xpressui_submission_status" name="xpressui_submission_status" class="xpressui-full-width">';
+	foreach ( $status_options as $value => $label ) {
+		echo '<option value="' . esc_attr( (string) $value ) . '"' . selected( $current_status, $value, false ) . '>' . esc_html( (string) $label ) . '</option>';
+	}
+	echo '</select>';
+	echo '<p class="xpressui-hint">' . esc_html__( 'Set the workflow status, then click Update.', 'xpressui-bridge' ) . '</p>';
 
 	echo '<label for="xpressui_assignee_id" class="xpressui-mt-12"><strong>' . esc_html__( 'Assignee', 'xpressui-bridge' ) . '</strong></label>';
 	echo '<select id="xpressui_assignee_id" name="xpressui_assignee_id" class="xpressui-full-width">';
@@ -136,9 +139,11 @@ function xpressui_save_submission_status( $post_id ) {
 	$previous_status = (string) get_post_meta( $post_id, '_xpressui_submission_status', true );
 	$previous_note   = (string) get_post_meta( $post_id, '_xpressui_review_note', true );
 	$previous_flagged_fields = xpressui_get_flagged_fields( $post_id );
-	// Status is owned by the SaaS and is READ-ONLY in WordPress: ignore any posted value
-	// and keep the current status (assignee, notes and flagged fields stay editable).
-	$status      = $previous_status !== '' ? $previous_status : 'new';
+	// Status is editable from the Submission Workflow metabox. Fall back to the current
+	// status (then 'new') when nothing valid is posted; validated against the options below.
+	$status      = isset( $_POST['xpressui_submission_status'] )
+		? sanitize_key( wp_unslash( (string) $_POST['xpressui_submission_status'] ) )
+		: ( $previous_status !== '' ? $previous_status : 'new' );
 	$note        = isset( $_POST['xpressui_review_note'] ) ? sanitize_textarea_field( wp_unslash( (string) $_POST['xpressui_review_note'] ) ) : '';
 
 	$assignee_id = isset( $_POST['xpressui_assignee_id'] ) ? absint( wp_unslash( (string) $_POST['xpressui_assignee_id'] ) ) : 0;
