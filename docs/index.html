@@ -814,7 +814,7 @@
             <!-- Tab Content 3 -->
             <div class="tab-content glass-panel" style="padding: 2.75rem;">
                 <div class="media-container">
-                    <img src="media/walkthrough_editing_page.webp" alt="Walkthrough: Editing WordPress page">
+                    <img data-src="media/walkthrough_editing_page.webp" src="" alt="Walkthrough: Editing WordPress page">
                 </div>
                 <div class="tab-text">
                     <h3>Native Gutenberg Integration</h3>
@@ -852,7 +852,7 @@
             <!-- Tab Content 5 -->
             <div class="tab-content glass-panel" style="padding: 2.75rem;">
                 <div class="media-container">
-                    <img src="media/walkthrough_wordpress_inbox.webp" alt="Walkthrough: WordPress Inbox review">
+                    <img data-src="media/walkthrough_wordpress_inbox.webp" src="" alt="Walkthrough: WordPress Inbox review">
                 </div>
                 <div class="tab-text">
                     <h3>Collaborative Admin Inbox</h3>
@@ -1039,12 +1039,19 @@
             const tabContents = document.querySelectorAll('.tab-content');
 
             tabBtns.forEach((btn, i) => {
+                const img = tabContents[i].querySelector('img');
                 if (i === index) {
                     btn.classList.add('active');
                     tabContents[i].classList.add('active');
+                    if (img && img.dataset.src) {
+                        img.src = img.dataset.src;
+                    }
                 } else {
                     btn.classList.remove('active');
                     tabContents[i].classList.remove('active');
+                    if (img && img.dataset.src) {
+                        img.src = "";
+                    }
                 }
             });
         }
