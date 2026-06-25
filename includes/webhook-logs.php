@@ -243,6 +243,28 @@ function xpressui_submissions_list_mail_notice() {
 add_action( 'admin_notices', 'xpressui_submissions_list_mail_notice' );
 
 /**
+ * Clears the standalone email delivery log (nonce-protected GET action from the Sync Logs page).
+ * Only the log entries are removed — submissions are untouched.
+ */
+function xpressui_handle_clear_email_log() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_action'] ) ) : '';
+	if ( 'clear_email_log' !== $action ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_clear_email_log' );
+	delete_option( XPRESSUI_EMAIL_LOG_OPTION );
+	if ( function_exists( 'xpressui_set_admin_notice' ) ) {
+		xpressui_set_admin_notice( __( 'Email delivery log cleared.', 'xpressui-bridge' ), 'success' );
+	}
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-sync-logs' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_clear_email_log' );
+
+/**
  * Renders the local email-delivery log shown to sites that aren't connected to the Console.
  *
  * Free / unconnected sites send admin notification emails via WordPress (wp_mail), so instead
@@ -268,6 +290,16 @@ function xpressui_render_mail_delivery_log() {
 		<p class="description" style="font-size: 13px; line-height: 1.6;">
 			<?php esc_html_e( 'Admin notification emails this site sent for new submissions. Connect the IntakeFlow Console to send via the cloud for higher deliverability (SPF/DKIM/DMARC) and to back up submissions.', 'xpressui-bridge' ); ?>
 		</p>
+		<?php if ( ! empty( $entries ) ) :
+			$xpui_clear_log_url = wp_nonce_url(
+				add_query_arg( [ 'xpressui_action' => 'clear_email_log' ], admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-sync-logs' ) ),
+				'xpressui_clear_email_log'
+			);
+		?>
+			<p style="margin: 0 0 8px;">
+				<a href="<?php echo esc_url( $xpui_clear_log_url ); ?>" class="button button-small" onclick="return confirm('<?php echo esc_js( __( 'Clear the email delivery log? This only removes the log entries — your submissions are not affected.', 'xpressui-bridge' ) ); ?>');"><?php esc_html_e( 'Clear log', 'xpressui-bridge' ); ?></a>
+			</p>
+		<?php endif; ?>
 		<?php if ( empty( $entries ) ) : ?>
 			<div style="padding: 32px; text-align: center; color: #64748b;">
 				<p style="font-weight: 600; margin: 0;"><?php esc_html_e( 'No notification emails sent yet.', 'xpressui-bridge' ); ?></p>

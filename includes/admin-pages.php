@@ -569,6 +569,7 @@ function xpressui_render_workflows_page() {
 		}
 		echo '<option value="archive">' . esc_html__( 'Archive', 'xpressui-bridge' ) . '</option>';
 		echo '<option value="restore">' . esc_html__( 'Restore', 'xpressui-bridge' ) . '</option>';
+		echo '<option value="delete">' . esc_html__( 'Delete permanently', 'xpressui-bridge' ) . '</option>';
 		echo '</select>';
 		echo '<input type="submit" id="' . esc_attr( $submit_id ) . '" class="button action" value="' . esc_attr__( 'Apply', 'xpressui-bridge' ) . '" name="xpressui_bulk_workflows_action" />';
 		echo '</div>';
@@ -1302,6 +1303,17 @@ function xpressui_render_settings_page() {
 	echo '<a href="' . esc_url( $connect_url ) . '" class="button button-primary button-large" style="display: inline-flex; align-items: center; justify-content: center; height: 38px; border-radius: 6px; font-weight: 600;">' . esc_html__( 'Connect IntakeFlow Account', 'xpressui-bridge' ) . '</a>';
 	echo '</div>';
 
+	// When a token is stored, offer a one-click disconnect that removes it from this site.
+	if ( ! empty( $conn['apiToken'] ) ) {
+		$disconnect_url = wp_nonce_url(
+			add_query_arg( [ 'xpressui_action' => 'disconnect_console' ], admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) ),
+			'xpressui_disconnect_console'
+		);
+		echo '<p style="margin: 12px 0 0;">';
+		echo '<a href="' . esc_url( $disconnect_url ) . '" class="button" style="color:#b32d2e; border-color:#f0c2c2;" onclick="return confirm(\'' . esc_js( __( 'Disconnect this site and remove the stored API token? You can reconnect at any time.', 'xpressui-bridge' ) ) . '\');">' . esc_html__( 'Disconnect &amp; disable token', 'xpressui-bridge' ) . '</a>';
+		echo '</p>';
+	}
+
 	echo '<details style="margin-top: 15px; cursor: pointer;"><summary style="font-weight: 600; color: #64748b; margin-bottom: 10px; outline: none;">' . esc_html__( 'Or configure connection manually', 'xpressui-bridge' ) . '</summary>';
 	if ( function_exists( 'xpressui_render_console_connection_form' ) ) {
 		xpressui_render_console_connection_form();
@@ -1958,7 +1970,7 @@ function xpressui_handle_workflow_bulk_actions() {
 		? array_map( 'sanitize_title', wp_unslash( $_POST['xpressui_workflow_checkboxes'] ) )
 		: [];
 
-	if ( empty( $selected ) || ! in_array( $bulk_action, [ 'sync', 'archive', 'restore' ], true ) ) {
+	if ( empty( $selected ) || ! in_array( $bulk_action, [ 'sync', 'archive', 'restore', 'delete' ], true ) ) {
 		return;
 	}
 
@@ -2023,12 +2035,66 @@ function xpressui_handle_workflow_bulk_actions() {
 				xpressui_set_admin_notice( $msg, 'success' );
 			}
 		}
+	} elseif ( 'delete' === $bulk_action ) {
+		$count   = 0;
+		$skipped = 0;
+		$errors  = [];
+		foreach ( $selected as $s_slug ) {
+			// Bundled starters are reinstallable templates — never hard-delete them here
+			// (mirrors the single-item delete guard); use Reinstall to restore the original.
+			if ( xpressui_is_bundled_workflow( $s_slug ) ) {
+				$skipped++;
+				continue;
+			}
+			// xpressui_delete_workflow() removes the workflow directory from disk and clears its
+			// manifest meta + per-workflow settings (standalone and Console-synced alike).
+			$res = xpressui_delete_workflow( $s_slug );
+			if ( is_wp_error( $res ) ) {
+				/* translators: 1: workflow slug, 2: error message */
+				$errors[] = sprintf( __( 'Failed to delete "%1$s": %2$s', 'xpressui-bridge' ), $s_slug, $res->get_error_message() );
+			} else {
+				$count++;
+			}
+		}
+		/* translators: %d: number of deleted workflows */
+		$msg = sprintf( _n( '%d workflow was permanently deleted (removed from disk).', '%d workflows were permanently deleted (removed from disk).', $count, 'xpressui-bridge' ), $count );
+		if ( $skipped > 0 ) {
+			/* translators: %d: number of skipped bundled starters */
+			$msg .= ' ' . sprintf( _n( '%d bundled starter was skipped — use Reinstall to restore it.', '%d bundled starters were skipped — use Reinstall to restore them.', $skipped, 'xpressui-bridge' ), $skipped );
+		}
+		if ( ! empty( $errors ) ) {
+			$msg .= '<br />' . implode( '<br />', $errors );
+			xpressui_set_admin_notice( $msg, 'warning' );
+		} else {
+			xpressui_set_admin_notice( $msg, 'success' );
+		}
 	}
 
 	wp_safe_redirect( remove_query_arg( [ 'xpressui_action', 'xpressui_slug', '_wpnonce' ] ) );
 	exit;
 }
 add_action( 'admin_init', 'xpressui_handle_workflow_bulk_actions' );
+
+/**
+ * Disconnects the site from the IntakeFlow Console: removes the stored connection and API
+ * token so the site stops syncing. Nonce-protected GET action from the Settings page.
+ */
+function xpressui_handle_disconnect_console() {
+	if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+	$action = isset( $_GET['xpressui_action'] ) ? sanitize_key( wp_unslash( (string) $_GET['xpressui_action'] ) ) : '';
+	if ( 'disconnect_console' !== $action ) {
+		return;
+	}
+	check_admin_referer( 'xpressui_disconnect_console' );
+	delete_option( 'xpressui_console_connection' );
+	delete_option( 'xpressui_api_token' );
+	xpressui_set_admin_notice( __( 'Disconnected from the IntakeFlow Console. The stored API token has been removed from this site.', 'xpressui-bridge' ), 'success' );
+	wp_safe_redirect( admin_url( 'edit.php?post_type=xpressui_submission&page=xpressui-settings' ) );
+	exit;
+}
+add_action( 'admin_init', 'xpressui_handle_disconnect_console' );
 
 function xpressui_submissions_trial_notice() {
 	if ( ! function_exists( 'get_current_screen' ) ) {
