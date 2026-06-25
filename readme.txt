@@ -1,24 +1,31 @@
 === IntakeFlow Forms – Multi-Step Form Builder, File Upload & Client Intake ===
 Contributors: iakpressteam
-Tags: form builder, contact form, multi-step form, file upload, intake form
+Tags: client intake, document collection, file upload, multi-step form, form builder
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.5
+Stable tag: 1.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Multi-step form builder for WordPress: contact forms, file upload, client intake & document collection, with a built-in submission inbox.
+GDPR-compliant Multi-Step Form Builder & Client Intake. 100% Free Local Submission Inbox, Secure Document Upload & Gravity/CF7 Importer.
 
 == Description ==
 
-**IntakeFlow** is a multi-step form builder for WordPress for contact forms, file uploads, client intake and document-collection workflows — with a built-in submission inbox so you manage everything inside wp-admin.
+**IntakeFlow** is a secure, GDPR-compliant multi-step form builder and client document collection portal for WordPress. It includes a **100% free, fully featured local submission inbox** in `wp-admin` allowing you to manage, review, and assign submissions to your team without third-party SaaS accounts or expensive user-seat upgrades.
 
-**Already using Contact Form 7 or Gravity Forms?** Import and convert any existing CF7 or Gravity Forms form into an IntakeFlow workflow in a few clicks (field types, choices and required rules are preserved), then embed it with a shortcode.
+Unlike traditional form plugins that lock team collaboration tools behind expensive licenses, IntakeFlow enables assignment and status workflows out-of-the-box, storing all submissions and file uploads safely in your own WordPress database.
 
-Embed any form anywhere using the `[xpressui]` shortcode (or the Gutenberg block / Elementor widget). The form renders natively inside your page — no iframe, no external dependencies at runtime. Submissions are stored as private posts in a dedicated wp-admin inbox, directly in your site's database.
+### 🔌 100% Offline-First & Local (SaaS connection is completely optional)
+You **do not** need a cloud account to use IntakeFlow. The core form builder, local wp-admin inbox, team assignment queue, email alerts, and the Contact Form 7 / Gravity Forms migrator run entirely within your WordPress hosting environment. 
 
-If you need advanced field types, direct Console Sync, or cloud workflow management, those are available by connecting the plugin to your IntakeFlow account at intakeflow.dev.
+An optional account on **intakeflow.dev** is only required if you want advanced cloud services such as digital signatures, document scanner fields, real-time Stripe/card checkout, or automatic backups.
+
+### 🔄 Already using Contact Form 7 or Gravity Forms?
+Convert your existing forms to IntakeFlow in just 3 clicks. Our migration wizard preserves inputs, options, and required rules, generating a clean multi-step form and a dedicated shortcode instantly.
+
+### 🌐 Clean HTML Rendering (No Bloated Iframes)
+Forms render natively using pure HTML/JS, inheriting your theme's active CSS and typography. This ensures lightning-fast page speed, excellent SEO indexing, and perfect mobile responsiveness.
 
 = Key features =
 
