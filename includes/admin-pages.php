@@ -2147,13 +2147,13 @@ function xpressui_submissions_trial_notice() {
 	$connect_url = xpressui_get_wordpress_connect_url( admin_url( 'edit.php?post_type=xpressui_submission' ) );
 	?>
 	<div class="notice notice-info" style="border-left-color: #3b82f6; padding: 15px; border-radius: 8px; margin-top: 15px;">
-		<h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-weight: 700; font-size: 14px;"><?php esc_html_e( 'Trial Workflows: Local Storage Disabled', 'xpressui-bridge' ); ?></h4>
+		<h4 style="margin: 0 0 8px 0; color: #1e3a8a; font-weight: 700; font-size: 14px;"><?php esc_html_e( 'Submissions are saved to your inbox', 'xpressui-bridge' ); ?></h4>
 		<p style="margin: 0 0 12px 0; font-size: 13px; color: #475569; max-width: 800px; line-height: 1.5;">
-			<?php esc_html_e( 'Submissions for trial (unconnected) workflows are sent directly to the administrator by email. To store, view, and manage submissions locally in this dashboard, connect your site to the IntakeFlow Console.', 'xpressui-bridge' ); ?>
+			<?php esc_html_e( 'New submissions are stored privately in this dashboard — review, assign and track them here, no account needed and your data stays in your site. Connect the IntakeFlow Console to add automatic cloud backup, higher email deliverability (SPF/DKIM/DMARC), the visual multi-step builder, and product & booking catalogs with checkout.', 'xpressui-bridge' ); ?>
 		</p>
 		<p style="margin: 0;">
 			<a href="<?php echo esc_url( $connect_url ); ?>" class="button button-primary" style="background: #2563eb; border-color: #2563eb; box-shadow: none; text-shadow: none;">
-				<?php esc_html_e( 'Connect to Console', 'xpressui-bridge' ); ?>
+				<?php esc_html_e( 'Connect for cloud backup &amp; more', 'xpressui-bridge' ); ?>
 			</a>
 		</p>
 	</div>
