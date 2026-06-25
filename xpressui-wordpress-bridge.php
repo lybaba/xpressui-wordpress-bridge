@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       IntakeFlow Forms – Multi-Step Form Builder, File Upload & Client Intake
  * Description:       Multi-step form builder for WordPress: contact forms, file upload, client intake & document collection. Import from Contact Form 7 / Gravity Forms, embed with a shortcode, and manage submissions in a wp-admin inbox.
- * Version:           1.1.3
+ * Version:           1.1.4
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            IAKPress
@@ -31,7 +31,7 @@ register_activation_hook( __FILE__, function() {
 	}
 } );
 
-define( 'XPRESSUI_BRIDGE_VERSION', '1.1.3' );
+define( 'XPRESSUI_BRIDGE_VERSION', '1.1.4' );
 define( 'XPRESSUI_BRIDGE_RUNTIME_VERSION', '1.0.17' );
 define( 'XPRESSUI_BRIDGE_DIR', plugin_dir_path( __FILE__ ) );
 define( 'XPRESSUI_BRIDGE_URL', plugin_dir_url( __FILE__ ) );

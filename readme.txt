@@ -4,7 +4,7 @@ Tags: form builder, contact form, multi-step form, file upload, intake form
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -168,6 +168,11 @@ To rebuild the runtime from those sources:
 7. Service / time-slot booking — the chosen slot is carried into the checkout step.
 
 == Changelog ==
+
+= 1.1.4 =
+* New: Bulk "Delete permanently" action on the Workflows screen — removes the selected standalone and Console-synced workflows from disk (bundled starters are skipped; use Reinstall to restore those).
+* New: "Disconnect & disable token" (Settings → Console Connection) now revokes the API token on the IntakeFlow Console as well as removing it from this site.
+* New: "Clear log" button on the Sync Logs email delivery log.
 
 = 1.1.3 =
 * Fix: Imported forms (e.g. Contact Form 7) no longer disappear from the Workflows list after connecting the site to the IntakeFlow Console.
